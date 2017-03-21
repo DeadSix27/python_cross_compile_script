@@ -1,6 +1,6 @@
 # A (somewhat) Modular cross-compile helper
 
-#### Written almost entirely in Python (3.6)
+#### Written almost entirely in Python3
 
 
 Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers
@@ -61,6 +61,6 @@ _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake o
 
 # System requirements:
 
-* Python 3 (tested on Python 3.5.2)
+* Python3 (tested on Python 3.5.2)
 * GNU/Linux (tested on Ubuntu 16.10)
 * Patience
