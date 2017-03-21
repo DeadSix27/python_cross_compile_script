@@ -44,6 +44,8 @@ _WORKDIR = "workdir"
 _MINGW_DIR = "xcompilers"
 _BITNESS = ( 64, )
 _DOWNLOADER = "wget" # wget or curl
+_ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
+
 git_get_latest = True # to be implemented in a better way
 
 PRODUCTS = { # e.g mpv, ffmpeg
@@ -53,17 +55,11 @@ PRODUCTS = { # e.g mpv, ffmpeg
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'folder_name': None, # Required for SVN repos, weird git onee and borked direct file downloads I guess. 
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'depends_on' : ( "zlib", "bzlib2", 'liblzma', 'libzimg' ) # order them correctly, if one needs yet another dep. you put that one first.
+		'depends_on' : ( "zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls' ), # order them correctly, if one needs another dep. first, you put that one first., or use depends_on in the depends itself, yes, nested works :)
+		'make_options': '{make_prefix_options}',
 	}
 }
 DEPENDS = { # e.g flac, libpng
-	'libdlfcn' : {
-		'repo_type' : 'git',
-		'branch' : '0.13.6',
-		'url' : 'https://github.com/dlfcn-win32/dlfcn-win32.git',
-		'folder_name': None,
-		'configure_options': '--cross-prefix={cross_prefix} --prefix={compile_prefix} --disable-shared --enable-static',
-	},
 	'bzlib2' : { # simple name for the library
 		'repo_type' : 'archive', # git, svn, archive
 		'branch' : None, # git/svn branch/tag [Optional, set None or remove]
@@ -72,16 +68,93 @@ DEPENDS = { # e.g flac, libpng
 		'patches' : ( # ordered list of patches, first one will be applied first..
 			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/bzip2_cross_compile.diff', "p0"),
 		),
-		'configure_options': '--static --prefix={compile_prefix}',
-		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover', # self.makePrefixOptions
+		"needs_configure": False, # self explanatory [Optional, set None or remove]
+		"needs_make": True, # self explanatory [Optional, set None or remove]
+		"needs_make_install": False, # self explanatory [Optional, set None or remove]
+		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install', # self.makePrefixOptions
 	},
 	'zlib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz',
-		'folder_name': None,
 		'configure_options': '--static --prefix={compile_prefix}',
 		'make_options': '{make_prefix_options} ARFLAGS=rcs', # self.makePrefixOptions
 	},
+	'liblzma' : {
+		'repo_type' : 'archive',
+		'url' : 'http://tukaani.org/xz/xz-5.2.3.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libzimg' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/sekrit-twc/zimg.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libsnappy' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/ffmpegwindowsbi/files/dependency_libraries/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
+		'folder_name' : 'google-snappy-32d6d7d',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libpng' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.28/libpng-1.6.28.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'gmp' : {
+		#export CC_FOR_BUILD=/usr/bin/gcc idk if we need this anymore, compiles fine without.
+		#export CPP_FOR_BUILD=usr/bin/cpp
+		#generic_configure "ABI=$bits_target"
+		'repo_type' : 'archive',
+		'url' : 'https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libnettle' : {
+		'repo_type' : 'archive',
+		'url' : 'https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-openssl --with-included-libtasn1',
+		'make_options': '{make_prefix_options}',
+	},
+	'iconv' : {
+		'repo_type' : 'archive',
+		# CFLAGS=-O2 # ??
+		'url' : 'https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'gnutls' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring',
+		'make_options': '{make_prefix_options}',
+		'run_after_install': ( # list of commands to run after make install variables can be found somewhere.
+			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
+		)
+	},
+	
+	
+#  download_and_unpack_file ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz #DeadSix27: bump from 3.4.17 to 3.5.10
+#  cd gnutls-3.5.10
+#    sed -i.bak 's/mkstemp(tmpfile)/ -1 /g' src/danetool.c # fix x86_64 absent? but danetool is just an exe AFAICT so this hack should be ok...
+#    # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference... 
+#    # --enable-local-libopts to allow building with local autogen installed, 
+#    # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
+#    # libtasn1 is some dependency, appears provided is an option [see also build_libnettle]
+#    # pks #11 hopefully we don't need kit
+#    generic_configure "--disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring"  #DeadSix27:  *** Libunistring was not found. To use the included one, use --with-included-unistring
+#    do_make_and_make_install
+#  cd ..
+#  sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' "$PKG_CONFIG_PATH/gnutls.pc"
+	
+	
+	#build_gnutls # needs libnettle, can use iconv it appears
+	#
+	#build_frei0r
+	
 }
 DOWNLOADERS = {
 	'wget' : {
@@ -115,6 +188,7 @@ class CrossCompileScript:
 		self.makePrefixOptions = None
 		self.bitnessDir        = None
 		self.winBitnessDir     = None
+		self.pkgConfigPath     = None
 		
 		#main starting point
 		for b in self.targetBitness:		
@@ -130,9 +204,14 @@ class CrossCompileScript:
 			self.compilePrefix     = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget )
 			self.mingwBinpath      = "{0}/{1}/mingw-w64-{2}/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir )
 			self.crossPrefix       = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir )
-			self.makePrefixOptions = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.crossPrefix, self.compilePrefix )
+			self.crossPrefix2      = "{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir )
+			self.makePrefixOptions = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.crossPrefix2, self.compilePrefix )
+			self.pkgConfigPath     = "{0}/lib/pkgconfig".format( self.compilePrefix )
 			
 			self.build_mingw(b)
+			
+			self.defaultCFLAGS()
+			
 			self.initProcess(b) # the passing is actually unessesary but looks better. 
 		
 			os.chdir("..")
@@ -142,7 +221,7 @@ class CrossCompileScript:
 	def initProcess(self,bitness):
 		
 		os.environ["PATH"]           = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
-		os.environ["KG_CONFIG_PATH"] = "{0}/lib/pkgconfig".format( self.compileTarget )
+		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
 		
 		if not os.path.isdir(self.bitnessDir):
 			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir ))
@@ -465,7 +544,9 @@ class CrossCompileScript:
 			
 			self.logger.info("Unpacking {0}".format( fileName ))
 			
-			if fileName.endswith(".tar.gz"):
+			tars = (".gz",".bz2",".xz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
+			
+			if fileName.endswith(tars):
 				self.run_process('tar -xf "{0}"'.format( fileName ))
 			else:
 				self.run_process('unzip "{0}"'.format( fileName ))
@@ -489,7 +570,10 @@ class CrossCompileScript:
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"])
 		if data["repo_type"] == "archive":
-			workDir = self.download_unpack_file(data["url"])
+			if "folder_name" in data:
+				workDir = self.download_unpack_file(data["url"],data["folder_name"])
+			else:
+				workDir = self.download_unpack_file(data["url"])
 		if workDir == None:
 			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
 			raise
@@ -499,13 +583,24 @@ class CrossCompileScript:
 			if data['patches'] != None:
 				for p in data['patches']:
 					self.apply_patch(p[0],p[1])
-			exit()
-		
-		self.configure_source(name,data)
-		
-		self.make_source(name,data)
-		
-		self.make_install_source(name,data)
+					
+		if 'needs_configure' in data:
+			if data['needs_configure'] == True:
+				self.configure_source(name,data)
+		else:
+			self.configure_source(name,data)
+			
+		if 'needs_make' in data:
+			if data['needs_make'] == True:
+				self.make_source(name,data)
+		else:
+			self.make_source(name,data)
+			
+		if 'needs_make_install' in data:
+			if data['needs_make_install'] == True:
+				self.make_install_source(name,data)
+		else:
+			self.make_install_source(name,data)
 		
 		os.chdir("..")
 		
@@ -559,12 +654,12 @@ class CrossCompileScript:
 					compile_target = self.compileTarget,
 					compile_prefix = self.compilePrefix,
 					)
-			print("writing: " + touch_name)
-			self.touch(touch_name)
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 			
 			self.run_process('./configure %s' % configOpts)
 			self.run_process('make clean -j {0}'.format( _CPU_COUNT ),True)
+			
+			self.touch(touch_name)
 			
 	def apply_patch(self,url,type = "-p1"): #p1 for github, p0 for idk
 		fileName = os.path.basename(urlparse(url).path)
@@ -622,12 +717,28 @@ class CrossCompileScript:
 			
 			self.run_process('make -j {0} install {1}'.format( _CPU_COUNT, makeInstallOpts ))
 			
+			if 'run_after_install' in data:
+				if data['run_after_install'] != None:
+					for cmd in data['run_after_install']:
+						cmd = cmd.format( 
+							pkg_config_path = self.pkgConfigPath,
+						)
+						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
+			
 			self.touch(touch_name)
 	#:
+	
+	def defaultCFLAGS(self):
+		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
+		os.environ["CFLAGS"] = _ORIG_CFLAGS
+	#:
+	
 	def removeAlreadyFiles(self):
 		for af in glob.glob("./already_*"):
 			os.remove(af)
-		
+	#:	
+	
 	def getKeyOrBlankString(self,db,k):
 		if k in db:
 			if k == None:
@@ -636,6 +747,7 @@ class CrossCompileScript:
 				return k
 		else:
 			return ""
-		
+	#:
+	
 if __name__ == "__main__":
 	main = CrossCompileScript()
