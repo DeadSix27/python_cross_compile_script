@@ -20,7 +20,10 @@ import http.cookiejar
 from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
-_VERSION = "1.1"
+_VERSION = "1.2"
+
+
+#autogen
 
 class Colors: # improperly named ansi colors.
 	GREEN  = '\033[1;32;40m'
@@ -36,13 +39,13 @@ class MissingDependency(Exception):
 		self.message = message
 
 _CPU_COUNT = cpu_count()
-_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh"
+_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #mingw script, keep the default one, unless you know what you're doing
 _LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s' + Colors.RESET
 _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
 _WORKDIR = "workdir"
 _MINGW_DIR = "xcompilers"
-_BITNESS = ( 64, )
+_BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
 _DOWNLOADER = "wget" # wget or curl
 _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 
@@ -55,7 +58,8 @@ PRODUCTS = { # e.g mpv, ffmpeg
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'folder_name': None, # Required for SVN repos, weird git onee and borked direct file downloads I guess. 
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'depends_on' : ( "zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls' ), # order them correctly, if one needs another dep. first, you put that one first., or use depends_on in the depends itself, yes, nested works :)
+		# \/ order them correctly, if one needs another dep. first, you put that one first., or use depends_on in the depends itself, yes, nested works :)
+		'depends_on' : ( "zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm' ),
 		'make_options': '{make_prefix_options}',
 	}
 }
@@ -126,6 +130,12 @@ DEPENDS = { # e.g flac, libpng
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '{make_prefix_options}',
 	},
+		#    sed -i.bak 's/mkstemp(tmpfile)/ -1 /g' src/danetool.c # fix x86_64 absent? but danetool is just an exe AFAICT so this hack should be ok...
+		#    # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference... 
+		#    # --enable-local-libopts to allow building with local autogen installed, 
+		#    # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
+		#    # libtasn1 is some dependency, appears provided is an option [see also build_libnettle]
+		#    # pks #11 hopefully we don't need kit
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
@@ -135,26 +145,98 @@ DEPENDS = { # e.g flac, libpng
 			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
 		)
 	},
+	'frei0r' : {
+		'repo_type' : 'archive',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'run_post_patch': ( # runs commands post the patch process
+			'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
+		),
+		'cmake_options': '{cmake_prefix_options}',
+		'url' : 'https://files.dyne.org/frei0r/releases/frei0r-plugins-1.5.0.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libsndfile' : {
+		'repo_type' : 'git',
+		'branch' : '1.0.27',
+		'url' : 'https://github.com/erikd/libsndfile.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libbs2b' : {
+		'repo_type' : 'archive',
+		'env_exports' : {
+			"ac_cv_func_malloc_0_nonnull" : "yes", # fixes undefined reference to `rpl_malloc'
+		},
+		'url' : 'https://sourceforge.net/projects/bs2b/files/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'wavpack' : {
+		'repo_type' : 'archive',
+		'url' : 'https://github.com/dbry/WavPack/archive/5.1.0.tar.gz',
+		'folder_name' : 'WavPack-5.1.0',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libgme_game_music_emu' : {
+		'repo_type' : 'archive',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'run_post_patch': ( # runs commands post the patch process
+			'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
+		),
+		'cmake_options': '{cmake_prefix_options}',
+		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libwebp' : { # why can't everything be so easy to compile
+		'repo_type' : 'archive',
+		'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'flite' : { # why can't everything be so easy to compile
+		'repo_type' : 'archive',
+		'url' : 'http://www.speech.cs.cmu.edu/flite/packed/flite-1.4/flite-1.4-release.tar.bz2',
+		'patches' : ( # ordered list of patches, first one will be applied first..
+			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/flite_64.diff', "p0"),
+		),
+		'cpu_count' : '1', #why do I even have to implement this, fix your stuff flite group.
+		'needs_make_install' : False,
+		'run_post_patch': (
+			'sed -i.bak "s|i386-mingw32-|{cross_prefix}|" configure',
+		),
+		"run_post_make": (
+			'mkdir -pv "{compile_prefix}/include/flite"',
+			'cp -v include/* "{compile_prefix}/include/flite"',
+			'cp -v ./build/{bit_namne}-mingw32/lib/*.a "{compile_prefix}/lib"',
+		),
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libgsm' : {
+		'repo_type' : 'archive',
+		'url' : 'http://www.quut.com/gsm/gsm-1.0.16.tar.gz',
+		'folder_name' : 'gsm-1.0-pl16',
+		'patches' : ( # ordered list of patches, first one will be applied first..
+			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/libgsm.patch', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', 'p0'), # toast fails. so lets just patch it out of the makefile..
+		),
+		'needs_configure' : False,
+		'needs_make_install' : False,
+		"run_post_make": (
+			'cp -v lib/libgsm.a {compile_prefix}/lib'
+			'mkdir -pv {compile_prefix}/include/gsm'
+			'cp -v inc/gsm.h {compile_prefix}/include/gsm'
+		),
+		'cpu_count' : '1',
+		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
+	},
 	
-	
-#  download_and_unpack_file ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz #DeadSix27: bump from 3.4.17 to 3.5.10
-#  cd gnutls-3.5.10
-#    sed -i.bak 's/mkstemp(tmpfile)/ -1 /g' src/danetool.c # fix x86_64 absent? but danetool is just an exe AFAICT so this hack should be ok...
-#    # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference... 
-#    # --enable-local-libopts to allow building with local autogen installed, 
-#    # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
-#    # libtasn1 is some dependency, appears provided is an option [see also build_libnettle]
-#    # pks #11 hopefully we don't need kit
-#    generic_configure "--disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring"  #DeadSix27:  *** Libunistring was not found. To use the included one, use --with-included-unistring
-#    do_make_and_make_install
-#  cd ..
-#  sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' "$PKG_CONFIG_PATH/gnutls.pc"
-	
-	
-	#build_gnutls # needs libnettle, can use iconv it appears
-	#
-	#build_frei0r
-	
+    # build_sdl 
 }
 DOWNLOADERS = {
 	'wget' : {
@@ -206,6 +288,7 @@ class CrossCompileScript:
 			self.crossPrefix       = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir )
 			self.crossPrefix2      = "{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir )
 			self.makePrefixOptions = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.crossPrefix2, self.compilePrefix )
+			self.cmakePrefixOptions= "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={0}ranlib -DCMAKE_C_COMPILER={0}gcc -DCMAKE_CXX_COMPILER={0}g++ -DCMAKE_RC_COMPILER={0}windres -DCMAKE_INSTALL_PREFIX={1}".format( self.crossPrefix2, self.compilePrefix )
 			self.pkgConfigPath     = "{0}/lib/pkgconfig".format( self.compilePrefix )
 			
 			self.build_mingw(b)
@@ -499,7 +582,7 @@ class CrossCompileScript:
 			  self.logger.info("Updating to latest '%s' git version [origin/master]..." % (dir))
 			  self.run_process('git merge origin/master')
 		else:
-			self.logger.info("git checkout'ing $desired_branch")
+			self.logger.info('git checkout\'ing "%s"' % (desiredBranch))
 			self.run_process('git checkout "%s"'% (desiredBranch))
 			self.run_process('git merge "%s"' % (desiredBranch))
 			
@@ -566,7 +649,8 @@ class CrossCompileScript:
 		workDir = None
 		self.logger.info("Building library '%s'" % (name))
 		if data["repo_type"] == "git":
-			workDir = self.git_clone(data["url"])
+			branch = self.getValueOrNone(data,'branch')
+			workDir = self.git_clone(data["url"],None,branch)
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"])
 		if data["repo_type"] == "archive":
@@ -578,11 +662,30 @@ class CrossCompileScript:
 			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
 			raise
 		os.chdir(workDir)
+			
+		if 'env_exports' in data:
+			if data['env_exports'] != None:
+				for key,val in data['env_exports'].items():
+					self.logger.info("Environment variable '{0}' has been set to '{1}'".format( key, val ))
+					os.environ[key] = val
+		
 		
 		if 'patches' in data:
 			if data['patches'] != None:
 				for p in data['patches']:
 					self.apply_patch(p[0],p[1])
+					
+		if 'run_post_patch' in data:
+			if data['run_post_patch'] != None:
+				for cmd in data['run_post_patch']:
+					cmd = cmd.format( 
+						pkg_config_path = self.pkgConfigPath,
+						cross_prefix    = self.crossPrefix2,
+						compile_prefix  = self.compilePrefix,
+					)
+					self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
+					self.run_process(cmd)
+					
 					
 		if 'needs_configure' in data:
 			if data['needs_configure'] == True:
@@ -590,17 +693,35 @@ class CrossCompileScript:
 		else:
 			self.configure_source(name,data)
 			
-		if 'needs_make' in data:
+		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
-				self.make_source(name,data)
+				if 'is_cmake' in data:
+					if data['is_cmake'] == True:
+						self.cmake_source(name,data)
+					else:
+						self.make_source(name,data)
+				else:
+					self.make_source(name,data)
 		else:
-			self.make_source(name,data)
+			if 'is_cmake' in data:
+				if data['is_cmake'] == True:
+					self.cmake_source(name,data)
+				else:
+					self.make_source(name,data)
+			else:
+				self.make_source(name,data)
 			
 		if 'needs_make_install' in data:
 			if data['needs_make_install'] == True:
 				self.make_install_source(name,data)
 		else:
 			self.make_install_source(name,data)
+		
+		if 'env_exports' in data:
+			if data['env_exports'] != None:
+				for key,val in data['env_exports'].items():
+					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
+					del os.environ[key]
 		
 		os.chdir("..")
 		
@@ -641,6 +762,7 @@ class CrossCompileScript:
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
+			
 			if not os.path.isfile("configure"):
 				if os.path.isfile("bootstrap.sh"):
 					self.run_process('./bootstrap.sh')
@@ -676,6 +798,28 @@ class CrossCompileScript:
 		else:
 			self.logger.info("Patch '{0}' already applied".format( fileName ))	
 	#:
+	
+	def cmake_source(self,name,data):
+		touch_name = "already_ran_cmake_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
+		
+		if not os.path.isfile(touch_name):
+			self.removeAlreadyFiles()
+
+			makeOpts = ''
+			if 'cmake_options' in data:
+				makeOpts = data["cmake_options"].format( 
+					cmake_prefix_options= self.cmakePrefixOptions,
+					cross_prefix        = self.crossPrefix,
+					compile_target      = self.compileTarget,
+					compile_prefix      = self.compilePrefix,
+					)
+	
+			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
+	
+			self.run_process('cmake {0}'.format( makeOpts ))
+			
+			self.touch(touch_name)			
+			
 			
 	def make_source(self,name,data):
 		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
@@ -694,7 +838,25 @@ class CrossCompileScript:
 				
 			self.logger.info("Making '{0}' with: {1}".format( name, makeOpts ))
 			
-			self.run_process('make -j {0} {1}'.format( _CPU_COUNT, makeOpts ))
+			cpcnt = _CPU_COUNT
+			
+			if 'cpu_count' in data:
+				if data['cpu_count'] != None:
+					cpcnt = 1
+			
+			self.run_process('make -j {0} {1}'.format( cpcnt, makeOpts ))
+			
+			if 'run_post_make' in data:
+				if data['run_post_make'] != None:
+					for cmd in data['run_post_make']:
+						cmd = cmd.format( 
+							pkg_config_path = self.pkgConfigPath,
+							cross_prefix    = self.crossPrefix2,
+							compile_prefix  = self.compilePrefix,
+							bit_namne       = self.bitnessDir,
+						)
+						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
 			
 			self.touch(touch_name)
 	#:
@@ -722,6 +884,7 @@ class CrossCompileScript:
 					for cmd in data['run_after_install']:
 						cmd = cmd.format( 
 							pkg_config_path = self.pkgConfigPath,
+							cross_prefix    = self.crossPrefix2,
 						)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -738,13 +901,21 @@ class CrossCompileScript:
 		for af in glob.glob("./already_*"):
 			os.remove(af)
 	#:	
+	def getValueOrNone(self,db,k):
+		if k in db:
+			if db[k] == None:
+				return None
+			else:
+				return db[k]
+		else:
+			return None
 	
 	def getKeyOrBlankString(self,db,k):
 		if k in db:
-			if k == None:
+			if db[k] == None:
 				return ""
 			else:
-				return k
+				return db[k]
 		else:
 			return ""
 	#:

@@ -1,6 +1,5 @@
 #!/bin/bash
-echo "modified version 4 running!"
-script_ver='3.6.7'
+script_ver='3.6.8' #3.6.7 is without weak refs patch.
 # local version: 4
 ################################################################################
 # MingGW-w64 Build Script
@@ -715,8 +714,8 @@ if [[ "$gcc_ver" != 'svn' ]]; then
 	
 	if [ "$gcc_ver" == "6.3.0" ]; then #DeadSix27: Patch gcc 6.3.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
 		cd gcc-"$gcc_ver"
-			echo "Patching GCC 6.3.0"
-			curl -4 --retry 5 "https://dsix.tech/gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
+			echo "Patching GCC 6.3.0 weak refs"
+			curl -4 --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
 			echo "applying patch"
 			patch -p1 < "gcc_6_3_0_weak_refs_x86_64.patch"
 			echo "Done"
