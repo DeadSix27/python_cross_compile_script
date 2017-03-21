@@ -1,0 +1,22 @@
+From c287a5942edd1a0b9d444f43ecc9be2a50cd8bb0 Mon Sep 17 00:00:00 2001
+From: Hagen <DeadSix27@users.noreply.github.com>
+Date: Thu, 9 Mar 2017 10:42:19 +0100
+Subject: [PATCH] disable weak refs in x86_64
+
+---
+ libstdc++-v3/config/os/mingw32-w64/os_defines.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libstdc++-v3/config/os/mingw32-w64/os_defines.h b/libstdc++-v3/config/os/mingw32-w64/os_defines.h
+index 1f46103..ab62906 100644
+--- a/libstdc++-v3/config/os/mingw32-w64/os_defines.h
++++ b/libstdc++-v3/config/os/mingw32-w64/os_defines.h
+@@ -76,6 +76,8 @@
+ 
+ #ifdef __x86_64__
+ #define _GLIBCXX_LLP64 1
++// See https://github.com/Alexpux/MINGW-packages/issues/1580
++#define _GLIBCXX_USE_WEAK_REF 0
+ #endif
+ 
+ // Enable use of GetModuleHandleEx (requires Windows XP/2003) in
