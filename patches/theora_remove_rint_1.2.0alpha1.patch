@@ -1,0 +1,28 @@
+From 4554f4ccee142e52898a079a08f4dc5880def641 Mon Sep 17 00:00:00 2001
+From: Hagen <DeadSix27@users.noreply.github.com>
+Date: Fri, 10 Mar 2017 18:20:03 +0100
+Subject: [PATCH] Update encoder_example.c
+
+---
+ examples/encoder_example.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/examples/encoder_example.c b/examples/encoder_example.c
+index 9083392..024cff5 100644
+--- a/examples/encoder_example.c
++++ b/examples/encoder_example.c
+@@ -52,14 +52,6 @@
+ /*supply missing headers and functions to Win32. going to hell, I know*/
+ #include <fcntl.h>
+ #include <io.h>
+-
+-static double rint(double x)
+-{
+-  if (x < 0.0)
+-    return (double)(int)(x - 0.5);
+-  else
+-    return (double)(int)(x + 0.5);
+-}
+ #endif
+ 
+ #if defined(OC_COLLECT_METRICS)

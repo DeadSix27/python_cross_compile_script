@@ -15,12 +15,12 @@
 
 
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
-import hashlib,glob,traceback,time
+import hashlib,glob,traceback,time,zlib
 import http.cookiejar
 from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
-_VERSION = "1.0"
+_VERSION = "1.1"
 
 class Colors: # improperly named ansi colors.
 	GREEN  = '\033[1;32;40m'
@@ -36,7 +36,7 @@ class MissingDependency(Exception):
 		self.message = message
 
 _CPU_COUNT = cpu_count()
-_MINGW_SCRIPT_URL = "https://dsix.tech/mingw-w64-build-3.6.7.local"
+_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh"
 _LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s' + Colors.RESET
 _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
@@ -54,6 +54,7 @@ PRODUCTS = { # e.g mpv, ffmpeg
 		'folder_name': None, # Required for SVN repos, weird git onee and borked direct file downloads I guess. 
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'depends_on' : ( "zlib", "bzlib2", 'liblzma', 'libzimg' ) # order them correctly, if one needs yet another dep. you put that one first.
+	}
 }
 DEPENDS = { # e.g flac, libpng
 	'libdlfcn' : {
@@ -69,11 +70,11 @@ DEPENDS = { # e.g flac, libpng
 		'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz', # https,http,file:// (ftp not yet supported, I think)
 		'folder_name': None, # [Optional, set None or remove]
 		'patches' : ( # ordered list of patches, first one will be applied first..
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/bzip2_cross_compile.diff', "p0")
+			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/bzip2_cross_compile.diff', "p0"),
 		),
 		'configure_options': '--static --prefix={compile_prefix}',
 		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover', # self.makePrefixOptions
-	}
+	},
 	'zlib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz',
@@ -210,7 +211,7 @@ class CrossCompileScript:
 		_CHUNKSIZE = 10240
 
 		if not link.lower().startswith("https") and not link.lower().startswith("file"):
-			print("WARNING: Using non-SSL http is adviced.")
+			print("WARNING: Using non-SSL http is not advised.")
 		
 		fname = None
 		
@@ -233,7 +234,7 @@ class CrossCompileScript:
 				('Upgrade-Insecure-Requests' , '1'),
 				('User-Agent'                , ua),
 				('Accept'                    , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
-				('Accept-Encoding'           , 'gzip,deflate,sdch'),
+				('Accept-Encoding'           , 'gzip*;q=1.0,deflate*;q=0.0,sdch*;q=0.0'),
 				('Accept-Language'           , 'en-US,en;q=0.8'),
 		]
 
@@ -283,9 +284,18 @@ class CrossCompileScript:
 		fancyFileSize = sizeof_fmt(fileSize)
 		fancyFileSize = fancyFileSize.ljust(len(fancyFileSize))
 		
+		isGzipped = False
+		if "content-encoding" in response.headers:
+			if response.headers["content-encoding"] == "gzip":
+				isGzipped = True
+		
 		while True:
 			chunk = response.read(_CHUNKSIZE)
 			downloadedBytes += len(chunk)
+			if isGzipped:
+				if len(chunk):
+					chunk = zlib.decompress(chunk, 16+zlib.MAX_WBITS)
+					
 			f.write(chunk)
 			fancyDownloadedBytes = sizeof_fmt(downloadedBytes).rjust(len(fancyFileSize), ' ')
 			
@@ -294,6 +304,7 @@ class CrossCompileScript:
 			done = int(50 * downloadedBytes / fileSize)
 			
 			print("[{0}] - {1}/{2} ({3})".format( '|' * done + '-' * (50-done), fancyDownloadedBytes,fancyFileSize,fancySpeed), end= "\r")
+			
 			if not len(chunk):
 				break
 		print("")
@@ -360,9 +371,10 @@ class CrossCompileScript:
 	def sanitize_filename(self,f):
 		return re.sub(r'[/\\:*?"<>|]', '', f)
 		
-	def md5(self,*s):
+	def md5(self,*args):
+		msg = ''.join(args).encode("utf-8")
 		m = hashlib.md5()
-		hashlib.md5().update(''.join(s).encode("utf-8"))
+		m.update(msg)
 		return m.hexdigest()
 
 	def touch(self,f):
@@ -415,7 +427,7 @@ class CrossCompileScript:
 		newGitVersion = self.get_process_result('git rev-parse HEAD')
 		if oldGitVersion != newGitVersion:
 			self.logger.info("Got upstream changes, rebuilding..")
-			#rm -f already*
+			self.removeAlreadyFiles()
 		else:	
 			self.logger.info("No git changes")
 		os.chdir("..")
@@ -460,7 +472,7 @@ class CrossCompileScript:
 				
 			self.touch(os.path.join(folderName,"unpacked.successfully"))
 			
-			os.unlink(fileName)
+			os.remove(fileName)
 			
 			return folderName
 			
@@ -483,8 +495,11 @@ class CrossCompileScript:
 			raise
 		os.chdir(workDir)
 		
-		
-		#tbd apply patches here
+		if 'patches' in data:
+			if data['patches'] != None:
+				for p in data['patches']:
+					self.apply_patch(p[0],p[1])
+			exit()
 		
 		self.configure_source(name,data)
 		
@@ -492,7 +507,7 @@ class CrossCompileScript:
 		
 		self.make_install_source(name,data)
 		
-		exit()
+		os.chdir("..")
 		
 	def build_product(self,name,data):
 	
@@ -516,14 +531,21 @@ class CrossCompileScript:
 		if workDir == None:
 			print("Unexpected error, please report this:", sys.exc_info()[0])
 			raise
+		
 		os.chdir(workDir)
 		
 		self.configure_source(name,data)
 		
+		self.make_source(name,data)
+		
+		self.make_install_source(name,data)
+		
+		os.chdir("..")
+		
 	def configure_source(self,name,data):
-		touch_name = "already_configured_%s" % (self.md5(name,data["configure_options"]))
+		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
 		if not os.path.isfile(touch_name):
-			[os.unlink(f) for f in glob.glob("already_*")]
+			self.removeAlreadyFiles()
 			if not os.path.isfile("configure"):
 				if os.path.isfile("bootstrap.sh"):
 					self.run_process('./bootstrap.sh')
@@ -537,19 +559,32 @@ class CrossCompileScript:
 					compile_target = self.compileTarget,
 					compile_prefix = self.compilePrefix,
 					)
-				
+			print("writing: " + touch_name)
+			self.touch(touch_name)
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 			
 			self.run_process('./configure %s' % configOpts)
 			self.run_process('make clean -j {0}'.format( _CPU_COUNT ),True)
-
-			self.touch(touch_name)
+			
+	def apply_patch(self,url,type = "-p1"): #p1 for github, p0 for idk
+		fileName = os.path.basename(urlparse(url).path)
+		self.logger.info("Downloading patch '{0}' to: {1}".format( url, fileName ))
+		self.download_file(url,fileName)
+		
+		patch_touch_name = "%s.done" % (fileName)
+			
+		if not os.path.isfile(patch_touch_name):
+			self.logger.info("Patching source uising: '{0}'".format( fileName ))
+			self.run_process('patch -{0} < "{1}"'.format(type, fileName )) 
+			self.touch(patch_touch_name)
+			self.removeAlreadyFiles()
+		else:
+			self.logger.info("Patch '{0}' already applied".format( fileName ))	
+	#:
 			
 	def make_source(self,name,data):
-		touch_name = "already_ran_make_%s" % (self.md5(name,data["make_options"]))
+		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
 		if not os.path.isfile(touch_name):
-			[os.unlink(f) for f in glob.glob("already_*")]
-
 			if os.path.isfile("configure"):
 				self.run_process('make clean -j {0}'.format( _CPU_COUNT ),True)
 
@@ -570,7 +605,7 @@ class CrossCompileScript:
 	#:
 			
 	def make_install_source(self,name,data):
-		touch_name = "already_ran_make_install_%s" % (self.md5(name,data["make_options"]))
+		touch_name = "already_ran_make_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
 		
 			makeInstallOpts  = ''
@@ -588,8 +623,19 @@ class CrossCompileScript:
 			self.run_process('make -j {0} install {1}'.format( _CPU_COUNT, makeInstallOpts ))
 			
 			self.touch(touch_name)
-		exit()
 	#:
+	def removeAlreadyFiles(self):
+		for af in glob.glob("./already_*"):
+			os.remove(af)
+		
+	def getKeyOrBlankString(self,db,k):
+		if k in db:
+			if k == None:
+				return ""
+			else:
+				return k
+		else:
+			return ""
 		
 if __name__ == "__main__":
 	main = CrossCompileScript()
