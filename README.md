@@ -2,14 +2,16 @@
 
 #### Written almost entirely in Python3
 
+**Note: It does not compile ffmpeg or anything yet, its just the framework. Only use it if you know how to add your own programs.**
+**And if that program doesn't compile, its not the fault of my program, see if it needs special configuration lines or patches first.**
 
 Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers
 
 Basically does the same thing, just in a pythonic way with a JSON-like program/depency system.
 
-As of now it works, however it has no programs defined, later on the defaults will be ffmpeg and mpv.
+It has no programs defined yet, later on the defaults will be ffmpeg and mpv.
 
-Required-packages are also not implemented yet, I highly discourage using this unless you know what you're doing.
+Required-packages (e.g apt-get stuff) are also not implemented yet, I highly discourage using this unless you know what you're doing.
 
 However later on, in theory all a user has to touch is said JSON-like configuration which can be..
 
