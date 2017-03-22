@@ -527,7 +527,7 @@ DEPENDS = { # e.g flac, libpng
 	'libcaca' : {
 		'repo_type' : 'archive',
 		'patches' : (
-			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libcaca-0.99.beta19.patch'
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libcaca-0.99.beta19.patch', 'p1'),
 		),
 		'cflag_addition' : '-DCACA_STATIC -D_WIN32 -D__LIBCACA__ -DDLL_EXPORT',
 		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz', #thanks fedora, I like you better than suse.

@@ -5,7 +5,7 @@ diff -Naurp libcaca-0.99.beta19/caca/figfont.c libcaca-0.99.beta19.patched/caca/
  
  #if defined _WIN32 && defined __GNUC__ && __GNUC__ >= 3
  int sprintf_s(char *s, size_t n, const char *fmt, ...) CACA_WEAK;
-+#if __GNUC__ > 5
++#if __GNUC__ < 6
  int vsnprintf(char *s, size_t n, const char *fmt, va_list ap) CACA_WEAK;
  #endif
 +#endif
@@ -17,7 +17,7 @@ diff -Naurp libcaca-0.99.beta19/caca/figfont.c libcaca-0.99.beta19.patched/caca/
      return ret;
  }
 -
-+#if __GNUC__ > 5
++#if __GNUC__ < 6
  int vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
  {
      return 0;
@@ -34,7 +34,7 @@ diff -Naurp libcaca-0.99.beta19/caca/string.c libcaca-0.99.beta19.patched/caca/s
  #if defined _WIN32 && defined __GNUC__ && __GNUC__ >= 3
  int vsnprintf_s(char *s, size_t n, size_t c,
                  const char *fmt, va_list ap) CACA_WEAK;
-+#if __GNUC__ > 5
++#if __GNUC__ < 6
  int vsnprintf(char *s, size_t n, const char *fmt, va_list ap) CACA_WEAK;
  #endif
 +#endif
@@ -46,7 +46,7 @@ diff -Naurp libcaca-0.99.beta19/caca/string.c libcaca-0.99.beta19.patched/caca/s
      return vsnprintf(s, n, fmt, ap);
  }
 -
-+#if __GNUC__ > 5
++#if __GNUC__ < 6
  int vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
  {
      return 0;
