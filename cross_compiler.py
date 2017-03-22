@@ -40,7 +40,7 @@ class MissingDependency(Exception):
 
 _CPU_COUNT = cpu_count()
 _MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #mingw script, keep the default one, unless you know what you're doing
-_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s' + Colors.RESET
+_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
 _WORKDIR = "workdir"
@@ -59,7 +59,11 @@ PRODUCTS = { # e.g mpv, ffmpeg
 		'folder_name': None, # Required for SVN repos, weird git onee and borked direct file downloads I guess. 
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		# \/ order them correctly, if one needs another dep. first, you put that one first., or use depends_on in the depends itself, yes, nested works :)
-		'depends_on' : ( "zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm' ),
+		'depends_on' : (
+			"zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype', 'expat', 'libxml', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libx265', 'libopenh264', 'vamp_plugin'
+			),
 		'make_options': '{make_prefix_options}',
 	}
 }
@@ -207,12 +211,12 @@ DEPENDS = { # e.g flac, libpng
 		'cpu_count' : '1', #why do I even have to implement this, fix your stuff flite group.
 		'needs_make_install' : False,
 		'run_post_patch': (
-			'sed -i.bak "s|i386-mingw32-|{cross_prefix}|" configure',
+			'sed -i.bak "s|i386-mingw32-|{cross_prefix_bare}|" configure',
 		),
 		"run_post_make": (
 			'mkdir -pv "{compile_prefix}/include/flite"',
 			'cp -v include/* "{compile_prefix}/include/flite"',
-			'cp -v ./build/{bit_namne}-mingw32/lib/*.a "{compile_prefix}/lib"',
+			'cp -v ./build/{bit_name}-mingw32/lib/*.a "{compile_prefix}/lib"',
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '{make_prefix_options}',
@@ -228,16 +232,224 @@ DEPENDS = { # e.g flac, libpng
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		"run_post_make": (
-			'cp -v lib/libgsm.a {compile_prefix}/lib'
-			'mkdir -pv {compile_prefix}/include/gsm'
-			'cp -v inc/gsm.h {compile_prefix}/include/gsm'
+			'cp -v lib/libgsm.a {compile_prefix}/lib',
+			'mkdir -pv {compile_prefix}/include/gsm',
+			'cp -v inc/gsm.h {compile_prefix}/include/gsm',
 		),
 		'cpu_count' : '1',
 		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
 	},
+	'sdl1' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.libsdl.org/release/SDL-1.2.15.tar.gz',
+		#export CFLAGS=-DDECLSPEC=  # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
+		"run_after_install": (
+			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl.pc"', # allow ffmpeg to output anything to console :|
+			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			'cp -v "{compile_prefix}/bin/sdl-config" "{cross_prefix_full}sdl-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+		),
+		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+	},
+	'sdl2' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
+		'patches' : (
+			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/sdl2.xinput.diff', "p0"),
+		),
+		#export CFLAGS=-DDECLSPEC=  # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet... [ didnt happen yet .. ]
+		"run_after_install": (
+			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+		),
+		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+	},
+	'libopus' : {
+		'repo_type' : 'archive',
+		'url' : 'https://github.com/xiph/opus/releases/download/v1.1.2/opus-1.1.2.tar.gz',
+		'patches': ( 
+			("https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/opus11.patch", "p0"),
+		),
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'opencore-amr' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.3.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'vo-amrwbenc' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.2.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libogg' : {
+		'repo_type' : 'archive',
+		'url' : 'https://github.com/xiph/ogg/archive/v1.3.2.tar.gz',
+		'folder_name' : 'ogg-1.3.2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libspeexdsp' : {
+		'repo_type' : 'archive',
+		'url' : 'https://github.com/xiph/speexdsp/archive/SpeexDSP-1.2rc3.tar.gz',
+		'folder_name' : 'speexdsp-SpeexDSP-1.2rc3',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'ibspeex' : {
+		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
+		'url' : 'https://github.com/xiph/speex.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libvorbis' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/vorbis.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libtheora' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/theora.git',
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', 'p1'),
+		),
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'orc' : {
+		'repo_type' : 'archive',
+		'url' : 'http://download.videolan.org/contrib/orc/orc-0.4.18.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libschroedinger' : {
+		'repo_type' : 'archive',
+		'url' : 'http://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+		'run_post_configure': (
+			'sed -i.bak \'s/testsuite//\' Makefile',
+		),
+		'run_after_install': (
+			'sed -i.bak \'s/-lschroedinger-1.0$/-lschroedinger-1.0 -lorc-0.4/\' "{pkg_config_path}/schroedinger-1.0.pc"',
+		),
+		
+	},
+	'freetype' : {
+		'repo_type' : 'archive',
+		'url' : 'https://download.videolan.org/contrib/freetype2/freetype-2.6.3.tar.gz',
+		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-png=no', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
+		'cpu_count' : '1', # ye idk why it needs that
+		#'make_options': '{make_prefix_options}', # nor does it like the default make options..
+		'run_after_install': (
+			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
+		),
+	},
+	'expat' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.0/expat-2.2.0.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libxml' : {
+		'repo_type' : 'archive',
+		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python',
+		'make_options': '{make_prefix_options}',
+	},
+	'libbluray' : { 
+		'repo_type' : 'archive',
+		'url' : 'http://ftp.videolan.org/pub/videolan/libbluray/0.7.0/libbluray-0.7.0.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+		'run_after_install': (
+			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # not sure...is this a blu-ray bug, or VLC's problem in not pulling freetype's .pc file? or our problem with not using pkg-config --static ...
+		),
+	},
+	'libxvid' : {
+		'repo_type' : 'archive',
+		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz',
+		'folder_name' : 'xvidcore',
+		'rename_folder' : 'xvidcore-1.3.4', #really xvid, never heard of standards?
+		'source_subfolder': './build/generic', #come on now.. whats this crap?
+		'configure_options': '--host={compile_target} --prefix={compile_prefix}',
+		'make_options': '{make_prefix_options}',
+		'cpu_count' : '1',
+		'run_post_configure': (
+			'sed -i.bak "s/-mno-cygwin//" platform.inc',
+		),
+		'run_after_install': (
+			'rm -v {compile_prefix}/lib/xvidcore.dll.a',
+			'mv -v {compile_prefix}/lib/xvidcore.a {compile_prefix}/lib/libxvidcore.a',
+		),
+	},
+	'xavs' : {
+		#compiles fine without LDFLAGS='-lm' apparently
+		'repo_type' : 'svn',
+		'url' : 'https://svn.code.sf.net/p/xavs/code/trunk',
+		'folder_name' : 'xavs_svn',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --cross-prefix={cross_prefix_bare}',
+		'make_options': '{make_prefix_options}',
+		'run_after_install' : (
+			'rm -f NUL', # I will not even ask.
+		)
+	},
+	'libsoxr' : {
+		'repo_type' : 'archive',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '{cmake_prefix_options} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'url' : 'https://sourceforge.net/projects/soxr/files/soxr-0.1.2-Source.tar.xz',
+		'make_options': '{make_prefix_options}',
+	},
+	# 'libebur128' : {
+	# 	'repo_type' : 'git',
+	# 	'url' : 'https://github.com/jiixyj/libebur128.git',
+	# 	'cmake_options': '{cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+	# 	'needs_configure' : False,
+	# 	'is_cmake' : True,
+	# 	'make_options': '{make_prefix_options}',
+	# 	'run_post_patch': (
+	# 		'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
+	# 	),
+	# },
+	'libx265' : { #should be a product actually :/ ill move/implement that later.
+		'repo_type' : 'git',
+		'url' : 'https://github.com/videolan/x265',
+		'cmake_options': '{cmake_prefix_options} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'make_options': '{make_prefix_options}',
+		'source_subfolder': './source',
+	},
+	'libopenh264' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/cisco/openh264.git',
+		'needs_configure' : False,
+		'make_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
+		'install_options': '{make_prefix_options} OS=mingw_nt',
+		'install_target' : 'install-static',
+	},
+	'vamp_plugin' : {
+		'repo_type' : 'archive',
+		'url' : 'https://dsix.tech/vamp-plugin-sdk-2.7.1.tar.gz', #todo obv move to a real host. (implement dl without filesize)
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'),
+		),
+		'make_options': '{make_prefix_options} sdkstatic',
+	},
+
+	#  '', '', ''
+    #  build_libx265
+    # build_libopenh264
 	
-    # build_sdl 
-}
+}      
 DOWNLOADERS = {
 	'wget' : {
 		'command_line' : 'wget {url} --retry-connrefused -nv --show-progress -O {output_dir}'
@@ -266,11 +478,12 @@ class CrossCompileScript:
 		self.compileTarget     = None
 		self.compilePrefix     = None
 		self.mingwBinpath      = None
-		self.crossPrefix       = None
+		self.fullCrossPrefix   = None
 		self.makePrefixOptions = None
 		self.bitnessDir        = None
 		self.winBitnessDir     = None
 		self.pkgConfigPath     = None
+		self.bareCrossPrefix   = None
 		
 		#main starting point
 		for b in self.targetBitness:		
@@ -280,17 +493,17 @@ class CrossCompileScript:
 				os.makedirs(_WORKDIR, exist_ok=True)
 			os.chdir(_WORKDIR)
 		
-			self.bitnessDir        = "x86_64" if b is 64 else "i686"
-			self.winBitnessDir     = "win64" if b is 64 else "win32"
-			self.compileTarget     = "{0}-w64-mingw32".format ( self.bitnessDir )
-			self.compilePrefix     = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget )
-			self.mingwBinpath      = "{0}/{1}/mingw-w64-{2}/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir )
-			self.crossPrefix       = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir )
-			self.crossPrefix2      = "{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir )
-			self.makePrefixOptions = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.crossPrefix2, self.compilePrefix )
-			self.cmakePrefixOptions= "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={0}ranlib -DCMAKE_C_COMPILER={0}gcc -DCMAKE_CXX_COMPILER={0}g++ -DCMAKE_RC_COMPILER={0}windres -DCMAKE_INSTALL_PREFIX={1}".format( self.crossPrefix2, self.compilePrefix )
-			self.pkgConfigPath     = "{0}/lib/pkgconfig".format( self.compilePrefix )
-			
+			self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
+			self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
+			self.compileTarget      = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
+			self.compilePrefix      = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget ) # /ffm/test/workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+			self.mingwBinpath       = "{0}/{1}/mingw-w64-{2}/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g /ffm/test/workdir/xcompilers/mingw-w64-x86_64/bin
+			self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g /ffm/test/workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+			self.bareCrossPrefix    = "{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g x86_64-w64-mingw32-
+			self.makePrefixOptions  = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.bareCrossPrefix, self.compilePrefix )
+			self.cmakePrefixOptions = "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={0}ranlib -DCMAKE_C_COMPILER={0}gcc -DCMAKE_CXX_COMPILER={0}g++ -DCMAKE_RC_COMPILER={0}windres -DCMAKE_INSTALL_PREFIX={1}".format( self.fullCrossPrefix, self.compilePrefix )
+			self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.compilePrefix ) #e.g /ffm/test/workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
+					
 			self.build_mingw(b)
 			
 			self.defaultCFLAGS()
@@ -647,21 +860,42 @@ class CrossCompileScript:
 	
 	def build_depend(self,name,data):
 		workDir = None
+		skipDownload = False #probably can be made easier by checking if its downloaded outside the download functions, but thats effort.
 		self.logger.info("Building library '%s'" % (name))
-		if data["repo_type"] == "git":
-			branch = self.getValueOrNone(data,'branch')
-			workDir = self.git_clone(data["url"],None,branch)
-		if data["repo_type"] == "svn":
-			workDir = self.svn_clone(data["url"],data["folder_name"])
-		if data["repo_type"] == "archive":
-			if "folder_name" in data:
-				workDir = self.download_unpack_file(data["url"],data["folder_name"])
-			else:
-				workDir = self.download_unpack_file(data["url"])
+		
+		if 'rename_folder' in data:
+			if data['rename_folder'] != None:
+				if os.path.isdir(data['rename_folder']):
+					skipDownload = True
+					workDir = data['rename_folder']
+		if skipDownload == False:
+			if data["repo_type"] == "git":
+				branch = self.getValueOrNone(data,'branch')
+				workDir = self.git_clone(data["url"],None,branch)
+			if data["repo_type"] == "svn":
+				workDir = self.svn_clone(data["url"],data["folder_name"])
+			if data["repo_type"] == "archive":
+				if "folder_name" in data:
+					workDir = self.download_unpack_file(data["url"],data["folder_name"])
+				else:
+					workDir = self.download_unpack_file(data["url"])
+					
 		if workDir == None:
 			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
 			raise
+			
+		if 'rename_folder' in data:
+			if data['rename_folder'] != None:
+				shutil.move(workDir, data['rename_folder'])
+				workDir = data['rename_folder']
+		
 		os.chdir(workDir)
+		
+		currentFullDir = os.getcwd()
+		
+		if 'source_subfolder' in data:
+			if data['source_subfolder'] != None:
+				os.chdir(data['source_subfolder'])
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -679,9 +913,13 @@ class CrossCompileScript:
 			if data['run_post_patch'] != None:
 				for cmd in data['run_post_patch']:
 					cmd = cmd.format( 
-						pkg_config_path = self.pkgConfigPath,
-						cross_prefix    = self.crossPrefix2,
-						compile_prefix  = self.compilePrefix,
+						pkg_config_path   = self.pkgConfigPath,
+						mingw_binpath     = self.mingwBinpath,
+						cross_prefix_bare = self.bareCrossPrefix,
+						cross_prefix_full = self.fullCrossPrefix,
+						compile_prefix    = self.compilePrefix,
+						compile_target    = self.compileTarget,
+					    bit_name          = self.bitnessDir,
 					)
 					self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
 					self.run_process(cmd)
@@ -693,23 +931,15 @@ class CrossCompileScript:
 		else:
 			self.configure_source(name,data)
 			
+		if 'is_cmake' in data:
+			if data['is_cmake'] == True:
+				self.cmake_source(name,data)
+				
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
-				if 'is_cmake' in data:
-					if data['is_cmake'] == True:
-						self.cmake_source(name,data)
-					else:
-						self.make_source(name,data)
-				else:
-					self.make_source(name,data)
-		else:
-			if 'is_cmake' in data:
-				if data['is_cmake'] == True:
-					self.cmake_source(name,data)
-				else:
-					self.make_source(name,data)
-			else:
 				self.make_source(name,data)
+		else:
+			self.make_source(name,data)
 			
 		if 'needs_make_install' in data:
 			if data['needs_make_install'] == True:
@@ -722,6 +952,10 @@ class CrossCompileScript:
 				for key,val in data['env_exports'].items():
 					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
 					del os.environ[key]
+		
+		if 'source_subfolder' in data:
+			if data['source_subfolder'] != None:
+				os.chdir(currentFullDir)
 		
 		os.chdir("..")
 		
@@ -772,13 +1006,33 @@ class CrossCompileScript:
 			configOpts = ''
 			if 'configure_options' in data:
 				configOpts = data["configure_options"].format( 
-					cross_prefix   = self.crossPrefix,
-					compile_target = self.compileTarget,
-					compile_prefix = self.compilePrefix,
+					pkg_config_path   = self.pkgConfigPath,
+					mingw_binpath     = self.mingwBinpath,
+					cross_prefix_bare = self.bareCrossPrefix,
+					cross_prefix_full = self.fullCrossPrefix,
+					compile_prefix    = self.compilePrefix,
+					compile_target    = self.compileTarget,
+					bit_name          = self.bitnessDir,
 					)
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 			
 			self.run_process('./configure %s' % configOpts)
+			
+			if 'run_post_configure' in data:
+				if data['run_post_configure'] != None:
+					for cmd in data['run_post_configure']:
+						cmd = cmd.format( 
+							pkg_config_path   = self.pkgConfigPath,
+							mingw_binpath     = self.mingwBinpath,
+							cross_prefix_bare = self.bareCrossPrefix,
+							cross_prefix_full = self.fullCrossPrefix,
+							compile_prefix    = self.compilePrefix,
+							compile_target    = self.compileTarget,
+							bit_name          = self.bitnessDir,
+						)
+						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
+			
 			self.run_process('make clean -j {0}'.format( _CPU_COUNT ),True)
 			
 			self.touch(touch_name)
@@ -808,10 +1062,14 @@ class CrossCompileScript:
 			makeOpts = ''
 			if 'cmake_options' in data:
 				makeOpts = data["cmake_options"].format( 
-					cmake_prefix_options= self.cmakePrefixOptions,
-					cross_prefix        = self.crossPrefix,
-					compile_target      = self.compileTarget,
-					compile_prefix      = self.compilePrefix,
+					cmake_prefix_options = self.cmakePrefixOptions,
+					pkg_config_path      = self.pkgConfigPath,
+					mingw_binpath        = self.mingwBinpath,
+					cross_prefix_bare    = self.bareCrossPrefix,
+					cross_prefix_full    = self.fullCrossPrefix,
+					compile_prefix       = self.compilePrefix,
+					compile_target       = self.compileTarget,
+					bit_name             = self.bitnessDir,
 					)
 	
 			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
@@ -831,29 +1089,36 @@ class CrossCompileScript:
 			if 'make_options' in data:
 				makeOpts = data["make_options"].format( 
 					make_prefix_options = self.makePrefixOptions,
-					cross_prefix        = self.crossPrefix,
-					compile_target      = self.compileTarget,
+					pkg_config_path     = self.pkgConfigPath,
+					mingw_binpath       = self.mingwBinpath,
+					cross_prefix_bare   = self.bareCrossPrefix,
+					cross_prefix_full   = self.fullCrossPrefix,
 					compile_prefix      = self.compilePrefix,
+					compile_target      = self.compileTarget,
+					bit_name            = self.bitnessDir,
 					)
 				
 			self.logger.info("Making '{0}' with: {1}".format( name, makeOpts ))
 			
-			cpcnt = _CPU_COUNT
+			cpcnt = '-j {0} '.format(_CPU_COUNT)
 			
 			if 'cpu_count' in data:
 				if data['cpu_count'] != None:
-					cpcnt = 1
+					cpcnt = ""
 			
-			self.run_process('make -j {0} {1}'.format( cpcnt, makeOpts ))
+			self.run_process('make {0}{1}'.format( cpcnt, makeOpts ))
 			
 			if 'run_post_make' in data:
 				if data['run_post_make'] != None:
 					for cmd in data['run_post_make']:
 						cmd = cmd.format( 
-							pkg_config_path = self.pkgConfigPath,
-							cross_prefix    = self.crossPrefix2,
-							compile_prefix  = self.compilePrefix,
-							bit_namne       = self.bitnessDir,
+							pkg_config_path   = self.pkgConfigPath,
+							mingw_binpath     = self.mingwBinpath,
+							cross_prefix_bare = self.bareCrossPrefix,
+							cross_prefix_full = self.fullCrossPrefix,
+							compile_prefix    = self.compilePrefix,
+							compile_target    = self.compileTarget,
+					        bit_name          = self.bitnessDir,
 						)
 						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -864,27 +1129,41 @@ class CrossCompileScript:
 	def make_install_source(self,name,data):
 		touch_name = "already_ran_make_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
-		
+			
 			makeInstallOpts  = ''
 			if 'install_options' in data:
-				makeInstallOpts = data["install_options"].format( 
-					make_prefix_options = self.makePrefixOptions,
-					cross_prefix        = self.crossPrefix,
-					compile_target      = self.compileTarget,
-					compile_prefix      = self.compilePrefix,
-					)
-				
+				if data['install_options'] != None:
+					makeInstallOpts = data["install_options"].format( 
+						make_prefix_options = self.makePrefixOptions,
+						pkg_config_path     = self.pkgConfigPath,
+						mingw_binpath       = self.mingwBinpath,
+						cross_prefix_bare   = self.bareCrossPrefix,
+						cross_prefix_full   = self.fullCrossPrefix,
+						compile_prefix      = self.compilePrefix,
+						compile_target      = self.compileTarget,
+						bit_name            = self.bitnessDir,
+						)
+			installTarget = "install"
+			if 'install_target' in data:
+				if data['install_target'] != None:
+					installTarget = data['install_target']
+					
 				
 			self.logger.info("Make installing '{0}' with: {1}".format( name, makeInstallOpts ))
 			
-			self.run_process('make -j {0} install {1}'.format( _CPU_COUNT, makeInstallOpts ))
+			self.run_process('make -j {0} {1} {2}'.format( _CPU_COUNT, installTarget, makeInstallOpts ))
 			
 			if 'run_after_install' in data:
 				if data['run_after_install'] != None:
 					for cmd in data['run_after_install']:
 						cmd = cmd.format( 
-							pkg_config_path = self.pkgConfigPath,
-							cross_prefix    = self.crossPrefix2,
+							pkg_config_path   = self.pkgConfigPath,
+							mingw_binpath     = self.mingwBinpath,
+							cross_prefix_bare = self.bareCrossPrefix,
+							cross_prefix_full = self.fullCrossPrefix,
+							compile_prefix    = self.compilePrefix,
+							compile_target    = self.compileTarget,
+					        bit_name          = self.bitnessDir,
 						)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
