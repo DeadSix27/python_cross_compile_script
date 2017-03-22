@@ -1,0 +1,58 @@
+diff -Naurp libcaca-0.99.beta19/caca/figfont.c libcaca-0.99.beta19.patched/caca/figfont.c
+--- a/caca/figfont.c	2017-03-22 17:15:58.302143599 +0100
++++ b/caca/figfont.c	2017-03-22 17:14:11.319826197 +0100
+@@ -31,8 +31,10 @@
+ 
+ #if defined _WIN32 && defined __GNUC__ && __GNUC__ >= 3
+ int sprintf_s(char *s, size_t n, const char *fmt, ...) CACA_WEAK;
++#if __GNUC__ > 5
+ int vsnprintf(char *s, size_t n, const char *fmt, va_list ap) CACA_WEAK;
+ #endif
++#endif
+ 
+ struct caca_charfont
+ {
+@@ -646,12 +648,13 @@ int sprintf_s(char *s, size_t n, const c
+     va_end(args);
+     return ret;
+ }
+-
++#if __GNUC__ > 5
+ int vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
+ {
+     return 0;
+ }
+ #endif
++#endif
+ 
+ /*
+  * XXX: The following functions are aliases.
+diff -Naurp libcaca-0.99.beta19/caca/string.c libcaca-0.99.beta19.patched/caca/string.c
+--- a/caca/string.c	2017-03-22 17:16:01.153669000 +0100
++++ b/caca/string.c	2017-03-22 17:14:11.319826197 +0100
+@@ -39,8 +39,10 @@
+ #if defined _WIN32 && defined __GNUC__ && __GNUC__ >= 3
+ int vsnprintf_s(char *s, size_t n, size_t c,
+                 const char *fmt, va_list ap) CACA_WEAK;
++#if __GNUC__ > 5
+ int vsnprintf(char *s, size_t n, const char *fmt, va_list ap) CACA_WEAK;
+ #endif
++#endif
+ 
+ /** \brief Set cursor position.
+  *
+@@ -615,12 +617,13 @@ int vsnprintf_s(char *s, size_t n, size_
+ {
+     return vsnprintf(s, n, fmt, ap);
+ }
+-
++#if __GNUC__ > 5
+ int vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
+ {
+     return 0;
+ }
+ #endif
++#endif
+ 
+ /*
+  * XXX: The following functions are aliases.

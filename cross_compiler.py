@@ -62,7 +62,7 @@ PRODUCTS = { # e.g mpv, ffmpeg
 		'depends_on' : (
 			"zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype', 'expat', 'libxml', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
-			'libx265', 'libopenh264', 'vamp_plugin'
+			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca'
 			),
 		'make_options': '{make_prefix_options}',
 	}
@@ -376,8 +376,8 @@ DEPENDS = { # e.g flac, libpng
 		'repo_type' : 'archive',
 		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz',
 		'folder_name' : 'xvidcore',
-		'rename_folder' : 'xvidcore-1.3.4', #really xvid, never heard of standards?
-		'source_subfolder': './build/generic', #come on now.. whats this crap?
+		'rename_folder' : 'xvidcore-1.3.4', #why the weird name xvid? never heard of standards?
+		'source_subfolder': './build/generic', # Why that subfolder.. come on
 		'configure_options': '--host={compile_target} --prefix={compile_prefix}',
 		'make_options': '{make_prefix_options}',
 		'cpu_count' : '1',
@@ -439,16 +439,115 @@ DEPENDS = { # e.g flac, libpng
 	'vamp_plugin' : {
 		'repo_type' : 'archive',
 		'url' : 'https://dsix.tech/vamp-plugin-sdk-2.7.1.tar.gz', #todo obv move to a real host. (implement dl without filesize)
-		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'),
+		'run_post_patch': (
+			'cp -v build/Makefile.mingw64 Makefile',
 		),
-		'make_options': '{make_prefix_options} sdkstatic',
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one.
+		),
+		'make_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
+		'needs_make_install' : False, # doesnt s support xcompile installing
+		'run_post_make' : ( # lets install it manually then I guess?
+			'cp -v libvamp-sdk.a "{compile_prefix}/lib/"',
+			'cp -v libvamp-hostsdk.a "{compile_prefix}/lib/"',
+			'cp -rv vamp-hostsdk/ "{compile_prefix}/include/"',
+			'cp -rv vamp-sdk/ "{compile_prefix}/include/"',
+			'cp -rv vamp/ "{compile_prefix}/include/"',
+			'cp -v pkgconfig/vamp.pc.in "{compile_prefix}/lib/pkgconfig/vamp.pc"',
+			'cp -v pkgconfig/vamp-hostsdk.pc.in "{compile_prefix}/lib/pkgconfig/vamp-hostsdk.pc"',
+			'cp -v pkgconfig/vamp-sdk.pc.in "{compile_prefix}/lib/pkgconfig/vamp-sdk.pc"',
+			'sed -i.bak \'s/\%PREFIX\%/{compile_prefix_sed_escaped}/\' "{pkg_config_path}/vamp.pc"',
+			'sed -i.bak \'s/\%PREFIX\%/{compile_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-hostsdk.pc"',
+			'sed -i.bak \'s/\%PREFIX\%/{compile_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-sdk.pc"',
+		)
 	},
-
-	#  '', '', ''
-    #  build_libx265
-    # build_libopenh264
+	'fftw3' : {
+		'repo_type' : 'archive',
+		#git tags/master require --enable-maintainer-mode we could but shouldn't use git I guess.
+		'url' : 'http://fftw.org/fftw-3.3.6-pl1.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libsamplerate' : {
+		'repo_type' : 'git',
+		'branch' : '477ce36f8e4bd6a177727f4ac32eba11864dd85d', # commit: Fix win32 compilation # fixed the cross compiling.
+		'url' : 'https://github.com/erikd/libsamplerate.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},	
+	'librubberband' : {
+		'repo_type' : 'archive',
+		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
+			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/ladspa.h',
+		),
+		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+		'needs_make_install' : False,
+		'run_post_make' : ( 
+			'cp lib/* "{compile_prefix}/lib"',
+			'cp -r rubberband "{compile_prefix}/include"',
+			'cp rubberband.pc.in "{pkg_config_path}/rubberband.pc"',
+			'sed -i.bak "s|%PREFIX%|{compile_prefix_sed_escaped}|" "{pkg_config_path}/rubberband.pc"',
+			'sed -i.bak \'s/-lrubberband *$/-lrubberband -lfftw3 -lsamplerate -lstdc++/\' "{pkg_config_path}/rubberband.pc"',
+		),		
+	},
+	'liblame' : { # todo make it a product too.
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/lame/files/lame/3.99/lame-3.99.5.tar.gz',
+		'patches' : (
+			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/lame3.patch', 'p0'),
+		),
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm',
+		'make_options': '{make_prefix_options}',
+	},
+	'twolame' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/twolame/files/twolame/0.3.13/twolame-0.3.13.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static CPPFLAGS=-DLIBTWOLAME_STATIC',
+		'make_options': '{make_prefix_options}',
+	},
+	'vidstab' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/georgmartius/vid.stab.git', #"Latest commit 97c6ae2  on May 29, 2015" .. master then I guess?
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '{cmake_prefix_options} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DUSE_OMP=OFF', #fatal error: omp.h: No such file or directory
+		'make_options': '{make_prefix_options}',
+		'run_post_patch': (
+			'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
+		),
+	},
+	'netcdf' : {
+		'repo_type' : 'archive',
+		'url' : 'https://gfd-dennou.org/arch/ucar/unidata/pub/netcdf/netcdf-4.4.1.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
+		'make_options': '{make_prefix_options}',
+	},
+	'libcaca' : {
+		'repo_type' : 'archive',
+		'patches' : (
+			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libcaca-0.99.beta19.patch'
+		),
+		'cflag_addition' : '-DCACA_STATIC -D_WIN32 -D__LIBCACA__ -DDLL_EXPORT',
+		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz', #thanks fedora, I like you better than suse.
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --enable-win32',
+		'make_options': '{make_prefix_options}',
+	},
 	
+		#build_libcaca() {
+		#  # beta19 and git were non xp friendly
+		#  download_and_unpack_file http://caca.zoy.org/files/libcaca/libcaca-0.99.beta19.tar.gz
+		#  cd libcaca-0.99.beta18
+		#	cd caca
+		#	  sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" *.c # doesn't compile with this in it double defined uh guess
+		#	  sed -i.bak "s/__declspec(dllexport)//g" *.h # get rid of the declspec lines otherwise the build will fail for undefined symbols
+		#	  sed -i.bak "s/__declspec(dllimport)//g" *.h 
+		#	cd ..
+		#	generic_configure "--libdir=$mingw_w64_x86_64_prefix/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc"
+		#	do_make_and_make_install
+		#  cd ..
+		#}
 }      
 DOWNLOADERS = {
 	'wget' : {
@@ -496,13 +595,13 @@ class CrossCompileScript:
 			self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
 			self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
 			self.compileTarget      = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
-			self.compilePrefix      = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget ) # /ffm/test/workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+			self.compilePrefix      = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
 			self.mingwBinpath       = "{0}/{1}/mingw-w64-{2}/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g /ffm/test/workdir/xcompilers/mingw-w64-x86_64/bin
-			self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g /ffm/test/workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+			self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 			self.bareCrossPrefix    = "{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g x86_64-w64-mingw32-
 			self.makePrefixOptions  = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.bareCrossPrefix, self.compilePrefix )
 			self.cmakePrefixOptions = "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={0}ranlib -DCMAKE_C_COMPILER={0}gcc -DCMAKE_CXX_COMPILER={0}g++ -DCMAKE_RC_COMPILER={0}windres -DCMAKE_INSTALL_PREFIX={1}".format( self.fullCrossPrefix, self.compilePrefix )
-			self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.compilePrefix ) #e.g /ffm/test/workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
+			self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.compilePrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 					
 			self.build_mingw(b)
 			
@@ -558,6 +657,18 @@ class CrossCompileScript:
 			self.logger.error("Previous MinGW build may have failed, delete the compiler folder named '{0}' and try again".format( _MINGW_DIR ))
 			exit(1)
 	#:
+
+	def downloadHeader(self,url):
+	
+		destination = os.path.join(self.compilePrefix,"include")
+		fileName = os.path.basename(urlparse(url).path)
+		
+		if not os.path.isfile(os.path.join(destination,fileName)):
+			fname = self.download_file(url)
+			self.logger.info("Moving Header File: '{0}' to '{1}'".format( fname, destination ))
+			shutil.move(fname, destination)
+		else:
+			self.logger.info("Header File: '{0}' already downloaded".format( fileName ))
 	
 	def download_file(self,link, targetName = None):
 		_MAX_REDIRECTS = 5
@@ -586,7 +697,7 @@ class CrossCompileScript:
 		_CHUNKSIZE = 10240
 
 		if not link.lower().startswith("https") and not link.lower().startswith("file"):
-			print("WARNING: Using non-SSL http is not advised.")
+			print("WARNING: Using non-SSL http is not advised..") # gotta get peoples attention somehow eh?
 		
 		fname = None
 		
@@ -889,6 +1000,11 @@ class CrossCompileScript:
 				shutil.move(workDir, data['rename_folder'])
 				workDir = data['rename_folder']
 		
+		if 'download_header' in data:
+			if data['download_header'] != None:
+				for h in data['download_header']:
+					self.downloadHeader(h)
+		
 		os.chdir(workDir)
 		
 		currentFullDir = os.getcwd()
@@ -896,6 +1012,11 @@ class CrossCompileScript:
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(data['source_subfolder'])
+			
+		if 'cflag_addition' in data:
+			if data['cflag_addition'] != None:
+				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
+				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -956,6 +1077,10 @@ class CrossCompileScript:
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(currentFullDir)
+		
+		if 'cflag_addition' in data:
+			if data['cflag_addition'] != None:
+				self.defaultCFLAGS()
 		
 		os.chdir("..")
 		
@@ -1100,25 +1225,26 @@ class CrossCompileScript:
 				
 			self.logger.info("Making '{0}' with: {1}".format( name, makeOpts ))
 			
-			cpcnt = '-j {0} '.format(_CPU_COUNT)
+			cpcnt = '-j {0}'.format(_CPU_COUNT)
 			
 			if 'cpu_count' in data:
 				if data['cpu_count'] != None:
 					cpcnt = ""
 			
-			self.run_process('make {0}{1}'.format( cpcnt, makeOpts ))
+			self.run_process('make {1} {0}'.format( cpcnt, makeOpts ))
 			
 			if 'run_post_make' in data:
 				if data['run_post_make'] != None:
 					for cmd in data['run_post_make']:
 						cmd = cmd.format( 
-							pkg_config_path   = self.pkgConfigPath,
-							mingw_binpath     = self.mingwBinpath,
-							cross_prefix_bare = self.bareCrossPrefix,
-							cross_prefix_full = self.fullCrossPrefix,
-							compile_prefix    = self.compilePrefix,
-							compile_target    = self.compileTarget,
-					        bit_name          = self.bitnessDir,
+							pkg_config_path               = self.pkgConfigPath,
+							mingw_binpath                 = self.mingwBinpath,
+							cross_prefix_bare             = self.bareCrossPrefix,
+							cross_prefix_full             = self.fullCrossPrefix,
+							compile_prefix                = self.compilePrefix,
+							compile_target                = self.compileTarget,
+					        bit_name                      = self.bitnessDir,
+							compile_prefix_sed_escaped    = self.compilePrefix.replace("/","\\/"),
 						)
 						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
