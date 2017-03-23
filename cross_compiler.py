@@ -20,7 +20,7 @@ import http.cookiejar
 from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
-_VERSION = "1.2"
+_VERSION = "1.3"
 
 
 #autogen
@@ -45,6 +45,7 @@ _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
 _WORKDIR = "workdir"
 _MINGW_DIR = "xcompilers"
+_PRODUCT_INSTALL_DIR = "products"
 _BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
 _DOWNLOADER = "wget" # wget or curl
 _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
@@ -52,20 +53,38 @@ _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake o
 git_get_latest = True # to be implemented in a better way
 
 PRODUCTS = { # e.g mpv, ffmpeg
-	'ffmpeg' : {
+	'ffmpeg_static' : {
 		'repo_type' : 'git', # git, svn, archive
-		'branch' : '0.13.6', # git branch/tag or svn whatever -r stood for
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		#'branch' : '0.13.6', # git branch/tag/commit or svn revision
+		'url' : 'https://git.ffmpeg.org/ffmpeg.git', #git,svn or direct http(s) url
 		'folder_name': None, # Required for SVN repos, weird git onee and borked direct file downloads I guess. 
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'rename_folder' : 'ffmpeg_static_git',
+		'configure_options': 
+			'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads'
+			' --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --enable-decklink --extra-libs=-loleaut32  --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp --enable-libgme --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf  --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg'
+			' --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid'
+			' --enable-libmfx'
+			' --enable-avresample'
+            ' --extra-libs=-lpsapi'
+            ' --extra-libs=-lspeexdsp'
+			' --prefix={product_prefix} --disable-shared --enable-static'
+			' --enable-runtime-cpudetect'
+		,	
 		# \/ order them correctly, if one needs another dep. first, you put that one first., or use depends_on in the depends itself, yes, nested works :)
 		'depends_on' : (
-			"zlib", "bzlib2", 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
+			'zlib', 'bzlib2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype', 'expat', 'libxml', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
-			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca'
+			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264'
 			),
-		'make_options': '{make_prefix_options}',
+		'run_post_patch' : ( #not sure if this even needs decklink, if not tbd: add header deps or something like that.
+			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPI.h -O {compile_prefix}/include/DeckLinkAPI.h',
+			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPI_i.c -O {compile_prefix}/include/DeckLinkAPI_i.c',
+			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPIVersion.h -O {compile_prefix}/include/DeckLinkAPIVersion.h',
+		),
+		'make_options': '',
 	}
+	
 }
 DEPENDS = { # e.g flac, libpng
 	'bzlib2' : { # simple name for the library
@@ -140,6 +159,7 @@ DEPENDS = { # e.g flac, libpng
 		#    # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
 		#    # libtasn1 is some dependency, appears provided is an option [see also build_libnettle]
 		#    # pks #11 hopefully we don't need kit
+		
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
@@ -188,10 +208,10 @@ DEPENDS = { # e.g flac, libpng
 		'repo_type' : 'archive',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'run_post_patch': ( # runs commands post the patch process
-			'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
-		),
-		'cmake_options': '{cmake_prefix_options}',
+		#'run_post_patch': ( # runs commands post the patch process
+		#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
+		#),
+		'cmake_options': '{cmake_prefix_options} -DBUILD_SHARED_LIBS=OFF',
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '{make_prefix_options}',
@@ -526,29 +546,168 @@ DEPENDS = { # e.g flac, libpng
 	},
 	'libcaca' : {
 		'repo_type' : 'archive',
-		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libcaca-0.99.beta19.patch', 'p1'),
+		'run_post_configure': (
+			'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/string.c"',
+			'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/figfont.c"',
+			'sed -i.bak "s/__declspec(dllexport)//g" cxx/caca++.h',
+			'sed -i.bak "s/__declspec(dllexport)//g" caca/caca.h',
+			'sed -i.bak "s/__declspec(dllexport)//g" caca/caca0.h',
+			'sed -i.bak "s/__declspec(dllimport)//g" caca/caca.h', 
+			'sed -i.bak "s/__declspec(dllimport)//g" caca/caca0.h', 
 		),
-		'cflag_addition' : '-DCACA_STATIC -D_WIN32 -D__LIBCACA__ -DDLL_EXPORT',
-		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz', #thanks fedora, I like you better than suse.
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --enable-win32',
+		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
 		'make_options': '{make_prefix_options}',
 	},
 	
-		#build_libcaca() {
-		#  # beta19 and git were non xp friendly
-		#  download_and_unpack_file http://caca.zoy.org/files/libcaca/libcaca-0.99.beta19.tar.gz
-		#  cd libcaca-0.99.beta18
-		#	cd caca
-		#	  sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" *.c # doesn't compile with this in it double defined uh guess
-		#	  sed -i.bak "s/__declspec(dllexport)//g" *.h # get rid of the declspec lines otherwise the build will fail for undefined symbols
-		#	  sed -i.bak "s/__declspec(dllimport)//g" *.h 
-		#	cd ..
-		#	generic_configure "--libdir=$mingw_w64_x86_64_prefix/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc"
-		#	do_make_and_make_install
-		#  cd ..
-		#}
-}      
+	
+	#libcaca' : { #why is this thing so hard to compile geez... well works now | nvm.
+	#	'repo_type' : 'archive',
+	#	'patches' : (
+	#		('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libcaca-0.99.beta19.patch', 'p1'),
+	#	),
+	#	'run_post_configure': (
+	#		'sed -i.bak "s/ src examples/ src/" Makefile',
+	#		'sed -i.bak "s/ doc test/ doc/" Makefile',
+	#		'sed -i.bak "s/__declspec(dllexport)//g" *.h',
+	#		'sed -i.bak "s/__declspec(dllimport)//g" *.h', 
+	#	),
+	#	#'cflag_addition' : '-DCACA_STATIC -D_WIN64 -D__LIBCACA__ -DDLL_EXPORT',
+	#	'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz', #thanks fedora, I like you better than suse.
+	#	'configure_options': '--host={compile_target} --prefix={compile_prefix} --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
+	#	'make_options': '{make_prefix_options}',
+	#,
+	'libmodplug' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.8.5/libmodplug-0.8.8.5.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+		'run_after_install': (
+			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] http://trac.ffmpeg.org/ticket/1539
+			'sed -i.bak \'s/-lmodplug.*/-lmodplug -lstdc++/\' "{pkg_config_path}/libmodplug.pc"', # huh ?? c++?
+			'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
+			'sed -i.bak \'s/__declspec(dllimport)//\' "{compile_prefix}/include/libmodplug/modplug.h"',
+		),
+	},
+	'zvbi' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/zapping/files/zvbi/0.2.35/zvbi-0.2.35.tar.bz2',
+		'env_exports' : {
+			'LIBS' : '-lpng',
+		},
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
+		'make_subdir' : 'src', #this will only run make and make install in said dir... geez..
+		'make_options': '{make_prefix_options}',
+		'patches': (
+		    ('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/zvbi-win32.patch', 'p0'),
+			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/zvbi-ioctl.patch', 'p0'),
+		),
+		#   there is no .pc for zvbi, so we add --extra-libs=-lpng to FFmpegs configure TODO there is a .pc file it just doesn't get installed [?]
+		#   sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
+	},
+	'libvpx' : {
+		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around dcd6c87b80f2435ce4f206c5875f3be1f23b6999 if it stops.
+		#'branch' : 'tags/v1.6.1',
+		'url' : 'https://chromium.googlesource.com/webm/libvpx', #
+		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --prefix={compile_prefix} --disable-shared --enable-static --enable-vp9-highbitdepth', # examples,tools crash with x86_64-w64-mingw32-ld: unrecognised emulation mode: 64
+		'make_options': '', #well.. that made it work.. huh.. ok then.
+		'env_exports' : {
+			'CROSS' : '{cross_prefix_bare}',
+		},
+		'patches': (
+			( 'https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/vpx_160_semaphore.patch', 'p1' ),
+		),
+	},
+	'libilbc' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/dekkers/libilbc.git',
+		'run_post_patch': (
+			'autoreconf -fiv',
+		),
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'fontconfig' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.1.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-docs',
+		'make_options': '{make_prefix_options}',
+		'run_after_install': (
+			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
+		),		
+	},
+	'libfribidi' : {
+		# seems like this patch is not needed anymore in 0.19.7
+		# apply_patch https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
+		'repo_type' : 'archive',
+		'url' : 'https://fribidi.org/download/fribidi-0.19.7.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'libass' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libass/libass.git',
+		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+		'run_after_install': (
+			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
+		),	
+	},
+	'openjpeg' : {
+		'repo_type' : 'archive',
+		'url' : 'https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz',
+		'folder_name': 'openjpeg-2.1.2',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '{cmake_prefix_options} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
+		'make_options': '{make_prefix_options}',		
+	},
+	'intel_quicksync_mfx' : {
+		'repo_type' : 'git',
+		'run_post_patch': (
+			'autoreconf -fiv',
+		),
+		'url' : 'https://github.com/lu-zero/mfx_dispatch.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'fdk_aac' : {
+		'repo_type' : 'git',
+		'run_post_patch': (
+			'autoreconf -fiv',
+		),
+		'url' : 'https://github.com/mstorsjo/fdk-aac.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'make_options': '{make_prefix_options}',
+	},
+	'rtmpdump' : {
+		'repo_type' : 'git',
+		'url' : 'git://git.ffmpeg.org/rtmpdump',
+		'needs_configure': False,
+		'install_options' : 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={compile_prefix} LIB_GNUTLS="-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
+		'make_options': 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={compile_prefix} LIB_GNUTLS="-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
+		'run_after_install':(
+			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
+		),
+	},
+	'rtmpdump' : {
+		'repo_type' : 'git',
+		'url' : 'git://git.ffmpeg.org/rtmpdump',
+		'needs_configure': False,
+		'install_options' : 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={compile_prefix} LIB_GNUTLS="-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
+		'make_options': 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={compile_prefix} LIB_GNUTLS="-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
+		'run_after_install':(
+			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
+		),
+	},
+	'libx264' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
+		'repo_type' : 'git',
+		'url' : 'http://git.videolan.org/git/x264.git',
+		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={compile_prefix} --enable-strip --disable-lavf', 
+		'make_options': '',
+	},
+}
 DOWNLOADERS = {
 	'wget' : {
 		'command_line' : 'wget {url} --retry-connrefused -nv --show-progress -O {output_dir}'
@@ -570,6 +729,7 @@ class CrossCompileScript:
 
 		self.fullCurrentPath   = os.getcwd()
 		self.fullWorkDir       = os.path.join(self.fullCurrentPath,_WORKDIR)
+		self.fullProductDir    = os.path.join(self.fullWorkDir,_PRODUCT_INSTALL_DIR)
 		self.targetBitness     = _BITNESS
 		self.originalPATH      = os.environ["PATH"]
 		
@@ -580,6 +740,7 @@ class CrossCompileScript:
 		self.fullCrossPrefix   = None
 		self.makePrefixOptions = None
 		self.bitnessDir        = None
+		self.bitnessDir2       = None
 		self.winBitnessDir     = None
 		self.pkgConfigPath     = None
 		self.bareCrossPrefix   = None
@@ -593,6 +754,7 @@ class CrossCompileScript:
 			os.chdir(_WORKDIR)
 		
 			self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
+			self.bitnessDir2        = "x86_64" if b is 64 else "x86" # just for vpx...
 			self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
 			self.compileTarget      = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
 			self.compilePrefix      = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
@@ -622,12 +784,12 @@ class CrossCompileScript:
 			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir ))
 			os.makedirs(self.bitnessDir, exist_ok=True)
 			
-		os.chdir(self.bitnessDir)
-
+		if not os.path.isdir(self.bitnessDir + "_products"):
+			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir + "_products" ))
+			os.makedirs(self.bitnessDir + "_products", exist_ok=True)
+			
 		for p, pi in PRODUCTS.items():
 			self.build_product(p,pi)
-			
-		os.chdir("..")
 	#:
 	
 	def build_mingw(self,bitness):
@@ -833,7 +995,7 @@ class CrossCompileScript:
 			self.logger.error("Error [%d] running process: '%s'" % (return_code,command))
 			traceback.print_exc()
 			if exitOnError:
-				exit(return_code)
+				raise
 		
 		#p = subprocess.Popen(command, stdout=subprocess.PIPE,stderr=subprocess.STDOUT, universal_newlines = True, shell = True)
 		#for line in iter(p.stdout.readline, b''):
@@ -1017,11 +1179,31 @@ class CrossCompileScript:
 			if data['cflag_addition'] != None:
 				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
+				
+		if 'custom_cflag' in data:
+			if data['custom_cflag'] != None:
+				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
+				os.environ["CFLAGS"] = data['custom_cflag']
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
-					self.logger.info("Environment variable '{0}' has been set to '{1}'".format( key, val ))
+					val = val.format( 
+						pkg_config_path   = self.pkgConfigPath,
+						mingw_binpath     = self.mingwBinpath,
+						cross_prefix_bare = self.bareCrossPrefix,
+						cross_prefix_full = self.fullCrossPrefix,
+						compile_prefix    = self.compilePrefix,
+						compile_target    = self.compileTarget,
+					    bit_name          = self.bitnessDir,
+						bit_name2         = self.bitnessDir,
+						bit_name_win      = self.winBitnessDir,
+						product_prefix    = self.fullProductDir,
+					)
+					prevEnv = ''
+					if key in os.environ:
+						prevEnv = os.environ[key]
+					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
 		
 		
@@ -1030,20 +1212,24 @@ class CrossCompileScript:
 				for p in data['patches']:
 					self.apply_patch(p[0],p[1])
 					
-		if 'run_post_patch' in data:
-			if data['run_post_patch'] != None:
-				for cmd in data['run_post_patch']:
-					cmd = cmd.format( 
-						pkg_config_path   = self.pkgConfigPath,
-						mingw_binpath     = self.mingwBinpath,
-						cross_prefix_bare = self.bareCrossPrefix,
-						cross_prefix_full = self.fullCrossPrefix,
-						compile_prefix    = self.compilePrefix,
-						compile_target    = self.compileTarget,
-					    bit_name          = self.bitnessDir,
-					)
-					self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
-					self.run_process(cmd)
+		if not self.wildCardIsFile('already_ran_make'):
+			if 'run_post_patch' in data:
+				if data['run_post_patch'] != None:
+					for cmd in data['run_post_patch']:
+						cmd = cmd.format( 
+							pkg_config_path   = self.pkgConfigPath,
+							mingw_binpath     = self.mingwBinpath,
+							cross_prefix_bare = self.bareCrossPrefix,
+							cross_prefix_full = self.fullCrossPrefix,
+							compile_prefix    = self.compilePrefix,
+							compile_target    = self.compileTarget,
+							bit_name          = self.bitnessDir,
+							bit_name2         = self.bitnessDir,
+							bit_name_win      = self.winBitnessDir,
+							product_prefix    = self.fullProductDir,
+						)
+						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
 					
 					
 		if 'needs_configure' in data:
@@ -1056,6 +1242,14 @@ class CrossCompileScript:
 			if data['is_cmake'] == True:
 				self.cmake_source(name,data)
 				
+		if 'make_subdir' in data:
+			if data['make_subdir'] != None:
+				os.chdir(data['make_subdir'])
+				
+		# self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
+		# self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
+		
+		
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
 				self.make_source(name,data)
@@ -1077,43 +1271,192 @@ class CrossCompileScript:
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(currentFullDir)
+				
+		if 'make_subdir' in data:
+			if data['make_subdir'] != None:
+				os.chdir(currentFullDir)
 		
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
+				self.defaultCFLAGS()
+				
+		if 'custom_cflag' in data:
+			if data['custom_cflag'] != None:
 				self.defaultCFLAGS()
 		
 		os.chdir("..")
 		
 	def build_product(self,name,data):
 	
+		
 		if "depends_on" in data:
 			if len(data["depends_on"])>0:
+			
+				os.chdir(self.bitnessDir)
+				
 				self.logger.info("Building dependencies of '%s'" % (name))
 				for libraryName in data["depends_on"]:
 					if libraryName not in DEPENDS:
 						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
 					else:
 						self.build_depend(libraryName,DEPENDS[libraryName])
-					
-		exit()
-	
+			
+				os.chdir("..")
+		
+		
+		os.chdir(self.bitnessDir + "_products")
+		
 		workDir = None
-		self.logger.info("Building project '%s'" % (name))
-		if data["repo_type"] == "git":
-			workDir = self.git_clone(data["url"])
-		if data["repo_type"] == "svn":
-			workDir = self.svn_clone(data["url"],data["folder_name"])
+		skipDownload = False #probably can be made easier by checking if its downloaded outside the download functions, but thats effort.
+		self.logger.info("Building library '%s'" % (name))
+		
+		if 'rename_folder' in data:
+			if data['rename_folder'] != None:
+				if os.path.isdir(data['rename_folder']):
+					skipDownload = True
+					workDir = data['rename_folder']
+		if skipDownload == False:
+			if data["repo_type"] == "git":
+				branch = self.getValueOrNone(data,'branch')
+				workDir = self.git_clone(data["url"],None,branch)
+			if data["repo_type"] == "svn":
+				workDir = self.svn_clone(data["url"],data["folder_name"])
+			if data["repo_type"] == "archive":
+				if "folder_name" in data:
+					workDir = self.download_unpack_file(data["url"],data["folder_name"])
+				else:
+					workDir = self.download_unpack_file(data["url"])
+					
 		if workDir == None:
-			print("Unexpected error, please report this:", sys.exc_info()[0])
+			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
 			raise
+			
+		if 'rename_folder' in data:
+			if data['rename_folder'] != None:
+				shutil.move(workDir, data['rename_folder'])
+				workDir = data['rename_folder']
+		
+		if 'download_header' in data:
+			if data['download_header'] != None:
+				for h in data['download_header']:
+					self.downloadHeader(h)
 		
 		os.chdir(workDir)
 		
-		self.configure_source(name,data)
+		currentFullDir = os.getcwd()
 		
-		self.make_source(name,data)
+		if 'source_subfolder' in data:
+			if data['source_subfolder'] != None:
+				os.chdir(data['source_subfolder'])
+			
+		if 'cflag_addition' in data:
+			if data['cflag_addition'] != None:
+				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
+				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
+				
+		if 'custom_cflag' in data:
+			if data['custom_cflag'] != None:
+				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
+				os.environ["CFLAGS"] = data['custom_cflag']
+			
+		if 'env_exports' in data:
+			if data['env_exports'] != None:
+				for key,val in data['env_exports'].items():
+					val = val.format( 
+						pkg_config_path   = self.pkgConfigPath,
+						mingw_binpath     = self.mingwBinpath,
+						cross_prefix_bare = self.bareCrossPrefix,
+						cross_prefix_full = self.fullCrossPrefix,
+						compile_prefix    = self.compilePrefix,
+						compile_target    = self.compileTarget,
+					    bit_name          = self.bitnessDir,
+						bit_name2         = self.bitnessDir,
+						bit_name_win      = self.winBitnessDir,
+						product_prefix    = self.fullProductDir,
+					)
+					prevEnv = ''
+					if key in os.environ:
+						prevEnv = os.environ[key]
+					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
+					os.environ[key] = val
 		
-		self.make_install_source(name,data)
+		
+		if 'patches' in data:
+			if data['patches'] != None:
+				for p in data['patches']:
+					self.apply_patch(p[0],p[1])
+					
+		if not self.wildCardIsFile('already_ran_make'):
+			if 'run_post_patch' in data:
+				if data['run_post_patch'] != None:
+					for cmd in data['run_post_patch']:
+						cmd = cmd.format( 
+							pkg_config_path   = self.pkgConfigPath,
+							mingw_binpath     = self.mingwBinpath,
+							cross_prefix_bare = self.bareCrossPrefix,
+							cross_prefix_full = self.fullCrossPrefix,
+							compile_prefix    = self.compilePrefix,
+							compile_target    = self.compileTarget,
+							bit_name          = self.bitnessDir,
+							bit_name2         = self.bitnessDir,
+							bit_name_win      = self.winBitnessDir,
+							product_prefix    = self.fullProductDir,
+						)
+						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
+					
+					
+		if 'needs_configure' in data:
+			if data['needs_configure'] == True:
+				self.configure_source(name,data)
+		else:
+			self.configure_source(name,data)
+			
+		if 'is_cmake' in data:
+			if data['is_cmake'] == True:
+				self.cmake_source(name,data)
+				
+		if 'make_subdir' in data:
+			if data['make_subdir'] != None:
+				os.chdir(data['make_subdir'])
+				
+		# self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
+		# self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
+		
+		
+		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
+			if data['needs_make'] == True:
+				self.make_source(name,data)
+		else:
+			self.make_source(name,data)
+			
+		if 'needs_make_install' in data:
+			if data['needs_make_install'] == True:
+				self.make_install_source(name,data)
+		else:
+			self.make_install_source(name,data)
+		
+		if 'env_exports' in data:
+			if data['env_exports'] != None:
+				for key,val in data['env_exports'].items():
+					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
+					del os.environ[key]
+		
+		if 'source_subfolder' in data:
+			if data['source_subfolder'] != None:
+				os.chdir(currentFullDir)
+				
+		if 'make_subdir' in data:
+			if data['make_subdir'] != None:
+				os.chdir(currentFullDir)
+		
+		if 'cflag_addition' in data:
+			if data['cflag_addition'] != None:
+				self.defaultCFLAGS()
+				
+		if 'custom_cflag' in data:
+			if data['custom_cflag'] != None:
+				self.defaultCFLAGS()
 		
 		os.chdir("..")
 		
@@ -1138,6 +1481,9 @@ class CrossCompileScript:
 					compile_prefix    = self.compilePrefix,
 					compile_target    = self.compileTarget,
 					bit_name          = self.bitnessDir,
+					bit_name2         = self.bitnessDir2,
+					bit_name_win      = self.winBitnessDir,
+					product_prefix    = self.fullProductDir,
 					)
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 			
@@ -1154,6 +1500,9 @@ class CrossCompileScript:
 							compile_prefix    = self.compilePrefix,
 							compile_target    = self.compileTarget,
 							bit_name          = self.bitnessDir,
+							bit_name2         = self.bitnessDir2,
+							bit_name_win      = self.winBitnessDir,
+							product_prefix    = self.fullProductDir,
 						)
 						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1164,9 +1513,11 @@ class CrossCompileScript:
 			
 	def apply_patch(self,url,type = "-p1"): #p1 for github, p0 for idk
 		fileName = os.path.basename(urlparse(url).path)
-		self.logger.info("Downloading patch '{0}' to: {1}".format( url, fileName ))
-		self.download_file(url,fileName)
 		
+		if not os.path.isfile(fileName):
+			self.logger.info("Downloading patch '{0}' to: {1}".format( url, fileName ))
+			self.download_file(url,fileName)
+			
 		patch_touch_name = "%s.done" % (fileName)
 			
 		if not os.path.isfile(patch_touch_name):
@@ -1195,6 +1546,9 @@ class CrossCompileScript:
 					compile_prefix       = self.compilePrefix,
 					compile_target       = self.compileTarget,
 					bit_name             = self.bitnessDir,
+					bit_name2         = self.bitnessDir2,
+					bit_name_win      = self.winBitnessDir,
+					product_prefix    = self.fullProductDir,
 					)
 	
 			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
@@ -1221,6 +1575,9 @@ class CrossCompileScript:
 					compile_prefix      = self.compilePrefix,
 					compile_target      = self.compileTarget,
 					bit_name            = self.bitnessDir,
+					bit_name2         = self.bitnessDir2,
+					bit_name_win      = self.winBitnessDir,
+					product_prefix    = self.fullProductDir,
 					)
 				
 			self.logger.info("Making '{0}' with: {1}".format( name, makeOpts ))
@@ -1231,7 +1588,32 @@ class CrossCompileScript:
 				if data['cpu_count'] != None:
 					cpcnt = ""
 			
-			self.run_process('make {1} {0}'.format( cpcnt, makeOpts ))
+			if 'ignore_make_fail_and_run' in data:
+				if len(data['ignore_make_fail_and_run']) > 0: #todo check if its a list too
+					try:
+						self.run_process('make {1} {0}'.format( cpcnt, makeOpts ))
+					except Exception as e:
+						#print("GOT HERE")
+						#exit()
+						self.logger.info("Ignoring failed make process...")
+						for cmd in data['ignore_make_fail_and_run']:
+							cmd = cmd.format( 
+								pkg_config_path               = self.pkgConfigPath,
+								mingw_binpath                 = self.mingwBinpath,
+								cross_prefix_bare             = self.bareCrossPrefix,
+								cross_prefix_full             = self.fullCrossPrefix,
+								compile_prefix                = self.compilePrefix,
+								compile_target                = self.compileTarget,
+								bit_name                      = self.bitnessDir,
+								bit_name2         = self.bitnessDir2,
+								bit_name_win      = self.winBitnessDir,
+								product_prefix    = self.fullProductDir,
+								compile_prefix_sed_escaped    = self.compilePrefix.replace("/","\\/"),
+							)
+							self.logger.info("Running post-failed-make-command: '{0}'".format( cmd ))
+							self.run_process(cmd)
+			else:
+				self.run_process('make {1} {0}'.format( cpcnt, makeOpts ))
 			
 			if 'run_post_make' in data:
 				if data['run_post_make'] != None:
@@ -1244,6 +1626,9 @@ class CrossCompileScript:
 							compile_prefix                = self.compilePrefix,
 							compile_target                = self.compileTarget,
 					        bit_name                      = self.bitnessDir,
+							bit_name2         = self.bitnessDir2,
+							bit_name_win      = self.winBitnessDir,
+							product_prefix    = self.fullProductDir,
 							compile_prefix_sed_escaped    = self.compilePrefix.replace("/","\\/"),
 						)
 						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
@@ -1268,6 +1653,9 @@ class CrossCompileScript:
 						compile_prefix      = self.compilePrefix,
 						compile_target      = self.compileTarget,
 						bit_name            = self.bitnessDir,
+						bit_name2         = self.bitnessDir2,
+						bit_name_win      = self.winBitnessDir,
+						product_prefix    = self.fullProductDir,
 						)
 			installTarget = "install"
 			if 'install_target' in data:
@@ -1290,6 +1678,9 @@ class CrossCompileScript:
 							compile_prefix    = self.compilePrefix,
 							compile_target    = self.compileTarget,
 					        bit_name          = self.bitnessDir,
+							bit_name2         = self.bitnessDir2,
+							bit_name_win      = self.winBitnessDir,
+							product_prefix    = self.fullProductDir,
 						)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1301,6 +1692,12 @@ class CrossCompileScript:
 		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
 		os.environ["CFLAGS"] = _ORIG_CFLAGS
 	#:
+	
+	def wildCardIsFile(self,wild):
+		for file in os.listdir('.'):
+			if file.startswith(wild):
+				return True
+		return False
 	
 	def removeAlreadyFiles(self):
 		for af in glob.glob("./already_*"):
