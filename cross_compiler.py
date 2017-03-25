@@ -20,6 +20,7 @@ import http.cookiejar
 from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
+from collections import OrderedDict
 _VERSION = "1.3"
 
 
@@ -39,119 +40,196 @@ class MissingDependency(Exception):
 		self.message = message
 
 _CPU_COUNT = cpu_count()
-_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #mingw script, keep the default one, unless you know what you're doing
+#_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
+_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch
 _LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
 _WORKDIR = "workdir"
 _MINGW_DIR = "xcompilers"
-_PRODUCT_INSTALL_DIR = "products"
 _BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
 _DOWNLOADER = "wget" # wget or curl
 _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 
+_DEBUG = False
+
 git_get_latest = True # to be implemented in a better way
 
-PRODUCTS = { # e.g mpv, ffmpeg
+PRODUCT_ORDER = ('ffmpeg_shared', 'ffmpeg_static','mpv')
+
+#INDEPENDENT_DEPS =
+
+PRODUCTS = {
+	'mpv' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/mpv-player/mpv.git',
+		'is_waf' : True,
+		'env_exports' : {
+			'DEST_OS' : 'win32',
+			'TARGET'  : '{compile_target}',
+		},
+		'run_post_patch' : (
+			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
+		),
+		'configure_options': '--enable-sdl2 --enable-libmpv-shared --disable-debug-build --prefix={product_prefix}/mpv_git.installed TARGET={compile_target} DEST_OS=win32',			
+		# --disable-x11 --disable-wayland
+		'depends_on' : (
+			'libffmpeg', 'luajit', #'vapoursynth',
+		),
+		'run_after_install': (
+			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
+			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
+		)
+	},
 	'ffmpeg_static' : {
-		'repo_type' : 'git', # git, svn, archive
-		#'branch' : '0.13.6', # git branch/tag/commit or svn revision
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git', #git,svn or direct http(s) url
-		'folder_name': None, # Required for SVN repos, weird git onee and borked direct file downloads I guess. 
+		'repo_type' : 'git',
+		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
 		'configure_options': 
-			'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads'
-			' --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --enable-decklink --extra-libs=-loleaut32  --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp --enable-libgme --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf  --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg'
-			' --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid'
-			' --enable-libmfx'
-			' --enable-avresample'
-            ' --extra-libs=-lpsapi'
-            ' --extra-libs=-lspeexdsp'
-			' --prefix={product_prefix} --disable-shared --enable-static'
-			' --enable-runtime-cpudetect'
-		,	
-		# \/ order them correctly, if one needs another dep. first, you put that one first., or use depends_on in the depends itself, yes, nested works :)
-		'depends_on' : (
+			' --arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv'
+			' --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --enable-decklink --extra-libs=-loleaut32'
+			' --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype'
+			' --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp'
+			' --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg --enable-gpl --enable-libx264 --enable-libx265'
+			' --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample --extra-libs=-lpsapi --extra-libs=-lspeexdsp'
+			' --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect',
+		'depends_on': (
 			'zlib', 'bzlib2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype', 'expat', 'libxml', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264'
-			),
-		'run_post_patch' : ( #not sure if this even needs decklink, if not tbd: add header deps or something like that.
+			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264', 
+		),
+	},
+	'ffmpeg_shared' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'rename_folder' : 'ffmpeg_shared_git',
+		'configure_options':
+			' --arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv'
+			' --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --enable-decklink --extra-libs=-loleaut32'
+			' --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype'
+			' --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp'
+			' --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg --enable-gpl --enable-libx264 --enable-libx265'
+			' --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample --extra-libs=-lpsapi --extra-libs=-lspeexdsp'
+			' --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme --enable-runtime-cpudetect', #' --extra-cflags=-march=skylake'#' --extra-cflags=-O3' # dont seem needed		
+		'depends_on': (
+			'zlib', 'bzlib2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype', 'expat', 'libxml', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264', 
+		),
+	}
+	
+}
+DEPENDS = {
+	'luajit': {
+		'repo_type' : 'git',
+		'url' : 'https://luajit.org/git/luajit-2.0.git',
+		'needs_configure' : False,
+		'custom_cflag' : '-O3', # doesn't like march's past ivybridge (yet), so we override it.
+		'install_options' : 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static FILE_T=luajit.exe PREFIX={compile_prefix}',
+		'make_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
+	},
+	'vapoursynth': {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/vapoursynth/vapoursynth.git',
+		'custom_cflag' : '-O3',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --disable-vsscript --disable-python-module --enable-core',
+		'patches' : (
+			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vapoursynth-0001-statically-link.patch', 'p1'),
+		),
+		#'download_header':(
+		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.thread.h',
+		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.mutex.h',
+		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.condition_variable.h',
+		#)
+	},
+	'libffmpeg' : { # static, as we use static on everything, my derp in the first place.
+		'repo_type' : 'git',
+		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'rename_folder' : 'libffmpeg_git',
+		'configure_options': 
+			' --arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv'
+			' --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --enable-decklink --extra-libs=-loleaut32'
+			' --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype'
+			' --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp'
+			' --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg --enable-gpl --enable-libx264 --enable-libx265'
+			' --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample --extra-libs=-lpsapi --extra-libs=-lspeexdsp'
+			' --prefix={compile_prefix} --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect'
+		,
+		'run_post_patch' : (
 			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPI.h -O {compile_prefix}/include/DeckLinkAPI.h',
 			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPI_i.c -O {compile_prefix}/include/DeckLinkAPI_i.c',
 			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPIVersion.h -O {compile_prefix}/include/DeckLinkAPIVersion.h',
 		),
 		'make_options': '',
-	}
-	
-}
-DEPENDS = { # e.g flac, libpng
-	'bzlib2' : { # simple name for the library
-		'repo_type' : 'archive', # git, svn, archive
-		'branch' : None, # git/svn branch/tag [Optional, set None or remove]
-		'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz', # https,http,file:// (ftp not yet supported, I think)
-		'folder_name': None, # [Optional, set None or remove]
-		'patches' : ( # ordered list of patches, first one will be applied first..
+		'depends_on': (
+			'zlib', 'bzlib2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype', 'expat', 'libxml', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264', 
+		),
+	},
+	'bzlib2' : {
+		'repo_type' : 'archive',
+		'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz',
+		'patches' : (
 			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/bzip2_cross_compile.diff', "p0"),
 		),
-		"needs_configure": False, # self explanatory [Optional, set None or remove]
-		"needs_make": True, # self explanatory [Optional, set None or remove]
-		"needs_make_install": False, # self explanatory [Optional, set None or remove]
-		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install', # self.makePrefixOptions
+		"needs_configure": False,
+		"needs_make": True,
+		"needs_make_install": False,
+		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install',
 	},
 	'zlib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz',
 		'configure_options': '--static --prefix={compile_prefix}',
-		'make_options': '{make_prefix_options} ARFLAGS=rcs', # self.makePrefixOptions
+		'make_options': '{make_prefix_options} ARFLAGS=rcs',
 	},
 	'liblzma' : {
 		'repo_type' : 'archive',
 		'url' : 'http://tukaani.org/xz/xz-5.2.3.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
 	},
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
 	},
 	'libsnappy' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/ffmpegwindowsbi/files/dependency_libraries/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
 		'folder_name' : 'google-snappy-32d6d7d',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libpng' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.28/libpng-1.6.28.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
 	},
-	'gmp' : {
+	'gmp' : { #todo try this.
 		#export CC_FOR_BUILD=/usr/bin/gcc idk if we need this anymore, compiles fine without.
 		#export CPP_FOR_BUILD=usr/bin/cpp
 		#generic_configure "ABI=$bits_target"
 		'repo_type' : 'archive',
 		'url' : 'https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libnettle' : {
 		'repo_type' : 'archive',
 		'url' : 'https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-openssl --with-included-libtasn1',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'iconv' : {
 		'repo_type' : 'archive',
 		# CFLAGS=-O2 # ??
 		'url' : 'https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 		#    sed -i.bak 's/mkstemp(tmpfile)/ -1 /g' src/danetool.c # fix x86_64 absent? but danetool is just an exe AFAICT so this hack should be ok...
 		#    # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference... 
@@ -164,7 +242,7 @@ DEPENDS = { # e.g flac, libpng
 		'repo_type' : 'archive',
 		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_after_install': ( # list of commands to run after make install variables can be found somewhere.
 			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
 		)
@@ -179,14 +257,14 @@ DEPENDS = { # e.g flac, libpng
 		'cmake_options': '{cmake_prefix_options}',
 		'url' : 'https://files.dyne.org/frei0r/releases/frei0r-plugins-1.5.0.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
 		'branch' : '1.0.27',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libbs2b' : {
 		'repo_type' : 'archive',
@@ -195,14 +273,14 @@ DEPENDS = { # e.g flac, libpng
 		},
 		'url' : 'https://sourceforge.net/projects/bs2b/files/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'wavpack' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/dbry/WavPack/archive/5.1.0.tar.gz',
 		'folder_name' : 'WavPack-5.1.0',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libgme_game_music_emu' : {
 		'repo_type' : 'archive',
@@ -214,13 +292,13 @@ DEPENDS = { # e.g flac, libpng
 		'cmake_options': '{cmake_prefix_options} -DBUILD_SHARED_LIBS=OFF',
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libwebp' : { # why can't everything be so easy to compile
 		'repo_type' : 'archive',
 		'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'flite' : { # why can't everything be so easy to compile
 		'repo_type' : 'archive',
@@ -239,7 +317,7 @@ DEPENDS = { # e.g flac, libpng
 			'cp -v ./build/{bit_name}-mingw32/lib/*.a "{compile_prefix}/lib"',
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libgsm' : {
 		'repo_type' : 'archive',
@@ -262,13 +340,13 @@ DEPENDS = { # e.g flac, libpng
 	'sdl1' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL-1.2.15.tar.gz',
-		#export CFLAGS=-DDECLSPEC=  # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
+		'custom_cflag' : '-DDECLSPEC=',# avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_after_install": (
 			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl.pc"', # allow ffmpeg to output anything to console :|
 			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl-config" "{cross_prefix_full}sdl-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
-		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
+		'make_options': '',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 	},
 	'sdl2' : {
@@ -277,13 +355,12 @@ DEPENDS = { # e.g flac, libpng
 		'patches' : (
 			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/sdl2.xinput.diff', "p0"),
 		),
-		#export CFLAGS=-DDECLSPEC=  # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet... [ didnt happen yet .. ]
+		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_after_install": (
 			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
 			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
-		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 	},
 	'libopus' : {
@@ -293,45 +370,45 @@ DEPENDS = { # e.g flac, libpng
 			("https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/opus11.patch", "p0"),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'opencore-amr' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.3.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'vo-amrwbenc' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.2.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libogg' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/xiph/ogg/archive/v1.3.2.tar.gz',
 		'folder_name' : 'ogg-1.3.2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libspeexdsp' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/xiph/speexdsp/archive/SpeexDSP-1.2rc3.tar.gz',
 		'folder_name' : 'speexdsp-SpeexDSP-1.2rc3',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'ibspeex' : {
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
 		'url' : 'https://github.com/xiph/speex.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libvorbis' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/vorbis.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libtheora' : {
 		'repo_type' : 'git',
@@ -340,19 +417,19 @@ DEPENDS = { # e.g flac, libpng
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', 'p1'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'orc' : {
 		'repo_type' : 'archive',
 		'url' : 'http://download.videolan.org/contrib/orc/orc-0.4.18.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libschroedinger' : {
 		'repo_type' : 'archive',
 		'url' : 'http://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_post_configure': (
 			'sed -i.bak \'s/testsuite//\' Makefile',
 		),
@@ -361,12 +438,12 @@ DEPENDS = { # e.g flac, libpng
 		),
 		
 	},
-	'freetype' : {
+	'freetype' : { #todo try playing with this.
 		'repo_type' : 'archive',
 		'url' : 'https://download.videolan.org/contrib/freetype2/freetype-2.6.3.tar.gz',
 		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-png=no', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
-		#'make_options': '{make_prefix_options}', # nor does it like the default make options..
+		#'make_options': '', # nor does it like the default make options..
 		'run_after_install': (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		),
@@ -375,19 +452,19 @@ DEPENDS = { # e.g flac, libpng
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.0/expat-2.2.0.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libxml' : {
 		'repo_type' : 'archive',
 		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libbluray' : { 
 		'repo_type' : 'archive',
 		'url' : 'http://ftp.videolan.org/pub/videolan/libbluray/0.7.0/libbluray-0.7.0.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_after_install': (
 			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # not sure...is this a blu-ray bug, or VLC's problem in not pulling freetype's .pc file? or our problem with not using pkg-config --static ...
 		),
@@ -399,7 +476,7 @@ DEPENDS = { # e.g flac, libpng
 		'rename_folder' : 'xvidcore-1.3.4', #why the weird name xvid? never heard of standards?
 		'source_subfolder': './build/generic', # Why that subfolder.. come on
 		'configure_options': '--host={compile_target} --prefix={compile_prefix}',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'cpu_count' : '1',
 		'run_post_configure': (
 			'sed -i.bak "s/-mno-cygwin//" platform.inc',
@@ -415,7 +492,7 @@ DEPENDS = { # e.g flac, libpng
 		'url' : 'https://svn.code.sf.net/p/xavs/code/trunk',
 		'folder_name' : 'xavs_svn',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --cross-prefix={cross_prefix_bare}',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_after_install' : (
 			'rm -f NUL', # I will not even ask.
 		)
@@ -426,7 +503,7 @@ DEPENDS = { # e.g flac, libpng
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'url' : 'https://sourceforge.net/projects/soxr/files/soxr-0.1.2-Source.tar.xz',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	# 'libebur128' : {
 	# 	'repo_type' : 'git',
@@ -434,7 +511,7 @@ DEPENDS = { # e.g flac, libpng
 	# 	'cmake_options': '{cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 	# 	'needs_configure' : False,
 	# 	'is_cmake' : True,
-	# 	'make_options': '{make_prefix_options}',
+	# 	'make_options': '',
 	# 	'run_post_patch': (
 	# 		'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
 	# 	),
@@ -445,7 +522,7 @@ DEPENDS = { # e.g flac, libpng
 		'cmake_options': '{cmake_prefix_options} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'source_subfolder': './source',
 	},
 	'libopenh264' : {
@@ -486,14 +563,14 @@ DEPENDS = { # e.g flac, libpng
 		#git tags/master require --enable-maintainer-mode we could but shouldn't use git I guess.
 		'url' : 'http://fftw.org/fftw-3.3.6-pl1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
 		'branch' : '477ce36f8e4bd6a177727f4ac32eba11864dd85d', # commit: Fix win32 compilation # fixed the cross compiling.
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},	
 	'librubberband' : {
 		'repo_type' : 'archive',
@@ -502,7 +579,7 @@ DEPENDS = { # e.g flac, libpng
 		),
 		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'needs_make_install' : False,
 		'run_post_make' : ( 
 			'cp lib/* "{compile_prefix}/lib"',
@@ -519,13 +596,13 @@ DEPENDS = { # e.g flac, libpng
 			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/lame3.patch', 'p0'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'twolame' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/twolame/files/twolame/0.3.13/twolame-0.3.13.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static CPPFLAGS=-DLIBTWOLAME_STATIC',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'vidstab' : {
 		'repo_type' : 'git',
@@ -533,7 +610,7 @@ DEPENDS = { # e.g flac, libpng
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DUSE_OMP=OFF', #fatal error: omp.h: No such file or directory
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_post_patch': (
 			'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
 		),
@@ -542,7 +619,7 @@ DEPENDS = { # e.g flac, libpng
 		'repo_type' : 'archive',
 		'url' : 'https://gfd-dennou.org/arch/ucar/unidata/pub/netcdf/netcdf-4.4.1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libcaca' : {
 		'repo_type' : 'archive',
@@ -557,7 +634,7 @@ DEPENDS = { # e.g flac, libpng
 		),
 		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	
 	
@@ -575,13 +652,13 @@ DEPENDS = { # e.g flac, libpng
 	#	#'cflag_addition' : '-DCACA_STATIC -D_WIN64 -D__LIBCACA__ -DDLL_EXPORT',
 	#	'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz', #thanks fedora, I like you better than suse.
 	#	'configure_options': '--host={compile_target} --prefix={compile_prefix} --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
-	#	'make_options': '{make_prefix_options}',
+	#	'make_options': '',
 	#,
 	'libmodplug' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.8.5/libmodplug-0.8.8.5.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_after_install': (
 			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] http://trac.ffmpeg.org/ticket/1539
 			'sed -i.bak \'s/-lmodplug.*/-lmodplug -lstdc++/\' "{pkg_config_path}/libmodplug.pc"', # huh ?? c++?
@@ -597,7 +674,7 @@ DEPENDS = { # e.g flac, libpng
 		},
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
 		'make_subdir' : 'src', #this will only run make and make install in said dir... geez..
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'patches': (
 		    ('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/zvbi-win32.patch', 'p0'),
 			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/zvbi-ioctl.patch', 'p0'),
@@ -625,13 +702,13 @@ DEPENDS = { # e.g flac, libpng
 			'autoreconf -fiv',
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'fontconfig' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-docs',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_after_install': (
 			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
 		),		
@@ -642,14 +719,14 @@ DEPENDS = { # e.g flac, libpng
 		'repo_type' : 'archive',
 		'url' : 'https://fribidi.org/download/fribidi-0.19.7.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'libass' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
 		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 		'run_after_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
 		),	
@@ -661,7 +738,7 @@ DEPENDS = { # e.g flac, libpng
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
-		'make_options': '{make_prefix_options}',		
+		'make_options': '',		
 	},
 	'intel_quicksync_mfx' : {
 		'repo_type' : 'git',
@@ -670,7 +747,7 @@ DEPENDS = { # e.g flac, libpng
 		),
 		'url' : 'https://github.com/lu-zero/mfx_dispatch.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'fdk_aac' : {
 		'repo_type' : 'git',
@@ -679,7 +756,7 @@ DEPENDS = { # e.g flac, libpng
 		),
 		'url' : 'https://github.com/mstorsjo/fdk-aac.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'make_options': '',
 	},
 	'rtmpdump' : {
 		'repo_type' : 'git',
@@ -729,7 +806,7 @@ class CrossCompileScript:
 
 		self.fullCurrentPath   = os.getcwd()
 		self.fullWorkDir       = os.path.join(self.fullCurrentPath,_WORKDIR)
-		self.fullProductDir    = os.path.join(self.fullWorkDir,_PRODUCT_INSTALL_DIR)
+		self.fullProductDir    = None
 		self.targetBitness     = _BITNESS
 		self.originalPATH      = os.environ["PATH"]
 		
@@ -764,12 +841,14 @@ class CrossCompileScript:
 			self.makePrefixOptions  = "CC={0}gcc AR={0}ar PREFIX={1} RANLIB={0}ranlib LD={0}ld STRIP={0}strip CXX={0}g++".format( self.bareCrossPrefix, self.compilePrefix )
 			self.cmakePrefixOptions = "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={0}ranlib -DCMAKE_C_COMPILER={0}gcc -DCMAKE_CXX_COMPILER={0}g++ -DCMAKE_RC_COMPILER={0}windres -DCMAKE_INSTALL_PREFIX={1}".format( self.fullCrossPrefix, self.compilePrefix )
 			self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.compilePrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
+			self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
+			self.currentBitness     = b
 					
 			self.build_mingw(b)
 			
 			self.defaultCFLAGS()
 			
-			self.initProcess(b) # the passing is actually unessesary but looks better. 
+			self.initProcess(b) 
 		
 			os.chdir("..")
 		
@@ -779,6 +858,7 @@ class CrossCompileScript:
 		
 		os.environ["PATH"]           = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
 		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
+		os.environ["PKG_CONFIG_LIBDIR"] = ""
 		
 		if not os.path.isdir(self.bitnessDir):
 			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir ))
@@ -787,9 +867,8 @@ class CrossCompileScript:
 		if not os.path.isdir(self.bitnessDir + "_products"):
 			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir + "_products" ))
 			os.makedirs(self.bitnessDir + "_products", exist_ok=True)
-			
-		for p, pi in PRODUCTS.items():
-			self.build_product(p,pi)
+		for p in PRODUCT_ORDER:
+			self.build_product(p,PRODUCTS[p])
 	#:
 	
 	def build_mingw(self,bitness):
@@ -811,13 +890,16 @@ class CrossCompileScript:
 		os.chdir(_MINGW_DIR)
 		
 		mingw_script_file    = self.download_file(_MINGW_SCRIPT_URL)
-		mingw_script_options = "--clean-build --disable-shared --default-configure  --pthreads-w32-ver=2-9-1 --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef --verbose".format ( _CPU_COUNT )
+		#mingw_script_options = "--clean-build --disable-shared --default-configure --threads=pthreads-w32 --pthreads-w32-ver=2-9-1 --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
+		mingw_script_options = "--clean-build --disable-shared --default-configure --threads=winpthreads --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
 		self.chmodpux(mingw_script_file)
 		try:
-			self.run_process( [ "./" + mingw_script_file, mingw_script_options, "--build-type={0}".format( self.winBitnessDir ) ], False, False )
+			self.run_process( [ "bash " + mingw_script_file, mingw_script_options, "--build-type={0}".format( self.winBitnessDir ) ], False, False )
 		except Exception as e:
 			self.logger.error("Previous MinGW build may have failed, delete the compiler folder named '{0}' and try again".format( _MINGW_DIR ))
 			exit(1)
+
+		os.chdir("..")
 	#:
 
 	def downloadHeader(self,url):
@@ -882,7 +964,7 @@ class CrossCompileScript:
 				('Upgrade-Insecure-Requests' , '1'),
 				('User-Agent'                , ua),
 				('Accept'                    , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
-				('Accept-Encoding'           , 'gzip*;q=1.0,deflate*;q=0.0,sdch*;q=0.0'),
+				# ('Accept-Encoding'           , 'gzip'),
 				('Accept-Language'           , 'en-US,en;q=0.8'),
 		]
 
@@ -942,7 +1024,15 @@ class CrossCompileScript:
 			downloadedBytes += len(chunk)
 			if isGzipped:
 				if len(chunk):
-					chunk = zlib.decompress(chunk, 16+zlib.MAX_WBITS)
+					try:
+						chunk = zlib.decompress(chunk, 15+32)
+					except Exception as e:
+						fullChunk = response.read()
+						# decompressor = zlib.decompressobj()
+						test = zlib.decompress(fullChunk, zlib.MAX_WBITS | 16)
+						print(test)
+						print(e)
+						exit()
 					
 			f.write(chunk)
 			fancyDownloadedBytes = sizeof_fmt(downloadedBytes).rjust(len(fancyFileSize), ' ')
@@ -978,10 +1068,10 @@ class CrossCompileScript:
 				break
 			if isSvn:
 				if not nextline.decode('utf-8').startswith('A    '):
-					sys.stdout.write(nextline.decode('utf-8'))
+					sys.stdout.write(nextline.decode('utf-8','replace'))
 					sys.stdout.flush()
 			else:
-				sys.stdout.write(nextline.decode('utf-8'))
+				sys.stdout.write(nextline.decode('utf-8','replace'))
 				sys.stdout.flush()
 				
 		output = process.communicate()[0]
@@ -1132,8 +1222,19 @@ class CrossCompileScript:
 	#:
 	
 	def build_depend(self,name,data):
+		if "depends_on" in data: #dependception
+			if len(data["depends_on"])>0:
+				self.logger.info("Building dependencies of '%s'" % (name))
+				for libraryName in data["depends_on"]:
+					if libraryName not in DEPENDS:
+						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
+					else:
+						self.build_depend(libraryName,DEPENDS[libraryName])
+	
+	
 		workDir = None
 		skipDownload = False #probably can be made easier by checking if its downloaded outside the download functions, but thats effort.
+		
 		self.logger.info("Building library '%s'" % (name))
 		
 		if 'rename_folder' in data:
@@ -1196,8 +1297,9 @@ class CrossCompileScript:
 						compile_prefix    = self.compilePrefix,
 						compile_target    = self.compileTarget,
 					    bit_name          = self.bitnessDir,
-						bit_name2         = self.bitnessDir,
+						bit_name2         = self.bitnessDir2,
 						bit_name_win      = self.winBitnessDir,
+						bit_num           = self.currentBitness,
 						product_prefix    = self.fullProductDir,
 					)
 					prevEnv = ''
@@ -1226,18 +1328,36 @@ class CrossCompileScript:
 							bit_name          = self.bitnessDir,
 							bit_name2         = self.bitnessDir,
 							bit_name_win      = self.winBitnessDir,
-							product_prefix    = self.fullProductDir,
+							bit_num           = self.currentBitness,
+							product_prefix       = self.fullProductDir,
 						)
 						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 					
+					
+		if _DEBUG:
+			self.logger.info("############ CWD: {0}".format(os.getcwd()))
+			self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
+			self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
+			self.logger.info("############ PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PATH")))
+			self.logger.info("############ PKG_CONFIG_LIBDIR: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_LIBDIR")))
+			self.logger.info("############ PKG_CONFIG_PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_PATH")))
+			for tk in os.environ:
+				print("############ " + tk + " : " + os.environ[tk])
 					
 		if 'needs_configure' in data:
 			if data['needs_configure'] == True:
 				self.configure_source(name,data)
 		else:
 			self.configure_source(name,data)
-			
+		
+		#if 'is_waf' in data:
+		#	if data['is_waf'] == True:
+		#		self.waf_configure(name,data)
+		#		self.waf_make(name,data)
+		#		self.waf_install(name,data)
+				
+				
 		if 'is_cmake' in data:
 			if data['is_cmake'] == True:
 				self.cmake_source(name,data)
@@ -1283,11 +1403,22 @@ class CrossCompileScript:
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
 				self.defaultCFLAGS()
-		
+				
 		os.chdir("..")
 		
+		if 'debug_exitafter' in data:
+			exit()
+			
 	def build_product(self,name,data):
 	
+		if _DEBUG:
+			self.logger.info("############ CWD: {0}".format(os.getcwd()))
+			self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
+			self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
+			self.logger.info("############ PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PATH")))
+			self.logger.info("############ PKG_CONFIG_LIBDIR: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_LIBDIR")))
+			self.logger.info("############ PKG_CONFIG_PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_PATH")))
+
 		
 		if "depends_on" in data:
 			if len(data["depends_on"])>0:
@@ -1304,11 +1435,14 @@ class CrossCompileScript:
 				os.chdir("..")
 		
 		
+		self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
+		self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
+		
 		os.chdir(self.bitnessDir + "_products")
 		
 		workDir = None
 		skipDownload = False #probably can be made easier by checking if its downloaded outside the download functions, but thats effort.
-		self.logger.info("Building library '%s'" % (name))
+		self.logger.info("Building PRODUCT '%s'" % (name))
 		
 		if 'rename_folder' in data:
 			if data['rename_folder'] != None:
@@ -1372,6 +1506,7 @@ class CrossCompileScript:
 					    bit_name          = self.bitnessDir,
 						bit_name2         = self.bitnessDir,
 						bit_name_win      = self.winBitnessDir,
+						bit_num           = self.currentBitness,
 						product_prefix    = self.fullProductDir,
 					)
 					prevEnv = ''
@@ -1399,7 +1534,7 @@ class CrossCompileScript:
 							compile_target    = self.compileTarget,
 							bit_name          = self.bitnessDir,
 							bit_name2         = self.bitnessDir,
-							bit_name_win      = self.winBitnessDir,
+							bit_num           = self.currentBitness,
 							product_prefix    = self.fullProductDir,
 						)
 						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
@@ -1460,16 +1595,30 @@ class CrossCompileScript:
 		
 		os.chdir("..")
 		
+		os.chdir("..")
+		
 	def configure_source(self,name,data):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
+		
+		
+		isWaf = False
+		if 'is_waf' in data:
+			if data['is_waf'] == True:
+				isWaf = True
+		
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
 			
-			if not os.path.isfile("configure"):
-				if os.path.isfile("bootstrap.sh"):
-					self.run_process('./bootstrap.sh')
-				if os.path.isfile("autogen.sh"):
-					self.run_process('./autogen.sh')
+			if isWaf:
+				if not os.path.isfile("waf"):
+					if os.path.isfile("bootstrap.py"):
+						self.run_process('./bootstrap.py')
+			else:
+				if not os.path.isfile("configure"):
+					if os.path.isfile("bootstrap.sh"):
+						self.run_process('./bootstrap.sh')
+					if os.path.isfile("autogen.sh"):
+						self.run_process('./autogen.sh')
 					
 			configOpts = ''
 			if 'configure_options' in data:
@@ -1483,11 +1632,16 @@ class CrossCompileScript:
 					bit_name          = self.bitnessDir,
 					bit_name2         = self.bitnessDir2,
 					bit_name_win      = self.winBitnessDir,
+					bit_num           = self.currentBitness,
 					product_prefix    = self.fullProductDir,
 					)
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 			
-			self.run_process('./configure %s' % configOpts)
+			confCmd = './configure'
+			if isWaf:
+				confCmd = './waf --color=yes configure'
+			
+			self.run_process('{0} {1}'.format(confCmd, configOpts))
 			
 			if 'run_post_configure' in data:
 				if data['run_post_configure'] != None:
@@ -1502,12 +1656,17 @@ class CrossCompileScript:
 							bit_name          = self.bitnessDir,
 							bit_name2         = self.bitnessDir2,
 							bit_name_win      = self.winBitnessDir,
+							bit_num           = self.currentBitness,
 							product_prefix    = self.fullProductDir,
 						)
 						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 			
-			self.run_process('make clean -j {0}'.format( _CPU_COUNT ),True)
+			mCleanCmd = 'make clean'
+			if isWaf:
+				mCleanCmd = './waf --color=yes clean'
+			
+			self.run_process('{0} -j {1}'.format( mCleanCmd, _CPU_COUNT ),True)
 			
 			self.touch(touch_name)
 			
@@ -1546,9 +1705,10 @@ class CrossCompileScript:
 					compile_prefix       = self.compilePrefix,
 					compile_target       = self.compileTarget,
 					bit_name             = self.bitnessDir,
-					bit_name2         = self.bitnessDir2,
-					bit_name_win      = self.winBitnessDir,
-					product_prefix    = self.fullProductDir,
+					bit_name2            = self.bitnessDir2,
+					bit_name_win         = self.winBitnessDir,
+					bit_num              = self.currentBitness,
+					product_prefix       = self.fullProductDir,
 					)
 	
 			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
@@ -1561,8 +1721,18 @@ class CrossCompileScript:
 	def make_source(self,name,data):
 		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
 		if not os.path.isfile(touch_name):
+		
+			isWaf = False
+			if 'is_waf' in data:
+				if data['is_waf'] == True:
+					isWaf = True
+			
+			mkCmd = 'make'
+			if isWaf:
+				mkCmd = './waf --color=yes'
+			
 			if os.path.isfile("configure"):
-				self.run_process('make clean -j {0}'.format( _CPU_COUNT ),True)
+				self.run_process('{0} clean -j {0}'.format( mkCmd, _CPU_COUNT ),True)
 
 			makeOpts = ''
 			if 'make_options' in data:
@@ -1575,9 +1745,10 @@ class CrossCompileScript:
 					compile_prefix      = self.compilePrefix,
 					compile_target      = self.compileTarget,
 					bit_name            = self.bitnessDir,
-					bit_name2         = self.bitnessDir2,
-					bit_name_win      = self.winBitnessDir,
-					product_prefix    = self.fullProductDir,
+					bit_name2           = self.bitnessDir2,
+					bit_name_win        = self.winBitnessDir,
+					bit_num             = self.currentBitness,
+					product_prefix      = self.fullProductDir,
 					)
 				
 			self.logger.info("Making '{0}' with: {1}".format( name, makeOpts ))
@@ -1591,7 +1762,9 @@ class CrossCompileScript:
 			if 'ignore_make_fail_and_run' in data:
 				if len(data['ignore_make_fail_and_run']) > 0: #todo check if its a list too
 					try:
-						self.run_process('make {1} {0}'.format( cpcnt, makeOpts ))
+						if isWaf:
+							mkCmd = './waf --color=yes build'
+						self.run_process('{0} {2} {1}'.format( mkCmd, cpcnt, makeOpts ))
 					except Exception as e:
 						#print("GOT HERE")
 						#exit()
@@ -1605,15 +1778,18 @@ class CrossCompileScript:
 								compile_prefix                = self.compilePrefix,
 								compile_target                = self.compileTarget,
 								bit_name                      = self.bitnessDir,
-								bit_name2         = self.bitnessDir2,
-								bit_name_win      = self.winBitnessDir,
-								product_prefix    = self.fullProductDir,
-								compile_prefix_sed_escaped    = self.compilePrefix.replace("/","\\/"),
+								bit_name2                     = self.bitnessDir2,
+								bit_name_win                  = self.winBitnessDir,
+								bit_num 			          = self.currentBitness,
+								product_prefix  			  = self.fullProductDir,
+								compile_pefix_sed_escaped     = self.compilePrefix.replace("/","\\/"),
 							)
 							self.logger.info("Running post-failed-make-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
 			else:
-				self.run_process('make {1} {0}'.format( cpcnt, makeOpts ))
+				if isWaf:
+					mkCmd = './waf --color=yes build'
+				self.run_process('{0} {2} {1}'.format( mkCmd, cpcnt, makeOpts ))
 			
 			if 'run_post_make' in data:
 				if data['run_post_make'] != None:
@@ -1626,10 +1802,12 @@ class CrossCompileScript:
 							compile_prefix                = self.compilePrefix,
 							compile_target                = self.compileTarget,
 					        bit_name                      = self.bitnessDir,
-							bit_name2         = self.bitnessDir2,
-							bit_name_win      = self.winBitnessDir,
-							product_prefix    = self.fullProductDir,
+							bit_name2        			  = self.bitnessDir2,
+							bit_name_win     			  = self.winBitnessDir,
+							bit_num          			  = self.currentBitness,
+							product_prefix   			  = self.fullProductDir,
 							compile_prefix_sed_escaped    = self.compilePrefix.replace("/","\\/"),
+							make_prefix_options           = self.makePrefixOptions,
 						)
 						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1640,6 +1818,13 @@ class CrossCompileScript:
 	def make_install_source(self,name,data):
 		touch_name = "already_ran_make_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
+		
+		
+			cpcnt = '-j {0}'.format(_CPU_COUNT)
+			
+			if 'cpu_count' in data:
+				if data['cpu_count'] != None:
+					cpcnt = ""
 			
 			makeInstallOpts  = ''
 			if 'install_options' in data:
@@ -1653,9 +1838,10 @@ class CrossCompileScript:
 						compile_prefix      = self.compilePrefix,
 						compile_target      = self.compileTarget,
 						bit_name            = self.bitnessDir,
-						bit_name2         = self.bitnessDir2,
-						bit_name_win      = self.winBitnessDir,
-						product_prefix    = self.fullProductDir,
+						bit_name2           = self.bitnessDir2,
+						bit_name_win        = self.winBitnessDir,
+						bit_num             = self.currentBitness,
+						product_prefix      = self.fullProductDir,
 						)
 			installTarget = "install"
 			if 'install_target' in data:
@@ -1665,7 +1851,16 @@ class CrossCompileScript:
 				
 			self.logger.info("Make installing '{0}' with: {1}".format( name, makeInstallOpts ))
 			
-			self.run_process('make -j {0} {1} {2}'.format( _CPU_COUNT, installTarget, makeInstallOpts ))
+			isWaf = False
+			if 'is_waf' in data:
+				if data['is_waf'] == True:
+					isWaf = True
+			
+			mkCmd = "make"
+			if isWaf:
+				mkCmd = "./waf"
+			
+			self.run_process('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt ))
 			
 			if 'run_after_install' in data:
 				if data['run_after_install'] != None:
@@ -1680,6 +1875,7 @@ class CrossCompileScript:
 					        bit_name          = self.bitnessDir,
 							bit_name2         = self.bitnessDir2,
 							bit_name_win      = self.winBitnessDir,
+							bit_num           = self.currentBitness,
 							product_prefix    = self.fullProductDir,
 						)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))

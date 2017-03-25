@@ -315,8 +315,8 @@ if [[ "$enabled_langs" != *,* ]]; then
 fi
 
 case "$gcc_ver" in
-  $gcc_old_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-host-libstdcxx="-lstdc++" --with-cloog="$cloog_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto --enable-threads=posix  > >(build_log) 2>&1 ;;
-  $gcc_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto --enable-threads=posix  > >(build_log) 2>&1 || print_error ;;
+  $gcc_old_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-host-libstdcxx="-lstdc++" --with-cloog="$cloog_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto --enable-threads=posix > >(build_log) 2>&1 ;;
+  $gcc_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto --enable-threads=posix > >(build_log) 2>&1 || print_error ;;
 esac
 }
 
@@ -774,6 +774,10 @@ rm -fr "./$mingw_w64_target/lib"
 cd "./$mingw_w64_target"
 ln -s '../lib' './lib'
 
+if [[ "$thread_lib" != 'disable' ]]; then
+  build_thread_lib "$mingw_w64_target" "$mingw_w64_prefix" || print_error
+fi
+
 # Build GCC
 cd "$pkgs_dir/gcc/build" || print_error
 build_progress 'gcc target-libgcc' 'Building'
@@ -791,10 +795,6 @@ build_progress 'done'
 build_progress 'gcc' 'Installing'
 make install-strip > >(build_log) 2>&1 || print_error
 build_progress 'done'
-
-if [[ "$thread_lib" != 'disable' ]]; then
-  build_thread_lib "$mingw_w64_target" "$mingw_w64_prefix" || print_error
-fi
 
 if [[ "$enable_gendef" = 'yes' ]]; then
   cd "$mingw_w64_build_dir" || print_error
@@ -981,7 +981,7 @@ shift 2
 case "$thread_lib" in
   'winpthreads' ) build_winpthreads "$target" "$prefix" ;;
   'pthreads-w32' ) build_pthreads_w32 "$target" "$prefix" ;;
-  * ) build_winpthreads "$target" "$prefix" ;;
+  * ) build_pthreads_w32 "$target" "$prefix" ;;
 esac
 }
 
