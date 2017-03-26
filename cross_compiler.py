@@ -24,9 +24,10 @@ from collections import OrderedDict
 _VERSION = "1.4"
 
 
-#autogen, gperf
+#CURRENTLY REQUIRED PROJECTS INCLUDE BUT A RE NOT LIMITED TO:
+# autogen, gperf, build-essential, ....
 
-class Colors: # improperly named ansi colors.
+class Colors: # improperly named ansi colors. :)
 	GREEN  = '\033[1;32;40m'
 	RESET  = '\033[0;37;40m'
 	YELLOW = '\033[1;33;40m'
@@ -39,21 +40,20 @@ class MissingDependency(Exception):
 	def __init__(self, message):
 		self.message = message
 
-_CPU_COUNT = cpu_count()
+_CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
 #_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
-_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch
+_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
 _LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
 _WORKDIR = "workdir"
 _MINGW_DIR = "xcompilers"
 _BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_DOWNLOADER = "wget" # wget or curl
+_DOWNLOADER = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
 _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 
 
 # ################################################################################
-
 
 _DEBUG = True
 git_get_latest = True # to be implemented in a better way
@@ -1279,6 +1279,7 @@ class CrossCompileScript:
 				if os.path.isdir(data['rename_folder']):
 					skipDownload = True
 					workDir = data['rename_folder']
+		
 		if skipDownload == False:
 			if data["repo_type"] == "git":
 				branch = self.getValueOrNone(data,'branch')
