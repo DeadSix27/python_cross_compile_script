@@ -1,0 +1,23 @@
+diff -ur a/Makefile.am b/Makefile.am
+--- a/Makefile.am	2017-03-26 17:45:45.951510800 +0200
++++ b/Makefile.am	2017-03-26 17:46:21.645159100 +0200
+@@ -86,7 +86,7 @@
+ 	echo '' >> $@
+ 	echo '#include "version.h"' >> $@
+ 	echo 'const char *version_string = "@VERSION@";' >> $@
+-	echo 'const char *compilation_string = "'$(COMPILE)'";' \
++	echo 'const char *compilation_string = "'$(COMPILE_HID)'";' \
+ 	    | $(ESCAPEQUOTE) >> $@
+ 	echo 'const char *link_string = "'$(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+ 	$(AM_LDFLAGS) $(LDFLAGS) $(LIBS) $(wget_LDADD)'";' \
+diff -ur a/Makefile.in b/Makefile.in
+--- a/Makefile.in	2017-03-26 17:45:46.696074500 +0200
++++ b/Makefile.in	2017-03-26 17:46:20.731240000 +0200
+@@ -353,6 +353,7 @@
+ am__v_lt_1 = 
+ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+ 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
++COMPILE_HID =  $(shell echo $(COMPILE) | sed -r "s/-I[^ ]+//g;s/-L[^ ]+//g;s/x86_64-w64-mingw32-//g;s/i686-w64-mingw32-//g;s/(-DLOCALEDIR=)[^ ]+(\/share\/locale)/\1\2/g;s/(-DSYSTEM_WGETRC=)[^ ]+(\/etc\/wgetrc)/\1\2/g;s/  */ /g")
+ AM_V_CC = $(am__v_CC_@AM_V@)
+ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+ am__v_CC_0 = @echo "  CC      " $@;

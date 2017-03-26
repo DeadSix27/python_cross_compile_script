@@ -21,10 +21,10 @@ from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
 from collections import OrderedDict
-_VERSION = "1.3"
+_VERSION = "1.4"
 
 
-#autogen
+#autogen, gperf
 
 class Colors: # improperly named ansi colors.
 	GREEN  = '\033[1;32;40m'
@@ -51,11 +51,14 @@ _BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit w
 _DOWNLOADER = "wget" # wget or curl
 _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 
-_DEBUG = False
 
+# ################################################################################
+
+
+_DEBUG = True
 git_get_latest = True # to be implemented in a better way
 
-PRODUCT_ORDER = ('ffmpeg_shared', 'ffmpeg_static','mpv')
+PRODUCT_ORDER = ('mpv', 'curl', 'wget', 'ffmpeg_shared', 'ffmpeg_static')
 
 #INDEPENDENT_DEPS =
 
@@ -71,15 +74,36 @@ PRODUCTS = {
 		'run_post_patch' : (
 			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
 		),
-		'configure_options': '--enable-sdl2 --enable-libmpv-shared --disable-debug-build --prefix={product_prefix}/mpv_git.installed TARGET={compile_target} DEST_OS=win32',			
-		# --disable-x11 --disable-wayland
+		'configure_options': ' --enable-libmpv-shared --enable-sdl2 --disable-debug-build --prefix={product_prefix}/mpv_git.installed TARGET={compile_target} DEST_OS=win32',			
 		'depends_on' : (
-			'libffmpeg', 'luajit', #'vapoursynth',
+			'libffmpeg', 'luajit', 'vapoursynth',
 		),
 		'run_after_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
 		)
+	},
+	'curl' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/curl/curl',
+		'rename_folder' : 'curl_git',
+		'configure_options': '--with-gnutls --enable-static --disable-shared --with-winssl --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
+		'depends_on': (
+			'zlib',
+		),
+	},
+	'wget' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.savannah.gnu.org/git/wget.git',
+		'rename_folder' : 'wget_git',
+		'configure_options': '--with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
+		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'),
+		),
+		'depends_on': (
+			'zlib', 'gnutls'
+		),
 	},
 	'ffmpeg_static' : {
 		'repo_type' : 'git',
@@ -118,6 +142,11 @@ PRODUCTS = {
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264', 
 		),
+		'run_post_patch' : (
+			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O {compile_prefix}/include/DeckLinkAPI.h',
+			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O {compile_prefix}/include/DeckLinkAPI_i.c',
+			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O {compile_prefix}/include/DeckLinkAPIVersion.h',
+		),
 	}
 	
 }
@@ -136,7 +165,7 @@ DEPENDS = {
 		'custom_cflag' : '-O3',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --disable-vsscript --disable-python-module --enable-core',
 		'patches' : (
-			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vapoursynth-0001-statically-link.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', 'p1'),
 		),
 		#'download_header':(
 		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.thread.h',
@@ -158,9 +187,9 @@ DEPENDS = {
 			' --prefix={compile_prefix} --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect'
 		,
 		'run_post_patch' : (
-			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPI.h -O {compile_prefix}/include/DeckLinkAPI.h',
-			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPI_i.c -O {compile_prefix}/include/DeckLinkAPI_i.c',
-			'wget https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/DeckLinkAPIVersion.h -O {compile_prefix}/include/DeckLinkAPIVersion.h',
+			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O {compile_prefix}/include/DeckLinkAPI.h',
+			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O {compile_prefix}/include/DeckLinkAPI_i.c',
+			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O {compile_prefix}/include/DeckLinkAPIVersion.h',
 		),
 		'make_options': '',
 		'depends_on': (
@@ -174,7 +203,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/bzip2_cross_compile.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/bzip2_cross_compile.diff', "p0"),
 		),
 		"needs_configure": False,
 		"needs_make": True,
@@ -304,7 +333,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'http://www.speech.cs.cmu.edu/flite/packed/flite-1.4/flite-1.4-release.tar.bz2',
 		'patches' : ( # ordered list of patches, first one will be applied first..
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/flite_64.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/flite_64.diff', "p0"),
 		),
 		'cpu_count' : '1', #why do I even have to implement this, fix your stuff flite group.
 		'needs_make_install' : False,
@@ -324,7 +353,7 @@ DEPENDS = {
 		'url' : 'http://www.quut.com/gsm/gsm-1.0.16.tar.gz',
 		'folder_name' : 'gsm-1.0-pl16',
 		'patches' : ( # ordered list of patches, first one will be applied first..
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/libgsm.patch', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gsm-1.0.16.patch', "p0"),
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', 'p0'), # toast fails. so lets just patch it out of the makefile..
 		),
 		'needs_configure' : False,
@@ -353,7 +382,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/sdl2.xinput.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_after_install": (
@@ -367,7 +396,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/xiph/opus/releases/download/v1.1.2/opus-1.1.2.tar.gz',
 		'patches': ( 
-			("https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/opus11.patch", "p0"),
+			("https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/opus-1.1.2.patch", "p0"),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '',
@@ -593,7 +622,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/lame/files/lame/3.99/lame-3.99.5.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/lame3.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm',
 		'make_options': '',
@@ -676,8 +705,8 @@ DEPENDS = {
 		'make_subdir' : 'src', #this will only run make and make install in said dir... geez..
 		'make_options': '',
 		'patches': (
-		    ('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/zvbi-win32.patch', 'p0'),
-			('https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/zvbi-ioctl.patch', 'p0'),
+		    ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/zvbi-0.2.35_win32.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/zvbi-0.2.35_ioctl.patch', 'p0'),
 		),
 		#   there is no .pc for zvbi, so we add --extra-libs=-lpng to FFmpegs configure TODO there is a .pc file it just doesn't get installed [?]
 		#   sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
@@ -692,7 +721,7 @@ DEPENDS = {
 			'CROSS' : '{cross_prefix_bare}',
 		},
 		'patches': (
-			( 'https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/vpx_160_semaphore.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vpx_160_semaphore.patch', 'p1' ),
 		),
 	},
 	'libilbc' : {
@@ -1203,7 +1232,7 @@ class CrossCompileScript:
 			
 			self.logger.info("Unpacking {0}".format( fileName ))
 			
-			tars = (".gz",".bz2",".xz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
+			tars = (".gz",".bz2",".xz", "bz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
 			
 			if fileName.endswith(tars):
 				self.run_process('tar -xf "{0}"'.format( fileName ))
@@ -1222,6 +1251,11 @@ class CrossCompileScript:
 	#:
 	
 	def build_depend(self,name,data):
+	
+		if '_already_built' in data:
+			if data['_already_built'] == True:
+				return # we already built this dep this run (skips unessesary re-checks if 2 things have the same dep. took me too long to figure out this quick and easy idea :|
+	
 		if "depends_on" in data: #dependception
 			if len(data["depends_on"])>0:
 				self.logger.info("Building dependencies of '%s'" % (name))
@@ -1231,6 +1265,9 @@ class CrossCompileScript:
 					else:
 						self.build_depend(libraryName,DEPENDS[libraryName])
 	
+		if _DEBUG:
+			for tk in os.environ:
+				print("############ " + tk + " : " + os.environ[tk])
 	
 		workDir = None
 		skipDownload = False #probably can be made easier by checking if its downloaded outside the download functions, but thats effort.
@@ -1279,29 +1316,17 @@ class CrossCompileScript:
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
 				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
-				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
+				os.environ["TARGET_CFLAGS"] = os.environ["TARGET_CFLAGS"] + " " + data['cflag_addition']
 				
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
 				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
-				os.environ["CFLAGS"] = data['custom_cflag']
+				os.environ["TARGET_CFLAGS"] = data['custom_cflag']
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
-					val = val.format( 
-						pkg_config_path   = self.pkgConfigPath,
-						mingw_binpath     = self.mingwBinpath,
-						cross_prefix_bare = self.bareCrossPrefix,
-						cross_prefix_full = self.fullCrossPrefix,
-						compile_prefix    = self.compilePrefix,
-						compile_target    = self.compileTarget,
-					    bit_name          = self.bitnessDir,
-						bit_name2         = self.bitnessDir2,
-						bit_name_win      = self.winBitnessDir,
-						bit_num           = self.currentBitness,
-						product_prefix    = self.fullProductDir,
-					)
+					val = self.replaceVariables(val)
 					prevEnv = ''
 					if key in os.environ:
 						prevEnv = os.environ[key]
@@ -1318,46 +1343,16 @@ class CrossCompileScript:
 			if 'run_post_patch' in data:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
-						cmd = cmd.format( 
-							pkg_config_path   = self.pkgConfigPath,
-							mingw_binpath     = self.mingwBinpath,
-							cross_prefix_bare = self.bareCrossPrefix,
-							cross_prefix_full = self.fullCrossPrefix,
-							compile_prefix    = self.compilePrefix,
-							compile_target    = self.compileTarget,
-							bit_name          = self.bitnessDir,
-							bit_name2         = self.bitnessDir,
-							bit_name_win      = self.winBitnessDir,
-							bit_num           = self.currentBitness,
-							product_prefix       = self.fullProductDir,
-						)
+						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
-					
-					
-		if _DEBUG:
-			self.logger.info("############ CWD: {0}".format(os.getcwd()))
-			self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
-			self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
-			self.logger.info("############ PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PATH")))
-			self.logger.info("############ PKG_CONFIG_LIBDIR: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_LIBDIR")))
-			self.logger.info("############ PKG_CONFIG_PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_PATH")))
-			for tk in os.environ:
-				print("############ " + tk + " : " + os.environ[tk])
 					
 		if 'needs_configure' in data:
 			if data['needs_configure'] == True:
 				self.configure_source(name,data)
 		else:
 			self.configure_source(name,data)
-		
-		#if 'is_waf' in data:
-		#	if data['is_waf'] == True:
-		#		self.waf_configure(name,data)
-		#		self.waf_make(name,data)
-		#		self.waf_install(name,data)
-				
-				
+
 		if 'is_cmake' in data:
 			if data['is_cmake'] == True:
 				self.cmake_source(name,data)
@@ -1365,10 +1360,6 @@ class CrossCompileScript:
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
 				os.chdir(data['make_subdir'])
-				
-		# self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
-		# self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
-		
 		
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
@@ -1408,16 +1399,16 @@ class CrossCompileScript:
 		
 		if 'debug_exitafter' in data:
 			exit()
-			
+	
+		DEPENDS[name]["_already_built"] = True
+	
+	#:
+	
 	def build_product(self,name,data):
 	
 		if _DEBUG:
-			self.logger.info("############ CWD: {0}".format(os.getcwd()))
-			self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
-			self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
-			self.logger.info("############ PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PATH")))
-			self.logger.info("############ PKG_CONFIG_LIBDIR: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_LIBDIR")))
-			self.logger.info("############ PKG_CONFIG_PATH: {0}".format(self.getKeyOrBlankString(os.environ,"PKG_CONFIG_PATH")))
+			for tk in os.environ:
+				print("############ " + tk + " : " + os.environ[tk])
 
 		
 		if "depends_on" in data:
@@ -1433,10 +1424,6 @@ class CrossCompileScript:
 						self.build_depend(libraryName,DEPENDS[libraryName])
 			
 				os.chdir("..")
-		
-		
-		self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
-		self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
 		
 		os.chdir(self.bitnessDir + "_products")
 		
@@ -1485,30 +1472,18 @@ class CrossCompileScript:
 			
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
-				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
-				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
+				self.logger.info("Adding '{0}' to TARGET_CFLAGS".format( data['cflag_addition'] ))
+				os.environ["TARGET_CFLAGS"] = os.environ["TARGET_CFLAGS"] + " " + data['cflag_addition']
 				
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
-				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
-				os.environ["CFLAGS"] = data['custom_cflag']
+				self.logger.info("Setting TARGET_CFLAGS to '{0}'".format( data['custom_cflag'] ))
+				os.environ["TARGET_CFLAGS"] = data['custom_cflag']
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
-					val = val.format( 
-						pkg_config_path   = self.pkgConfigPath,
-						mingw_binpath     = self.mingwBinpath,
-						cross_prefix_bare = self.bareCrossPrefix,
-						cross_prefix_full = self.fullCrossPrefix,
-						compile_prefix    = self.compilePrefix,
-						compile_target    = self.compileTarget,
-					    bit_name          = self.bitnessDir,
-						bit_name2         = self.bitnessDir,
-						bit_name_win      = self.winBitnessDir,
-						bit_num           = self.currentBitness,
-						product_prefix    = self.fullProductDir,
-					)
+					val = self.replaceVariables(val)
 					prevEnv = ''
 					if key in os.environ:
 						prevEnv = os.environ[key]
@@ -1525,18 +1500,7 @@ class CrossCompileScript:
 			if 'run_post_patch' in data:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
-						cmd = cmd.format( 
-							pkg_config_path   = self.pkgConfigPath,
-							mingw_binpath     = self.mingwBinpath,
-							cross_prefix_bare = self.bareCrossPrefix,
-							cross_prefix_full = self.fullCrossPrefix,
-							compile_prefix    = self.compilePrefix,
-							compile_target    = self.compileTarget,
-							bit_name          = self.bitnessDir,
-							bit_name2         = self.bitnessDir,
-							bit_num           = self.currentBitness,
-							product_prefix    = self.fullProductDir,
-						)
+						cmd = cmd.replaceVariables(val)
 						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 					
@@ -1553,11 +1517,7 @@ class CrossCompileScript:
 				
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
-				os.chdir(data['make_subdir'])
-				
-		# self.logger.info("############ CFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"CFLAGS")))
-		# self.logger.info("############ LDFLAGS: {0}".format(self.getKeyOrBlankString(os.environ,"LDFLAGS")))
-		
+				os.chdir(data['make_subdir'])		
 		
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
@@ -1619,22 +1579,14 @@ class CrossCompileScript:
 						self.run_process('./bootstrap.sh')
 					if os.path.isfile("autogen.sh"):
 						self.run_process('./autogen.sh')
+					if os.path.isfile("buildconf"):
+						self.run_process('./buildconf')
+					if os.path.isfile("bootstrap"):
+						self.run_process('./bootstrap')	
 					
 			configOpts = ''
 			if 'configure_options' in data:
-				configOpts = data["configure_options"].format( 
-					pkg_config_path   = self.pkgConfigPath,
-					mingw_binpath     = self.mingwBinpath,
-					cross_prefix_bare = self.bareCrossPrefix,
-					cross_prefix_full = self.fullCrossPrefix,
-					compile_prefix    = self.compilePrefix,
-					compile_target    = self.compileTarget,
-					bit_name          = self.bitnessDir,
-					bit_name2         = self.bitnessDir2,
-					bit_name_win      = self.winBitnessDir,
-					bit_num           = self.currentBitness,
-					product_prefix    = self.fullProductDir,
-					)
+				configOpts = self.replaceVariables(data["configure_options"])
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 			
 			confCmd = './configure'
@@ -1646,19 +1598,7 @@ class CrossCompileScript:
 			if 'run_post_configure' in data:
 				if data['run_post_configure'] != None:
 					for cmd in data['run_post_configure']:
-						cmd = cmd.format( 
-							pkg_config_path   = self.pkgConfigPath,
-							mingw_binpath     = self.mingwBinpath,
-							cross_prefix_bare = self.bareCrossPrefix,
-							cross_prefix_full = self.fullCrossPrefix,
-							compile_prefix    = self.compilePrefix,
-							compile_target    = self.compileTarget,
-							bit_name          = self.bitnessDir,
-							bit_name2         = self.bitnessDir2,
-							bit_name_win      = self.winBitnessDir,
-							bit_num           = self.currentBitness,
-							product_prefix    = self.fullProductDir,
-						)
+						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 			
@@ -1696,21 +1636,7 @@ class CrossCompileScript:
 
 			makeOpts = ''
 			if 'cmake_options' in data:
-				makeOpts = data["cmake_options"].format( 
-					cmake_prefix_options = self.cmakePrefixOptions,
-					pkg_config_path      = self.pkgConfigPath,
-					mingw_binpath        = self.mingwBinpath,
-					cross_prefix_bare    = self.bareCrossPrefix,
-					cross_prefix_full    = self.fullCrossPrefix,
-					compile_prefix       = self.compilePrefix,
-					compile_target       = self.compileTarget,
-					bit_name             = self.bitnessDir,
-					bit_name2            = self.bitnessDir2,
-					bit_name_win         = self.winBitnessDir,
-					bit_num              = self.currentBitness,
-					product_prefix       = self.fullProductDir,
-					)
-	
+				makeOpts = self.replaceVariables(data["cmake_options"])
 			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
 	
 			self.run_process('cmake {0}'.format( makeOpts ))
@@ -1736,20 +1662,7 @@ class CrossCompileScript:
 
 			makeOpts = ''
 			if 'make_options' in data:
-				makeOpts = data["make_options"].format( 
-					make_prefix_options = self.makePrefixOptions,
-					pkg_config_path     = self.pkgConfigPath,
-					mingw_binpath       = self.mingwBinpath,
-					cross_prefix_bare   = self.bareCrossPrefix,
-					cross_prefix_full   = self.fullCrossPrefix,
-					compile_prefix      = self.compilePrefix,
-					compile_target      = self.compileTarget,
-					bit_name            = self.bitnessDir,
-					bit_name2           = self.bitnessDir2,
-					bit_name_win        = self.winBitnessDir,
-					bit_num             = self.currentBitness,
-					product_prefix      = self.fullProductDir,
-					)
+				makeOpts = self.replaceVariables(data["make_options"]) 
 				
 			self.logger.info("Making '{0}' with: {1}".format( name, makeOpts ))
 			
@@ -1770,20 +1683,7 @@ class CrossCompileScript:
 						#exit()
 						self.logger.info("Ignoring failed make process...")
 						for cmd in data['ignore_make_fail_and_run']:
-							cmd = cmd.format( 
-								pkg_config_path               = self.pkgConfigPath,
-								mingw_binpath                 = self.mingwBinpath,
-								cross_prefix_bare             = self.bareCrossPrefix,
-								cross_prefix_full             = self.fullCrossPrefix,
-								compile_prefix                = self.compilePrefix,
-								compile_target                = self.compileTarget,
-								bit_name                      = self.bitnessDir,
-								bit_name2                     = self.bitnessDir2,
-								bit_name_win                  = self.winBitnessDir,
-								bit_num 			          = self.currentBitness,
-								product_prefix  			  = self.fullProductDir,
-								compile_pefix_sed_escaped     = self.compilePrefix.replace("/","\\/"),
-							)
+							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-failed-make-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
 			else:
@@ -1794,21 +1694,7 @@ class CrossCompileScript:
 			if 'run_post_make' in data:
 				if data['run_post_make'] != None:
 					for cmd in data['run_post_make']:
-						cmd = cmd.format( 
-							pkg_config_path               = self.pkgConfigPath,
-							mingw_binpath                 = self.mingwBinpath,
-							cross_prefix_bare             = self.bareCrossPrefix,
-							cross_prefix_full             = self.fullCrossPrefix,
-							compile_prefix                = self.compilePrefix,
-							compile_target                = self.compileTarget,
-					        bit_name                      = self.bitnessDir,
-							bit_name2        			  = self.bitnessDir2,
-							bit_name_win     			  = self.winBitnessDir,
-							bit_num          			  = self.currentBitness,
-							product_prefix   			  = self.fullProductDir,
-							compile_prefix_sed_escaped    = self.compilePrefix.replace("/","\\/"),
-							make_prefix_options           = self.makePrefixOptions,
-						)
+						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 			
@@ -1829,20 +1715,7 @@ class CrossCompileScript:
 			makeInstallOpts  = ''
 			if 'install_options' in data:
 				if data['install_options'] != None:
-					makeInstallOpts = data["install_options"].format( 
-						make_prefix_options = self.makePrefixOptions,
-						pkg_config_path     = self.pkgConfigPath,
-						mingw_binpath       = self.mingwBinpath,
-						cross_prefix_bare   = self.bareCrossPrefix,
-						cross_prefix_full   = self.fullCrossPrefix,
-						compile_prefix      = self.compilePrefix,
-						compile_target      = self.compileTarget,
-						bit_name            = self.bitnessDir,
-						bit_name2           = self.bitnessDir2,
-						bit_name_win        = self.winBitnessDir,
-						bit_num             = self.currentBitness,
-						product_prefix      = self.fullProductDir,
-						)
+					makeInstallOpts = self.replaceVariables(data["install_options"])
 			installTarget = "install"
 			if 'install_target' in data:
 				if data['install_target'] != None:
@@ -1865,19 +1738,7 @@ class CrossCompileScript:
 			if 'run_after_install' in data:
 				if data['run_after_install'] != None:
 					for cmd in data['run_after_install']:
-						cmd = cmd.format( 
-							pkg_config_path   = self.pkgConfigPath,
-							mingw_binpath     = self.mingwBinpath,
-							cross_prefix_bare = self.bareCrossPrefix,
-							cross_prefix_full = self.fullCrossPrefix,
-							compile_prefix    = self.compilePrefix,
-							compile_target    = self.compileTarget,
-					        bit_name          = self.bitnessDir,
-							bit_name2         = self.bitnessDir2,
-							bit_name_win      = self.winBitnessDir,
-							bit_num           = self.currentBitness,
-							product_prefix    = self.fullProductDir,
-						)
+						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 			
@@ -1886,7 +1747,7 @@ class CrossCompileScript:
 	
 	def defaultCFLAGS(self):
 		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
-		os.environ["CFLAGS"] = _ORIG_CFLAGS
+		os.environ["TARGET_CFLAGS"] = _ORIG_CFLAGS
 	#:
 	
 	def wildCardIsFile(self,wild):
@@ -1899,6 +1760,26 @@ class CrossCompileScript:
 		for af in glob.glob("./already_*"):
 			os.remove(af)
 	#:	
+	
+	def replaceVariables(self,cmd):
+		cmd = cmd.format( 
+			cmake_prefix_options      = self.cmakePrefixOptions,
+			make_prefix_options       = self.makePrefixOptions,
+			pkg_config_path           = self.pkgConfigPath,
+			mingw_binpath             = self.mingwBinpath,
+			cross_prefix_bare         = self.bareCrossPrefix,
+			cross_prefix_full         = self.fullCrossPrefix,
+			compile_prefix            = self.compilePrefix,
+			compile_target            = self.compileTarget,
+			bit_name                  = self.bitnessDir,
+			bit_name2                 = self.bitnessDir2,
+			bit_name_win              = self.winBitnessDir,
+			bit_num                   = self.currentBitness,
+			product_prefix            = self.fullProductDir,
+			compile_pefix_sed_escaped = self.compilePrefix.replace("/","\\/"),
+		)
+		return cmd
+	#:
 	def getValueOrNone(self,db,k):
 		if k in db:
 			if db[k] == None:
@@ -1907,6 +1788,13 @@ class CrossCompileScript:
 				return db[k]
 		else:
 			return None
+			
+	def reReplaceInFile(self,infile,oldString,newString,outfile):
+		with open(infile, 'rw') as f:
+			for line in f:
+				line = re.sub(oldString, newString, line)
+				print(line)
+		exit()
 	
 	def getKeyOrBlankString(self,db,k):
 		if k in db:
