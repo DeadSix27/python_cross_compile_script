@@ -27,28 +27,29 @@ Basically does the same thing, just in a pythonic way with a JSON-like program/d
 
 However many more settings and variables are available, see this list of variables:
 
+To the right is their value.
 
 ```python
-cmake_prefix_options
-make_prefix_options
-pkg_config_path
-mingw_binpath
-cross_prefix_bare
-cross_prefix_full
-compile_prefix
-compile_target
-bit_name
-bit_name2
-bit_name_win
-bit_num
-product_prefix
-compile_pefix_sed_escaped
+cmake_prefix_options         # -G"Unix Makefiles" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_INSTALL_PREFIX={compile_prefix}
+make_prefix_options          # CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={compile_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++
+pkg_config_path              # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
+mingw_binpath                # e.g workdir/xcompilers/mingw-w64-x86_64/bin
+cross_prefix_bare            # e.g x86_64-w64-mingw32-
+cross_prefix_full            # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+compile_prefix               # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+compile_target               # e.g x86_64-w64-mingw32
+bit_name                     # e.g x86_64
+bit_name2                    # e.g x86/x86_64
+bit_name_win                 # e.g win64/win32
+bit_num                      # e.g 64
+product_prefix               # x86_64_products
+compile_pefix_sed_escaped    # compile_prefix with / escaped to \/
 ```
 
 
 and this information here:
 
-[FOPTIONAL] means the setting can be set to False or completely removed.
+`[FOPTIONAL]` means the setting can be set to False or completely removed.
 All custom commands will be executed within the projects directory.
 All commands,cflags,install/config/etc options can use the variables listed above.
 
@@ -76,7 +77,7 @@ You can always just check the predefined projects for ideas and wether I missed 
 	'run_post_patch' : (                          # ( List of commands to run before starting the build, will be executed inside the project folder ) [FOPTIONAL]
 		'echo "foobar" > test.foobar',            
 	), 
-    'needs_configure' : False,                    # ( Whether it needs to run "configure"(incl. waf), cmake often doesn't. ) [FOPTIONAL]
+	'needs_configure' : False,                    # ( Whether it needs to run "configure"(incl. waf), cmake often doesn't. ) [FOPTIONAL]
 	'configure_options': '--enable-static',       # ( Configure script options ) [FOPTIONAL]                                            
 	'run_post_configure': (                       # ( List of commands to run after configure (only triggered when needs_configure is True) ) [FOPTIONAL]
 		'cmd',
