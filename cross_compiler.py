@@ -76,7 +76,7 @@ PRODUCTS = {
 		),
 		'configure_options': ' --enable-libmpv-shared --enable-sdl2 --disable-debug-build --prefix={product_prefix}/mpv_git.installed TARGET={compile_target} DEST_OS=win32',			
 		'depends_on' : (
-			'python36', 'libffmpeg', 'luajit', 'vapoursynth',
+			'python36_libs', 'vapoursynth_libs', 'libffmpeg', 'luajit',
 		),
 		'run_after_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
@@ -146,9 +146,16 @@ PRODUCTS = {
 	
 }
 DEPENDS = {
-	'python36': {
+	'python36_libs': {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
+		'needs_configure' : False,
+		'needs_make_install' : False,
+		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+	},
+	'vapoursynth_libs': {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/DeadSix27/vapoursynth_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
