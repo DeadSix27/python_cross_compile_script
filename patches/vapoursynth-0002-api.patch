@@ -1,0 +1,11 @@
+diff -ur a/include/cython/vapoursynth_api.h b/include/cython/vapoursynth_api.h
+--- a/include/cython/vapoursynth_api.h	2017-03-27 02:32:04.553860986 +0200
++++ b/include/cython/vapoursynth_api.h	2017-03-27 00:38:36.197373500 +0200
+@@ -2,6 +2,7 @@
+ 
+ #ifndef __PYX_HAVE_API__vapoursynth
+ #define __PYX_HAVE_API__vapoursynth
++#include <cmath>
+ #include "Python.h"
+ #include "vapoursynth.h"
+ 

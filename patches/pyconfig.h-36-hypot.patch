@@ -1,0 +1,13 @@
+diff -ur a/pyconfig.h b/pyconfig.h
+--- a/pyconfig.h	2017-03-27 02:36:39.639770700 +0200
++++ b/pyconfig.h	2017-03-27 02:37:17.908362400 +0200
+@@ -238,7 +238,8 @@
+ #endif
+ 
+ #define COMPILER "[gcc]"
+-#define hypot _hypot
++/*no idea how this affects things.., but it makes vapoursynth compile and work fine? */
++/*#define hypot _hypot*/ 
+ #define PY_LONG_LONG long long
+ #define PY_LLONG_MIN LLONG_MIN
+ #define PY_LLONG_MAX LLONG_MAX

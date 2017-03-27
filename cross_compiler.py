@@ -55,7 +55,7 @@ _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake o
 
 # ################################################################################
 
-_DEBUG = True
+_DEBUG = False
 git_get_latest = True # to be implemented in a better way
 
 PRODUCT_ORDER = ('mpv', 'curl', 'wget', 'ffmpeg_shared', 'ffmpeg_static')
@@ -76,7 +76,7 @@ PRODUCTS = {
 		),
 		'configure_options': ' --enable-libmpv-shared --enable-sdl2 --disable-debug-build --prefix={product_prefix}/mpv_git.installed TARGET={compile_target} DEST_OS=win32',			
 		'depends_on' : (
-			'libffmpeg', 'luajit', 'vapoursynth',
+			'python36', 'libffmpeg', 'luajit', 'vapoursynth',
 		),
 		'run_after_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
@@ -142,15 +142,17 @@ PRODUCTS = {
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264', 
 		),
-		'run_post_patch' : (
-			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O {compile_prefix}/include/DeckLinkAPI.h',
-			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O {compile_prefix}/include/DeckLinkAPI_i.c',
-			'wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O {compile_prefix}/include/DeckLinkAPIVersion.h',
-		),
 	}
 	
 }
 DEPENDS = {
+	'python36': {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
+		'needs_configure' : False,
+		'needs_make_install' : False,
+		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+	},
 	'luajit': {
 		'repo_type' : 'git',
 		'url' : 'https://luajit.org/git/luajit-2.0.git',
@@ -163,15 +165,11 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/vapoursynth/vapoursynth.git',
 		'custom_cflag' : '-O3',
-		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --disable-vsscript --disable-python-module --enable-core',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --disable-python-module --enable-core',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0002-api.patch', 'p1'),
 		),
-		#'download_header':(
-		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.thread.h',
-		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.mutex.h',
-		#	'https://raw.githubusercontent.com/meganz/mingw-std-threads/master/mingw.condition_variable.h',
-		#)
 	},
 	'libffmpeg' : { # static, as we use static on everything, my derp in the first place.
 		'repo_type' : 'git',
@@ -1232,7 +1230,7 @@ class CrossCompileScript:
 			
 			self.logger.info("Unpacking {0}".format( fileName ))
 			
-			tars = (".gz",".bz2",".xz", "bz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
+			tars = (".gz",".bz2",".xz",".bz",".tgz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
 			
 			if fileName.endswith(tars):
 				self.run_process('tar -xf "{0}"'.format( fileName ))
@@ -1501,7 +1499,7 @@ class CrossCompileScript:
 			if 'run_post_patch' in data:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
-						cmd = cmd.replaceVariables(val)
+						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 					
