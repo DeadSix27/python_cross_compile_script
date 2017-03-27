@@ -71,8 +71,15 @@ You can always just check the predefined projects for ideas and wether I missed 
 	},
 	'cflag_addition' : '-DFOOBAR',                # ( These will be appended to TARGET_CFLASG and reset after the build ) [FOPTIONAL]
 	'custom_cflag' : '-O3',                       # ( This will completely overwrite TARGET_CLFAGS and be reset after the build ) [FOPTIONAL]
+	'doBootStrap' : True,                         # ( Whether we should try to run a bootstrap script ) [FOPTIONAL]
+	'run_pre_patch' : (                           # ( Commands to run before patches ) [FOPTIONAL]
+		'cmd',
+	),
 	'patches' : (                                 # ( List of patches to run on the source before anything is being done, requires defining the type p1 or p0 ) [FOPTIONAL]
 		('(url)', 'p1'),
+	),
+	'patches_post_configure' : (
+		('(url)', 'p1'),                          # ( List of patches to run on the source agter configure ran, requires defining the type p1 or p0 ) [FOPTIONAL]
 	),
 	'run_post_patch' : (                          # ( List of commands to run before starting the build, will be executed inside the project folder ) [FOPTIONAL]
 		'echo "foobar" > test.foobar',            

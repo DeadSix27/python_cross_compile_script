@@ -98,7 +98,7 @@ PRODUCTS = {
 		'rename_folder' : 'wget_git',
 		'configure_options': '--with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
-		'patches' : (
+		'patches_post_configure' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'),
 		),
 		'depends_on': (
@@ -1340,6 +1340,13 @@ class CrossCompileScript:
 					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
 		
+		if not self.wildCardIsFile('already_configured'):
+			if 'run_pre_patch' in data:
+				if data['run_pre_patch'] != None:
+					for cmd in data['run_pre_patch']:
+						cmd = self.replaceVariables(cmd)
+						self.logger.info("Running pre-patch-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
 		
 		if 'patches' in data:
 			if data['patches'] != None:
@@ -1359,6 +1366,11 @@ class CrossCompileScript:
 				self.configure_source(name,data)
 		else:
 			self.configure_source(name,data)
+			
+		if 'patches_post_configure' in data:
+			if data['patches_post_configure'] != None:
+				for p in data['patches_post_configure']:
+					self.apply_patch(p[0],p[1])
 
 		if 'is_cmake' in data:
 			if data['is_cmake'] == True:
@@ -1413,10 +1425,13 @@ class CrossCompileScript:
 	
 	def build_product(self,name,data):
 	
+		if '_already_built' in data:
+			if data['_already_built'] == True:
+				return
+				
 		if _DEBUG:
 			for tk in os.environ:
 				print("############ " + tk + " : " + os.environ[tk])
-
 		
 		if "depends_on" in data:
 			if len(data["depends_on"])>0:
@@ -1443,6 +1458,7 @@ class CrossCompileScript:
 				if os.path.isdir(data['rename_folder']):
 					skipDownload = True
 					workDir = data['rename_folder']
+		
 		if skipDownload == False:
 			if data["repo_type"] == "git":
 				branch = self.getValueOrNone(data,'branch')
@@ -1496,7 +1512,14 @@ class CrossCompileScript:
 						prevEnv = os.environ[key]
 					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
-		
+					
+		if not self.wildCardIsFile('already_configured'):
+			if 'run_pre_patch' in data:
+				if data['run_pre_patch'] != None:
+					for cmd in data['run_pre_patch']:
+						cmd = self.replaceVariables(cmd)
+						self.logger.info("Running pre-patch-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
 		
 		if 'patches' in data:
 			if data['patches'] != None:
@@ -1517,6 +1540,11 @@ class CrossCompileScript:
 				self.configure_source(name,data)
 		else:
 			self.configure_source(name,data)
+			
+		if 'patches_post_configure' in data:
+			if data['patches_post_configure'] != None:
+				for p in data['patches_post_configure']:
+					self.apply_patch(p[0],p[1])
 			
 		if 'is_cmake' in data:
 			if data['is_cmake'] == True:
@@ -1560,6 +1588,9 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.defaultCFLAGS()
 		
+		
+		PRODUCTS[name]["_already_built"] = True
+		
 		os.chdir("..")
 		
 		os.chdir("..")
@@ -1575,21 +1606,27 @@ class CrossCompileScript:
 		
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
+		
+			doBootStrap = True
+			if 'do_not_bootstrap' in data:
+				if data['do_not_bootstrap'] == True:
+					doBootStrap = False
 			
-			if isWaf:
-				if not os.path.isfile("waf"):
-					if os.path.isfile("bootstrap.py"):
-						self.run_process('./bootstrap.py')
-			else:
-				if not os.path.isfile("configure"):
-					if os.path.isfile("bootstrap.sh"):
-						self.run_process('./bootstrap.sh')
-					if os.path.isfile("autogen.sh"):
-						self.run_process('./autogen.sh')
-					if os.path.isfile("buildconf"):
-						self.run_process('./buildconf')
-					if os.path.isfile("bootstrap"):
-						self.run_process('./bootstrap')	
+			if doBootStrap:
+				if isWaf:
+					if not os.path.isfile("waf"):
+						if os.path.isfile("bootstrap.py"):
+							self.run_process('./bootstrap.py')
+				else:
+					if not os.path.isfile("configure"):
+						if os.path.isfile("bootstrap.sh"):
+							self.run_process('./bootstrap.sh')
+						if os.path.isfile("autogen.sh"):
+							self.run_process('./autogen.sh')
+						if os.path.isfile("buildconf"):
+							self.run_process('./buildconf')
+						if os.path.isfile("bootstrap"):
+							self.run_process('./bootstrap')	
 					
 			configOpts = ''
 			if 'configure_options' in data:
