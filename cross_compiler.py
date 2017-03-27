@@ -169,6 +169,7 @@ DEPENDS = {
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', 'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0002-api.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', 'p1'),
 		),
 	},
 	'libffmpeg' : { # static, as we use static on everything, my derp in the first place.

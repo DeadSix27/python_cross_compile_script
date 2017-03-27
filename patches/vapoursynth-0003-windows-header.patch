@@ -1,0 +1,12 @@
+diff -ur a/src/vsscript/vsscript.cpp b/src/vsscript/vsscript.cpp
+--- a/src/vsscript/vsscript.cpp	2017-03-27 03:15:18.284263700 +0200
++++ b/src/vsscript/vsscript.cpp	2017-03-27 03:17:04.028937876 +0200
+@@ -28,7 +28,7 @@
+ #ifdef VS_TARGET_OS_WINDOWS
+ #define WIN32_LEAN_AND_MEAN
+ #define NOMINMAX
+-#include <Windows.h>
++#include <windows.h>
+ #endif
+ 
+ static std::once_flag flag;
