@@ -1323,12 +1323,12 @@ class CrossCompileScript:
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
 				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
-				os.environ["TARGET_CFLAGS"] = os.environ["TARGET_CFLAGS"] + " " + data['cflag_addition']
+				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
 				
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
 				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
-				os.environ["TARGET_CFLAGS"] = data['custom_cflag']
+				os.environ["CFLAGS"] = data['custom_cflag']
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -1495,13 +1495,13 @@ class CrossCompileScript:
 			
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
-				self.logger.info("Adding '{0}' to TARGET_CFLAGS".format( data['cflag_addition'] ))
-				os.environ["TARGET_CFLAGS"] = os.environ["TARGET_CFLAGS"] + " " + data['cflag_addition']
+				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
+				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
 				
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
-				self.logger.info("Setting TARGET_CFLAGS to '{0}'".format( data['custom_cflag'] ))
-				os.environ["TARGET_CFLAGS"] = data['custom_cflag']
+				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
+				os.environ["CFLAGS"] = data['custom_cflag']
 			
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -1791,7 +1791,7 @@ class CrossCompileScript:
 	
 	def defaultCFLAGS(self):
 		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
-		os.environ["TARGET_CFLAGS"] = _ORIG_CFLAGS
+		os.environ["CFLAGS"] = _ORIG_CFLAGS
 	#:
 	
 	def wildCardIsFile(self,wild):
