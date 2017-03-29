@@ -1,0 +1,14 @@
+diff -ur libbluray_git/contrib/libudfread/src/udfread.c libbluray_git_b/contrib/libudfread/src/udfread.c
+--- libbluray_git/contrib/libudfread/src/udfread.c	2017-03-29 20:35:44.169124540 +0200
++++ libbluray_git_b/contrib/libudfread/src/udfread.c	2017-03-29 20:35:15.340771412 +0200
+@@ -33,10 +33,6 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#ifdef _WIN32
+-#define strtok_r strtok_s
+-#endif
+-
+ 
+ /*
+  * Logging
