@@ -1338,7 +1338,7 @@ PRODUCTS = {
 	},
 }
 DEPENDS = {
-	'angle' : { # implenting gyp support just for this would be a weaste of time, so lets make it a fully manual process!
+	'angle' : { # implenting gyp support just for this would be a waste of time, so a mnaual process shall suffice.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -1350,7 +1350,7 @@ DEPENDS = {
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
-		'run_post_patch': ( # this is also a very good example of how a fully custom build can look.
+		'run_post_patch': ( # this is also a very good example of how a fully custom build too. 
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',
 			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 ; fi',
 			'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
