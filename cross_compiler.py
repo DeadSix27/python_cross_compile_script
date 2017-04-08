@@ -35,17 +35,41 @@ class Colors: # improperly named ansi colors. :)
 	BLUE   = '\033[1;34;40m'
 	CYAN   = '\033[1;36;40m'
 	RED    = '\033[1;31;40m'
+	PURPLE = '\033[1;0;35m'
 
 class MissingDependency(Exception):
 	__module__ = 'exceptions'
 	def __init__(self, message):
 		self.message = message
+		
+_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
+		
+class MyFormatter(logging.Formatter):
 
+	err_fmt  = Colors.RED    + _LOGFORMAT + Colors.RESET
+	dbg_fmt  = Colors.YELLOW + _LOGFORMAT + Colors.RESET
+	info_fmt = Colors.CYAN   + _LOGFORMAT + Colors.RESET
+
+	def __init__(self):
+		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')  
+
+	def format(self, record):
+		format_orig = self._style._fmt
+		if record.levelno == logging.DEBUG:
+			self._style._fmt = MyFormatter.dbg_fmt
+		elif record.levelno == logging.INFO:
+			self._style._fmt = MyFormatter.info_fmt
+		elif record.levelno == logging.ERROR:
+			self._style._fmt = MyFormatter.err_fmt
+		result = logging.Formatter.format(self, record)
+		self._style._fmt = format_orig
+		return result
+		
+		
 _CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
 _STARTDIR = os.getcwd()
 #_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
 _MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
-_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 _LOG_DATEFORMAT = '%H:%M:%S'
 _QUIET = False #not recommended, but sure looks nice...
 _WORKDIR = "workdir"
@@ -61,23 +85,26 @@ _STATUS_FILE = _STARTDIR + "/status_file"
 _DEBUG = False
 git_get_latest = True # to be implemented in a better way
 
-PRODUCT_ORDER = ('mpv', 'x265_10bit', 'sox', 'curl', 'wget', 'ffmpeg_shared', 'ffmpeg_static')
-
 class CrossCompileScript:
 	"""A simple cross compiler helper made in python(3.6)"""
 
 	def __init__(self,po,ps,ds):
 		print(Colors.GREEN+ "Starting {0} v{1}".format( self.__class__.__name__,_VERSION ) + Colors.RESET )
-
+		
 
 		self.PRODUCT_ORDER = po
 		self.PRODUCTS = ps
 		self.DEPENDS = ds
 
-
+		fmt = MyFormatter()
+		hdlr = logging.StreamHandler(sys.stdout)
+		hdlr.setFormatter(fmt)
 		self.logger = logging.getLogger(__name__)
-		logging.basicConfig(level=logging.INFO,  format=Colors.CYAN + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
-		logging.basicConfig(level=logging.ERROR, format=Colors.RED  + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		# logging.basicConfig(level=logging.INFO,  format=Colors.CYAN + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		# logging.basicConfig(level=logging.DEBUG,  format=Colors.RED + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		# logging.basicConfig(level=logging.ERROR, format=Colors.RED  + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		self.logger.setLevel(logging.DEBUG)
+		self.logger.addHandler(hdlr) 
 
 		self.fullCurrentPath   = os.getcwd()
 		self.fullWorkDir       = os.path.join(self.fullCurrentPath,_WORKDIR)
@@ -97,6 +124,7 @@ class CrossCompileScript:
 		self.pkgConfigPath     = None
 		self.bareCrossPrefix   = None
 		self.cpuCount          = None
+		self.originalCflags    = None
 
 	#:
 
@@ -146,9 +174,11 @@ class CrossCompileScript:
 
 		self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
 		self.bitnessDir2        = "x86_64" if b is 64 else "x86" # just for vpx...
+		self.bitnessDir3        = "mingw64" if b is 64 else "mingw" # just for openssl...
 		self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
 		self.compileTarget      = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
 		self.compilePrefix      = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+		self.hostTarget         = "{0}/{1}/mingw-w64-{2}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir )
 		self.mingwBinpath       = "{0}/{1}/mingw-w64-{2}/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
 		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
@@ -158,7 +188,7 @@ class CrossCompileScript:
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
 		self.currentBitness     = b
 		self.cpuCount           = _CPU_COUNT
-
+		self.originalCflags     = _ORIG_CFLAGS
 
 		if _DEBUG:
 			print('self.bitnessDir = \n' + self.bitnessDir + '\n\n')
@@ -174,8 +204,10 @@ class CrossCompileScript:
 			print('self.pkgConfigPath = \n' + self.pkgConfigPath + '\n\n')
 			print('self.fullProductDir = \n' + self.fullProductDir + '\n\n')
 			print('self.currentBitness = \n' + str(self.currentBitness) + '\n\n')
+			print('PATH = \n' + os.environ["PATH"] + '\n\n')
 
 		os.environ["PATH"]           = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
+		#os.environ["PATH"]           = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.compilePrefix,'bin'), self.originalPATH ) #todo properly test this..
 		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
@@ -264,7 +296,7 @@ class CrossCompileScript:
 		fname = None
 
 		if targetName == None:
-			fname = os.path.basename(link)
+			fname = os.path.basename(urlparse(link).path)
 		else:
 			fname = targetName
 
@@ -453,15 +485,21 @@ class CrossCompileScript:
 
 		if os.path.isdir(realFolderName):
 			os.chdir(realFolderName)
-			hgVersion = os.system('hg --debug id -i')
+			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
 			self.run_process('hg pull -u')
 			self.run_process('hg update')
-			hgVersionNew = os.system('hg --debug id -i')
+			hgVersionNew = subprocess.check_output('hg --debug id -i', shell=True)
 			if hgVersion != hgVersionNew:
+				self.logger.debug("HG clone has code changes, updating")
 				self.removeAlreadyFiles()
+			else:
+				self.logger.debug("HG clone already up to date")
 			os.chdir("..")
 		else:
-			self.run_process('hg clone {0} {1}'.format(url,realFolderName))
+			self.logger.info("HG cloning '%s' to '%s'" % (url,dir))
+			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
+			os.system('mv "{0}" "{1}"')
+			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,dir))
 
 		return realFolderName
 	#:
@@ -646,6 +684,7 @@ class CrossCompileScript:
 					self.downloadHeader(h)
 
 		os.chdir(workDir)
+		self.defaultCFLAGS()
 
 		currentFullDir = os.getcwd()
 
@@ -663,6 +702,15 @@ class CrossCompileScript:
 				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
 
+				
+		if 'flipped_path' in data:
+			if data['flipped_path'] == True:
+				bef = os.environ["PATH"]
+				os.environ["PATH"] = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.compilePrefix,'bin'), self.originalPATH ) #todo properly test this.."PATH"]))
+				self.logger.debug("Flipping path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
+				
+				
+		
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
@@ -684,7 +732,7 @@ class CrossCompileScript:
 		if 'patches' in data:
 			if data['patches'] != None:
 				for p in data['patches']:
-					self.apply_patch(p[0],p[1])
+					self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
 
 		if not self.wildCardIsFile('already_ran_make'):
 			if 'run_post_patch' in data:
@@ -730,6 +778,12 @@ class CrossCompileScript:
 				for key,val in data['env_exports'].items():
 					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
 					del os.environ[key]
+					
+		if 'flipped_path' in data:
+			if data['flipped_path'] == True:
+				bef = os.environ["PATH"]
+				os.environ["PATH"] = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
+				self.logger.debug("Resetting flipped path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
@@ -826,6 +880,7 @@ class CrossCompileScript:
 					self.downloadHeader(h)
 
 		os.chdir(workDir)
+		self.defaultCFLAGS()
 
 		currentFullDir = os.getcwd()
 
@@ -842,7 +897,13 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
-
+	
+		if 'flipped_path' in data:
+			if data['flipped_path'] == True:
+				bef = os.environ["PATH"]
+				os.environ["PATH"] = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.compilePrefix,'bin'), self.originalPATH ) #todo properly test this..
+				self.logger.debug("Flipping path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
+				
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
@@ -852,6 +913,7 @@ class CrossCompileScript:
 						prevEnv = os.environ[key]
 					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
+
 
 		if not self.wildCardIsFile('already_configured'):
 			if 'run_pre_patch' in data:
@@ -864,7 +926,7 @@ class CrossCompileScript:
 		if 'patches' in data:
 			if data['patches'] != None:
 				for p in data['patches']:
-					self.apply_patch(p[0],p[1])
+					self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
 
 		if not self.wildCardIsFile('already_ran_make'):
 			if 'run_post_patch' in data:
@@ -911,7 +973,13 @@ class CrossCompileScript:
 				for key,val in data['env_exports'].items():
 					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
 					del os.environ[key]
-
+					
+		if 'flipped_path' in data:
+			if data['flipped_path'] == True:
+				bef = os.environ["PATH"]
+				os.environ["PATH"] = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
+				self.logger.debug("Resetting flipped path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
+					
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(currentFullDir)
@@ -978,7 +1046,10 @@ class CrossCompileScript:
 			confCmd = './configure'
 			if isWaf:
 				confCmd = './waf --color=yes configure'
-
+			elif 'configure_path' in data:
+				if data['configure_path'] != None:
+					confCmd = data['configure_path']
+			
 			self.run_process('{0} {1}'.format(confCmd, configOpts))
 
 			if 'run_post_configure' in data:
@@ -997,8 +1068,14 @@ class CrossCompileScript:
 			self.touch(touch_name)
 			self.logger.info("Finsihed configuring '{0}'".format( name ))
 
-	def apply_patch(self,url,type = "-p1", postConf = False): #p1 for github, p0 for idk
+	def apply_patch(self,url,type = "-p1", postConf = False, folderToPatchIn = None): #p1 for github, p0 for idk
 
+		originalFolder = os.getcwd()
+		
+		if folderToPatchIn != None:
+			os.chdir(folderToPatchIn)
+			self.logger.debug("Moving to patch folder: {0}" .format( folderToPatchIn ))
+	
 		fileName = os.path.basename(urlparse(url).path)
 
 		if not os.path.isfile(fileName):
@@ -1025,6 +1102,9 @@ class CrossCompileScript:
 				self.removeAlreadyFiles()
 		else:
 			self.logger.info("Patch '{0}' already applied".format( fileName ))
+			
+		if folderToPatchIn != None:
+			os.chdir("..")
 	#:
 
 	def cmake_source(self,name,data):
@@ -1051,10 +1131,17 @@ class CrossCompileScript:
 			if 'is_waf' in data:
 				if data['is_waf'] == True:
 					isWaf = True
+					
+			isRake = False
+			if 'is_rake' in data:
+				if data['is_rake'] == True:
+					isRake = True
 
 			mkCmd = 'make'
 			if isWaf:
 				mkCmd = './waf --color=yes'
+			if isRake:
+				mkCmd = 'rake'
 
 			if os.path.isfile("configure"):
 				self.run_process('{0} clean -j {0}'.format( mkCmd, _CPU_COUNT ),True)
@@ -1127,10 +1214,17 @@ class CrossCompileScript:
 			if 'is_waf' in data:
 				if data['is_waf'] == True:
 					isWaf = True
+					
+			isRake = False
+			if 'is_rake' in data:
+				if data['is_rake'] == True:
+					isRake = True
 
 			mkCmd = "make"
 			if isWaf:
 				mkCmd = "./waf"
+			if isRake:
+				mkCmd = "rake"
 
 			self.run_process('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt ))
 
@@ -1147,6 +1241,7 @@ class CrossCompileScript:
 	def defaultCFLAGS(self):
 		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
 		os.environ["CFLAGS"] = _ORIG_CFLAGS
+		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
 	def wildCardIsFile(self,wild):
@@ -1166,7 +1261,17 @@ class CrossCompileScript:
 		for af in glob.glob("./*.patch.done_past_conf"):
 			os.remove(af)
 	#:
-
+	def generateCflagString(self, prefix = ""):
+		cfs = os.environ["CFLAGS"]
+		cfs = cfs.split(' ')
+		out = ''
+		if len(cfs) >= 1:
+			for c in cfs:
+				out+=prefix + c + ' '
+			out.rstrip(' ')
+			return out
+		return ''
+			
 	def replaceVariables(self,cmd):
 		cmd = cmd.format(
 			cmake_prefix_options      = self.cmakePrefixOptions,
@@ -1177,14 +1282,24 @@ class CrossCompileScript:
 			cross_prefix_full         = self.fullCrossPrefix,
 			compile_prefix            = self.compilePrefix,
 			compile_target            = self.compileTarget,
+			host_target               = self.hostTarget,
 			bit_name                  = self.bitnessDir,
 			bit_name2                 = self.bitnessDir2,
+			bit_name3                 = self.bitnessDir3,
 			bit_name_win              = self.winBitnessDir,
 			bit_num                   = self.currentBitness,
 			product_prefix            = self.fullProductDir,
 			compile_pefix_sed_escaped = self.compilePrefix.replace("/","\\/"),
-			make_cpu_count            = "-j {0}".format(self.cpuCount)
+			make_cpu_count            = "-j {0}".format(self.cpuCount),
+			original_cflags           = self.originalCflags,
+			cflag_string              = self.generateCflagString('--extra-cflags=')
 		)
+		# needed actual commands sometimes, so I made this custom command support, compareable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
+		m = re.search(r'\!CMD\((.*)\)CMD!',cmd)
+		if m != None:
+			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n","").replace("\r","")
+			mr = re.sub(r"\!CMD\((.*)\)CMD!", r"{0}".format(cmdReplacer), cmd, flags=re.DOTALL)
+			return mr
 		return cmd
 	#:
 	def getValueOrNone(self,db,k):
@@ -1195,7 +1310,14 @@ class CrossCompileScript:
 				return db[k]
 		else:
 			return None
+			
+	def getValueByIntOrNone(self,db,key):
+		if key >= 0 and key < len(db):
+			return db[key]
+		else:
+			return None
 
+		
 	def reReplaceInFile(self,infile,oldString,newString,outfile):
 		with open(infile, 'rw') as f:
 			for line in f:
@@ -1212,8 +1334,24 @@ class CrossCompileScript:
 		else:
 			return ""
 	#:
+	
+PRODUCT_ORDER = ('mediainfo','mediainfo_dll', 'x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static')
 
 PRODUCTS = {
+	'x264_10bit' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
+		'repo_type' : 'git',
+		'url' : 'http://git.videolan.org/git/x264.git',
+		'rename_folder' : 'x264_10bit',
+		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_10bit.installed --enable-strip --enable-lavf --bit-depth=10 {cflag_string}',
+		'env_exports': {
+			'LAVF_LIBS' : '!CMD(pkg-config --libs libavformat libavcodec libavutil libswscale)CMD!',
+			'LAVF_CFLAGS' : '!CMD(pkg-config --cflags libavformat libavcodec libavutil libswscale)CMD!',
+			'SWSCALE_LIBS' : '!CMD(pkg-config --libs libswscale)CMD!',
+		},
+		'depends_on' : (
+			'libffmpeg',
+		),
+	},
 	'curl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/curl/curl',
@@ -1293,6 +1431,51 @@ PRODUCTS = {
 		'is_cmake' : True,
 		'source_subfolder': './source',
 	},
+	'mkvtoolnix': { # requires rake?? ok then
+		'repo_type' : 'git',
+		'recursive_git' : True,
+		'is_rake' : True, #thx for not using make...
+		'url' : 'https://github.com/mbunkus/mkvtoolnix.git',
+		'configure_options':
+			'--host={compile_target} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
+			' --with-boost={compile_prefix} --with-boost-system=boost_system --with-boost-filesystem=boost_filesystem --with-boost-date-time=boost_date_time --with-boost-regex=boost_regex --enable-optimization --enable-qt --enable-static-qt'
+			' --with-moc={mingw_binpath}/moc --with-uic={mingw_binpath}/uic --with-rcc={mingw_binpath}/rcc --with-qmake={mingw_binpath}/qmake'
+			' QT_LIBS="-lws2_32 -lprcre"'
+		,
+		'depends_on' : [
+			'libfile','libflac','boost','qt5'
+		],
+		'patches':
+		{
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_get_rid_of_platformsupport.patch', 'p1'),
+		},
+		'packages': {
+			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
+		},
+		#'debug_exitafter':True,
+	},
+	'flac' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.xiph.org/flac.git',
+		'configure_options': '--host={compile_target} --prefix={product_prefix}/flac_git.installed --disable-shared --enable-static',
+	},
+	'lame3' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/lame/files/lame/3.99/lame-3.99.5.tar.gz',
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
+		),
+		'configure_options': '--host={compile_target} --prefix={product_prefix}/lame-3.99.5.installed --disable-shared --enable-static --enable-nasm',
+		'make_options': '',
+	},
+	'vorbis-tools' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/vorbis-tools.git',
+		'configure_options': '--host={compile_target} --prefix={product_prefix}/vorbis-tools_git.installed --disable-shared --enable-static --without-libintl-prefix',
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vorbis_tools_odd_locale.patch','p1'),
+		)
+	},
 	'sox' : {
 		'repo_type' : 'git',
 		'rename_folder' : 'sox_git',
@@ -1336,9 +1519,116 @@ PRODUCTS = {
 		),
 		'skip_deps' : False,
 	},
+	'mediainfo' : {
+		'repo_type' : 'git',
+		'branch' : 'v0.7.94',
+		'custom_cflag' : '',
+		'recursive_git' : True,
+		'url' : 'https://github.com/MediaArea/MediaInfo.git',
+		'source_subfolder' : 'Project/GNU/CLI',
+		'rename_folder' : 'mediainfo_git',
+		'configure_options': '--host={compile_target} --prefix={product_prefix}/mediainfo_git.installed --disable-shared --disable-static-libs',
+		'depends_on': [
+			'libmediainfo',
+		],
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+	},
+	'mediainfo_dll' : {
+		'repo_type' : 'git',
+		'branch' : 'v0.7.94',
+		'source_subfolder' : 'Project/GNU/Library',
+		'rename_folder' : 'mediainfo_dll',
+		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
+		'configure_options' : '--host={compile_target} --prefix={product_prefix}/mediainfo_dll.installed --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo', # --enable-static --disable-shared --enable-shared=no
+		'run_post_patch' : [
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
+		],
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'depends_on': [
+			'zenlib', 'libcurl',
+		],
+	},
 }
 DEPENDS = {
+	'libmediainfo' : {
+		'repo_type' : 'git',
+		'branch' : 'v0.7.94',
+		'source_subfolder' : 'Project/GNU/Library',
+		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll', # --enable-static --disable-shared --enable-shared=no
+		'run_post_patch' : [
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
+		],
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'depends_on': [
+			'zenlib', 'libcurl',
+		],
+	},
+	'libcurl' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/curl/curl',
+		'rename_folder' : 'curl_git',
+		'configure_options': '--with-gnutls --enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --exec-prefix={compile_prefix}',
+		'depends_on': (
+			'zlib',
+		),
+	},
+	'zenlib' : {
+		'repo_type' : 'git',
+		'branch' : 'v0.4.35',
+		'source_subfolder' : 'Project/GNU/Library',
+		'url' : 'https://github.com/MediaArea/ZenLib.git',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --enable-static --disable-shared --enable-shared=no',
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'run_post_patch' : [
+			'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
+		],
+	},
+	'boost' : { # oh god no.. 
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz',
+		'needs_make':False,
+		'needs_make_install':False,
+		'needs_configure':False,
+		'run_post_patch': ( # this is a very good example for a fully custom dependency
+			'if [ ! -f "already_configured_0" ] ; then ./bootstrap.sh mingw --prefix={compile_prefix} ; fi',
+			'if [ ! -f "already_configured_0" ] ; then sed -i.bak \'s/case \*       : option = -pthread ; libs = rt ;/case *      : option = -pthread ;/\' tools/build/src/tools/gcc.jam ; fi',
+			'if [ ! -f "already_configured_0" ] ; then touch already_configured_0 ; fi',
+			'if [ ! -f "already_ran_make_0" ] ; then'
+				' echo "using gcc : mingw : {cross_prefix_bare}g++ : <rc>{cross_prefix_bare}windres <archiver>{cross_prefix_bare}ar <ranlib>{cross_prefix_bare}ranlib ;" > user-config.jam'
+			' ; fi',
+			'if [ ! -f "already_ran_make_0" ] ; then'
+				' ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={compile_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install'
+			' ; fi',
+			#'if [ ! -f "already_ran_make_0" ] ; then'
+			#	' ./b2 -a -d+2 --debug-configuration --prefix={compile_prefix} variant=release target-os=windows toolset=gcc-mingw address-model=64'
+			#	' link=shared runtime-link=shared threading=multi threadapi=win32 architecture=x86 binary-format=pe --with-system --with-filesystem --with-regex'
+			#	' --with-date_time --with-thread --with-test --user-config=user-config.jam install'
+			#' ; fi',
+			#'if [ ! -f "already_ran_make_0" ] ; then'
+			#	' ./b2 -a -d+2 --debug-configuration --prefix={compile_prefix} variant=debug target-os=windows toolset=gcc-mingw address-model=64'
+			#	' link=shared runtime-link=shared threading=multi threadapi=win32 architecture=x86 binary-format=pe boost.locale.winapi=on boost.locale.std=on'
+			#	' boost.locale.icu=on boost.locale.iconv=on boost.locale.posix=off --with-locale --user-config=user-config.jam install'
+			#' ; fi',
+			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
+		),
+	},
+	'vlc' : {
+		'repo_type' : 'git',
+		'url' : 'https://chromium.googlesource.com/angle/angle',
+	},
 	'angle' : { # implenting gyp support just for this would be a waste of time, so a mnaual process shall suffice.
+		#'_already_built': True,
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -1350,7 +1640,8 @@ DEPENDS = {
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
-		'run_post_patch': ( # this is also a very good example of how a fully custom build too. 
+		'run_post_patch': ( # so is this
+			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',
 			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 ; fi',
 			'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
@@ -1361,13 +1652,244 @@ DEPENDS = {
 			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
 		)
 	},
+	
+	'qt5' : {
+		'_already_built' : True,
+		'repo_type' : 'archive',
+		'url' : 'https://download.qt.io/official_releases/qt/5.8/5.8.0/single/qt-everywhere-opensource-src-5.8.0.tar.gz',
+		'configure_options' :
+		
+			' -opensource'
+			' -force-pkg-config'
+			' -confirm-license'
+			' -c++std c++11'
+			' -xplatform win32-g++'
+			' -device-option CROSS_COMPILE={cross_prefix_bare}'
+			' -no-use-gold-linker'
+			' -release'
+			' -static'
+			' -hostprefix {host_target}'
+			' -hostdatadir {host_target}/lib/qt'
+			' -hostbindir {host_target}/bin'
+			' -prefix {host_target}'
+			' -bindir {host_target}/bin'
+			' -archdatadir {host_target}/lib/qt'
+			' -datadir {host_target}/share/qt'
+			' -docdir {host_target}/share/doc/qt'
+			' -examplesdir {host_target}/share/qt/examples'
+			' -headerdir {host_target}/include/qt'
+			' -libdir {host_target}/lib'
+			' -plugindir {host_target}/lib/qt/plugins'
+			' -sysconfdir {host_target}/etc'
+			' -translationdir {host_target}/share/qt/translations'
+			' -no-icu'
+			' -opengl desktop'
+			' -no-glib'
+			' -accessibility'
+			' -make tools'
+			' -nomake examples'
+			' -nomake tests'
+			' -system-zlib'
+			' -system-libjpeg'
+			' -no-pch'
+			' -no-dbus'
+			' -no-direct2d'
+			' -no-openssl'
+			' !CMD({cross_prefix_full}pkg-config --cflags-only-I freetype2 bzip2 zlib)CMD!'
+		,
+		'custom_cflag' : '',
+		'depends_on' : [ 'libwebp', 'freetype2', 'libpng', 'libjpeg-turbo', 'pcre'], #openssl, only supports 1.0.1, so no. https://wiki.qt.io/Qt_5.8_Tools_and_Versions # -openssl -openssl-linked -I{compile_prefix}/include/openssl -L{compile_prefix}/lib/
+		'patches' : [ #thanks to the Arch & mxe community for some of those patches!: https://aur.archlinux.org/packages/mingw-w64-qt5-base-angle/                                                                                            'p0'),
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/qtbase-1-fixes_different.patch'                                                                        ,'p1','qtbase'),			
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/winextras/qtwinextras-1.patch'                                                                              ,'p1','qtwinextras'),
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-1.patch'                                                                                ,'p1','qtactiveqt'),		
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/winextras/0001-Fix-condition-for-_WIN32_IE-SHCreateItemFromParsingN.patch'                                  ,'p1','qtwinextras'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/webengine/0044-qt-5.4.0-win32-g%2B%2B-enable-qtwebengine-build.patch'                                       ,'p1'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/tools/0001-Fix-linguist-macro.patch'                                                                        ,'p1','qttools'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/multimedia/0001-Recorder-includes-to-prevent-conflict-with-vsnprintf.patch'                                 ,'p1','qtmultimedia'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/multimedia/0002-Fix-build-with-ANGLE.patch'                                                                 ,'p1','qtmultimedia'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/location/0001-Ensure-static-3rdparty-libs-are-linked-correctly.patch'                                       ,'p1','qtlocation'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/declarative/0001-Build-QML-dev-tools-as-shared-library.patch'                                               ,'p1','qtdeclarative'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/declarative/0002-Ensure-static-plugins-are-exported.patch'                                                  ,'p1','qtdeclarative'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/declarative/0003-Prevent-exporting-QML-parser-symbols-on-static-build.patch'                                ,'p1','qtdeclarative'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qt5-activeqt-fix-compilation.patch'                                                                ,'p0','qtactiveqt'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-fix-build.patch'                                                                        ,'p1','qtactiveqt'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-win64.patch'                                                                            ,'p1','qtactiveqt'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0001-Add-profile-for-cross-compilation-with-mingw-w64.patch'                                           ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0002-Ensure-GLdouble-is-defined-when-using-dynamic-OpenGL.patch'                                       ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0003-Use-external-ANGLE-library.patch'                                                                 ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0004-Fix-too-many-sections-assemler-error-in-OpenGL-facto.patch'                                       ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0005-Make-sure-.pc-files-are-installed-correctly.patch'                                                ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0006-Don-t-add-resource-files-to-LIBS-parameter.patch'                                                 ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0007-Prevent-debug-library-names-in-pkg-config-files.patch'                                            ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0008_5-hacky_non_priv_libs.patch'                                                                      ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0008-Fix-linking-against-shared-static-libpng.patch'                                                   ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0009-Fix-linking-against-static-D-Bus.patch'                                                           ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0010-Fix-linking-against-static-freetype2.patch'                                                       ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0011-Fix-linking-against-static-harfbuzz.patch'                                                        ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0012-Fix-linking-against-static-pcre.patch'                                                            ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0013-Fix-linking-against-shared-static-MariaDB.patch'                                                  ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0014-Fix-linking-against-shared-static-PostgreSQL.patch'                                               ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0015-Rename-qtmain-to-qt5main.patch'                                                                   ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0016-Build-dynamic-host-libraries.patch'                                                               ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0017-Enable-rpath-for-build-tools.patch'                                                               ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0018-Use-system-zlib-for-build-tools.patch'                                                            ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0019-Disable-determing-default-include-and-lib-dirs-at-qm.patch'                                       ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0020-Use-.dll.a-as-import-lib-extension.patch'                                                         ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0021-Merge-shared-and-static-library-trees.patch'                                                      ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0022-Allow-usage-of-static-version-with-CMake.patch'                                                   ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0023-Use-correct-pkg-config-static-flag.patch'                                                         ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0024-Fix-qt5_wrap_ui-macro.patch'                                                                      ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0025-Ignore-errors-about-missing-feature-static.patch'                                                 ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0026-Enable-and-fix-use-of-iconv.patch'                                                                ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0027-Ignore-failing-pkg-config-test.patch'                                                             ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0028-Include-uiviewsettingsinterop.h-correctly.patch'                                                  ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0029-Hardcode-linker-flags-for-libqwindows.dll.patch'                                                  ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0030-Prevent-qmake-from-messing-static-lib-dependencies.patch'                                         ,'p1','qtbase'),
+		],
+		#'run_post_patch' : [
+		#	'rm -rf src/3rdparty/angle include/QtANGLE/EGL',
+		#	'rm -rf src/3rdparty/angle include/QtANGLE/GLES2',
+		#	'rm -rf src/3rdparty/angle include/QtANGLE/GLES3',
+		#	'rm -rf src/3rdparty/angle include/QtANGLE/KHR',
+		#	'rm -rf src/3rdparty/pcre',
+		#	'rm -rf src/3rdparty/zlib',
+		#],
+		#'run_post_patch' : [
+		#	'if [ ! -f "{mingw_binpath}/pkg-config" ] ; then cp -nv "!CMD(which pkg-config)CMD!" "{mingw_binpath}/pkg-config" ; fi',
+		#	'if [ ! -f "{compile_prefix}/include/UIViewSettingsInterop.h" ] ; then cp -nv "{compile_prefix}/include/uiviewsettingsinterop.h" "{compile_prefix}/include/UIViewSettingsInterop.h" ; fi', # no clue why its lower case and why qt5 doesn't know either #fatal error: UIViewSettingsInterop.h: No such file or directory
+		#],
+		'env_exports' : {
+			'PKG_CONFIG' : '{cross_prefix_full}pkg-config',
+			'PKG_CONFIG_SYSROOT_DIR' : '/',
+			'PKG_CONFIG_LIBDIR' : '{compile_prefix}/lib/pkgconfig',
+			'CROSS_COMPILE' : '{cross_prefix_bare}',
+			#'OPENSSL_LIBS' : '!CMD({cross_prefix_full}pkg-config --libs-only-l openssl)CMD!',
+		},
+	},
+	'libjpeg-turbo' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-jpeg8',
+		'run_post_patch' : (
+			'autoreconf -fiv',
+		),
+		'patches': [
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-header-compat.mingw.patch',  'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-libmng-compatibility.patch', 'p1'),
+		],
+	},
+	'libpng' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.28/libpng-1.6.28.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libpng-1.6.28-apng.patch', 'p0'),
+		],
+	},
+	'harfbuzz' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.5.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --with-freetype --with-glib --enable-static=yes --enable-shared=no', #--with-graphite2 --with-cairo --with-icu --with-gobject 
+		'env_exports' : {
+			'CFLAGS'   : '-DGRAPHITE2_STATIC',
+			'CXXFLAGS' : '-DGRAPHITE2_STATIC',
+		},
+	},
+	'pcre' : {
+		'repo_type' : 'archive',
+		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-unicode-properties --enable-jit --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2',
+	},
+	
+	'd-bus' : {
+		'repo_type' : 'archive',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.10.16.tar.gz',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
+	},
+	'glib2' : {
+		'repo_type' : 'archive',
+		'url' : 'https://ftp.gnome.org/pub/gnome/sources/glib/2.50/glib-2.50.3.tar.xz',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
+		'depends_on' : [ 'pcre' ],
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0004-glib-prefer-constructors-over-DllMain.patch'               ,'Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0017-GSocket-Fix-race-conditions-on-Win32-if-multiple-thr.patch','p1' ),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0027-no_sys_if_nametoindex.patch'                               ,'Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0028-inode_directory.patch'                                     ,'Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/revert-warn-glib-compile-schemas.patch'                         ,'Rp1'),
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/use-pkgconfig-file-for-intl.patch'                              ,'p0' ),
+
+		],
+		'run_post_patch' : [
+			'./autogen.sh NOCONFIGURE=1',
+		],
+	},
+	'openssl' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.openssl.org/source/openssl-1.1.0e.tar.gz',
+		'configure_options' : '{bit_name3} --prefix={compile_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
+		'configure_path' : './Configure',
+		'install_target' : 'install_sw', # we don't need the docs..
+		'env_exports' : {
+			'CROSS_COMPILE' : '{cross_prefix_bare}',
+		},
+	},
+	'libfile_local' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/file/file.git',
+		'rename_folder' : 'libfile.git',
+		'configure_options': '--prefix={compile_prefix} --disable-shared --enable-static',
+		'needs_make' : False,
+		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
+		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
+		'run_post_patch' : [ 'autoreconf -fiv' ],
+	},
+	'mingw-libgnurx' : {
+		'repo_type' : 'archive',
+		'folder_name' : 'mingw-libgnurx-2.5.1',
+		'url' : 'https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix}', # --disable-shared --enable-static --enable-fsect-man5
+		'cpu_count' : '1', #...
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'run_post_configure' : [
+			'make -f Makefile.mingw-cross-env -j 1 TARGET={compile_target} bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS= install-static'
+			#'{cross_prefix_bare}ranlib libregex.a'
+			#'make -f "Makefile.mingw-cross-env" libgnurx.a V=1'
+		],
+		'patches' : [
+			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw-libgnurx-static.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libgnurx-1-build-static-lib.patch', 'p1' ),
+		],
+	},
+	'libfile' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/file/file.git',
+		'rename_folder' : 'libfile_local.git',
+		'patches' : [
+			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
+		],
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-fsect-man5',
+		'depends_on' : [ 'mingw-libgnurx', 'libfile_local' ],
+		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
+		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
+		'run_post_patch' : [ 'autoreconf -fiv' ],
+		'flipped_path' : True,
+	},
+	'libflac' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.xiph.org/flac.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+	},
 	'libarchive': {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libarchive.org/downloads/libarchive-3.3.1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-bsdtar --disable-bsdcat --disable-bsdcpio --without-openssl', #--without-xml2 --without-nettle
-		'depends_on' : (
+		'depends_on' : [
 			'bzip2', 'expat', 'zlib', 'liblzma', 'lzo'
-		)
+		]
 	},
 	'lzo': {
 		'repo_type' : 'archive',
@@ -1380,14 +1902,6 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
-	},
-	'libjpeg-turbo' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'run_post_patch' : (
-			'autoreconf -fiv',
-		),
 	},
 	'libcdio' : {
 		'repo_type' : 'archive',
@@ -1564,11 +2078,6 @@ DEPENDS = {
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '',
 	},
-	'libpng' : {
-		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.28/libpng-1.6.28.tar.gz',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-	},
 	'gmp' : { #todo try this.
 		#export CC_FOR_BUILD=/usr/bin/gcc idk if we need this anymore, compiles fine without.
 		#export CPP_FOR_BUILD=usr/bin/cpp
@@ -1657,7 +2166,7 @@ DEPENDS = {
 	'libwebp' : { # why can't everything be so easy to compile
 		'repo_type' : 'archive',
 		'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
 		'make_options': '',
 	},
 	'flite' : { # why can't everything be so easy to compile
@@ -1800,13 +2309,18 @@ DEPENDS = {
 	},
 	'freetype2' : { #todo try playing with this.
 		'repo_type' : 'archive',
-		'url' : 'https://download.videolan.org/contrib/freetype2/freetype-2.6.3.tar.gz',
-		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-png=no', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
+		'url' : 'https://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.bz2',
+		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-zlib={compile_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
+		'patches' : [
+			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0002-Enable-subpixel-rendering.patch?h=mingw-w64-freetype2',          'Np1'),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
+		],
 		#'make_options': '', # nor does it like the default make options..
-		'run_after_install': (
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
-		),
+		#'run_after_install': (
+		#	'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
+		#),
 	},
 	'expat' : {
 		'repo_type' : 'archive',
@@ -1889,7 +2403,7 @@ DEPENDS = {
 	},
 	'vamp_plugin' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dsix.tech/vamp-plugin-sdk-2.7.1.tar.gz', #todo obv move to a real host. (implement dl without filesize)
+		'url' : 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz', #todo obv move to a real host. (implement dl without filesize)
 		'run_post_patch': (
 			'cp -v build/Makefile.mingw64 Makefile',
 		),
@@ -1949,7 +2463,7 @@ DEPENDS = {
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
 		),
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm --disable-frontend',
 		'make_options': '',
 	},
 	'twolame' : {
