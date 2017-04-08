@@ -1,0 +1,12 @@
+diff -ur vorbis-tools_git/intl/localename.c vorbis-tools_git_patched/intl/localename.c
+--- vorbis-tools_git/intl/localename.c	2017-03-30 13:13:12.821267890 +0200
++++ vorbis-tools_git_patched/intl/localename.c	2017-03-30 13:12:35.593598270 +0200
+@@ -1386,7 +1386,7 @@
+       case LANG_SINDHI:
+ 	switch (sub)
+ 	  {
+-	  case SUBLANG_SINDHI_PAKISTAN: return "sd_PK";
++	  /*case SUBLANG_SINDHI_PAKISTAN: return "sd_PK";*/
+ 	  case SUBLANG_SINDHI_AFGHANISTAN: return "sd_AF";
+ 	  }
+ 	return "sd";

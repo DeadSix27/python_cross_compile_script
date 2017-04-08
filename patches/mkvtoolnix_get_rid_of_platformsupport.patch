@@ -1,0 +1,12 @@
+diff -ur mkvtoolnix_git/ac/qt5.m4 mkvtoolnix_git.patched/ac/qt5.m4
+--- mkvtoolnix_git/ac/qt5.m4	2017-04-04 18:44:35.420776241 +0200
++++ mkvtoolnix_git.patched/ac/qt5.m4	2017-04-04 18:44:26.038924644 +0200
+@@ -242,7 +242,7 @@
+ 
+       wanted_plugin=`echo $wanted_include | tr '[A-Z]' '[a-z]'`
+ 
+-      QT_LIBS="-L$plugins_dir/platforms -lq$wanted_plugin $QT_LIBS -lQt5PlatformSupport"
++      QT_LIBS="-L$plugins_dir/platforms -lq$wanted_plugin $QT_LIBS -lQt5EventDispatcherSupport -lQt5AccessibilitySupport -lQt5FontDatabaseSupport -lQt5ThemeSupport -lgdi32 -lfreetype -lbz2"
+ 
+       wanted_include=Q"$wanted_include"IntegrationPlugin
+ 

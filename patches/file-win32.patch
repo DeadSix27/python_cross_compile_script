@@ -1,0 +1,11 @@
+--- a/magic/Makefile.am.orig	2016-05-05 16:03:00.098000000 +0000
++++ b/magic/Makefile.am	2016-05-05 16:03:32.336000000 +0000
+@@ -286,7 +286,7 @@
+ # FIXME: Build file natively as well so that it can be used to compile
+ # the target's magic file; for now we bail if the local version does not match
+ if IS_CROSS_COMPILE
+-FILE_COMPILE = file${EXEEXT}
++FILE_COMPILE = file # ${EXEEXT}
+ FILE_COMPILE_DEP =
+ else
+ FILE_COMPILE = $(top_builddir)/src/file${EXEEXT}
