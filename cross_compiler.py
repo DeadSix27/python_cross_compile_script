@@ -496,14 +496,55 @@ class CrossCompileScript:
 				self.logger.debug("HG clone already up to date")
 			os.chdir("..")
 		else:
-			self.logger.info("HG cloning '%s' to '%s'" % (url,dir))
+			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
 			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
-			os.system('mv "{0}" "{1}"')
-			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,dir))
+			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
+			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,realFolderName))
 
 		return realFolderName
 	#:
-	def git_clone(self, url, dir = None, desiredBranch = None, renameFolder = None, recursive = True):
+	def git_clone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None,recursive=False):
+		if virtFolderName == None:
+			virtFolderName = self.sanitize_filename(os.path.basename(url))
+			if not virtFolderName.endswith(".git"): virtFolderName += ".git"
+			virtFolderName = virtFolderName.replace(".git","_git")
+		else:
+			virtFolderName = self.sanitize_filename(virtFolderName)
+
+		realFolderName = virtFolderName
+		if renameTo != None:
+			realFolderName = renameTo
+
+		if os.path.isdir(realFolderName):
+			os.chdir(realFolderName)
+			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
+			self.run_process('git checkout')
+			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
+			if gitVersion != gitVersionNew:
+				self.logger.debug("GIT clone has code changes, updating")
+				self.run_process('git fetch')
+				self.run_process('git reset --hard FETCH_HEAD')	
+				self.run_process('git clean -df')
+				self.removeAlreadyFiles()
+			else:
+				self.logger.debug("GIT clone already up to date")
+			os.chdir("..")
+		else:
+			branch = ""
+			if desiredBranch != None:
+				branch = " -b {0}".format(desiredBranch)
+			recur = ""
+			if recursive:
+				recur = " --recursive"
+				
+			self.logger.info("GIT cloning '%s' to '%s'" % (url,realFolderName))
+			self.run_process('git clone{0}{1} "{2}" "{3}"'.format(branch,recur,url,realFolderName + ".tmp" ))
+			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
+			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url,realFolderName))
+
+		return realFolderName
+	#:
+	def git_clone_b(self, url, dir = None, desiredBranch = None, renameFolder = None, recursive = True):
 		if dir == None:
 			dir = self.sanitize_filename(os.path.basename(url))
 			if not dir.endswith(".git"): dir += ".git"
@@ -548,8 +589,11 @@ class CrossCompileScript:
 			self.logger.info("Checking out git master")
 			self.run_process('git checkout master')
 			if git_get_latest == True: # to be implemented
-			  self.logger.info("Updating to latest '%s' git version [origin/master]..." % (dir))
-			  self.run_process('git merge origin/master')
+				self.logger.info("Updating to latest '%s' git version..." % (dir))
+				self.run_process('git reset --hard')
+				self.run_process('git clean -f -d')
+				self.run_process('git pull')
+				self.run_process('git merge origin/master')
 		else:
 			self.logger.info('git checkout\'ing "%s"' % (desiredBranch))
 			self.run_process('git checkout "%s"'% (desiredBranch))
@@ -656,8 +700,10 @@ class CrossCompileScript:
 				renameFolder = data['rename_folder']
 
 		if data["repo_type"] == "git":
-			branch = self.getValueOrNone(data,'branch')
-			workDir = self.git_clone(data["url"],None,branch,renameFolder,self.getValueOrNone(data,'recursive_git'))
+			branch     = self.getValueOrNone(data,'branch')
+			recursive  = self.getValueOrNone(data,'recursive_git')
+			folderName = self.getValueOrNone(data,'folder_name')
+			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
 		if data['repo_type'] == "hg":
@@ -852,8 +898,10 @@ class CrossCompileScript:
 				renameFolder = data['rename_folder']
 
 		if data["repo_type"] == "git":
-			branch = self.getValueOrNone(data,'branch')
-			workDir = self.git_clone(data["url"],None,branch,renameFolder,self.getValueOrNone(data,'recursive_git'))
+			branch     = self.getValueOrNone(data,'branch')
+			recursive  = self.getValueOrNone(data,'recursive_git')
+			folderName = self.getValueOrNone(data,'folder_name')
+			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
 		if data['repo_type'] == "hg":
@@ -1228,9 +1276,9 @@ class CrossCompileScript:
 
 			self.run_process('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt ))
 
-			if 'run_after_install' in data:
-				if data['run_after_install'] != None:
-					for cmd in data['run_after_install']:
+			if 'run_post_install' in data:
+				if data['run_post_install'] != None:
+					for cmd in data['run_post_install']:
 						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1335,7 +1383,7 @@ class CrossCompileScript:
 			return ""
 	#:
 	
-PRODUCT_ORDER = ('mediainfo','mediainfo_dll', 'x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static')
+PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2')
 
 PRODUCTS = {
 	'x264_10bit' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
@@ -1373,6 +1421,22 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib', 'gnutls'
 		),
+	},
+	'aria2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/aria2/aria2.git',
+		'configure_options':
+			' --host={compile_target} --prefix={product_prefix}/aria2_git.installed'
+			' --without-included-gettext --disable-nls --disable-shared --enable-static'
+			' --without-openssl --with-libexpat --with-libz --with-libgmp --without-libgcrypt'
+			' --without-libnettle --with-cppunit-prefix={compile_prefix} ARIA2_STATIC=yes' # --without-gnutls --without-libxml2 --with-sqlite3 --with-libssh2 --with-libcares
+		,
+		'run_post_patch' : [
+			'autoreconf -fiv'
+		],
+		'run_post_install': [
+			'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
+		]
 	},
 	'ffmpeg_static' : {
 		'repo_type' : 'git',
@@ -1443,12 +1507,13 @@ PRODUCTS = {
 			' QT_LIBS="-lws2_32 -lprcre"'
 		,
 		'depends_on' : [
-			'libfile','libflac','boost','qt5'
+			'libfile','libflac','boost','qt5', 'gettext'
 		],
-		'patches':
-		{
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_get_rid_of_platformsupport.patch', 'p1'),
-		},
+		#'patches':
+		#{
+		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_get_rid_of_platformsupport.patch', 'p1'),
+		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_fix_qmediaplayer.patch', 'p1'),
+		#},
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
 		},
@@ -1486,7 +1551,7 @@ PRODUCTS = {
 			'mv {compile_prefix}/lib/libgsm.a {compile_prefix}/lib/libgsm.a.disabled',
 			'mv {compile_prefix}/include/gsm {compile_prefix}/include/gsm.disabled',
 		),
-		'run_after_install' : (
+		'run_post_install' : (
 			'mv {compile_prefix}/lib/libgsm.a.disabled {compile_prefix}/lib/libgsm.a',
 			'mv {compile_prefix}/include/gsm.disabled {compile_prefix}/include/gsm',
 		),
@@ -1513,7 +1578,7 @@ PRODUCTS = {
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 		),
-		'run_after_install': (
+		'run_post_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
 		),
@@ -1654,11 +1719,9 @@ DEPENDS = {
 	},
 	
 	'qt5' : {
-		'_already_built' : True,
 		'repo_type' : 'archive',
 		'url' : 'https://download.qt.io/official_releases/qt/5.8/5.8.0/single/qt-everywhere-opensource-src-5.8.0.tar.gz',
 		'configure_options' :
-		
 			' -opensource'
 			' -force-pkg-config'
 			' -confirm-license'
@@ -1695,7 +1758,7 @@ DEPENDS = {
 			' -no-dbus'
 			' -no-direct2d'
 			' -no-openssl'
-			' !CMD({cross_prefix_full}pkg-config --cflags-only-I freetype2 bzip2 zlib)CMD!'
+			' !CMD({cross_prefix_full}pkg-config --cflags-only-I freetype2 zlib)CMD!'
 		,
 		'custom_cflag' : '',
 		'depends_on' : [ 'libwebp', 'freetype2', 'libpng', 'libjpeg-turbo', 'pcre'], #openssl, only supports 1.0.1, so no. https://wiki.qt.io/Qt_5.8_Tools_and_Versions # -openssl -openssl-linked -I{compile_prefix}/include/openssl -L{compile_prefix}/lib/
@@ -1864,6 +1927,14 @@ DEPENDS = {
 			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libgnurx-1-build-static-lib.patch', 'p1' ),
 		],
 	},
+	'gettext' : {
+		'repo_type' : 'archive',
+		'url' : 'http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
+	},
+	# build_gettext() {
+		# generic_download_and_install http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.7.tar.xz gettext-0.19.7 "CFLAGS=-O2 CXXFLAGS=-O2 LIBS=-lpthread"
+	# }
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
@@ -1940,7 +2011,7 @@ DEPENDS = {
 		'run_post_patch' : (
 			'autoreconf -i',
 		),
-		'run_after_install' : (
+		'run_post_install' : (
 			'sed -i.bak \'s/-ldvdread/-ldvdread -ldvdcss/\' "{pkg_config_path}/dvdread.pc"', # fix undefined reference to `dvdcss_close'
 		),
 	},
@@ -1963,7 +2034,7 @@ DEPENDS = {
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libbluray_git_remove_strtok_s.patch', 'p1'),
 		),
-		'run_after_install' : (
+		'run_post_install' : (
 			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
 		),
 		'depends_on' : (
@@ -2112,7 +2183,7 @@ DEPENDS = {
 		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring',
 		'make_options': '',
-		'run_after_install': ( # list of commands to run after make install variables can be found somewhere.
+		'run_post_install': ( # list of commands to run after make install variables can be found somewhere.
 			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
 		)
 	},
@@ -2210,7 +2281,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL-1.2.15.tar.gz',
 		'custom_cflag' : '-DDECLSPEC=',# avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
-		"run_after_install": (
+		"run_post_install": (
 			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl.pc"', # allow ffmpeg to output anything to console :|
 			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl-config" "{cross_prefix_full}sdl-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
@@ -2225,7 +2296,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
-		"run_after_install": (
+		"run_post_install": (
 			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
 			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
@@ -2302,7 +2373,7 @@ DEPENDS = {
 		'run_post_configure': (
 			'sed -i.bak \'s/testsuite//\' Makefile',
 		),
-		'run_after_install': (
+		'run_post_install': (
 			'sed -i.bak \'s/-lschroedinger-1.0$/-lschroedinger-1.0 -lorc-0.4/\' "{pkg_config_path}/schroedinger-1.0.pc"',
 		),
 
@@ -2318,7 +2389,7 @@ DEPENDS = {
 			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
 		],
 		#'make_options': '', # nor does it like the default make options..
-		#'run_after_install': (
+		#'run_post_install': (
 		#	'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		#),
 	},
@@ -2332,7 +2403,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python',
-		'run_after_install' : (
+		'run_post_install' : (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lxml2/Libs: -L${{libdir}} -lxml2 -lz -llzma -liconv -lws2_32/\' "{pkg_config_path}/libxml-2.0.pc"', # libarchive complaints without this.
 		),
 	},
@@ -2348,7 +2419,7 @@ DEPENDS = {
 		'run_post_configure': (
 			'sed -i.bak "s/-mno-cygwin//" platform.inc',
 		),
-		'run_after_install': (
+		'run_post_install': (
 			'rm -v {compile_prefix}/lib/xvidcore.dll.a',
 			'mv -v {compile_prefix}/lib/xvidcore.a {compile_prefix}/lib/libxvidcore.a',
 		),
@@ -2360,7 +2431,7 @@ DEPENDS = {
 		'folder_name' : 'xavs_svn',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --cross-prefix={cross_prefix_bare}',
 		'make_options': '',
-		'run_after_install' : (
+		'run_post_install' : (
 			'rm -f NUL', # I will not even ask.
 		)
 	},
@@ -2527,7 +2598,7 @@ DEPENDS = {
 		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.8.5/libmodplug-0.8.8.5.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '',
-		'run_after_install': (
+		'run_post_install': (
 			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] http://trac.ffmpeg.org/ticket/1539
 			'sed -i.bak \'s/-lmodplug.*/-lmodplug -lstdc++/\' "{pkg_config_path}/libmodplug.pc"', # huh ?? c++?
 			'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
@@ -2577,7 +2648,7 @@ DEPENDS = {
 		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-docs',
 		'make_options': '',
-		'run_after_install': (
+		'run_post_install': (
 			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
 		),
 	},
@@ -2595,7 +2666,7 @@ DEPENDS = {
 		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '',
-		'run_after_install': (
+		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
 		),
 	},
@@ -2632,7 +2703,7 @@ DEPENDS = {
 		'needs_configure': False,
 		'install_options' : 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={compile_prefix} LIB_GNUTLS="-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
 		'make_options': 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={compile_prefix} LIB_GNUTLS="-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
-		'run_after_install':(
+		'run_post_install':(
 			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
 		),
 	},
