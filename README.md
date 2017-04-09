@@ -14,8 +14,51 @@ Basically does the same thing, just in a pythonic way with a JSON-like program/d
 
 ---
 
+# System requirements:
 
-### A simple make project can look like this:
+* Python3 (tested on Python 3.5.2)
+* GNU/Linux (tested on Ubuntu 16.10)
+* wget, sed, diff
+* Build-packages, e.g `build-essential, autotools` etc those are not detected yet..
+* around 20GB free space depending on how many products you want it to compile.
+* Some programs may require aditional packages, e.g `xsltproc, docbook-utils, rake` those are unfortunately not yet automatically detected
+
+# Usage
+
+```bash
+chmod u+x cross_compiler.py && ./cross_compiler.py
+```
+
+
+# Configuration options:
+
+Compile specific configs,
+you can order them how you like, or remove some, etc.
+```python
+PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2', 'vlc')
+```
+General configs:
+
+```python
+_CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
+#_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
+_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
+_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
+_LOG_DATEFORMAT = '%H:%M:%S'
+_QUIET = False #not recommended, but sure looks nice...
+_WORKDIR = "workdir"
+_MINGW_DIR = "xcompilers"
+_BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
+_DOWNLOADER = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
+_ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
+```
+
+___
+
+
+## Adding your own programs:
+
+#### A simple make project can look like this:
 
 ```python
 'foobar' : {
@@ -114,26 +157,3 @@ You can always just check the predefined projects for ideas and wether I missed 
 	'_already_built': True                        # ( Set by system, but theoretically setting this to true will ALWAYS skip and NEVER build this proejct )
 },
 ```
-
-
-# Configuration options:
-
-```python
-_CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-#_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
-_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
-_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
-_LOG_DATEFORMAT = '%H:%M:%S'
-_QUIET = False #not recommended, but sure looks nice...
-_WORKDIR = "workdir"
-_MINGW_DIR = "xcompilers"
-_BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_DOWNLOADER = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
-_ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
-```
-
-# System requirements:
-
-* Python3 (tested on Python 3.5.2)
-* GNU/Linux (tested on Ubuntu 16.10)
-* wget, sed, diff
