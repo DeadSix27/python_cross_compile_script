@@ -84,10 +84,14 @@ compile_prefix               # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w6
 compile_target               # e.g x86_64-w64-mingw32
 bit_name                     # e.g x86_64
 bit_name2                    # e.g x86/x86_64
+bit_name3                    # e.g mingw64/mingw
 bit_name_win                 # e.g win64/win32
 bit_num                      # e.g 64
 product_prefix               # x86_64_products
 compile_pefix_sed_escaped    # compile_prefix with / escaped to \/
+make_cpu_count               # -j 4
+original_cflags              # value of _ORIG_CFLAGS
+cflag_string                 # needed for x264/ffmpeg, produces a string like: "--extra-cflags=-march=skylake --extra-cflags=-O3"
 ```
 
 
