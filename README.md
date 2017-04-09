@@ -26,6 +26,7 @@ Basically does the same thing, just in a pythonic way with a JSON-like program/d
 # Usage
 
 ```bash
+wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
 
