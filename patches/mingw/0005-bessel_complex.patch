@@ -11,8 +11,8 @@ Subject: [PATCH] Allow to use bessel and complex functions without undefining
 
 diff --git a/mingw-w64-headers/crt/math.h b/mingw-w64-headers/crt/math.h
 index b06ca79..d3617d0 100644
---- a/math.h
-+++ b/math.h
+--- a/mingw-w64-headers/crt/math.h
++++ b/mingw-w64-headers/crt/math.h
 @@ -263,7 +263,7 @@ extern "C" {
  #define EDOM 33
  #define ERANGE 34

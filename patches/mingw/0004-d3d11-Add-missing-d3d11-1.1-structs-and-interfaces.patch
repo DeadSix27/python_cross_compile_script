@@ -10,8 +10,8 @@ Subject: [PATCH 4/6] d3d11: Add missing d3d11 1.1 structs and interfaces
 
 diff --git a/mingw-w64-headers/direct-x/include/d3d11_1.h b/mingw-w64-headers/direct-x/include/d3d11_1.h
 index 51ca735..2460b3d 100644
---- a/d3d11_1.h
-+++ b/d3d11_1.h
+--- a/mingw-w64-headers/direct-x/include/d3d11_1.h
++++ b/mingw-w64-headers/direct-x/include/d3d11_1.h
 @@ -59,6 +59,11 @@ typedef interface ID3D11Device1 ID3D11Device1;
  extern "C" {
  #endif
@@ -26,8 +26,8 @@ index 51ca735..2460b3d 100644
      D3D11_LOGIC_OP_SET = 1,
 diff --git a/mingw-w64-headers/direct-x/include/d3d11_1.idl b/mingw-w64-headers/direct-x/include/d3d11_1.idl
 index 1a46abf..319d522 100644
---- a/d3d11_1.idl
-+++ b/d3d11_1.idl
+--- a/mingw-w64-headers/direct-x/include/d3d11_1.idl
++++ b/mingw-w64-headers/direct-x/include/d3d11_1.idl
 @@ -22,6 +22,12 @@ import "dxgi1_2.idl";
  import "d3dcommon.idl";
  import "d3d11.idl";

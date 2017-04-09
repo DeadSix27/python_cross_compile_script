@@ -10,8 +10,8 @@ Subject: [PATCH 3/6] dxgi: Add missing dxgi 1.2 structs and interfaces
 
 diff --git a/mingw-w64-headers/direct-x/include/dxgi1_2.h b/mingw-w64-headers/direct-x/include/dxgi1_2.h
 index de3f359..3af09c7 100644
---- a/dxgi1_2.h
-+++ b/dxgi1_2.h
+--- a/mingw-w64-headers/direct-x/include/dxgi1_2.h
++++ b/mingw-w64-headers/direct-x/include/dxgi1_2.h
 @@ -17,6 +17,16 @@
  
  /* Forward declarations */
@@ -786,8 +786,8 @@ index de3f359..3af09c7 100644
  
 diff --git a/mingw-w64-headers/direct-x/include/dxgi1_2.idl b/mingw-w64-headers/direct-x/include/dxgi1_2.idl
 index 92f9c0e..838521e 100644
---- a/dxgi1_2.idl
-+++ b/dxgi1_2.idl
+--- a/mingw-w64-headers/direct-x/include/dxgi1_2.idl
++++ b/mingw-w64-headers/direct-x/include/dxgi1_2.idl
 @@ -1,5 +1,6 @@
  /*
   * Copyright 2014 Jacek Caban for CodeWeavers
