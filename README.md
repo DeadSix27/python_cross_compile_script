@@ -29,15 +29,16 @@ Basically does the same thing, just in a pythonic way with a JSON-like program/d
 wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
-
+### Note:
+Products are defined in `PRODUCT_ORDER` like:
+```python
+PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2')
+```
+You can just removce specific programs if you do not need them!!
+E.g `PRODUCT_ORDER = ('x264_10bit')` will only build x264 10bit
 
 # Configuration options:
 
-Compile specific configs,
-you can order them how you like, or remove some, etc.
-```python
-PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2', 'vlc')
-```
 General configs:
 
 ```python
