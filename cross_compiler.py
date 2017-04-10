@@ -1357,7 +1357,7 @@ class CrossCompileScript:
 	def getValueOrNone(self,db,k):
 		if k in db:
 			if db[k] == None:
-				return Nonev
+				return None
 			else:
 				return db[k]
 		else:
