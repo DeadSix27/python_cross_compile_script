@@ -18,10 +18,17 @@ Basically does the same thing, just in a pythonic way with a JSON-like program/d
 
 * Python3 (tested on Python 3.5.2)
 * GNU/Linux (tested on Ubuntu 16.10)
-* wget, sed, diff
-* Build-packages, e.g `build-essential, autotools` etc those are not detected yet..
-* around 20GB free space depending on how many products you want it to compile.
-* Some programs may require aditional packages, e.g `xsltproc, docbook-utils, rake` those are unfortunately not yet automatically detected
+* For all packages at least 20GB of free Space (SSD recommended)
+
+# Package requirements (not yet auto-installed, and not fully listed)
+```
+OpenSUSE Tumbleweed:
+sudo zypper install makeinfo spax python3 git-core yasm
+sudo zypper install --type pattern devel_C_C++
+and probably some more... gyp etc
+
+For other systems see RDP's script
+```
 
 # Usage
 
