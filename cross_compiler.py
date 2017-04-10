@@ -1988,6 +1988,9 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-bsdtar --disable-bsdcat --disable-bsdcpio --without-openssl', #--without-xml2 --without-nettle
 		'depends_on' : [
 			'bzip2', 'expat', 'zlib', 'liblzma', 'lzo'
+		],
+		'run_post_install' : [
+			'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
 		]
 	},
 	'lzo': {
@@ -2257,8 +2260,8 @@ DEPENDS = {
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
 		#],
 		'run_post_patch': [
 			'autoreconf -fi -I M4',
