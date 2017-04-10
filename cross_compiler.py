@@ -1387,7 +1387,7 @@ class CrossCompileScript:
 			return ""
 	#:
 	
-PRODUCT_ORDER = ('aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'vlc')
+PRODUCT_ORDER = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
 
 PRODUCTS = {
 	'x264_10bit' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
