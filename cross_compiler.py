@@ -519,7 +519,7 @@ class CrossCompileScript:
 		if os.path.isdir(realFolderName):
 			os.chdir(realFolderName)
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
-			self.logger.debug("GIT Checking out: '{0}'".format( "master" if desiredBranch == None else branchString ))
+			self.logger.debug("GIT Checking out:{0}".format( "master" if desiredBranch == None else branchString ))
 			self.run_process('git checkout{0}'.format(branchString))
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
@@ -540,7 +540,7 @@ class CrossCompileScript:
 			self.run_process('git clone{0} "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				os.chdir(realFolderName + ".tmp")
-				self.logger.debug("GIT Checking out: '{0}'".format(branchString))
+				self.logger.debug("GIT Checking out:{0}".format(branchString))
 				self.run_process('git checkout{0}'.format(branchString))
 				os.chdir("..")
 			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
@@ -1459,7 +1459,7 @@ PRODUCTS = {
 			' --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -1483,7 +1483,7 @@ PRODUCTS = {
 			' --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme --enable-runtime-cpudetect', #' --extra-cflags=-march=skylake'#' --extra-cflags=-O3' # dont seem needed
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -1526,15 +1526,9 @@ PRODUCTS = {
 		'depends_on' : [
 			'libfile','libflac','boost','qt5', 'gettext'
 		],
-		#'patches':
-		#{
-		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_get_rid_of_platformsupport.patch', 'p1'),
-		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_fix_qmediaplayer.patch', 'p1'),
-		#},
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
 		},
-		#'debug_exitafter':True,
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -1737,7 +1731,10 @@ DEPENDS = {
 			'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
 			'if [ ! -f "already_done" ] ; then make install PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
-		)
+		),
+		'packages': {
+			'ubuntu' : [ 'gyp' ],
+		},
 	},
 	
 	'qt5' : {
@@ -2157,7 +2154,7 @@ DEPENDS = {
 			' --disable-doc --disable-programs',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -2250,6 +2247,9 @@ DEPENDS = {
 		'depends_on' : [
 			'gmp', 'libnettle',
 		],
+		'packages': {
+			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
+		},
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -2277,6 +2277,10 @@ DEPENDS = {
 		],
 		'run_post_install' : [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lsndfile/Libs: -L${{libdir}} -lsndfile -lFLAC -lvorbis -lvorbisenc -logg -lspeex/\' "{pkg_config_path}/sndfile.pc"', #issue with rubberband not using pkg-config option "--static" or so idk?
+		],
+		'depends_on': 
+		[
+			'libspeex',
 		],
 	},
 	'libbs2b' : {
@@ -2411,7 +2415,7 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '',
 	},
-	'ibspeex' : {
+	'libspeex' : {
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
 		'url' : 'https://github.com/xiph/speex.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
@@ -2592,9 +2596,18 @@ DEPENDS = {
 		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
 			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/ladspa.h',
 		),
+		'env_exports' : {
+			'AR' : '{cross_prefix_bare}ar',
+			'CC' : '{cross_prefix_bare}gcc',
+			'PREFIX' : '{compile_prefix}',
+			'RANLIB' : '{cross_prefix_bare}ranlib',
+			'LD'     : '{cross_prefix_bare}ld',
+			'STRIP'  : '{cross_prefix_bare}strip',
+			'CXX'    : '{cross_prefix_bare}g++',
+		},
 		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'make_options': '{make_prefix_options}',
 		'needs_make_install' : False,
 		'run_post_make' : (
 			'cp lib/* "{compile_prefix}/lib"',
