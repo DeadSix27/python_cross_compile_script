@@ -74,13 +74,13 @@ target_i686='i686-w64-mingw32'
 target_x86_64='x86_64-w64-mingw32'
 
 ## Versions
-mingw_w64_release_ver='4.0.6' # we just use git anyway :)
+mingw_w64_release_ver='git' #4.0.6 we just use git anyway :)
 gcc_release_ver='6.3.0' # 6.1.0 has problems with 64 bit ffmpeg with c++ deps
 gcc_old_release_ver='4.9.4' # default if none specified, was 4.9.4 cannot be same as gcc_release_ver above, apparently, as a note...
-mpfr_release_ver='3.1.3'
+mpfr_release_ver='3.1.5' #3.1.3
 mpc_release_ver='1.0.3'
-binutils_release_ver='2.27'
-gmp_release_ver='6.1.1'
+binutils_release_ver='2.28' #2.27
+gmp_release_ver='6.1.2' # 6.1.1
 isl_release_ver='0.16.1'
 pthreads_w32_release_ver='2-9-1'
 
@@ -315,8 +315,8 @@ if [[ "$enabled_langs" != *,* ]]; then
 fi
 
 case "$gcc_ver" in
-  $gcc_old_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-host-libstdcxx="-lstdc++" --with-cloog="$cloog_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto  > >(build_log) 2>&1 ;;
-  $gcc_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto  > >(build_log) 2>&1 || print_error ;;
+  $gcc_old_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-host-libstdcxx="-lstdc++" --with-cloog="$cloog_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto --enable-threads=posix > >(build_log) 2>&1 ;;
+  $gcc_release_ver ) "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto --enable-threads=posix > >(build_log) 2>&1 || print_error ;;
 esac
 }
 
@@ -563,7 +563,7 @@ build_binutils () {
 cd "$pkgs_dir" || print_error
 create_pkg_dirs 'binutils' || print_error
 if [[ "$binutils_ver" != 'git' ]]; then
-  download_extract "http://ftp.gnu.org/gnu/binutils/binutils-$binutils_ver.tar.bz2" "ftp://ftp.gnu.org/gnu/binutils/binutils-$binutils_ver.tar.bz2"
+  download_extract "https://ftp.gnu.org/gnu/binutils/binutils-$binutils_ver.tar.bz2" "ftp://ftp.gnu.org/gnu/binutils/binutils-$binutils_ver.tar.bz2"
 else
   git_dl "binutils" "git://sourceware.org/git/binutils-gdb.git"
 fi
@@ -641,10 +641,10 @@ local mingw_w64_prefix="$2"
 if [ "$gcc_ver" == "6.3.0" ]; then # We only support 6.3.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
 	cd "mingw-w64-$mingw_w64_ver"
 		echo "Patching mingw headers"
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw/0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw/0004-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch" -O --fail || exit 1
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw/0005-bessel_complex.patch" -O --fail || exit 1
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw/0006-processor_format.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/0004-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/0005-bessel_complex.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/0006-processor_format.patch" -O --fail || exit 1
 		echo "applying patch 0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch"
 		patch -p1 < "0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch"
 		echo "applying patch 0004-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch"
@@ -707,13 +707,13 @@ if [[ -n $CC ]]; then
 fi
 
 # Build gmp
-std_compile 'gmp' "$gmp_release_ver" "https://gmplib.org/download/gmp//gmp-$gmp_release_ver.tar.xz" "../source/gmp-6.1.1/configure" --build="$system_type" --prefix="$gmp_prefix" --enable-fat --enable-static --enable-cxx CPPFLAGS='-fexceptions'
+std_compile 'gmp' "$gmp_release_ver" "https://gmplib.org/download/gmp/gmp-$gmp_release_ver.tar.xz" "../source/gmp-6.1.1/configure" --build="$system_type" --prefix="$gmp_prefix" --enable-fat --enable-static --enable-cxx CPPFLAGS='-fexceptions'
 
 #build mpfr
-std_compile 'mpfr' "$mpfr_release_ver" "http://ftp.gnu.org/gnu/mpfr/mpfr-$mpfr_release_ver.tar.xz" "../source/mpfr-$mpfr_release_ver/configure" --build="$system_type" --prefix="$mpfr_prefix" --disable-shared --enable-static --with-gmp="$gmp_prefix"
+std_compile 'mpfr' "$mpfr_release_ver" "https://ftp.gnu.org/gnu/mpfr/mpfr-$mpfr_release_ver.tar.xz" "../source/mpfr-$mpfr_release_ver/configure" --build="$system_type" --prefix="$mpfr_prefix" --disable-shared --enable-static --with-gmp="$gmp_prefix"
 
 #build mpc
-std_compile 'mpc' "$mpc_release_ver" "http://ftp.gnu.org/gnu/mpc/mpc-$mpc_release_ver.tar.gz" "../source/mpc-$mpc_release_ver/configure" --build="$system_type" --prefix="$mpc_prefix" --with-gmp="$gmp_prefix" --with-mpfr="$mpfr_prefix" --disable-shared --enable-static
+std_compile 'mpc' "$mpc_release_ver" "https://ftp.gnu.org/gnu/mpc/mpc-$mpc_release_ver.tar.gz" "../source/mpc-$mpc_release_ver/configure" --build="$system_type" --prefix="$mpc_prefix" --with-gmp="$gmp_prefix" --with-mpfr="$mpfr_prefix" --disable-shared --enable-static
 
 #build isl
 std_compile 'isl' "$isl_ver" "http://ftp.vim.org/languages/gcc/infrastructure/isl-$isl_ver.tar.bz2" "../source/isl-$isl_ver/configure" --prefix="$isl_prefix" --build="$system_type" --enable-static --disable-shared --with-gmp-prefix="$gmp_prefix" --with-piplib=no --with-clang=no
@@ -730,12 +730,12 @@ cd "$pkgs_dir" || print_error
 create_pkg_dirs 'gcc'
 cd "$pkgs_dir/gcc/source" || print_error
 if [[ "$gcc_ver" != 'svn' ]]; then
-	download_extract "http://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2" "ftp://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2"
+	download_extract "https://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2" "ftp://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2"
 	
 	if [ "$gcc_ver" == "6.3.0" ]; then #DeadSix27: Patch gcc 6.3.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
 		cd gcc-"$gcc_ver"
 			echo "Patching GCC 6.3.0 weak refs"
-			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
+			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
 			echo "applying patch"
 			patch -p1 < "gcc_6_3_0_weak_refs_x86_64.patch"
 			echo "Done"
@@ -794,6 +794,10 @@ rm -fr "./$mingw_w64_target/lib"
 cd "./$mingw_w64_target"
 ln -s '../lib' './lib'
 
+if [[ "$thread_lib" != 'disable' ]]; then
+  build_thread_lib "$mingw_w64_target" "$mingw_w64_prefix" || print_error
+fi
+
 # Build GCC
 cd "$pkgs_dir/gcc/build" || print_error
 build_progress 'gcc target-libgcc' 'Building'
@@ -811,10 +815,6 @@ build_progress 'done'
 build_progress 'gcc' 'Installing'
 make install-strip > >(build_log) 2>&1 || print_error
 build_progress 'done'
-
-if [[ "$thread_lib" != 'disable' ]]; then
-  build_thread_lib "$mingw_w64_target" "$mingw_w64_prefix" || print_error
-fi
 
 if [[ "$enable_gendef" = 'yes' ]]; then
   cd "$mingw_w64_build_dir" || print_error
@@ -889,13 +889,13 @@ mkdir -p 'pkgs' 'source' 'build'
 cd 'pkgs' || print_error
 rm -fr 'config.guess'
 build_progress 'config.guess' 'Downloading'
-wget -nv -O config.guess 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' > >(build_log) 2>&1 || { ping -c 1 git.savannah.gnu.org >/dev/null 2>&1 || printf '\nsavannah.gnu.org seems to be offline right now and is needed to download the file "config.guess", please try again later.\n\n'; rm -f 'config.guess' && exit 1; }
+wget -nv -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' > >(build_log) 2>&1 || { ping -c 1 git.savannah.gnu.org >/dev/null 2>&1 || printf '\nsavannah.gnu.org seems to be offline right now and is needed to download the file "config.guess", please try again later.\n\n'; rm -f 'config.guess' && exit 1; }
 build_progress 'done'
 system_type="$(sh config.guess)"
 
 cd "$mingw_w64_source_dir" || print_error
 if [[ "$mingw_w64_ver" = 'git' ]]; then
-  git_dl "mingw-w64" "http://git.code.sf.net/p/mingw-w64/mingw-w64"
+  git_dl "mingw-w64" "https://git.code.sf.net/p/mingw-w64/mingw-w64"
 else
   if [[ -d "mingw-w64-$mingw_w64_release_ver" && "$allow_overwrite" != 'yes' &&  "$prefix_present" = 'yes' ]]; then
     if ! yes_no_sel "MinGW-w64 is already the latest version, continue with the build anyway? You can set this option with: '--allow-overwrite', see '--help' for more information."; then
@@ -906,7 +906,7 @@ else
   if [[ ! -d "mingw-w64-$mingw_w64_release_ver" || ! -f "mingw-w64-$mingw_w64_release_ver.tar.bz2" ]]; then
     rm -f "mingw-w64-$mingw_w64_release_ver.tar.bz2" "mingw-w64-$mingw_w64_release_ver"
     build_progress "mingw-w64-$mingw_w64_release_ver.tar.bz2" 'Downloading'
-    wget -nv -O "mingw-w64-$mingw_w64_release_ver.tar.bz2" http://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v${mingw_w64_release_ver}.tar.bz2 > >(build_log) 2>&1 || print_error
+    wget -nv -O "mingw-w64-$mingw_w64_release_ver.tar.bz2" "https://downloads.sourceforge.net/project/mingw-w64/mingw-w64/mingw-w64-release/mingw-w64-v${mingw_w64_release_ver}.tar.bz2" > >(build_log) 2>&1 || print_error
     build_progress 'done'
     build_progress "mingw-w64-$mingw_w64_release_ver.tar.bz2" 'Extracting'
     bzip2 -d <"mingw-w64-$mingw_w64_release_ver.tar.bz2" | pax -r
@@ -943,7 +943,7 @@ cd "$pkgs_dir" || print_error
 create_pkg_dirs 'pthread-w32' || print_error
 
 if [[ "$pthreads_w32_ver" = "$pthreads_w32_release_ver" ]]; then
-  download_extract "http://mirrors.kernel.org/sourceware/pthreads-win32/pthreads-w32-$pthreads_w32_release_ver-release.tar.gz"
+  download_extract "https://mirrors.kernel.org/sourceware/pthreads-win32/pthreads-w32-$pthreads_w32_release_ver-release.tar.gz"
   if [[ ! -d "pthreads-w32-$pthreads_w32_release_ver" ]]; then
     mv "pthreads-w32-$pthreads_w32_release_ver-release" "pthreads-w32-$pthreads_w32_release_ver" || print_error
   fi
