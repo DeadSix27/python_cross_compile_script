@@ -14,29 +14,36 @@ Basically does the same thing, just in a pythonic way with a JSON-like program/d
 
 ---
 
-# System requirements:
+## System requirements:
 
 * Python3 (tested on Python 3.5.2)
-* GNU/Linux (tested on Ubuntu 16.10)
-* For all packages at least 20GB of free Space (SSD recommended)
+* GNU/Linux (Tested on Ubuntu 16.10 (x86_64) and Fedora 25 (x86_64))
+* Works fine in VM, haven't tested Win10's bash thing.
+* For all products & dependencies at least 20GB of free Space (SSD recommended)
 
-# Package requirements (not yet auto-installed, and not fully listed)
+## Package requirements (no auto-check yet)
 ```
-OpenSUSE Tumbleweed:
-sudo zypper install makeinfo spax python3 git-core yasm
-sudo zypper install --type pattern devel_C_C++
-and probably some more... gyp etc
+Packages required, tested on:
 
-For other systems see RDP's script
+(Some of those may only be required one of the OS and package namings may differ)
+
+Fedora 25    (Twenty Five)
+Ubuntu 16.10 (Yakkety)
+
+global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
+mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
+gnutls      - gperf
+angle       - gyp
+vapoursynth - p7zip
 ```
 
-# Usage
+## Usage
 
 ```bash
 wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
-### Note:
+#### Note:
 Products are defined in `PRODUCT_ORDER` like:
 ```python
 PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2')
@@ -44,7 +51,7 @@ PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtooln
 You can just removce specific programs if you do not need them!!
 E.g `PRODUCT_ORDER = ('x264_10bit')` will only build x264 10bit
 
-# Configuration options:
+## Configuration options:
 
 General configs:
 

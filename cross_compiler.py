@@ -2074,10 +2074,17 @@ DEPENDS = {
 		'url' : 'https://github.com/kcat/openal-soft.git',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
+		'cmake_options': 
+			'{cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={compile_target}'
+			' -DCMAKE_INSTALL_PREFIX={compile_prefix} -DCMAKE_FIND_ROOT_PATH='
+			' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/openal-soft-privlibs.patch', 'p1'),
 		),
+		'run_post_patch' : [
+			"sed -i.bak 's/CMAKE_INSTALL_PREFIX \"\${{CMAKE_FIND_ROOT_PATH}}\"/CMAKE_INSTALL_PREFIX \"\"/' XCompile.txt",
+		],
+		'install_options' : 'DESTDIR={compile_prefix}',
 	},
 	'lcms2' : {
 		'repo_type' : 'git',
@@ -2098,6 +2105,10 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+		'packages': {
+			'ubuntu' : [ 'p7zip-full' ],
+			'fedora' : [ 'p7zip.' ],
+		},
 	},
 	'luajit': {
 		'repo_type' : 'git',
