@@ -1,16 +1,13 @@
 # A (somewhat) Modular cross-compile helper
 #### written in Python 3
 
-**This script as of now only is tested on Ubuntu 16.10.**
-**It does NOT check for packages like `gperf` or `autogen` for you (or even `gcc` etc) you'll have to do that yourself.**
- (Automation will be added later for that).
- 
+Kind of a wrapper for cmake/make/gyp/etc, makes cross compiling a single-command thing, useful for nightly builds while being advanced enough to have complex buildscripts yet keep the configuration simple.
 Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers
-Basically does the same thing, just in a pythonic way with a JSON-like program/depency system.
+and does almost the same thing, just in a pythonic way with a JSON-like program/depency system.
 
-**Current main products (you can add your own) are: MPV, FFMPEG(Static,Shared GPL), WGET and CURL.**
+Currently main focus is on building: mpv, ffmpeg, aria2 and x265, but other products will be cared for too.
 
-**It successfully builds them (for me) you can test it and report issues and I'll happily fix them (if I can)!**
+GCC Version is 6.3.0 and has mutex support.
 
 ---
 
