@@ -2181,6 +2181,15 @@ DEPENDS = {
 	'zlib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz',
+		'env_exports' : {
+			'AR' : '{cross_prefix_bare}ar',
+			'CC' : '{cross_prefix_bare}gcc',
+			'PREFIX' : '{compile_prefix}',
+			'RANLIB' : '{cross_prefix_bare}ranlib',
+			'LD'     : '{cross_prefix_bare}ld',
+			'STRIP'  : '{cross_prefix_bare}strip',
+			'CXX'    : '{cross_prefix_bare}g++',
+		},
 		'configure_options': '--static --prefix={compile_prefix}',
 		'make_options': '{make_prefix_options} ARFLAGS=rcs',
 	},
