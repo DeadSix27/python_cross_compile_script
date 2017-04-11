@@ -1,11 +1,10 @@
-diff -ur a/CMakeLists.txt b/CMakeLists.txt
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -783,6 +783,12 @@ ENDIF()
+diff -ur openal-soft/CMakeLists.txt openal-soft.patched/CMakeLists.txt
+--- openal-soft/CMakeLists.txt	2017-04-10 19:30:07.037950001 +0200
++++ openal-soft.patched/CMakeLists.txt	2017-04-10 19:31:38.360780061 +0200
+@@ -1152,6 +1152,11 @@
  IF(LIBTYPE STREQUAL "STATIC")
      ADD_DEFINITIONS(-DAL_LIBTYPE_STATIC)
      SET(PKG_CONFIG_CFLAGS -DAL_LIBTYPE_STATIC ${PKG_CONFIG_CFLAGS})
-+
 +    FOREACH(l ${EXTRA_LIBS})
 +        IF(NOT l MATCHES "^-.*")
 +            SET(PKG_CONFIG_LIBS_PRIVATE "${PKG_CONFIG_LIBS_PRIVATE} -l${l}")
@@ -13,17 +12,13 @@ diff -ur a/CMakeLists.txt b/CMakeLists.txt
 +    ENDFOREACH()
  ENDIF()
  
- # Needed for openal.pc.in
-diff -ur a/openal.pc.in b/openal.pc.in
-index 8bdd4f3..d8759d0 100644
---- a/openal.pc.in
-+++ b/openal.pc.in
-@@ -8,4 +8,5 @@ Description: OpenAL is a cross-platform 3D audio API
+ IF(NOT WIN32)
+diff -ur openal-soft/openal.pc.in openal-soft.patched/openal.pc.in
+--- openal-soft/openal.pc.in	2017-04-10 19:30:07.045950297 +0200
++++ openal-soft.patched/openal.pc.in	2017-04-10 19:32:01.919742629 +0200
+@@ -8,4 +8,5 @@
  Requires: @PKG_CONFIG_REQUIRES@
  Version: @PACKAGE_VERSION@
  Libs: -L${libdir} -l@LIBNAME@ @PKG_CONFIG_LIBS@
 +Libs.private: @PKG_CONFIG_LIBS_PRIVATE@
  Cflags: -I${includedir} -I${includedir}/AL @PKG_CONFIG_CFLAGS@
--- 
-1.8.3.4
-

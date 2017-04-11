@@ -1,43 +1,55 @@
 # A (somewhat) Modular cross-compile helper
 #### written in Python 3
 
-**This script as of now only is tested on Ubuntu 16.10.**
-**It does NOT check for packages like `gperf` or `autogen` for you (or even `gcc` etc) you'll have to do that yourself.**
- (Automation will be added later for that).
- 
+Kind of a wrapper for cmake/make/gyp/etc, makes cross compiling a single-command thing, useful for nightly builds while being advanced enough to have complex buildscripts yet keep the configuration simple.
 Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers
-Basically does the same thing, just in a pythonic way with a JSON-like program/depency system.
+and does almost the same thing, just in a pythonic way with a JSON-like program/depency system.
 
-**Current main products (you can add your own) are: MPV, FFMPEG(Static,Shared GPL), WGET and CURL.**
+Currently main focus is on building: mpv, ffmpeg, aria2 and x265, but other products will be cared for too.
 
-**It successfully builds them (for me) you can test it and report issues and I'll happily fix them (if I can)!**
+GCC Version is 6.3.0 and has mutex support.
 
 ---
 
-# System requirements:
+## System requirements:
 
 * Python3 (tested on Python 3.5.2)
-* GNU/Linux (tested on Ubuntu 16.10)
-* wget, sed, diff
-* Build-packages, e.g `build-essential, autotools` etc those are not detected yet..
-* around 20GB free space depending on how many products you want it to compile.
-* Some programs may require aditional packages, e.g `xsltproc, docbook-utils, rake` those are unfortunately not yet automatically detected
+* GNU/Linux (Tested on Ubuntu 16.10 (x86_64) and Fedora 25 (x86_64))
+* Works fine in VM, haven't tested Win10's bash thing.
+* For all products & dependencies at least 20GB of free Space (SSD recommended)
 
-# Usage
+## Package requirements (no auto-check yet)
+```
+Packages required, tested on:
+
+(Some of those may only be required one of the OS and package namings may differ)
+
+Fedora 25    (Twenty Five)
+Ubuntu 16.10 (Yakkety)
+
+global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
+mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
+gnutls      - gperf
+angle       - gyp
+vapoursynth - p7zip
+```
+
+## Usage
 
 ```bash
 wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
-
-
-# Configuration options:
-
-Compile specific configs,
-you can order them how you like, or remove some, etc.
+#### Note:
+Products are defined in `PRODUCT_ORDER` like:
 ```python
-PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2', 'vlc')
+PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2')
 ```
+You can just removce specific programs if you do not need them!!
+E.g `PRODUCT_ORDER = ('x264_10bit')` will only build x264 10bit
+
+## Configuration options:
+
 General configs:
 
 ```python

@@ -519,7 +519,7 @@ class CrossCompileScript:
 		if os.path.isdir(realFolderName):
 			os.chdir(realFolderName)
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
-			self.logger.debug("GIT Checking out: '{0}'".format( "master" if desiredBranch == None else branchString ))
+			self.logger.debug("GIT Checking out:{0}".format( "master" if desiredBranch == None else branchString ))
 			self.run_process('git checkout{0}'.format(branchString))
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
@@ -540,7 +540,7 @@ class CrossCompileScript:
 			self.run_process('git clone{0} "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				os.chdir(realFolderName + ".tmp")
-				self.logger.debug("GIT Checking out: '{0}'".format(branchString))
+				self.logger.debug("GIT Checking out:{0}".format(branchString))
 				self.run_process('git checkout{0}'.format(branchString))
 				os.chdir("..")
 			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
@@ -737,10 +737,17 @@ class CrossCompileScript:
 		self.defaultCFLAGS()
 
 		currentFullDir = os.getcwd()
+		
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(data['source_subfolder'])
+				
+		if 'debug_confighelp_and_exit' in data:
+			if data['debug_confighelp_and_exit'] == True:
+				self.bootstrap_configure()
+				os.system("./configure --help")
+				exit()
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
@@ -939,6 +946,12 @@ class CrossCompileScript:
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(data['source_subfolder'])
+				
+		if 'debug_confighelp_and_exit' in data:
+			if data['debug_confighelp_and_exit'] == True:
+				self.bootstrap_configure()
+				os.system("./configure --help")
+				exit()
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
@@ -1055,7 +1068,17 @@ class CrossCompileScript:
 		os.chdir("..")
 
 		os.chdir("..")
-
+	def bootstrap_configure(self):
+		if not os.path.isfile("configure"):
+			if os.path.isfile("bootstrap.sh"):
+				self.run_process('./bootstrap.sh')
+			if os.path.isfile("autogen.sh"):
+				self.run_process('./autogen.sh')
+			if os.path.isfile("buildconf"):
+				self.run_process('./buildconf')
+			if os.path.isfile("bootstrap"):
+				self.run_process('./bootstrap')
+	
 	def configure_source(self,name,data):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
 
@@ -1357,7 +1380,7 @@ class CrossCompileScript:
 	def getValueOrNone(self,db,k):
 		if k in db:
 			if db[k] == None:
-				return Nonev
+				return None
 			else:
 				return db[k]
 		else:
@@ -1387,7 +1410,7 @@ class CrossCompileScript:
 			return ""
 	#:
 	
-PRODUCT_ORDER = ('aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'vlc')
+PRODUCT_ORDER = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
 
 PRODUCTS = {
 	'x264_10bit' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
@@ -1408,7 +1431,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/curl/curl',
 		'rename_folder' : 'curl_git',
-		'configure_options': '--with-gnutls --enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
+		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
 		'depends_on': (
 			'zlib',
 		),
@@ -1417,11 +1440,11 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.savannah.gnu.org/git/wget.git',
 		'rename_folder' : 'wget_git',
-		'configure_options': '--with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
+		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
 		#'patches_post_configure' : ( this patch idea is on hold for now.. too fiddly.
 		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'),
-		#),
+		#)
 		'depends_on': (
 			'zlib', 'gnutls'
 		),
@@ -1433,7 +1456,8 @@ PRODUCTS = {
 			' --host={compile_target} --prefix={product_prefix}/aria2_git.installed'
 			' --without-included-gettext --disable-nls --disable-shared --enable-static'
 			' --without-openssl --with-libexpat --with-libz --with-libgmp --without-libgcrypt'
-			' --without-libnettle --with-cppunit-prefix={compile_prefix} ARIA2_STATIC=yes' # --without-gnutls --without-libxml2 --with-sqlite3 --with-libssh2 --with-libcares
+			' --with-sqlite3 --with-libxml2'	
+			' --without-libnettle --with-cppunit-prefix={compile_prefix} ARIA2_STATIC=yes' # --without-gnutls --with-libssh2 --with-libcares
 		,
 		'run_post_patch' : [
 			'autoreconf -fiv'
@@ -1442,7 +1466,7 @@ PRODUCTS = {
 			'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
 		],
 		'depends_on': [
-			'zlib', 'libxml2', 'expat', 'gmp', 'gnutls' #'libssh2', 'c-ares', 'libsqlite3'
+			'zlib', 'libxml2', 'expat', 'gmp', 'gnutls', 'libsqlite3', 'libssh2', # 'c-ares', 'libsqlite3', 'openssl_1_1'
 		],
 	},
 	'ffmpeg_static' : {
@@ -1459,7 +1483,7 @@ PRODUCTS = {
 			' --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -1483,7 +1507,7 @@ PRODUCTS = {
 			' --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme --enable-runtime-cpudetect', #' --extra-cflags=-march=skylake'#' --extra-cflags=-O3' # dont seem needed
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -1526,15 +1550,9 @@ PRODUCTS = {
 		'depends_on' : [
 			'libfile','libflac','boost','qt5', 'gettext'
 		],
-		#'patches':
-		#{
-		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_get_rid_of_platformsupport.patch', 'p1'),
-		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mkvtoolnix_fix_qmediaplayer.patch', 'p1'),
-		#},
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
 		},
-		#'debug_exitafter':True,
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -1663,11 +1681,28 @@ DEPENDS = {
 			'zenlib', 'libcurl',
 		],
 	},
+	'libssh2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libssh2/libssh2.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-openssl',
+		'env_exports' : {
+			'LIBS' : '-lbcrypt' # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
+		},
+	},
+	'libsqlite3' : {
+		'repo_type' : 'archive',
+		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
+		'url' : 'http://sqlite.org/2017/sqlite-autoconf-3180000.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
+		'depends_on': (
+			'zlib',
+		),
+	},
 	'libcurl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/curl/curl',
 		'rename_folder' : 'curl_git',
-		'configure_options': '--with-gnutls --enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --exec-prefix={compile_prefix}',
+		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={compile_prefix} --exec-prefix={compile_prefix}',
 		'depends_on': (
 			'zlib',
 		),
@@ -1737,7 +1772,10 @@ DEPENDS = {
 			'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
 			'if [ ! -f "already_done" ] ; then make install PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
-		)
+		),
+		'packages': {
+			'ubuntu' : [ 'gyp' ],
+		},
 	},
 	
 	'qt5' : {
@@ -1914,7 +1952,7 @@ DEPENDS = {
 			'./autogen.sh NOCONFIGURE=1',
 		],
 	},
-	'openssl' : {
+	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.openssl.org/source/openssl-1.1.0e.tar.gz',
 		'configure_options' : '{bit_name3} --prefix={compile_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
@@ -1988,6 +2026,9 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-bsdtar --disable-bsdcat --disable-bsdcpio --without-openssl', #--without-xml2 --without-nettle
 		'depends_on' : [
 			'bzip2', 'expat', 'zlib', 'liblzma', 'lzo'
+		],
+		'run_post_install' : [
+			'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
 		]
 	},
 	'lzo': {
@@ -2074,10 +2115,17 @@ DEPENDS = {
 		'url' : 'https://github.com/kcat/openal-soft.git',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
+		'cmake_options': 
+			'{cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={compile_target}'
+			' -DCMAKE_INSTALL_PREFIX={compile_prefix} -DCMAKE_FIND_ROOT_PATH='
+			' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/openal-soft-privlibs.patch', 'p1'),
 		),
+		'run_post_patch' : [
+			"sed -i.bak 's/CMAKE_INSTALL_PREFIX \"\${{CMAKE_FIND_ROOT_PATH}}\"/CMAKE_INSTALL_PREFIX \"\"/' XCompile.txt",
+		],
+		'install_options' : 'DESTDIR={compile_prefix}',
 	},
 	'lcms2' : {
 		'repo_type' : 'git',
@@ -2098,6 +2146,10 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+		'packages': {
+			'ubuntu' : [ 'p7zip-full' ],
+			'fedora' : [ 'p7zip.' ],
+		},
 	},
 	'luajit': {
 		'repo_type' : 'git',
@@ -2154,7 +2206,7 @@ DEPENDS = {
 			' --disable-doc --disable-programs',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'ibspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -2178,6 +2230,15 @@ DEPENDS = {
 	'zlib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/libpng/files/zlib/1.2.11/zlib-1.2.11.tar.gz',
+		'env_exports' : {
+			'AR' : '{cross_prefix_bare}ar',
+			'CC' : '{cross_prefix_bare}gcc',
+			'PREFIX' : '{compile_prefix}',
+			'RANLIB' : '{cross_prefix_bare}ranlib',
+			'LD'     : '{cross_prefix_bare}ld',
+			'STRIP'  : '{cross_prefix_bare}strip',
+			'CXX'    : '{cross_prefix_bare}g++',
+		},
 		'configure_options': '--static --prefix={compile_prefix}',
 		'make_options': '{make_prefix_options} ARFLAGS=rcs',
 	},
@@ -2238,6 +2299,9 @@ DEPENDS = {
 		'depends_on' : [
 			'gmp', 'libnettle',
 		],
+		'packages': {
+			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
+		},
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -2255,16 +2319,20 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'branch' : '1.0.28',
 		'url' : 'https://github.com/erikd/libsndfile.git',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
+			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
 		#],
 		'run_post_patch': [
 			'autoreconf -fi -I M4',
 		],
 		'run_post_install' : [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lsndfile/Libs: -L${{libdir}} -lsndfile -lFLAC -lvorbis -lvorbisenc -logg -lspeex/\' "{pkg_config_path}/sndfile.pc"', #issue with rubberband not using pkg-config option "--static" or so idk?
+		],
+		'depends_on': 
+		[
+			'libspeex',
 		],
 	},
 	'libbs2b' : {
@@ -2399,7 +2467,7 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '',
 	},
-	'ibspeex' : {
+	'libspeex' : {
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
 		'url' : 'https://github.com/xiph/speex.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
@@ -2580,9 +2648,18 @@ DEPENDS = {
 		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
 			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/ladspa.h',
 		),
+		'env_exports' : {
+			'AR' : '{cross_prefix_bare}ar',
+			'CC' : '{cross_prefix_bare}gcc',
+			'PREFIX' : '{compile_prefix}',
+			'RANLIB' : '{cross_prefix_bare}ranlib',
+			'LD'     : '{cross_prefix_bare}ld',
+			'STRIP'  : '{cross_prefix_bare}strip',
+			'CXX'    : '{cross_prefix_bare}g++',
+		},
 		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'make_options': '{make_prefix_options}',
 		'needs_make_install' : False,
 		'run_post_make' : (
 			'cp lib/* "{compile_prefix}/lib"',
