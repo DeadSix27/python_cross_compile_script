@@ -737,10 +737,17 @@ class CrossCompileScript:
 		self.defaultCFLAGS()
 
 		currentFullDir = os.getcwd()
+		
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(data['source_subfolder'])
+				
+		if 'debug_confighelp_and_exit' in data:
+			if data['debug_confighelp_and_exit'] == True:
+				self.bootstrap_configure()
+				os.system("./configure --help")
+				exit()
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
@@ -939,6 +946,12 @@ class CrossCompileScript:
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				os.chdir(data['source_subfolder'])
+				
+		if 'debug_confighelp_and_exit' in data:
+			if data['debug_confighelp_and_exit'] == True:
+				self.bootstrap_configure()
+				os.system("./configure --help")
+				exit()
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
@@ -1055,7 +1068,17 @@ class CrossCompileScript:
 		os.chdir("..")
 
 		os.chdir("..")
-
+	def bootstrap_configure(self):
+		if not os.path.isfile("configure"):
+			if os.path.isfile("bootstrap.sh"):
+				self.run_process('./bootstrap.sh')
+			if os.path.isfile("autogen.sh"):
+				self.run_process('./autogen.sh')
+			if os.path.isfile("buildconf"):
+				self.run_process('./buildconf')
+			if os.path.isfile("bootstrap"):
+				self.run_process('./bootstrap')
+	
 	def configure_source(self,name,data):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
 
@@ -1408,7 +1431,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/curl/curl',
 		'rename_folder' : 'curl_git',
-		'configure_options': '--with-gnutls --enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
+		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
 		'depends_on': (
 			'zlib',
 		),
@@ -1417,11 +1440,11 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.savannah.gnu.org/git/wget.git',
 		'rename_folder' : 'wget_git',
-		'configure_options': '--with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
+		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
 		#'patches_post_configure' : ( this patch idea is on hold for now.. too fiddly.
 		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'),
-		#),
+		#)
 		'depends_on': (
 			'zlib', 'gnutls'
 		),
@@ -1433,7 +1456,8 @@ PRODUCTS = {
 			' --host={compile_target} --prefix={product_prefix}/aria2_git.installed'
 			' --without-included-gettext --disable-nls --disable-shared --enable-static'
 			' --without-openssl --with-libexpat --with-libz --with-libgmp --without-libgcrypt'
-			' --without-libnettle --with-cppunit-prefix={compile_prefix} ARIA2_STATIC=yes' # --without-gnutls --without-libxml2 --with-sqlite3 --with-libssh2 --with-libcares
+			' --with-sqlite3 --with-libxml2'	
+			' --without-libnettle --with-cppunit-prefix={compile_prefix} ARIA2_STATIC=yes' # --without-gnutls --with-libssh2 --with-libcares
 		,
 		'run_post_patch' : [
 			'autoreconf -fiv'
@@ -1442,7 +1466,7 @@ PRODUCTS = {
 			'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
 		],
 		'depends_on': [
-			'zlib', 'libxml2', 'expat', 'gmp', 'gnutls' #'libssh2', 'c-ares', 'libsqlite3'
+			'zlib', 'libxml2', 'expat', 'gmp', 'gnutls', 'libsqlite3', 'libssh2', # 'c-ares', 'libsqlite3', 'openssl_1_1'
 		],
 	},
 	'ffmpeg_static' : {
@@ -1657,11 +1681,28 @@ DEPENDS = {
 			'zenlib', 'libcurl',
 		],
 	},
+	'libssh2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libssh2/libssh2.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-openssl',
+		'env_exports' : {
+			'LIBS' : '-lbcrypt' # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
+		},
+	},
+	'libsqlite3' : {
+		'repo_type' : 'archive',
+		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
+		'url' : 'http://sqlite.org/2017/sqlite-autoconf-3180000.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
+		'depends_on': (
+			'zlib',
+		),
+	},
 	'libcurl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/curl/curl',
 		'rename_folder' : 'curl_git',
-		'configure_options': '--with-gnutls --enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --exec-prefix={compile_prefix}',
+		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={compile_prefix} --exec-prefix={compile_prefix}',
 		'depends_on': (
 			'zlib',
 		),
@@ -1911,7 +1952,7 @@ DEPENDS = {
 			'./autogen.sh NOCONFIGURE=1',
 		],
 	},
-	'openssl' : {
+	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.openssl.org/source/openssl-1.1.0e.tar.gz',
 		'configure_options' : '{bit_name3} --prefix={compile_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
@@ -2278,7 +2319,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'branch' : '1.0.28',
 		'url' : 'https://github.com/erikd/libsndfile.git',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
 			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
 			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
