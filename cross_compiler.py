@@ -22,11 +22,21 @@ from pathlib import Path
 from urllib.parse import urlparse
 from collections import OrderedDict
 import argparse
-_VERSION = "1.4"
 
+_VERSION = "1.5"
 
-#CURRENTLY REQUIRED PROJECTS INCLUDE BUT A RE NOT LIMITED TO:
-# autogen, gperf, build-essential, gettext ....
+# ###################################################
+# Package dependencies (some may be missing):
+# 
+# Fedora 25    (Twenty Five)
+# Ubuntu 16.10 (Yakkety)
+# 
+# global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
+# mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
+# gnutls      - gperf
+# angle       - gyp
+# vapoursynth - p7zip
+# ###################################################
 
 class Colors: # improperly named ansi colors. :)
 	GREEN  = '\033[1;32;40m'
@@ -66,19 +76,21 @@ class MyFormatter(logging.Formatter):
 		return result
 		
 		
-_CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-_STARTDIR = os.getcwd()
-#_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
-_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
-_LOG_DATEFORMAT = '%H:%M:%S'
-_QUIET = False #not recommended, but sure looks nice...
-_WORKDIR = "workdir"
-_MINGW_DIR = "xcompilers"
-_BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_DOWNLOADER = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
-_ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
-_ENABLE_STATUSFILE = True # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
-_STATUS_FILE = _STARTDIR + "/status_file"
+_CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
+_STARTDIR                       = os.getcwd()
+_LOG_DATEFORMAT                 = '%H:%M:%S'
+_QUIET                          = False #not recommended, but sure looks nice...
+_WORKDIR                        = "workdir"
+_MINGW_DIR                      = "xcompilers"
+_BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
+_DOWNLOADER                     = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
+_ORIG_CFLAGS                    = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
+_ENABLE_STATUSFILE              = True # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
+_STATUS_FILE                    = _STARTDIR + "/status_file"
+_BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master'
+_MINGW_SCRIPT_URL               = '/mingw_build_scripts/mingw-build-script.sh'
+_MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix_threads.sh'
+
 
 # ################################################################################
 
@@ -90,41 +102,40 @@ class CrossCompileScript:
 
 	def __init__(self,po,ps,ds):
 		print(Colors.GREEN+ "Starting {0} v{1}".format( self.__class__.__name__,_VERSION ) + Colors.RESET )
-		
+		self.PRODUCT_ORDER          = po
+		self.PRODUCTS               = ps
+		self.DEPENDS                = ds
 
-		self.PRODUCT_ORDER = po
-		self.PRODUCTS = ps
-		self.DEPENDS = ds
-
-		fmt = MyFormatter()
-		hdlr = logging.StreamHandler(sys.stdout)
+		fmt                         = MyFormatter()
+		hdlr                        = logging.StreamHandler(sys.stdout)
 		hdlr.setFormatter(fmt)
-		self.logger = logging.getLogger(__name__)
-		# logging.basicConfig(level=logging.INFO,  format=Colors.CYAN + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
-		# logging.basicConfig(level=logging.DEBUG,  format=Colors.RED + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
-		# logging.basicConfig(level=logging.ERROR, format=Colors.RED  + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		self.logger                 = logging.getLogger(__name__)
+		#logging.basicConfig(level   = logging.INFO,  format=Colors.CYAN + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		#logging.basicConfig(level   = logging.DEBUG,  format=Colors.RED + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
+		#logging.basicConfig(level   = logging.ERROR, format=Colors.RED  + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
 		self.logger.setLevel(logging.DEBUG)
 		self.logger.addHandler(hdlr) 
 
-		self.fullCurrentPath   = os.getcwd()
-		self.fullWorkDir       = os.path.join(self.fullCurrentPath,_WORKDIR)
-		self.fullProductDir    = None
-		self.targetBitness     = _BITNESS
-		self.originalPATH      = os.environ["PATH"]
+		self.fullCurrentPath        = os.getcwd()
+		self.fullWorkDir            = os.path.join(self.fullCurrentPath,_WORKDIR)
+		self.fullProductDir         = None
+		self.targetBitness          = _BITNESS
+		self.originalPATH           = os.environ["PATH"]
+		self.mingwScriptURL         = _BASE_URL + _MINGW_SCRIPT_URL_POSIX_THREADS
 
 		#init some stuff.
-		self.compileTarget     = None
-		self.compilePrefix     = None
-		self.mingwBinpath      = None
-		self.fullCrossPrefix   = None
-		self.makePrefixOptions = None
-		self.bitnessDir        = None
-		self.bitnessDir2       = None
-		self.winBitnessDir     = None
-		self.pkgConfigPath     = None
-		self.bareCrossPrefix   = None
-		self.cpuCount          = None
-		self.originalCflags    = None
+		self.compileTarget          = None
+		self.compilePrefix          = None
+		self.mingwBinpath           = None
+		self.fullCrossPrefix        = None
+		self.makePrefixOptions      = None
+		self.bitnessDir             = None
+		self.bitnessDir2            = None
+		self.winBitnessDir          = None
+		self.pkgConfigPath          = None
+		self.bareCrossPrefix        = None
+		self.cpuCount               = None
+		self.originalCflags         = None
 
 	#:
 
@@ -147,16 +158,11 @@ class CrossCompileScript:
 
 	def defaultEntrace(self):
 		for b in self.targetBitness:
-
 			main.prepareBuilding(b)
-
 			main.build_mingw(b)
-
 			main.initBuildFolders()
-
 			for p in self.PRODUCT_ORDER:
 				main.produceProduct(p)
-
 			main.finishBuilding()
 
 	def finishBuilding(self):
@@ -191,20 +197,20 @@ class CrossCompileScript:
 		self.originalCflags     = _ORIG_CFLAGS
 
 		if _DEBUG:
-			print('self.bitnessDir = \n' + self.bitnessDir + '\n\n')
-			print('self.bitnessDir2 = \n' + self.bitnessDir2 + '\n\n')
-			print('self.winBitnessDir = \n' + self.winBitnessDir + '\n\n')
-			print('self.compileTarget = \n' + self.compileTarget + '\n\n')
-			print('self.compilePrefix = \n' + self.compilePrefix + '\n\n')
-			print('self.mingwBinpath = \n' + self.mingwBinpath + '\n\n')
-			print('self.fullCrossPrefix = \n' + self.fullCrossPrefix + '\n\n')
-			print('self.bareCrossPrefix = \n' + self.bareCrossPrefix + '\n\n')
-			print('self.makePrefixOptions = \n' + self.makePrefixOptions + '\n\n')
+			print('self.bitnessDir = \n'         + self.bitnessDir + '\n\n')
+			print('self.bitnessDir2 = \n'        + self.bitnessDir2 + '\n\n')
+			print('self.winBitnessDir = \n'      + self.winBitnessDir + '\n\n')
+			print('self.compileTarget = \n'      + self.compileTarget + '\n\n')
+			print('self.compilePrefix = \n'      + self.compilePrefix + '\n\n')
+			print('self.mingwBinpath = \n'       + self.mingwBinpath + '\n\n')
+			print('self.fullCrossPrefix = \n'    + self.fullCrossPrefix + '\n\n')
+			print('self.bareCrossPrefix = \n'    + self.bareCrossPrefix + '\n\n')
+			print('self.makePrefixOptions = \n'  + self.makePrefixOptions + '\n\n')
 			print('self.cmakePrefixOptions = \n' + self.cmakePrefixOptions + '\n\n')
-			print('self.pkgConfigPath = \n' + self.pkgConfigPath + '\n\n')
-			print('self.fullProductDir = \n' + self.fullProductDir + '\n\n')
-			print('self.currentBitness = \n' + str(self.currentBitness) + '\n\n')
-			print('PATH = \n' + os.environ["PATH"] + '\n\n')
+			print('self.pkgConfigPath = \n'      + self.pkgConfigPath + '\n\n')
+			print('self.fullProductDir = \n'     + self.fullProductDir + '\n\n')
+			print('self.currentBitness = \n'     + str(self.currentBitness) + '\n\n')
+			print('PATH = \n'                    + os.environ["PATH"] + '\n\n')
 
 		os.environ["PATH"]           = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
 		#os.environ["PATH"]           = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.compilePrefix,'bin'), self.originalPATH ) #todo properly test this..
@@ -236,7 +242,7 @@ class CrossCompileScript:
 
 		os.chdir(_MINGW_DIR)
 
-		mingw_script_file    = self.download_file(_MINGW_SCRIPT_URL)
+		mingw_script_file    = self.download_file(self.mingwScriptURL)
 		#mingw_script_options = "--clean-build --disable-shared --default-configure --threads=pthreads-w32 --pthreads-w32-ver=2-9-1 --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
 		mingw_script_options = "--clean-build --disable-shared --default-configure --threads=winpthreads --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
 		self.chmodpux(mingw_script_file)
@@ -537,7 +543,7 @@ class CrossCompileScript:
 				recur = " --recursive"
 				
 			self.logger.info("GIT cloning '%s' to '%s'" % (url,realFolderName))
-			self.run_process('git clone{0} "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
+			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				os.chdir(realFolderName + ".tmp")
 				self.logger.debug("GIT Checking out:{0}".format(branchString))
@@ -1519,13 +1525,22 @@ PRODUCTS = {
 	},
 	'vlc' : {
 		'repo_type' : 'git',
-		'url' : 'http://git.videolan.org/git/vlc.git',
+		'url' : 'https://github.com/videolan/vlc.git', # https://git.videolan.org/git/vlc.git is slow..
 		'configure_options':
 			'--host={compile_target} --prefix={product_prefix}/vlc_git.installed --disable-lua LIBS=-lbz2'
 		,
 		'depends_on' : [
-			'lua', 'a52dec',
-		]
+			'lua53', 'a52dec',
+		],
+		'env_exports' : {
+			'LIBS' : '-lbcrypt' # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
+		},
+		'download_header' : [
+			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_3.h',
+			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_4.h',
+			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_5.h',
+			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_6.h',
+		],
 	},
 	'x265_10bit' : {
 		'repo_type' : 'hg',
@@ -2159,13 +2174,13 @@ DEPENDS = {
 		'install_options' : 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static FILE_T=luajit.exe PREFIX={compile_prefix}',
 		'make_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
 	},
-	'lua' : {
+	'lua53' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.lua.org/ftp/lua-5.3.4.tar.gz',
 		'needs_configure' : False,
-		'make_options': 'CC={cross_prefix_bare}gcc PREFIX={compile_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++ AR="{cross_prefix_bare}ar rcu" generic LUA_A=lua53.dll LUA_T=lua.exe',
-		'install_options' : 'INSTALL_TOP={compile_prefix}',
-		'install_target' : 'generic install',
+		'make_options': 'CC={cross_prefix_bare}gcc PREFIX={compile_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++ AR="{cross_prefix_bare}ar rcu" mingw', # LUA_A=lua53.dll LUA_T=lua.exe LUAC_T=luac.exe
+		'install_options' : 'TO_BIN="lua.exe luac.exe lua53.dll" TO_LIB="liblua.a" INSTALL_TOP="{compile_prefix}"', #TO_LIB="liblua.a liblua.dll.a"
+		'install_target' : 'install',
 		'packages': {
 			'ubuntu' : [ 'lua5.2' ],
 		},
