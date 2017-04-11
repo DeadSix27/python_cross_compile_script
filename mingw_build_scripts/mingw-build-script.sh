@@ -737,7 +737,7 @@ if [[ "$gcc_ver" != 'svn' ]]; then
 			echo "Patching GCC 6.3.0 weak refs"
 			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/0001-gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
 			echo "applying patch"
-			patch -p1 < "gcc_6_3_0_weak_refs_x86_64.patch"
+			patch -p1 < "0001-gcc_6_3_0_weak_refs_x86_64.patch"
 			echo "Done"
 		cd ..
 	fi
