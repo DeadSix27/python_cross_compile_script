@@ -707,7 +707,7 @@ if [[ -n $CC ]]; then
 fi
 
 # Build gmp
-std_compile 'gmp' "$gmp_release_ver" "https://gmplib.org/download/gmp/gmp-$gmp_release_ver.tar.xz" "../source/gmp-6.1.1/configure" --build="$system_type" --prefix="$gmp_prefix" --enable-fat --enable-static --enable-cxx CPPFLAGS='-fexceptions'
+std_compile 'gmp' "$gmp_release_ver" "https://gmplib.org/download/gmp/gmp-$gmp_release_ver.tar.xz" "../source/gmp-$gmp_release_ver/configure" --build="$system_type" --prefix="$gmp_prefix" --enable-fat --enable-static --enable-cxx CPPFLAGS='-fexceptions'
 
 #build mpfr
 std_compile 'mpfr' "$mpfr_release_ver" "https://ftp.gnu.org/gnu/mpfr/mpfr-$mpfr_release_ver.tar.xz" "../source/mpfr-$mpfr_release_ver/configure" --build="$system_type" --prefix="$mpfr_prefix" --disable-shared --enable-static --with-gmp="$gmp_prefix"
@@ -735,9 +735,9 @@ if [[ "$gcc_ver" != 'svn' ]]; then
 	if [ "$gcc_ver" == "6.3.0" ]; then #DeadSix27: Patch gcc 6.3.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
 		cd gcc-"$gcc_ver"
 			echo "Patching GCC 6.3.0 weak refs"
-			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
+			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw_build_scripts/patches/0001-gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
 			echo "applying patch"
-			patch -p1 < "gcc_6_3_0_weak_refs_x86_64.patch"
+			patch -p1 < "0001-gcc_6_3_0_weak_refs_x86_64.patch"
 			echo "Done"
 		cd ..
 	fi
