@@ -731,7 +731,6 @@ create_pkg_dirs 'gcc'
 cd "$pkgs_dir/gcc/source" || print_error
 if [[ "$gcc_ver" != 'svn' ]]; then
 	download_extract "https://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2" "ftp://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2"
-	
 	if [ "$gcc_ver" == "6.3.0" ]; then #DeadSix27: Patch gcc 6.3.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
 		cd gcc-"$gcc_ver"
 			echo "Patching GCC 6.3.0 weak refs"
