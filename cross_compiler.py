@@ -1564,7 +1564,6 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
 		'is_waf' : True,
-		'branch' : '759ac6cc93bd1895a8f9233b8e9256889bdef6aa', # we will use this commit until team-mpv fixes https://github.com/mpv-player/mpv/issues/4315
 		'env_exports' : {
 			'DEST_OS' : 'win32',
 			'TARGET'  : '{compile_target}',
@@ -1622,8 +1621,33 @@ PRODUCTS = {
 			'zenlib', 'libcurl',
 		],
 	},
+	'filezilla_svn' : {
+		'repo_type' : 'svn',
+		'folder_name' : 'filezilla_svn',
+		'url' : 'https://svn.filezilla-project.org/svn/FileZilla3/trunk',
+		'configure_options': '--host={compile_target} --prefix={product_prefix}/filezilla_svn.installed --disable-shared --enable-static --disable-manualupdatecheck --disable-autoupdatecheck --with-pugixml=builtin host_os=mingw',
+		# 'run_post_patch' : [
+			# 'autoreconf -fiv',
+		# ],
+		'depends_on' : [
+			'libfilezilla',
+		],
+		# 'debug_confighelp_and_exit' : True,
+	},
 }
 DEPENDS = {
+	'libfilezilla' : {
+		'repo_type' : 'svn',
+		'folder_name' : 'libfilezilla_svn',
+		'url' : 'https://svn.filezilla-project.org/svn/libfilezilla/trunk',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'run_post_patch' : [
+			'autoreconf -fiv',
+		],
+		'env_exports' : {
+			'CXXFLAGS' : '-O0',
+		},
+	},
 	'libmediainfo' : {
 		'repo_type' : 'git',
 		'branch' : 'v0.7.94',
