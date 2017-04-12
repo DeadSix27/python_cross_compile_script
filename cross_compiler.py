@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # #################################################################################################################
-# Copyright (C) 2017 DeadSix27
+# Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/modular_cross_compile_script)
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 # To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
@@ -15,7 +15,7 @@
 
 
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
-import hashlib,glob,traceback,time,zlib
+import hashlib,glob,traceback,time,zlib,codecs
 import http.cookiejar
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -78,8 +78,8 @@ class MyFormatter(logging.Formatter):
 		
 _CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
 _STARTDIR                       = os.getcwd()
+_QUIET                          = True # Writes build output to raw_build.log and only prints log messages.
 _LOG_DATEFORMAT                 = '%H:%M:%S'
-_QUIET                          = False #not recommended, but sure looks nice...
 _WORKDIR                        = "workdir"
 _MINGW_DIR                      = "xcompilers"
 _BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
@@ -94,12 +94,9 @@ _MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix
 
 # ################################################################################
 
-_DEBUG = False
-git_get_latest = True # to be implemented in a better way
+_DEBUG = False # for.. debugging.. purposes.
 
 class CrossCompileScript:
-	"""A simple cross compiler helper made in python(3.6)"""
-
 	def __init__(self,po,ps,ds):
 		print(Colors.GREEN+ "Starting {0} v{1}".format( self.__class__.__name__,_VERSION ) + Colors.RESET )
 		self.PRODUCT_ORDER          = po
@@ -113,7 +110,7 @@ class CrossCompileScript:
 		#logging.basicConfig(level   = logging.INFO,  format=Colors.CYAN + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
 		#logging.basicConfig(level   = logging.DEBUG,  format=Colors.RED + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
 		#logging.basicConfig(level   = logging.ERROR, format=Colors.RED  + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
-		self.logger.setLevel(logging.DEBUG)
+		self.logger.setLevel(logging.INFO) #DEBUG
 		self.logger.addHandler(hdlr) 
 
 		self.fullCurrentPath        = os.getcwd()
@@ -136,7 +133,9 @@ class CrossCompileScript:
 		self.bareCrossPrefix        = None
 		self.cpuCount               = None
 		self.originalCflags         = None
-
+		self.buildLogFile           = None
+		if _QUIET:
+			self.buildLogFile            = codecs.open("raw_build.log","w","utf-8")
 	#:
 
 	def commandLineEntrace(self):
@@ -262,10 +261,10 @@ class CrossCompileScript:
 
 		if not os.path.isfile(os.path.join(destination,fileName)):
 			fname = self.download_file(url)
-			self.logger.info("Moving Header File: '{0}' to '{1}'".format( fname, destination ))
+			self.logger.debug("Moving Header File: '{0}' to '{1}'".format( fname, destination ))
 			shutil.move(fname, destination)
 		else:
-			self.logger.info("Header File: '{0}' already downloaded".format( fileName ))
+			self.logger.debug("Header File: '{0}' already downloaded".format( fileName ))
 
 	def download_file(self,link, targetName = None):
 		_MAX_REDIRECTS = 5
@@ -419,11 +418,17 @@ class CrossCompileScript:
 				break
 			if isSvn:
 				if not nextline.decode('utf-8').startswith('A    '):
+					if _QUIET == True:
+						self.buildLogFile.write(nextline.decode('utf-8','replace'))
+					else:
+						sys.stdout.write(nextline.decode('utf-8','replace'))
+						sys.stdout.flush()
+			else:
+				if _QUIET == True:
+					self.buildLogFile.write(nextline.decode('utf-8','replace'))
+				else:
 					sys.stdout.write(nextline.decode('utf-8','replace'))
 					sys.stdout.flush()
-			else:
-				sys.stdout.write(nextline.decode('utf-8','replace'))
-				sys.stdout.flush()
 
 		output = process.communicate()[0]
 		return_code = process.returncode
@@ -554,72 +559,6 @@ class CrossCompileScript:
 
 		return realFolderName
 	#:
-	def git_clone_b(self, url, dir = None, desiredBranch = None, renameFolder = None, recursive = True):
-		if dir == None:
-			dir = self.sanitize_filename(os.path.basename(url))
-			if not dir.endswith(".git"): dir += ".git"
-			dir = dir.replace(".git","_git")
-		else:
-			dir = self.sanitize_filename(dir)
-
-		dirToCheck = None
-
-		if renameFolder != None:
-			dirToCheck = renameFolder
-		else:
-			dirToCheck = dir
-
-		if os.path.isdir(dirToCheck):
-			os.chdir(dirToCheck)
-			if git_get_latest == True: # to be implemented
-				self.logger.info("Git fetching in '%s'" % (dir))
-				self.run_process('git fetch')
-			else:
-				self.logger.info("Not doing git get latest pull for latest code '%s'" % (dir))
-		elif not os.path.isdir(dirToCheck):
-			self.logger.info("Git cloning '%s' to '%s'" % (url,dir))
-
-			if os.path.isdir('%s.tmp' % (dir)):
-				shutil.rmtree('%s.tmp' % (dir))
-
-			recursiveText = ""
-			if recursive:
-				recursiveText = " --recursive"
-
-			self.run_process('git clone{0} "{1}" "{2}.tmp"'.format(recursiveText,url, dir))
-			shutil.move('%s.tmp' % dir, dirToCheck)
-			self.logger.info("Finished git cloning '%s' to '%s'" % (url,dir))
-			os.chdir(dirToCheck)
-		else:
-			print("Unexpected error, please report this:", sys.exc_info()[0])
-			raise
-
-		oldGitVersion = self.get_process_result('git rev-parse HEAD')
-		if desiredBranch == None:
-			self.logger.info("Checking out git master")
-			self.run_process('git checkout master')
-			if git_get_latest == True: # to be implemented
-				self.logger.info("Updating to latest '%s' git version..." % (dir))
-				self.run_process('git reset --hard')
-				self.run_process('git clean -f -d')
-				self.run_process('git pull')
-				self.run_process('git merge origin/master')
-		else:
-			self.logger.info('git checkout\'ing "%s"' % (desiredBranch))
-			self.run_process('git checkout "%s"'% (desiredBranch))
-			self.run_process('git merge "%s"' % (desiredBranch))
-
-		newGitVersion = self.get_process_result('git rev-parse HEAD')
-		if oldGitVersion != newGitVersion:
-			self.logger.info("Got upstream changes, rebuilding..")
-			self.removeAlreadyFiles()
-		else:
-			self.logger.info("No git changes")
-
-
-		os.chdir("..")
-		return dir
-
 	def svn_clone(self, url, dir, desiredBranch = None): # "branch".. "clone"..
 		dir = self.sanitize_filename(dir)
 		if not dir.endswith("_svn"): dir += "_svn"
@@ -669,7 +608,7 @@ class CrossCompileScript:
 			return folderName
 
 		else:
-			self.logger.info("{0} already downloaded".format( fileName ))
+			self.logger.debug("{0} already downloaded".format( fileName ))
 			return folderName
 	#:
 
@@ -757,12 +696,12 @@ class CrossCompileScript:
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
-				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
+				self.logger.debug("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
 
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
-				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
+				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
 
 				
@@ -781,7 +720,7 @@ class CrossCompileScript:
 					prevEnv = ''
 					if key in os.environ:
 						prevEnv = os.environ[key]
-					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
+					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
 
 		if not self.wildCardIsFile('already_configured'):
@@ -789,7 +728,7 @@ class CrossCompileScript:
 				if data['run_pre_patch'] != None:
 					for cmd in data['run_pre_patch']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running pre-patch-command: '{0}'".format( cmd ))
+						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 
 		if 'patches' in data:
@@ -802,7 +741,7 @@ class CrossCompileScript:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
+						self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 
 		if 'needs_configure' in data:
@@ -839,7 +778,7 @@ class CrossCompileScript:
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
-					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
+					self.logger.debug("Environment variable '{0}' has been UNSET!".format( key, val ))
 					del os.environ[key]
 					
 		if 'flipped_path' in data:
@@ -961,12 +900,12 @@ class CrossCompileScript:
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
-				self.logger.info("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
+				self.logger.debug("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
 
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
-				self.logger.info("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
+				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
 	
 		if 'flipped_path' in data:
@@ -982,7 +921,7 @@ class CrossCompileScript:
 					prevEnv = ''
 					if key in os.environ:
 						prevEnv = os.environ[key]
-					self.logger.info("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
+					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
 
 
@@ -991,7 +930,7 @@ class CrossCompileScript:
 				if data['run_pre_patch'] != None:
 					for cmd in data['run_pre_patch']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running pre-patch-command: '{0}'".format( cmd ))
+						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 
 		if 'patches' in data:
@@ -1004,7 +943,7 @@ class CrossCompileScript:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
+						self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 
 
@@ -1182,7 +1121,7 @@ class CrossCompileScript:
 			if not postConf:
 				self.removeAlreadyFiles()
 		else:
-			self.logger.info("Patch '{0}' already applied".format( fileName ))
+			self.logger.debug("Patch '{0}' already applied".format( fileName ))
 			
 		if folderToPatchIn != None:
 			os.chdir("..")
