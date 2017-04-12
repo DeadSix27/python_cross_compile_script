@@ -78,18 +78,21 @@ class MyFormatter(logging.Formatter):
 		
 _CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
 _STARTDIR                       = os.getcwd()
-_QUIET                          = True # Writes build output to raw_build.log and only prints log messages.
+_QUIET                          = False # Writes build output to raw_build.log and only prints log messages.
 _LOG_DATEFORMAT                 = '%H:%M:%S'
 _WORKDIR                        = "workdir"
 _MINGW_DIR                      = "xcompilers"
 _BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
 _DOWNLOADER                     = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
 _ORIG_CFLAGS                    = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
-_ENABLE_STATUSFILE              = True # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
+_ENABLE_STATUSFILE              = True # NOT IMPLEMENTED YET ! # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
 _STATUS_FILE                    = _STARTDIR + "/status_file"
 _BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master'
 _MINGW_SCRIPT_URL               = '/mingw_build_scripts/mingw-build-script.sh'
 _MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix_threads.sh'
+
+#Remove a product, re-order them or add your own, do as you like.
+PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
 
 
 # ################################################################################
@@ -1354,8 +1357,6 @@ class CrossCompileScript:
 		else:
 			return ""
 	#:
-	
-PRODUCT_ORDER = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
 
 PRODUCTS = {
 	'x264_10bit' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
@@ -1466,13 +1467,18 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/videolan/vlc.git', # https://git.videolan.org/git/vlc.git is slow..
 		'configure_options':
-			'--host={compile_target} --prefix={product_prefix}/vlc_git.installed --disable-lua LIBS=-lbz2'
+			'--host={compile_target} --prefix={product_prefix}/vlc_git.installed --disable-lua --enable-qt --disable-ncurses --disable-dbus --disable-sdl --disable-telx --enable-nls LIBS="-lbcrypt -lbz2"'
 		,
 		'depends_on' : [
 			'lua53', 'a52dec',
 		],
+		# 'patches' : [
+			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0002-MinGW-w64-lfind-s-_NumOfElements-is-an-unsigned-int.patch','p1'),
+			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0003-MinGW-w64-don-t-pass-static-to-pkg-config-if-SYS-min.patch','p1'),
+			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0004-Revert-Win32-prefer-the-static-libraries-when-creati.patch','p1'),
+		# ],
 		'env_exports' : {
-			'LIBS' : '-lbcrypt' # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
+			'LIBS' : '-lbcrypt -lbz2', # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
 		},
 		'download_header' : [
 			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_3.h',
@@ -1558,6 +1564,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
 		'is_waf' : True,
+		'branch' : '759ac6cc93bd1895a8f9233b8e9256889bdef6aa', # we will use this commit until team-mpv fixes https://github.com/mpv-player/mpv/issues/4315
 		'env_exports' : {
 			'DEST_OS' : 'win32',
 			'TARGET'  : '{compile_target}',
@@ -1580,7 +1587,6 @@ PRODUCTS = {
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
 		),
-		'skip_deps' : False,
 	},
 	'mediainfo' : {
 		'repo_type' : 'git',
