@@ -533,8 +533,8 @@ class CrossCompileScript:
 		if os.path.isdir(realFolderName):
 			os.chdir(realFolderName)
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
-			self.logger.debug("GIT Checking out:{0}".format( "master" if desiredBranch == None else branchString ))
-			self.run_process('git checkout{0}'.format(branchString))
+			self.logger.debug("GIT Checking out:{0}".format( " master" if desiredBranch == None else branchString ))
+			self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
 				self.logger.debug("GIT clone has code changes, updating")
@@ -554,8 +554,8 @@ class CrossCompileScript:
 			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				os.chdir(realFolderName + ".tmp")
-				self.logger.debug("GIT Checking out:{0}".format(branchString))
-				self.run_process('git checkout{0}'.format(branchString))
+				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch == None else branchString))
+				self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
 				os.chdir("..")
 			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url,realFolderName))
@@ -984,7 +984,7 @@ class CrossCompileScript:
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
-					self.logger.info("Environment variable '{0}' has been UNSET!".format( key, val ))
+					self.logger.debug("Environment variable '{0}' has been UNSET!".format( key, val ))
 					del os.environ[key]
 					
 		if 'flipped_path' in data:
