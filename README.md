@@ -1,9 +1,11 @@
-# A (somewhat) Modular cross-compile helper
-#### written in Python 3
+# A GNU/Linux to Windows cross-compile helper script
+## _almost_ fully written in Python 3
 
-Kind of a wrapper for cmake/make/gyp/etc, makes cross compiling a single-command thing, useful for nightly builds while being advanced enough to have complex buildscripts yet keep the configuration simple.
+_python_cross_compile_script_ could be described as a wrapper for various build-helpers (Autotools,C-Make,Rake,..).
+Products and dependencies are written in JSON and thus very easy to host remotely or modify quickly.
+It comes with a CLI to compile specific lists of "products/dependencies" or a single one.
+This project was heavily influenced by rdp's [ffmpeg-windows-build-helpers](https://github.com/rdp/ffmpeg-windows-build-helpers).
 
-Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers and does almost the same thing, just in a pythonic way with a JSON-like program/dependency system.
 
 Menu:
 [->How to use it<-](#usage)
@@ -24,7 +26,7 @@ Menu:
 - wGet
 - x264 & x265 (10bit)
 
-#### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies and products and their respective version
+#### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies, products and their respective versions
 
 GCC Version is 6.3.0 and has mutex support.
 
@@ -34,14 +36,14 @@ GCC Version is 6.3.0 and has mutex support.
 
 * Python3 (tested on Python 3.5.2)
 * GNU/Linux (Tested on Ubuntu 16.10 (x86_64) and Fedora 25 (x86_64))
-* Works fine in VM, haven't tested Win10's bash thing.
-* For all products & dependencies at least 20GB of free Space (SSD recommended)
+* Works fine in a VM, haven't tested using Win10's bash thing.
+* For all products & dependencies at least 20GB of free space needed (SSD recommended)
 
 ## **Package requirements (no auto-check yet)**
 ```
 Packages required, tested on:
 
-(Some of those may only be required one of the OS and package namings may differ)
+(This list is possibly incomplete and differs from OS to OS)
 
 Fedora 25    (Twenty Five)
 Ubuntu 16.10 (Yakkety)
@@ -59,7 +61,7 @@ vapoursynth - p7zip
 
 `cross_compiler.py -q -a` (Quiet CLI)
 
-_**But wait, there is more!**_ Too much to explain it here, to see the full help, type: `cross_compiler.py --help`
+_**But wait, there is more!**_ Too much to explain here; to see the full help, type: `cross_compiler.py --help`
 
 ### **The simple, *"just build it all mode"***:
 ```
@@ -139,7 +141,7 @@ You can always just check the predefined projects for ideas and wether I missed 
 ```python
 'bar' : {
 	'repo_type' : 'git',                          # ( Can be git, svn or archive )
-	'url' : '[url]',                              # ( Must be a URL represending the above, e.g a git, svn or direct download link )
+	'url' : '[url]',                              # ( Must be a URL representing the above, e.g a git, svn or direct download link )
 	'folder_name' : 'actualName'                  # ( Sometimes archives do not extract to the same dir as they're named, e.g test.zip won't be test, you can specify that here ) [FOPTIONAL]
 	'rename_folder' : 'iLikeThisNameBetter',      # ( Renames the project folder to the specified string ) [FOPTIONAL]
 	'make_subdir' : 'build',                      # ( If the build files are in a subfolder, e.g 'ProjectDir/build', specify it here and we will descend there beforehand ) [FOPTIONAL]
@@ -168,7 +170,7 @@ You can always just check the predefined projects for ideas and wether I missed 
 	'run_post_configure': (                       # ( List of commands to run after configure (only triggered when needs_configure is True) ) [FOPTIONAL]
 		'cmd',
 	),
-	'cpu_count': '1',                             # ( If a prroject requires a specific cpu-count e.g 1 or it fails or so ) [FOPTIONAL]
+	'cpu_count': '1',                             # ( If a project requires a specific cpu-count e.g 1 or it fails or so ) [FOPTIONAL]
 	'needs_make' : True,                          # ( Whether it needs to run "make"(incl. waf), so far everything did. ) [FOPTIONAL]
 	'make_options': 'CROSS={cross_prefix_bare}',  # ( Make options, things that get appended to the "make" command. ) [FOPTIONAL]
 	'ignore_make_fail_and_run':(                  # ( Ignores failing make and runs a list of commands ) [FOPTIONAL]
@@ -190,6 +192,6 @@ You can always just check the predefined projects for ideas and wether I missed 
 		'libfoobar',
 	),
 	'debug_exitafter': True,                      # ( True/False, will exit after this build, useful for testing ) [FOPTIONAL]
-	'_already_built': True                        # ( Set by system, but theoretically setting this to true will ALWAYS skip and NEVER build this proejct )
+	'_already_built': True                        # ( Set by system, but theoretically setting this to true will ALWAYS skip and NEVER build this project )
 },
 ```
