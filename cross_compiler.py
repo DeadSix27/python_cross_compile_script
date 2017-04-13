@@ -43,15 +43,15 @@ _VERSION = "2.0"
 # ###################################################
 #
 _CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-_STARTDIR                       = os.getcwd()
-_QUIET                          = False # Writes build output to raw_build.log and only prints log messages.
-_LOG_DATEFORMAT                 = '%H:%M:%S'
-_WORKDIR                        = "workdir"
-_MINGW_DIR                      = "xcompilers"
+_QUIET                          = False # This is only for the 'just build it all mode', in CLI you should use "-q"
+_LOG_DATEFORMAT                 = '%H:%M:%S' 
+_LOGFORMAT                      = '[%(asctime)s][%(levelname)s] %(message)s'
+_WORKDIR                        = 'workdir'
+_MINGW_DIR                      = 'xcompilers'
 _BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_ORIG_CFLAGS                    = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
+_ORIG_CFLAGS                    = '-march=nehalem -O3'# If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 _ENABLE_STATUSFILE              = True # NOT IMPLEMENTED YET ! # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
-_STATUS_FILE                    = _STARTDIR + "/status_file" # NOT IMPLEMENTED YET !
+_STATUS_FILE                    = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
 PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'x265_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
@@ -77,8 +77,6 @@ class MissingDependency(Exception):
 	__module__ = 'exceptions'
 	def __init__(self, message):
 		self.message = message
-		
-_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 		
 class MyFormatter(logging.Formatter):
 
@@ -1382,7 +1380,7 @@ PRODUCTS = {
 		'depends_on' : (
 			'libffmpeg',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'x264' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
 	},
 	'curl' : {
 		'repo_type' : 'git',
@@ -1392,7 +1390,7 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'cURL' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cURL' },
 	},
 	'wget' : {
 		'repo_type' : 'git',
@@ -1406,7 +1404,7 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib', 'gnutls'
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'wget' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wget' },
 	},
 	'aria2' : {
 		'repo_type' : 'git',
@@ -1427,7 +1425,7 @@ PRODUCTS = {
 		'depends_on': [
 			'zlib', 'libxml2', 'expat', 'gmp', 'gnutls', 'libsqlite3', 'libssh2', # 'c-ares', 'libsqlite3', 'openssl_1_1'
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'aria2' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aria2' },
 	},
 	'ffmpeg_static' : {
 		'repo_type' : 'git',
@@ -1452,7 +1450,7 @@ PRODUCTS = {
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'ffmpeg (static)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
 	},
 	'ffmpeg_shared' : {
 		'repo_type' : 'git',
@@ -1477,7 +1475,7 @@ PRODUCTS = {
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'ffmpeg (shared)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
 	},
 	'vlc' : { # not working
 		'repo_type' : 'git',
@@ -1502,7 +1500,7 @@ PRODUCTS = {
 			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_5.h',
 			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_6.h',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'VLC (git)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'VLC (git)' },
 	},
 	'x265_10bit' : {
 		'repo_type' : 'hg',
@@ -1512,7 +1510,7 @@ PRODUCTS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': './source',
-		'_info' : { 'version' : 'HG (master)', 'fancy_name' : 'x265' },
+		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265' },
 	},
 	'mkvtoolnix': {
 		'repo_type' : 'git',
@@ -1531,7 +1529,7 @@ PRODUCTS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
 		},
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'mkvtoolnix' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mkvtoolnix' },
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -1540,7 +1538,7 @@ PRODUCTS = {
 		'depends_on': [
 			'libogg',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'FLAC' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FLAC' },
 	},
 	'lame3' : {
 		'repo_type' : 'archive',
@@ -1560,7 +1558,7 @@ PRODUCTS = {
 		'depends_on': [
 			'libvorbis',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'vorbis-tools' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vorbis-tools' },
 	},
 	'sox' : {
 		'repo_type' : 'git',
@@ -1579,7 +1577,7 @@ PRODUCTS = {
 		'depends_on': [
 			'libvorbis','gettext',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'SoX' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SoX' },
 	},
 	'mpv' : {
 		'repo_type' : 'git',
@@ -1607,7 +1605,7 @@ PRODUCTS = {
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'mpv' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv' },
 	},
 	'mediainfo' : {
 		'repo_type' : 'git',
@@ -1624,7 +1622,7 @@ PRODUCTS = {
 		'run_post_configure' : [
 			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'MediaInfo' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfo' },
 	},
 	'mediainfo_dll' : {
 		'repo_type' : 'git',
@@ -1643,7 +1641,7 @@ PRODUCTS = {
 		'depends_on': [
 			'zenlib', 'libcurl',
 		],
-		#'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'MediaInfoDLL' },
+		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
 	},
 	'filezilla_svn' : {
 		'repo_type' : 'svn',
@@ -1689,7 +1687,7 @@ DEPENDS = {
 		'depends_on': [
 			'zenlib', 'libcurl',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libmediainfo' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmediainfo' },
 	},
 	'libssh2' : {
 		'repo_type' : 'git',
@@ -1698,7 +1696,7 @@ DEPENDS = {
 		'env_exports' : {
 			'LIBS' : '-lbcrypt' # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
 		},
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libssh2' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libssh2' },
 	},
 	'libsqlite3' : {
 		'repo_type' : 'archive',
@@ -1718,7 +1716,7 @@ DEPENDS = {
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libcurl' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
 	},
 	'zenlib' : {
 		'repo_type' : 'git',
@@ -1732,7 +1730,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
 		],
-		'_info' : { 'version' : 'Git_v4.35', 'fancy_name' : 'zenlib' },
+		'_info' : { 'version' : 'git (v4.35)', 'fancy_name' : 'zenlib' },
 	},
 	'boost' : { # oh god no.. 
 		'repo_type' : 'archive',
@@ -1790,7 +1788,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
 	},
 	
 	'qt5' : { # too... many.... patches....
@@ -1917,7 +1915,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-header-compat.mingw.patch',  'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-libmng-compatibility.patch', 'p1'),
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libjpeg-turbo' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
 	},
 	'libpng' : {
 		'repo_type' : 'archive',
@@ -2035,7 +2033,7 @@ DEPENDS = {
 		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 		'run_post_patch' : [ 'autoreconf -fiv' ],
 		'flipped_path' : True,
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'file' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'file' },
 	},
 	'libflac' : {
 		'repo_type' : 'git',
@@ -2044,7 +2042,7 @@ DEPENDS = {
 		'depends_on': [
 			'libogg',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'flac (library)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'flac (library)' },
 	},
 	'libarchive': {
 		'repo_type' : 'archive',
@@ -2071,7 +2069,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'uchardet' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
 		'repo_type' : 'archive',
@@ -2092,7 +2090,7 @@ DEPENDS = {
 		'depends_on': (
 			'libcdio',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libcdio-paranoia' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcdio-paranoia' },
 	},
 	'libdvdcss' : {
 		'repo_type' : 'git',
@@ -2101,7 +2099,7 @@ DEPENDS = {
 		'run_post_patch' : (
 			'autoreconf -i',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libdvdcss' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdcss' },
 	},
 	'libdvdread' : {
 		'repo_type' : 'git',
@@ -2116,7 +2114,7 @@ DEPENDS = {
 		'run_post_install' : (
 			'sed -i.bak \'s/-ldvdread/-ldvdread -ldvdcss/\' "{pkg_config_path}/dvdread.pc"', # fix undefined reference to `dvdcss_close'
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libdvdread' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdread' },
 	},
 	'libdvdnav' : {
 		'repo_type' : 'git',
@@ -2128,7 +2126,7 @@ DEPENDS = {
 		'run_post_patch' : (
 			'autoreconf -i',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libdvdnav' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdnav' },
 	},
 	'libbluray' : {
 		'repo_type' : 'git',
@@ -2144,7 +2142,7 @@ DEPENDS = {
 		'depends_on' : (
 			'freetype2',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libbluray' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libbluray' },
 	},
 	'openal-soft' : {
 		'repo_type' : 'git',
@@ -2162,13 +2160,13 @@ DEPENDS = {
 			"sed -i.bak 's/CMAKE_INSTALL_PREFIX \"\${{CMAKE_FIND_ROOT_PATH}}\"/CMAKE_INSTALL_PREFIX \"\"/' XCompile.txt",
 		],
 		'install_options' : 'DESTDIR={compile_prefix}',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'openal-soft' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openal-soft' },
 	},
 	'lcms2' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mm2/Little-CMS.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'Little-CMS2' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Little-CMS2' },
 	},
 	'python36_libs': {
 		'repo_type' : 'git',
@@ -2197,7 +2195,7 @@ DEPENDS = {
 		'custom_cflag' : '-O3', # doesn't like march's past ivybridge (yet), so we override it.
 		'install_options' : 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static FILE_T=luajit.exe PREFIX={compile_prefix}',
 		'make_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'LuaJIT2' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'LuaJIT2' },
 	},
 	'lua' : {
 		'repo_type' : 'archive',
@@ -2258,7 +2256,7 @@ DEPENDS = {
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'FFmpeg (library)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
 	'bzip2' : {
 		'repo_type' : 'archive',
@@ -2378,7 +2376,7 @@ DEPENDS = {
 		[
 			'libspeex',
 		],
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libsndfile' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsndfile' },
 	},
 	'libbs2b' : {
 		'repo_type' : 'archive',
@@ -2412,7 +2410,7 @@ DEPENDS = {
 		#'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
 		'url' : 'https://chromium.googlesource.com/webm/libwebp',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libwebp' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libwebp' },
 	},
 	'flite' : { # why can't everything be so easy to compile
 		'repo_type' : 'archive',
@@ -2486,7 +2484,7 @@ DEPENDS = {
 			("https://dsix.tech/opus_git_strip_declspec.patch", "p1"),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'opus' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'opus' },
 	},
 	'opencore-amr' : {
 		'repo_type' : 'archive',
@@ -2518,13 +2516,13 @@ DEPENDS = {
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
 		'url' : 'https://github.com/xiph/speex.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'speex' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'speex' },
 	},
 	'libvorbis' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/vorbis.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'vorbis' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vorbis' },
 	},
 	'libtheora' : {
 		'repo_type' : 'git',
@@ -2533,7 +2531,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', 'p1'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'theora' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'theora' },
 	},
 	'orc' : {
 		'repo_type' : 'archive',
@@ -2632,7 +2630,7 @@ DEPENDS = {
 		'run_post_patch': (
 			'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libebur128' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libebur128' },
 	},
 	'libx265' : {
 		'repo_type' : 'hg',
@@ -2642,7 +2640,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': './source',
-		'_info' : { 'version' : 'HG (master)', 'fancy_name' : 'x265 (library)' },
+		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library)' },
 	},
 	'libopenh264' : {
 		'repo_type' : 'git',
@@ -2651,7 +2649,7 @@ DEPENDS = {
 		'make_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
 		'install_options': '{make_prefix_options} OS=mingw_nt',
 		'install_target' : 'install-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'openh264' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openh264' },
 	},
 	'vamp_plugin' : {
 		'repo_type' : 'archive',
@@ -2691,7 +2689,7 @@ DEPENDS = {
 		'branch' : '477ce36f8e4bd6a177727f4ac32eba11864dd85d', # commit: Fix win32 compilation # fixed the cross compiling.
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'git-477ce36', 'fancy_name' : 'fftw3' },
+		'_info' : { 'version' : 'git (477ce3)', 'fancy_name' : 'fftw3' },
 	},
 	'librubberband' : {
 		'repo_type' : 'archive',
@@ -2747,7 +2745,7 @@ DEPENDS = {
 		'run_post_patch': (
 			'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'vid.stab' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vid.stab' },
 	},
 	'netcdf' : {
 		'repo_type' : 'archive',
@@ -2809,7 +2807,7 @@ DEPENDS = {
 		'patches': (
 			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vpx_160_semaphore.patch', 'p1' ),
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libvpx' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libvpx' },
 	},
 	'libilbc' : {
 		'repo_type' : 'git',
@@ -2818,7 +2816,7 @@ DEPENDS = {
 			'autoreconf -fiv',
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libilbc' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libilbc' },
 	},
 	'fontconfig' : {
 		'repo_type' : 'archive',
@@ -2844,7 +2842,7 @@ DEPENDS = {
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
 		),
-		'_info' : { 'version' : 'Git-1be7dc0', 'fancy_name' : 'libass' },
+		'_info' : { 'version' : 'git (1be7dc)', 'fancy_name' : 'libass' },
 	},
 	'openjpeg' : {
 		'repo_type' : 'archive',
@@ -2862,7 +2860,7 @@ DEPENDS = {
 		),
 		'url' : 'https://github.com/lu-zero/mfx_dispatch.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'intel_quicksync_mfx' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'intel_quicksync_mfx' },
 	},
 	'fdk_aac' : {
 		'repo_type' : 'git',
@@ -2871,7 +2869,7 @@ DEPENDS = {
 		),
 		'url' : 'https://github.com/mstorsjo/fdk-aac.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'fdk-aac' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'fdk-aac' },
 	},
 	'rtmpdump' : {
 		'repo_type' : 'git',
@@ -2882,14 +2880,14 @@ DEPENDS = {
 		'run_post_install':(
 			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
 		),
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'rtmpdump' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'rtmpdump' },
 	},
 	'libx264' : {
 		'repo_type' : 'git',
 		'url' : 'http://git.videolan.org/git/x264.git',
 		'rename_folder' : 'libx264_git',
 		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={compile_prefix} --enable-strip --disable-lavf',
-		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'x264 (library)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264 (library)' },
 	},
 }
 

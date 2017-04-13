@@ -11,22 +11,20 @@ Menu:
 [->What it requires<-](#system-requirements)
 
 ### **Currently this script builds these products from git-master**
-- aria2 
-- curl
-- ffmpeg_shared
-- ffmpeg_static
-- flac
-- lame3 
-- mediainfo _(Only .exe)_
-- mkvtoolnix _(Static with QT5)_
-- mpv _(with VapourSynth, Python and LuaJIT)_
-- sox
-- vorbis-tools
-- wget
-- x264_10bit
-- x265_10bit
+- Aria2 
+- cURL
+- FFmpeg (shared & static)
+- FLAC
+- LAME3 
+- MediaInfo _(Only .exe)_
+- mkvToolNix _(Static with QT5)_
+- mpv Player _(with VapourSynth, Python and LuaJIT)_
+- SoX tools _(sox,play,..)
+- Vobis tools _(oggenc,ogginfo,..)_
+- wGet
+- x264 & x265 (10bit)
 
-#### See [VERSIONS.md](VERSIONS.md) for a full list of dependencies and products and their respective version
+#### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies and products and their respective version
 
 GCC Version is 6.3.0 and has mutex support.
 
@@ -57,19 +55,20 @@ vapoursynth - p7zip
 
 ## **Usage**
 
-#### **The simple, *"just build it all mode"***:
-```bash
+### **The CLI mode**:
+
+`cross_compiler.py -q -a` (Quiet CLI)
+
+_**But wait, there is more!**_ Too much to explain it here, to see the full help, type: `cross_compiler.py --help`
+
+### **The simple, *"just build it all mode"***:
+```
 wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
+
 **Note:** This will build every product and it's dependencies as defined in `PRODUCT_ORDER`.
 You can just remove or re-order products in it as you like.
-
-#### **The CLI mode**:
-**Note:** As of now you can only build one product at a time in CLI mode (Soon to change).
-
-There is too much to describe it here, to see the full help for this, type:
-`cross_compiler.py --help`
 
 ## Configuration options:
 
