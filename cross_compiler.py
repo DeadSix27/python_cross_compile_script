@@ -42,16 +42,16 @@ _VERSION = "2.0"
 # ################# CONFIGURATION ###################
 # ###################################################
 #
-_CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-_QUIET                          = False # This is only for the 'just build it all mode', in CLI you should use "-q"
-_LOG_DATEFORMAT                 = '%H:%M:%S' 
-_LOGFORMAT                      = '[%(asctime)s][%(levelname)s] %(message)s'
-_WORKDIR                        = 'workdir'
-_MINGW_DIR                      = 'xcompilers'
-_BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_ORIG_CFLAGS                    = '-march=nehalem -O3'# If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
-_ENABLE_STATUSFILE              = True # NOT IMPLEMENTED YET ! # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
-_STATUS_FILE                    = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
+_CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
+_QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false 
+_LOG_DATEFORMAT    = '%H:%M:%S' default: %H:%M:%S
+_LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' default: [%(asctime)s][%(levelname)s] %(message)s
+_WORKDIR           = 'workdir' # default: workdir
+_MINGW_DIR         = 'xcompilers' # default: xcompilers
+_BITNESS           = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32), this is completely untested .
+_ORIG_CFLAGS       = '-march=nehalem -O3' # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options #default: -march=nehalem -O3
+_ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
+_STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
 PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'x265_10bit', 'ffmpeg_shared', 'ffmpeg_static' )

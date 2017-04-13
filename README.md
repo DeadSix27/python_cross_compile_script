@@ -75,16 +75,14 @@ You can just remove or re-order products in it as you like.
 General configs:
 
 ```python
-_CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-#_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script.sh" #without mutex support, original, includes weak ref patch
-_MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
-_LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
-_LOG_DATEFORMAT = '%H:%M:%S'
-_QUIET = False # mutes the build outputs, set this here for the "just build it all mode"
-_WORKDIR = "workdir"
-_MINGW_DIR = "xcompilers"
-_BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
+_CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
+_QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false 
+_LOG_DATEFORMAT    = '%H:%M:%S' default: %H:%M:%S
+_LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' default: [%(asctime)s][%(levelname)s] %(message)s
+_WORKDIR           = 'workdir' # default: workdir
+_MINGW_DIR         = 'xcompilers' # default: xcompilers
+_BITNESS           = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32), this is completely untested .
+_ORIG_CFLAGS       = '-march=nehalem -O3' # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options #default: -march=nehalem -O3
 ```
 
 ___
