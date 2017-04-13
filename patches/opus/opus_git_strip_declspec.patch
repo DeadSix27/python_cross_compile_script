@@ -1,0 +1,16 @@
+Remove __declspec stuff of opus, patched on git c43633d - DeadSix27
+diff -urN a b > opus_git_strip_declspec.patch
+--- a/include/opus_defines.h   2017-04-13 08:55:13.362627300 +0200
++++ b/include/opus_defines.h   2017-04-13 08:55:13.362627300 +0200
+@@ -65,11 +65,7 @@
+ 
+ #ifndef OPUS_EXPORT
+ # if defined(WIN32)
+-#  if defined(OPUS_BUILD) && defined(DLL_EXPORT)
+-#   define OPUS_EXPORT __declspec(dllexport)
+-#  else
+ #   define OPUS_EXPORT
+-#  endif
+ # elif defined(__GNUC__) && defined(OPUS_BUILD)
+ #  define OPUS_EXPORT __attribute__ ((visibility ("default")))
+ # else

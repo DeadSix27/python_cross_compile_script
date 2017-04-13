@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 # #################################################################################################################
 # Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/modular_cross_compile_script)
 #
@@ -15,16 +16,17 @@
 
 
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
-import hashlib,glob,traceback,time,zlib,codecs
+import hashlib,glob,traceback,time,zlib,codecs,argparse
 import http.cookiejar
 from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
 from collections import OrderedDict
-import argparse
 
-_VERSION = "1.5"
+_VERSION = "2.0"
 
+# ###################################################
+# ################ REQUIRED PACKAGES ################
 # ###################################################
 # Package dependencies (some may be missing):
 # 
@@ -37,15 +39,39 @@ _VERSION = "1.5"
 # angle       - gyp
 # vapoursynth - p7zip
 # ###################################################
+# ################# CONFIGURATION ###################
+# ###################################################
+#
+_CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
+_STARTDIR                       = os.getcwd()
+_QUIET                          = False # Writes build output to raw_build.log and only prints log messages.
+_LOG_DATEFORMAT                 = '%H:%M:%S'
+_WORKDIR                        = "workdir"
+_MINGW_DIR                      = "xcompilers"
+_BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
+_ORIG_CFLAGS                    = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
+_ENABLE_STATUSFILE              = True # NOT IMPLEMENTED YET ! # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
+_STATUS_FILE                    = _STARTDIR + "/status_file" # NOT IMPLEMENTED YET !
 
-class Colors: # improperly named ansi colors. :)
-	GREEN  = '\033[1;32;40m'
-	RESET  = '\033[0;37;40m'
-	YELLOW = '\033[1;33;40m'
-	BLUE   = '\033[1;34;40m'
-	CYAN   = '\033[1;36;40m'
-	RED    = '\033[1;31;40m'
-	PURPLE = '\033[1;0;35m'
+# Remove a product, re-order them or add your own, do as you like.
+PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'x265_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
+#
+# ###################################################
+# ###################################################
+# ###################################################
+
+class Colors: #ansi colors
+	BLACK           = '\033[30m'
+	RED             = '\033[31m'
+	GREEN           = '\033[32m'
+	YELLOW          = '\033[33m'
+	BLUE            = '\033[34m'
+	MAGENTA         = '\033[35m'
+	CYAN            = '\033[36m'
+	WHITE           = '\033[37m'
+	RESET           = '\033[0m'
+	LIGHT_RED_EX    = '\033[91m'
+	LIGHTMAGENTA_EX = '\033[95m'
 
 class MissingDependency(Exception):
 	__module__ = 'exceptions'
@@ -56,9 +82,10 @@ _LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 		
 class MyFormatter(logging.Formatter):
 
-	err_fmt  = Colors.RED    + _LOGFORMAT + Colors.RESET
-	dbg_fmt  = Colors.YELLOW + _LOGFORMAT + Colors.RESET
-	info_fmt = Colors.CYAN   + _LOGFORMAT + Colors.RESET
+	inf_fmt = Colors.CYAN               + _LOGFORMAT + Colors.RESET
+	err_fmt  = Colors.RED               + _LOGFORMAT + Colors.RESET
+	dbg_fmt  = Colors.YELLOW            + _LOGFORMAT + Colors.RESET
+	war_fmt  = Colors.LIGHTMAGENTA_EX   + _LOGFORMAT + Colors.RESET
 
 	def __init__(self):
 		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')  
@@ -68,40 +95,27 @@ class MyFormatter(logging.Formatter):
 		if record.levelno == logging.DEBUG:
 			self._style._fmt = MyFormatter.dbg_fmt
 		elif record.levelno == logging.INFO:
-			self._style._fmt = MyFormatter.info_fmt
+			self._style._fmt = MyFormatter.inf_fmt
 		elif record.levelno == logging.ERROR:
 			self._style._fmt = MyFormatter.err_fmt
+		elif record.levelno == logging.WARNING:
+			self._style._fmt = MyFormatter.war_fmt
 		result = logging.Formatter.format(self, record)
 		self._style._fmt = format_orig
 		return result
-		
-		
-_CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-_STARTDIR                       = os.getcwd()
-_QUIET                          = False # Writes build output to raw_build.log and only prints log messages.
-_LOG_DATEFORMAT                 = '%H:%M:%S'
-_WORKDIR                        = "workdir"
-_MINGW_DIR                      = "xcompilers"
-_BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_DOWNLOADER                     = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
-_ORIG_CFLAGS                    = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
-_ENABLE_STATUSFILE              = True # NOT IMPLEMENTED YET ! # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
-_STATUS_FILE                    = _STARTDIR + "/status_file"
+
 _BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master'
 _MINGW_SCRIPT_URL               = '/mingw_build_scripts/mingw-build-script.sh'
 _MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix_threads.sh'
 
-#Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
-
-
-# ################################################################################
-
 _DEBUG = False # for.. debugging.. purposes.
+
+_OUR_VER = ".".join(str(x) for x in sys.version_info[0:3])
+_TESTED_VERS = ['3.5.2','3.6.0']
 
 class CrossCompileScript:
 	def __init__(self,po,ps,ds):
-		print(Colors.GREEN+ "Starting {0} v{1}".format( self.__class__.__name__,_VERSION ) + Colors.RESET )
+		# print(Colors.GREEN+ "Starting {0} v{1}".format( self.__class__.__name__,_VERSION ) + Colors.RESET )
 		self.PRODUCT_ORDER          = po
 		self.PRODUCTS               = ps
 		self.DEPENDS                = ds
@@ -137,48 +151,239 @@ class CrossCompileScript:
 		self.cpuCount               = None
 		self.originalCflags         = None
 		self.buildLogFile           = None
-		if _QUIET:
-			self.buildLogFile            = codecs.open("raw_build.log","w","utf-8")
+		self.quietMode              = _QUIET
+		if self.quietMode:
+			self.logger.warning('Quiet mode is enabled')
+			self.init_quietMode()
 	#:
+	def init_quietMode(self):
+		self.buildLogFile = codecs.open("raw_build.log","w","utf-8")
+	
+	def listify_pdeps(self,pdlist,type):
+		class customArgsAction(argparse.Action):
+			def __call__(self, parser, args, values, option_string=None):
+				format = "CLI"
+				if args.markdown:
+					format = "MD"
+				if args.csv:
+					format = "CSV"
+					
+				if format == "CLI":
+					longestName = 0
+					longestVer = 1
+					for key,val in pdlist.items():
+						if '_info' in val:
+							if 'version' in val['_info']:
+								if len(val['_info']['version']) > longestVer:
+									longestVer = len(val['_info']['version'])
+							name = key
+							if len(name) > longestName:
+								longestName = len(name)
+							# if 'fancy_name' in val['_info']:
+								# if len(val['_info']['fancy_name']) > longestName:
+									# longestName = len(val['_info']['fancy_name'])
+						else:
+							if len(key) > longestName:
+								longestName = len(key)
 
+					HEADER = "Product"
+					if type == "D":
+						HEADER = "Dependency"
+					if longestName < len('Dependency'):
+						longestName = len('Dependency')
+					HEADER_V = "Version"
+					if longestVer < len(HEADER_V):
+						longestVer = len(HEADER_V)
+						
+					print(' {0} - {1}'.format(HEADER.rjust(longestName,' '),HEADER_V.ljust(longestVer, ' ')))
+					print('')
+					
+					for key,val in sorted(pdlist.items()):
+						ver = Colors.RED + "(no version)" + Colors.RESET
+						if '_info' in val:
+							if 'version' in val['_info']:
+								ver = Colors.GREEN + val['_info']['version'] + Colors.RESET
+						name = key
+						# if '_info' in val:
+							# if 'fancy_name' in val['_info']:
+								# name = val['_info']['fancy_name']
+						
+						print(' {0} - {1}'.format(name.rjust(longestName,' '),ver.ljust(longestVer, ' ')))
+				elif format == "MD":
+					longestName = 0
+					longestVer = 1
+					for key,val in pdlist.items():
+						if '_info' in val:
+							if 'version' in val['_info']:
+								if len(val['_info']['version']) > longestVer:
+									longestVer = len(val['_info']['version'])
+							if 'fancy_name' in val['_info']:
+								if len(val['_info']['fancy_name']) > longestName:
+									longestName = len(val['_info']['fancy_name'])
+						else:
+							if len(key) > longestName:
+								longestName = len(key)
+								
+					HEADER = "Product"
+					if type == "D":
+						HEADER = "Dependency"
+					if longestName < len('Dependency'):
+						longestName = len('Dependency')
+					HEADER_V = "Version"
+					if longestVer < len(HEADER_V):
+						longestVer = len(HEADER_V)
+				
+					print('| {0} | {1} |'.format(HEADER.ljust(longestName,' '),HEADER_V.ljust(longestVer,' ')))
+					print('| {0}:|:{1} |'.format(longestName * '-', longestVer * '-'))
+					for key,val in sorted(pdlist.items()):
+						if '_info' in val:
+							ver = "?"
+							name = key
+							if 'version' in val['_info']:
+								ver = val['_info']['version']
+							if 'fancy_name' in val['_info']:
+								name = val['_info']['fancy_name']
+							print('| {0} | {1} |'.format(name.ljust(longestName,' '),ver.ljust(longestVer,' ')))
+				else:
+					print(";".join( sorted(pdlist.keys()) ))
+				setattr(args, self.dest, values)
+				parser.exit()
+		return customArgsAction
+	
 	def commandLineEntrace(self):
-		print("")
-		parser = argparse.ArgumentParser(description='Pythonic Cross Compile Helper')
-		parser.add_argument('--build_product', "-p", dest='[PRODUCT NAME]', help='Build this and only this specific product (WITH dependencies)')
-		parser.add_argument('--build_product_only', "-pp", dest='{PRODUCT NAME]', help='Build this and only this specific product (WITHOUT dependencies)')
-		parser.add_argument('--build_dependency', "-d", dest='[PRODUCT NAME]', help='Build this and only this specific depedency (WITH dependencies)')
-		parser.add_argument('--build_dependency_only', '-dd', dest='[PRODUCT NAME]', help='Build this and only this specific depedency (WITHOUT dependencies)')
-
-		parser.add_argument('--build_all_products', '-all', action='store_true')
-
+		class epiFormatter(argparse.RawDescriptionHelpFormatter):
+			w = shutil.get_terminal_size((120, 10))[0]
+			def __init__(self, max_help_position=w, width=w, *args, **kwargs):
+				kwargs['max_help_position'] = max_help_position
+				kwargs['width'] = width
+				super(epiFormatter, self).__init__(*args, **kwargs)
+			def _split_lines(self, text, width):
+				return text.splitlines()
+			
+		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/modular_cross_compile_script)\n\n This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.\n To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.\n '
+		if _OUR_VER not in _TESTED_VERS:
+			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
+		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
+		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper v' + _VERSION + Colors.RESET + '\n\nExample usages:' \
+			'\n "{0} list -p"             - lists all the products' \
+			'\n "{0} -a"                  - builds everything' \
+			'\n "{0} -f -d libx264"       - forces the rebuilding of libx264' \
+			'\n "{0} -pl x265_10bit,mpv"  - builds this list of products in that order' \
+			'\n "{0} -q -p ffmpeg_static" - will quietly build ffmpeg-static'.format(parser.prog)
+			
+		subparsers = parser.add_subparsers(help='Sub commands')
+		
+		list_p = subparsers.add_parser('list', help= 'Type: \'' + parser.prog + ' list --help\' for more help')
+		
+		list_p.add_argument('-md', '--markdown', help='Print list in markdown format', action='store_true')
+		list_p.add_argument('-cv', '--csv', help='Print list as CSV-like string', action='store_true')
+			
+		list_p_group1 = list_p.add_mutually_exclusive_group(required=True)
+		list_p_group1.add_argument('-p', '--productss',    nargs=0, help='List all products',     action=self.listify_pdeps(self.PRODUCTS,"P"))
+		list_p_group1.add_argument('-d', '--dependencies', nargs=0, help='List all dependencies', action=self.listify_pdeps(self.DEPENDS, "D"))
+		
+		
+		group2 = parser.add_mutually_exclusive_group(required=True)
+		group2.add_argument('-p',  '--build_product_list',    dest='PRODUCT',         help='Build this product (and dependencies)')
+		group2.add_argument('-pl', '--build_product',         dest='PRODUCT_LIST',    help='Build this product (and dependencies)')
+		group2.add_argument('-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency')
+		group2.add_argument('-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency')
+		group2.add_argument('-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true')
+		parser.add_argument('-q',  '--quiet',                                         help='Only show info lines',                    action='store_true')
+		parser.add_argument('-f',  '--force',                                         help='Force rebuild, deletes already files',    action='store_true')
+				
 		if len(sys.argv)==1:
 			self.defaultEntrace()
 		else:
+			def errorOut(p,t,m=None):
+				if m == None:
+					fullStr = Colors.LIGHT_RED_EX + 'Error:\n ' + Colors.CYAN + '\'{0}\'' + Colors.LIGHT_RED_EX + ' is not a valid {2}\n Type: ' + Colors.CYAN + '\'{1} list --products/--dependencies\'' + Colors.LIGHT_RED_EX + ' for a full list'
+					print( fullStr.format ( p, os.path.basename(__file__), "Product" if t == "PRODUCT" else "Dependency" ) + Colors.RESET )
+				else:
+					print(m)
+				exit(1)
 			args = parser.parse_args()
+			forceRebuild = False
+			if args.quiet:
+				self.logger.warning('Quiet mode is enabled')
+				self.quietMode = True
+				self.init_quietMode()
+			if args.force:
+				forceRebuild = True
+			thingToBuild = None
+			buildType = None
 
-		# print(args.accumulate(args.integers))
-
+			finalThingList = []
+			
+			if args.PRODUCT:
+				buildType = "PRODUCT"
+				thingToBuild = args.PRODUCT
+				if thingToBuild in self.PRODUCTS:
+					finalThingList.append(thingToBuild)
+				else:
+					errorOut(thingToBuild,buildType)
+					
+			elif args.DEPENDENCY:
+				buildType = "DEPENDENCY"
+				thingToBuild = args.DEPENDENCY
+				if thingToBuild in self.DEPENDS:
+					finalThingList.append(thingToBuild)
+				else:
+					errorOut(thingToBuild,buildType)
+					
+			elif args.DEPENDENCY_LIST:
+				buildType = "DEPENDENCY"
+				thingToBuild = args.DEPENDENCY_LIST
+				if "," not in thingToBuild:
+					errorOut(None,None,"Error: are you sure the list format is correct? It must be dependency1;dependency2;dependency3;...")
+				for d in thingToBuild.split(","):
+					if d in self.DEPENDS:
+						finalThingList.append(d)
+					else:
+						errorOut(thingToBuild,buildType)
+					
+			elif args.PRODUCT_LIST:
+				buildType = "PRODUCT"
+				thingToBuild = args.PRODUCT_LIST
+				if "," not in thingToBuild:
+					errorOut(None,None,"Error: are you sure the list format is correct? It must be product1;product2;product3,...")
+				for d in thingToBuild.split(","):
+					if d in self.PRODUCTS:
+						finalThingList.append(d)
+					else:
+						errorOut(thingToBuild,buildType)
+					
+			elif args.build_all:
+				self.defaultEntrace()
+				return
+			
+			self.logger.warning('Starting custom build process for: {0}'.format(thingToBuild))
+			
+			for thing in finalThingList:
+				for b in self.targetBitness:
+					main.prepareBuilding(b)
+					main.build_mingw(b)
+					main.initBuildFolders()
+					self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild)
+					main.finishBuilding()
+	
 	def defaultEntrace(self):
 		for b in self.targetBitness:
 			main.prepareBuilding(b)
 			main.build_mingw(b)
 			main.initBuildFolders()
 			for p in self.PRODUCT_ORDER:
-				main.produceProduct(p)
+				self.build_thing(p,self.PRODUCTS[p],"PRODUCT")
 			main.finishBuilding()
 
 	def finishBuilding(self):
-		os.chdir("..")
-
-	def produceProduct(self,p):
-		self.defaultCFLAGS()
-		self.build_product(p,self.PRODUCTS[p])
+		self.cchdir("..")
 
 	def prepareBuilding(self,b):
 		if not os.path.isdir(_WORKDIR):
 			self.logger.info("Creating workdir: %s" % (_WORKDIR))
 			os.makedirs(_WORKDIR, exist_ok=True)
-		os.chdir(_WORKDIR)
+		self.cchdir(_WORKDIR)
 
 		self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
 		self.bitnessDir2        = "x86_64" if b is 64 else "x86" # just for vpx...
@@ -242,7 +447,7 @@ class CrossCompileScript:
 
 		os.unsetenv("CFLAGS")
 
-		os.chdir(_MINGW_DIR)
+		self.cchdir(_MINGW_DIR)
 
 		mingw_script_file    = self.download_file(self.mingwScriptURL)
 		#mingw_script_options = "--clean-build --disable-shared --default-configure --threads=pthreads-w32 --pthreads-w32-ver=2-9-1 --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
@@ -254,7 +459,7 @@ class CrossCompileScript:
 			self.logger.error("Previous MinGW build may have failed, delete the compiler folder named '{0}' and try again".format( _MINGW_DIR ))
 			exit(1)
 
-		os.chdir("..")
+		self.cchdir("..")
 	#:
 
 	def downloadHeader(self,url):
@@ -421,22 +626,22 @@ class CrossCompileScript:
 				break
 			if isSvn:
 				if not nextline.decode('utf-8').startswith('A    '):
-					if _QUIET == True:
+					if self.quietMode == True:
 						self.buildLogFile.write(nextline.decode('utf-8','replace'))
 					else:
 						sys.stdout.write(nextline.decode('utf-8','replace'))
 						sys.stdout.flush()
 			else:
-				if _QUIET == True:
+				if self.quietMode == True:
 					self.buildLogFile.write(nextline.decode('utf-8','replace'))
 				else:
 					sys.stdout.write(nextline.decode('utf-8','replace'))
 					sys.stdout.flush()
 
-		output = process.communicate()[0]
 		return_code = process.returncode
 		process.wait()
 		if (return_code == 0):
+			output = process.communicate()[0]
 			return output
 		else:
 			if ignoreErrors:
@@ -495,7 +700,7 @@ class CrossCompileScript:
 			realFolderName = renameTo
 
 		if os.path.isdir(realFolderName):
-			os.chdir(realFolderName)
+			self.cchdir(realFolderName)
 			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
 			self.run_process('hg pull -u')
 			self.run_process('hg update')
@@ -505,7 +710,7 @@ class CrossCompileScript:
 				self.removeAlreadyFiles()
 			else:
 				self.logger.debug("HG clone already up to date")
-			os.chdir("..")
+			self.cchdir("..")
 		else:
 			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
 			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
@@ -531,7 +736,7 @@ class CrossCompileScript:
 			branchString = " {0}".format( desiredBranch )
 
 		if os.path.isdir(realFolderName):
-			os.chdir(realFolderName)
+			self.cchdir(realFolderName)
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
 			self.logger.debug("GIT Checking out:{0}".format( " master" if desiredBranch == None else branchString ))
 			self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
@@ -544,7 +749,7 @@ class CrossCompileScript:
 				self.removeAlreadyFiles()
 			else:
 				self.logger.debug("GIT clone already up to date")
-			os.chdir("..")
+			self.cchdir("..")
 		else:
 			recur = ""
 			if recursive:
@@ -553,10 +758,10 @@ class CrossCompileScript:
 			self.logger.info("GIT cloning '%s' to '%s'" % (url,realFolderName))
 			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
-				os.chdir(realFolderName + ".tmp")
+				self.cchdir(realFolderName + ".tmp")
 				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch == None else branchString))
 				self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
-				os.chdir("..")
+				self.cchdir("..")
 			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url,realFolderName))
 
@@ -614,43 +819,42 @@ class CrossCompileScript:
 			self.logger.debug("{0} already downloaded".format( fileName ))
 			return folderName
 	#:
-
-	def build_depend(self,name,data):
-
+	def build_thing(self,name,data,type,force_rebuild = False): # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
+		#we are in workdir
 		if '_already_built' in data:
 			if data['_already_built'] == True:
-				return # we already built this dep this run (skips unessesary re-checks if 2 things have the same dep. took me too long to figure out this quick and easy idea :|
-
+				return
+				
+		if _DEBUG:
+			for tk in os.environ:
+				print("############ " + tk + " : " + os.environ[tk])
+				
+		self.logger.info("Building {0} '{1}'".format(type,name))
+		
 		skipDepends = False
 		if 'skip_deps' in data:
 			if data['skip_deps'] == True:
 				skipDepends = True
-
 		if "depends_on" in data and skipDepends == False: #dependception
 			if len(data["depends_on"])>0:
-				print("got here!")
 				self.logger.info("Building dependencies of '%s'" % (name))
 				for libraryName in data["depends_on"]:
 					if libraryName not in self.DEPENDS:
 						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
 					else:
-						self.build_depend(libraryName,DEPENDS[libraryName])
-
-		if _DEBUG:
-			for tk in os.environ:
-				print("############ " + tk + " : " + os.environ[tk])
-
-
-		self.logger.info("Building depend '%s'" % (name))
+						self.build_thing(libraryName,self.DEPENDS[libraryName],"DEPENDENCY")
 
 		workDir = None
-
 		renameFolder = None
-
 		if 'rename_folder' in data:
 			if data['rename_folder'] != None:
 				renameFolder = data['rename_folder']
-
+				
+		if type == "PRODUCT": 
+			self.cchdir(self.bitnessDir + "_products") #descend into x86_64_products
+		else:
+			self.cchdir(self.bitnessDir) #descend into x86_64
+		
 		if data["repo_type"] == "git":
 			branch     = self.getValueOrNone(data,'branch')
 			recursive  = self.getValueOrNone(data,'recursive_git')
@@ -680,220 +884,17 @@ class CrossCompileScript:
 			if data['download_header'] != None:
 				for h in data['download_header']:
 					self.downloadHeader(h)
-
-		os.chdir(workDir)
-		self.defaultCFLAGS()
-
-		currentFullDir = os.getcwd()
-		
-
-		if 'source_subfolder' in data:
-			if data['source_subfolder'] != None:
-				os.chdir(data['source_subfolder'])
-				
-		if 'debug_confighelp_and_exit' in data:
-			if data['debug_confighelp_and_exit'] == True:
-				self.bootstrap_configure()
-				os.system("./configure --help")
-				exit()
-
-		if 'cflag_addition' in data:
-			if data['cflag_addition'] != None:
-				self.logger.debug("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
-				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
-
-		if 'custom_cflag' in data:
-			if data['custom_cflag'] != None:
-				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
-				os.environ["CFLAGS"] = data['custom_cflag']
-
-				
-		if 'flipped_path' in data:
-			if data['flipped_path'] == True:
-				bef = os.environ["PATH"]
-				os.environ["PATH"] = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.compilePrefix,'bin'), self.originalPATH ) #todo properly test this.."PATH"]))
-				self.logger.debug("Flipping path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
-				
-				
-		
-		if 'env_exports' in data:
-			if data['env_exports'] != None:
-				for key,val in data['env_exports'].items():
-					val = self.replaceVariables(val)
-					prevEnv = ''
-					if key in os.environ:
-						prevEnv = os.environ[key]
-					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
-					os.environ[key] = val
-
-		if not self.wildCardIsFile('already_configured'):
-			if 'run_pre_patch' in data:
-				if data['run_pre_patch'] != None:
-					for cmd in data['run_pre_patch']:
-						cmd = self.replaceVariables(cmd)
-						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
-						self.run_process(cmd)
-
-		if 'patches' in data:
-			if data['patches'] != None:
-				for p in data['patches']:
-					self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
-
-		if not self.wildCardIsFile('already_ran_make'):
-			if 'run_post_patch' in data:
-				if data['run_post_patch'] != None:
-					for cmd in data['run_post_patch']:
-						cmd = self.replaceVariables(cmd)
-						self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
-						self.run_process(cmd)
-
-		if 'needs_configure' in data:
-			if data['needs_configure'] == True:
-				self.configure_source(name,data)
-		else:
-			self.configure_source(name,data)
-
-		if 'patches_post_configure' in data:
-			if data['patches_post_configure'] != None:
-				for p in data['patches_post_configure']:
-					self.apply_patch(p[0],p[1],True)
-
-		if 'is_cmake' in data:
-			if data['is_cmake'] == True:
-				self.cmake_source(name,data)
-
-		if 'make_subdir' in data:
-			if data['make_subdir'] != None:
-				os.chdir(data['make_subdir'])
-
-		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
-			if data['needs_make'] == True:
-				self.make_source(name,data)
-		else:
-			self.make_source(name,data)
-
-		if 'needs_make_install' in data:
-			if data['needs_make_install'] == True:
-				self.make_install_source(name,data)
-		else:
-			self.make_install_source(name,data)
-
-		if 'env_exports' in data:
-			if data['env_exports'] != None:
-				for key,val in data['env_exports'].items():
-					self.logger.debug("Environment variable '{0}' has been UNSET!".format( key, val ))
-					del os.environ[key]
 					
-		if 'flipped_path' in data:
-			if data['flipped_path'] == True:
-				bef = os.environ["PATH"]
-				os.environ["PATH"] = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
-				self.logger.debug("Resetting flipped path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
-
-		if 'source_subfolder' in data:
-			if data['source_subfolder'] != None:
-				os.chdir(currentFullDir)
-
-		if 'make_subdir' in data:
-			if data['make_subdir'] != None:
-				os.chdir(currentFullDir)
-
-		if 'cflag_addition' in data:
-			if data['cflag_addition'] != None:
-				self.defaultCFLAGS()
-
-		if 'custom_cflag' in data:
-			if data['custom_cflag'] != None:
-				self.defaultCFLAGS()
-
-		os.chdir("..")
-
-		if 'debug_exitafter' in data:
-			exit()
-
-		DEPENDS[name]["_already_built"] = True
-		self.logger.info("Building depend '%s': Done!" % (name))
-
-	#:
-
-	def build_product(self,name,data):
-
-		if '_already_built' in data:
-			if data['_already_built'] == True:
-				return
-
-		if _DEBUG:
-			for tk in os.environ:
-				print("############ " + tk + " : " + os.environ[tk])
-
-		self.logger.info("Building PRODUCT '%s'" % (name))
-
-		skipDepends = False
-		if 'skip_deps' in data:
-			if data['skip_deps'] == True:
-				skipDepends = True
-		if "depends_on" in data and skipDepends == False:
-			if len(data["depends_on"])>0:
-
-				os.chdir(self.bitnessDir)
-
-				self.logger.info("Building dependencies of '%s'" % (name))
-				for libraryName in data["depends_on"]:
-					if libraryName not in self.DEPENDS:
-						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
-					else:
-						self.build_depend(libraryName,self.DEPENDS[libraryName])
-
-				os.chdir("..")
-
-		os.chdir(self.bitnessDir + "_products")
-
-		workDir = None
-
-		renameFolder = None
-
-		if 'rename_folder' in data:
-			if data['rename_folder'] != None:
-				renameFolder = data['rename_folder']
-
-		if data["repo_type"] == "git":
-			branch     = self.getValueOrNone(data,'branch')
-			recursive  = self.getValueOrNone(data,'recursive_git')
-			folderName = self.getValueOrNone(data,'folder_name')
-			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
-		if data["repo_type"] == "svn":
-			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
-		if data['repo_type'] == "hg":
-			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder)
-		if data["repo_type"] == "archive":
-			if "folder_name" in data:
-				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
-			else:
-				workDir = self.download_unpack_file(data["url"],None,workDir)
-
-		if workDir == None:
-			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
-			raise
-
-		if 'rename_folder' in data:
-			if data['rename_folder'] != None:
-				if not os.path.isdir(data['rename_folder']):
-					shutil.move(workDir, data['rename_folder'])
-				workDir = data['rename_folder']
-
-		if 'download_header' in data:
-			if data['download_header'] != None:
-				for h in data['download_header']:
-					self.downloadHeader(h)
-
-		os.chdir(workDir)
+		self.cchdir(workDir) #descend into x86_64/[DEPENDENCY_OR_PRODUCT_FOLDER]
 		self.defaultCFLAGS()
-
 		currentFullDir = os.getcwd()
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
-				os.chdir(data['source_subfolder'])
+				self.cchdir(data['source_subfolder'])
+		
+		if force_rebuild:
+			self.removeAlreadyFiles()
 				
 		if 'debug_confighelp_and_exit' in data:
 			if data['debug_confighelp_and_exit'] == True:
@@ -910,13 +911,14 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
-	
+
+
 		if 'flipped_path' in data:
 			if data['flipped_path'] == True:
 				bef = os.environ["PATH"]
 				os.environ["PATH"] = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.compilePrefix,'bin'), self.originalPATH ) #todo properly test this..
 				self.logger.debug("Flipping path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
-				
+
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
 				for key,val in data['env_exports'].items():
@@ -926,7 +928,6 @@ class CrossCompileScript:
 						prevEnv = os.environ[key]
 					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
-
 
 		if not self.wildCardIsFile('already_configured'):
 			if 'run_pre_patch' in data:
@@ -949,7 +950,6 @@ class CrossCompileScript:
 						self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 
-
 		if 'needs_configure' in data:
 			if data['needs_configure'] == True:
 				self.configure_source(name,data)
@@ -967,7 +967,7 @@ class CrossCompileScript:
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
-				os.chdir(data['make_subdir'])
+				self.cchdir(data['make_subdir'])
 
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
@@ -992,14 +992,14 @@ class CrossCompileScript:
 				bef = os.environ["PATH"]
 				os.environ["PATH"] = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
 				self.logger.debug("Resetting flipped path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
-					
+
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
-				os.chdir(currentFullDir)
+				self.cchdir(currentFullDir)
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
-				os.chdir(currentFullDir)
+				self.cchdir(currentFullDir)
 
 		if 'cflag_addition' in data:
 			if data['cflag_addition'] != None:
@@ -1009,13 +1009,17 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.defaultCFLAGS()
 
-
-		self.PRODUCTS[name]["_already_built"] = True
-		self.logger.info("Building PRODUCT '%s': Done!" % (name))
-
-		os.chdir("..")
-
-		os.chdir("..")
+		self.cchdir("..") #asecond into x86_64
+		if type == "PRODUCT": 
+			self.PRODUCTS[name]["_already_built"] = True
+		else:
+			self.DEPENDS[name]["_already_built"] = True
+			
+		self.logger.info("Building {0} '{1}': Done!".format(type,name))
+		if 'debug_exitafter' in data:
+			exit()
+		self.cchdir("..") #asecond into workdir
+	#:
 	def bootstrap_configure(self):
 		if not os.path.isfile("configure"):
 			if os.path.isfile("bootstrap.sh"):
@@ -1096,7 +1100,7 @@ class CrossCompileScript:
 		originalFolder = os.getcwd()
 		
 		if folderToPatchIn != None:
-			os.chdir(folderToPatchIn)
+			self.cchdir(folderToPatchIn)
 			self.logger.debug("Moving to patch folder: {0}" .format( folderToPatchIn ))
 	
 		fileName = os.path.basename(urlparse(url).path)
@@ -1127,7 +1131,7 @@ class CrossCompileScript:
 			self.logger.debug("Patch '{0}' already applied".format( fileName ))
 			
 		if folderToPatchIn != None:
-			os.chdir("..")
+			self.cchdir("..")
 	#:
 
 	def cmake_source(self,name,data):
@@ -1142,6 +1146,8 @@ class CrossCompileScript:
 			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
 
 			self.run_process('cmake {0}'.format( makeOpts ))
+			
+			self.run_process("make clean",True)
 
 			self.touch(touch_name)
 
@@ -1357,9 +1363,13 @@ class CrossCompileScript:
 		else:
 			return ""
 	#:
+	def cchdir(self,dir):
+		if _DEBUG:
+			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
+		os.chdir(dir)
 
 PRODUCTS = {
-	'x264_10bit' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
+	'x264_10bit' : {
 		'repo_type' : 'git',
 		'url' : 'http://git.videolan.org/git/x264.git',
 		'rename_folder' : 'x264_10bit',
@@ -1372,6 +1382,7 @@ PRODUCTS = {
 		'depends_on' : (
 			'libffmpeg',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'x264' },
 	},
 	'curl' : {
 		'repo_type' : 'git',
@@ -1381,6 +1392,7 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'cURL' },
 	},
 	'wget' : {
 		'repo_type' : 'git',
@@ -1394,6 +1406,7 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib', 'gnutls'
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'wget' },
 	},
 	'aria2' : {
 		'repo_type' : 'git',
@@ -1414,6 +1427,7 @@ PRODUCTS = {
 		'depends_on': [
 			'zlib', 'libxml2', 'expat', 'gmp', 'gnutls', 'libsqlite3', 'libssh2', # 'c-ares', 'libsqlite3', 'openssl_1_1'
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'aria2' },
 	},
 	'ffmpeg_static' : {
 		'repo_type' : 'git',
@@ -1438,6 +1452,7 @@ PRODUCTS = {
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'ffmpeg (static)' },
 	},
 	'ffmpeg_shared' : {
 		'repo_type' : 'git',
@@ -1462,15 +1477,16 @@ PRODUCTS = {
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'ffmpeg (shared)' },
 	},
-	'vlc' : {
+	'vlc' : { # not working
 		'repo_type' : 'git',
 		'url' : 'https://github.com/videolan/vlc.git', # https://git.videolan.org/git/vlc.git is slow..
 		'configure_options':
 			'--host={compile_target} --prefix={product_prefix}/vlc_git.installed --disable-lua --enable-qt --disable-ncurses --disable-dbus --disable-sdl --disable-telx --enable-nls LIBS="-lbcrypt -lbz2"'
 		,
 		'depends_on' : [
-			'lua53', 'a52dec',
+			'lua', 'a52dec',
 		],
 		# 'patches' : [
 			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0002-MinGW-w64-lfind-s-_NumOfElements-is-an-unsigned-int.patch','p1'),
@@ -1486,6 +1502,7 @@ PRODUCTS = {
 			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_5.h',
 			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_6.h',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'VLC (git)' },
 	},
 	'x265_10bit' : {
 		'repo_type' : 'hg',
@@ -1495,11 +1512,12 @@ PRODUCTS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': './source',
+		'_info' : { 'version' : 'HG (master)', 'fancy_name' : 'x265' },
 	},
-	'mkvtoolnix': { # requires rake?? ok then
+	'mkvtoolnix': {
 		'repo_type' : 'git',
 		'recursive_git' : True,
-		'is_rake' : True, #thx for not using make...
+		'is_rake' : True,
 		'url' : 'https://github.com/mbunkus/mkvtoolnix.git',
 		'configure_options':
 			'--host={compile_target} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
@@ -1513,6 +1531,7 @@ PRODUCTS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
 		},
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'mkvtoolnix' },
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -1521,6 +1540,7 @@ PRODUCTS = {
 		'depends_on': [
 			'libogg',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'FLAC' },
 	},
 	'lame3' : {
 		'repo_type' : 'archive',
@@ -1529,7 +1549,6 @@ PRODUCTS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
 		),
 		'configure_options': '--host={compile_target} --prefix={product_prefix}/lame-3.99.5.installed --disable-shared --enable-static --enable-nasm',
-		'make_options': '',
 	},
 	'vorbis-tools' : {
 		'repo_type' : 'git',
@@ -1541,6 +1560,7 @@ PRODUCTS = {
 		'depends_on': [
 			'libvorbis',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'vorbis-tools' },
 	},
 	'sox' : {
 		'repo_type' : 'git',
@@ -1559,6 +1579,7 @@ PRODUCTS = {
 		'depends_on': [
 			'libvorbis','gettext',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'SoX' },
 	},
 	'mpv' : {
 		'repo_type' : 'git',
@@ -1586,6 +1607,7 @@ PRODUCTS = {
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'mpv' },
 	},
 	'mediainfo' : {
 		'repo_type' : 'git',
@@ -1602,6 +1624,7 @@ PRODUCTS = {
 		'run_post_configure' : [
 			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'MediaInfo' },
 	},
 	'mediainfo_dll' : {
 		'repo_type' : 'git',
@@ -1620,6 +1643,7 @@ PRODUCTS = {
 		'depends_on': [
 			'zenlib', 'libcurl',
 		],
+		#'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'MediaInfoDLL' },
 	},
 	'filezilla_svn' : {
 		'repo_type' : 'svn',
@@ -1632,7 +1656,7 @@ PRODUCTS = {
 		'depends_on' : [
 			'libfilezilla',
 		],
-		# 'debug_confighelp_and_exit' : True,
+		#'_info' : { 'version' : 'SVN (master)', 'fancy_name' : 'FileZilla' },
 	},
 }
 DEPENDS = {
@@ -1647,6 +1671,7 @@ DEPENDS = {
 		'env_exports' : {
 			'CXXFLAGS' : '-O0',
 		},
+		'_info' : { 'version' : 'SVN (master)', 'fancy_name' : 'FileZilla (libary)' },
 	},
 	'libmediainfo' : {
 		'repo_type' : 'git',
@@ -1664,6 +1689,7 @@ DEPENDS = {
 		'depends_on': [
 			'zenlib', 'libcurl',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libmediainfo' },
 	},
 	'libssh2' : {
 		'repo_type' : 'git',
@@ -1672,6 +1698,7 @@ DEPENDS = {
 		'env_exports' : {
 			'LIBS' : '-lbcrypt' # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
 		},
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libssh2' },
 	},
 	'libsqlite3' : {
 		'repo_type' : 'archive',
@@ -1681,6 +1708,7 @@ DEPENDS = {
 		'depends_on': (
 			'zlib',
 		),
+		'_info' : { 'version' : '3.1.8', 'fancy_name' : 'libsqlite3)' },
 	},
 	'libcurl' : {
 		'repo_type' : 'git',
@@ -1690,6 +1718,7 @@ DEPENDS = {
 		'depends_on': (
 			'zlib',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libcurl' },
 	},
 	'zenlib' : {
 		'repo_type' : 'git',
@@ -1703,6 +1732,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
 		],
+		'_info' : { 'version' : 'Git_v4.35', 'fancy_name' : 'zenlib' },
 	},
 	'boost' : { # oh god no.. 
 		'repo_type' : 'archive',
@@ -1732,9 +1762,9 @@ DEPENDS = {
 			#' ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
+		'_info' : { 'version' : '1.63', 'fancy_name' : 'Boost' },
 	},
 	'angle' : { # implenting gyp support just for this would be a waste of time, so a mnaual process shall suffice.
-		#'_already_built': True,
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -1746,7 +1776,7 @@ DEPENDS = {
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
-		'run_post_patch': ( # so is this
+		'run_post_patch': (
 			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',
 			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 ; fi',
@@ -1760,9 +1790,10 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'Angle' },
 	},
 	
-	'qt5' : {
+	'qt5' : { # too... many.... patches....
 		'repo_type' : 'archive',
 		'url' : 'https://download.qt.io/official_releases/qt/5.8/5.8.0/single/qt-everywhere-opensource-src-5.8.0.tar.gz',
 		'configure_options' :
@@ -1873,6 +1904,7 @@ DEPENDS = {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 			#'OPENSSL_LIBS' : '!CMD({cross_prefix_full}pkg-config --libs-only-l openssl)CMD!',
 		},
+		'_info' : { 'version' : '5.8.0', 'fancy_name' : 'QT5' },
 	},
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
@@ -1885,6 +1917,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-header-compat.mingw.patch',  'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-libmng-compatibility.patch', 'p1'),
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libjpeg-turbo' },
 	},
 	'libpng' : {
 		'repo_type' : 'archive',
@@ -1893,6 +1926,7 @@ DEPENDS = {
 		'patches' : [
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libpng-1.6.28-apng.patch', 'p0'),
 		],
+		'_info' : { 'version' : '1.6.28', 'fancy_name' : 'libpng' },
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
@@ -1902,6 +1936,7 @@ DEPENDS = {
 			'CFLAGS'   : '-DGRAPHITE2_STATIC',
 			'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		},
+		'_info' : { 'version' : '1.4.5', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
@@ -1910,12 +1945,14 @@ DEPENDS = {
 		'depends_on' : [
 			'bzip2',
 		],
+		'_info' : { 'version' : '8.40', 'fancy_name' : 'pcre' },
 	},
 	
 	'd-bus' : {
 		'repo_type' : 'archive',
 		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.10.16.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
+		'_info' : { 'version' : '1.10.16', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
@@ -1935,6 +1972,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
+		'_info' : { 'version' : '2.50.3', 'fancy_name' : 'glib2' },
 	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
@@ -1945,16 +1983,18 @@ DEPENDS = {
 		'env_exports' : {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 		},
+		'_info' : { 'version' : '1.1.0e', 'fancy_name' : 'openssl' },
 	},
 	'libfile_local' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'rename_folder' : 'libfile.git',
+		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={compile_prefix} --disable-shared --enable-static',
 		'needs_make' : False,
 		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
 		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 		'run_post_patch' : [ 'autoreconf -fiv' ],
+		
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -1973,19 +2013,19 @@ DEPENDS = {
 			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw-libgnurx-static.patch', 'p1' ),
 			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libgnurx-1-build-static-lib.patch', 'p1' ),
 		],
+		'_info' : { 'version' : '2.5.1', 'fancy_name' : 'mingw-libgnurx' },
 	},
 	'gettext' : {
 		'repo_type' : 'archive',
 		'url' : 'http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
+		'version' : '0.19.8.1',
+		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
 	},
-	# build_gettext() {
-		# generic_download_and_install http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.7.tar.xz gettext-0.19.7 "CFLAGS=-O2 CXXFLAGS=-O2 LIBS=-lpthread"
-	# }
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'rename_folder' : 'libfile_local.git',
+		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
 		],
@@ -1995,6 +2035,7 @@ DEPENDS = {
 		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 		'run_post_patch' : [ 'autoreconf -fiv' ],
 		'flipped_path' : True,
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'file' },
 	},
 	'libflac' : {
 		'repo_type' : 'git',
@@ -2003,6 +2044,7 @@ DEPENDS = {
 		'depends_on': [
 			'libogg',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'flac (library)' },
 	},
 	'libarchive': {
 		'repo_type' : 'archive',
@@ -2013,12 +2055,15 @@ DEPENDS = {
 		],
 		'run_post_install' : [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
-		]
+		],
+		'_info' : { 'version' : '3.3.1', 'fancy_name' : 'libarchive' },
 	},
 	'lzo': {
 		'repo_type' : 'archive',
 		'url' : 'http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'version' : '2.10',
+		'_info' : { 'version' : '2.10', 'fancy_name' : 'lzo' },
 	},
 	'uchardet': {
 		'repo_type' : 'git',
@@ -2026,6 +2071,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
 		'repo_type' : 'archive',
@@ -2037,6 +2083,7 @@ DEPENDS = {
 			#'if [ ! -f "configure" ] ; then ./autogen.sh ; fi',
 			#'make -C doc stamp-vti', # idk why it needs this... odd thing: https://lists.gnu.org/archive/html/libcdio-devel/2016-03/msg00007.html
 		),
+		'_info' : { 'version' : '0.94', 'fancy_name' : 'libcdio' },
 	},
 	'libcdio-paranoia' : {
 		'repo_type' : 'git',
@@ -2045,6 +2092,7 @@ DEPENDS = {
 		'depends_on': (
 			'libcdio',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libcdio-paranoia' },
 	},
 	'libdvdcss' : {
 		'repo_type' : 'git',
@@ -2053,6 +2101,7 @@ DEPENDS = {
 		'run_post_patch' : (
 			'autoreconf -i',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libdvdcss' },
 	},
 	'libdvdread' : {
 		'repo_type' : 'git',
@@ -2067,6 +2116,7 @@ DEPENDS = {
 		'run_post_install' : (
 			'sed -i.bak \'s/-ldvdread/-ldvdread -ldvdcss/\' "{pkg_config_path}/dvdread.pc"', # fix undefined reference to `dvdcss_close'
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libdvdread' },
 	},
 	'libdvdnav' : {
 		'repo_type' : 'git',
@@ -2078,6 +2128,7 @@ DEPENDS = {
 		'run_post_patch' : (
 			'autoreconf -i',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libdvdnav' },
 	},
 	'libbluray' : {
 		'repo_type' : 'git',
@@ -2093,6 +2144,7 @@ DEPENDS = {
 		'depends_on' : (
 			'freetype2',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libbluray' },
 	},
 	'openal-soft' : {
 		'repo_type' : 'git',
@@ -2110,12 +2162,13 @@ DEPENDS = {
 			"sed -i.bak 's/CMAKE_INSTALL_PREFIX \"\${{CMAKE_FIND_ROOT_PATH}}\"/CMAKE_INSTALL_PREFIX \"\"/' XCompile.txt",
 		],
 		'install_options' : 'DESTDIR={compile_prefix}',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'openal-soft' },
 	},
 	'lcms2' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mm2/Little-CMS.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'Little-CMS2' },
 	},
 	'python36_libs': {
 		'repo_type' : 'git',
@@ -2123,6 +2176,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+		'_info' : { 'version' : '3.6', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
 		'repo_type' : 'git',
@@ -2134,6 +2188,7 @@ DEPENDS = {
 			'ubuntu' : [ 'p7zip-full' ],
 			'fedora' : [ 'p7zip.' ],
 		},
+		'_info' : { 'version' : '37', 'fancy_name' : 'VapourSynth (library-only)' },
 	},
 	'luajit': {
 		'repo_type' : 'git',
@@ -2142,8 +2197,9 @@ DEPENDS = {
 		'custom_cflag' : '-O3', # doesn't like march's past ivybridge (yet), so we override it.
 		'install_options' : 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static FILE_T=luajit.exe PREFIX={compile_prefix}',
 		'make_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'LuaJIT2' },
 	},
-	'lua53' : {
+	'lua' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.lua.org/ftp/lua-5.3.4.tar.gz',
 		'needs_configure' : False,
@@ -2153,6 +2209,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'lua5.2' ],
 		},
+		'_info' : { 'version' : '5.3.4', 'fancy_name' : 'lua' },
 	},
 	'a52dec' : {
 		'repo_type' : 'archive',
@@ -2163,6 +2220,7 @@ DEPENDS = {
 		],
 		'make_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 		'install_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
+		'_info' : { 'version' : '0.7.4', 'fancy_name' : 'a52dec' },
 	},
 	'vapoursynth': {
 		'repo_type' : 'git',
@@ -2174,6 +2232,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0002-api.patch', 'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', 'p1'),
 		),
+
 	},
 	'libffmpeg' : { # static, as we use static on everything, my derp in the first place.
 		'repo_type' : 'git',
@@ -2199,6 +2258,7 @@ DEPENDS = {
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
 	'bzip2' : {
 		'repo_type' : 'archive',
@@ -2210,6 +2270,7 @@ DEPENDS = {
 		"needs_make": True,
 		"needs_make_install": False,
 		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install',
+		'_info' : { 'version' : '1.0.6', 'fancy_name' : 'BZip2 (library)' },
 	},
 	'zlib' : {
 		'repo_type' : 'archive',
@@ -2225,23 +2286,26 @@ DEPENDS = {
 		},
 		'configure_options': '--static --prefix={compile_prefix}',
 		'make_options': '{make_prefix_options} ARFLAGS=rcs',
+		'_info' : { 'version' : '1.2.11', 'fancy_name' : 'zlib' },
 	},
 	'liblzma' : {
 		'repo_type' : 'archive',
 		'url' : 'http://tukaani.org/xz/xz-5.2.3.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
 	},
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : '5.2.3', 'fancy_name' : 'zimg' },
 	},
 	'libsnappy' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/ffmpegwindowsbi/files/dependency_libraries/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
+		'url' : 'https://github.com/DeadSix27/modular_cross_compile_script/blob/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
 		'folder_name' : 'google-snappy-32d6d7d',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '1.1.3-14', 'fancy_name' : 'libsnappy' },
 	},
 	'gmp' : { #todo try this.
 		#export CC_FOR_BUILD=/usr/bin/gcc idk if we need this anymore, compiles fine without.
@@ -2250,6 +2314,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : '6.1.2', 'fancy_name' : 'gmp' },
 	},
 	'libnettle' : {
 		'repo_type' : 'archive',
@@ -2258,21 +2323,15 @@ DEPENDS = {
 		'depends_on' : [
 			'gmp',
 		],
+		'_info' : { 'version' : '3.3', 'fancy_name' : 'nettle' },
 	},
 	'iconv' : {
 		'repo_type' : 'archive',
 		# CFLAGS=-O2 # ??
 		'url' : 'https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '1.15', 'fancy_name' : 'libiconv' },
 	},
-		#    sed -i.bak 's/mkstemp(tmpfile)/ -1 /g' src/danetool.c # fix x86_64 absent? but danetool is just an exe AFAICT so this hack should be ok...
-		#    # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference...
-		#    # --enable-local-libopts to allow building with local autogen installed,
-		#    # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
-		#    # libtasn1 is some dependency, appears provided is an option [see also build_libnettle]
-		#    # pks #11 hopefully we don't need kit
-
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
@@ -2286,18 +2345,19 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
+		'_info' : { 'version' : '3.5.10', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
+		'url' : 'https://files.dyne.org/frei0r/releases/frei0r-plugins-1.5.0.tar.gz',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'run_post_patch': ( # runs commands post the patch process
 			'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
 		),
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix}',
-		'url' : 'https://files.dyne.org/frei0r/releases/frei0r-plugins-1.5.0.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '1.5.0', 'fancy_name' : 'frei0r-plugins' },
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
@@ -2318,6 +2378,7 @@ DEPENDS = {
 		[
 			'libspeex',
 		],
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libsndfile' },
 	},
 	'libbs2b' : {
 		'repo_type' : 'archive',
@@ -2326,14 +2387,14 @@ DEPENDS = {
 		},
 		'url' : 'https://sourceforge.net/projects/bs2b/files/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '3.1.0', 'fancy_name' : 'libbs2b' },
 	},
 	'wavpack' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/dbry/WavPack/archive/5.1.0.tar.gz',
 		'folder_name' : 'WavPack-5.1.0',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '5.1.0', 'fancy_name' : 'wavpack' },
 	},
 	'libgme_game_music_emu' : {
 		'repo_type' : 'archive',
@@ -2344,14 +2405,14 @@ DEPENDS = {
 		#),
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2',
-		#'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		#'make_options': '',
+		'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : { # why can't everything be so easy to compile
-		'repo_type' : 'archive',
-		'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
+		'repo_type' : 'git',
+		#'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
+		'url' : 'https://chromium.googlesource.com/webm/libwebp',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libwebp' },
 	},
 	'flite' : { # why can't everything be so easy to compile
 		'repo_type' : 'archive',
@@ -2370,7 +2431,7 @@ DEPENDS = {
 			'cp -v ./build/{bit_name}-mingw32/lib/*.a "{compile_prefix}/lib"',
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '1.4', 'fancy_name' : 'flite' },
 	},
 	'libgsm' : {
 		'repo_type' : 'archive',
@@ -2389,6 +2450,7 @@ DEPENDS = {
 		),
 		'cpu_count' : '1',
 		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
+		'_info' : { 'version' : '1.0.16', 'fancy_name' : 'gsm' },
 	},
 	'sdl1' : {
 		'repo_type' : 'archive',
@@ -2399,8 +2461,8 @@ DEPENDS = {
 			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl-config" "{cross_prefix_full}sdl-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
-		'make_options': '',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : '1.2.15', 'fancy_name' : 'SDL1' },
 	},
 	'sdl2' : {
 		'repo_type' : 'archive',
@@ -2415,53 +2477,54 @@ DEPENDS = {
 			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : '2.0.5', 'fancy_name' : 'SDL2' },
 	},
 	'libopus' : {
-		'repo_type' : 'archive',
-		'url' : 'https://github.com/xiph/opus/releases/download/v1.1.2/opus-1.1.2.tar.gz',
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/opus.git',
 		'patches': (
-			("https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/opus-1.1.2.patch", "p0"),
+			("https://dsix.tech/opus_git_strip_declspec.patch", "p1"),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'opus' },
 	},
 	'opencore-amr' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.3.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'opencore-amr' },
 	},
 	'vo-amrwbenc' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.2.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '0.1.2', 'fancy_name' : 'vo-amrwbenc' },
 	},
 	'libogg' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/xiph/ogg/archive/v1.3.2.tar.gz',
 		'folder_name' : 'ogg-1.3.2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '1.3.2', 'fancy_name' : 'ogg' },
 	},
 	'libspeexdsp' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/xiph/speexdsp/archive/SpeexDSP-1.2rc3.tar.gz',
 		'folder_name' : 'speexdsp-SpeexDSP-1.2rc3',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '1.2rc3', 'fancy_name' : 'speexdsp' },
 	},
 	'libspeex' : {
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
 		'url' : 'https://github.com/xiph/speex.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'speex' },
 	},
 	'libvorbis' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/vorbis.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'vorbis' },
 	},
 	'libtheora' : {
 		'repo_type' : 'git',
@@ -2470,28 +2533,28 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', 'p1'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'theora' },
 	},
 	'orc' : {
 		'repo_type' : 'archive',
 		'url' : 'http://download.videolan.org/contrib/orc/orc-0.4.18.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '0.4.18', 'fancy_name' : 'orc' },
 	},
 	'libschroedinger' : {
 		'repo_type' : 'archive',
 		'url' : 'http://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
 		'run_post_configure': (
 			'sed -i.bak \'s/testsuite//\' Makefile',
 		),
 		'run_post_install': (
 			'sed -i.bak \'s/-lschroedinger-1.0$/-lschroedinger-1.0 -lorc-0.4/\' "{pkg_config_path}/schroedinger-1.0.pc"',
 		),
+		'_info' : { 'version' : '1.0.11', 'fancy_name' : 'schroedinger' },
 
 	},
-	'freetype2' : { #todo try playing with this.
+	'freetype2' : {
 		'repo_type' : 'archive',
 		'url' : 'https://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.bz2',
 		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-zlib={compile_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
@@ -2501,16 +2564,16 @@ DEPENDS = {
 			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0002-Enable-subpixel-rendering.patch?h=mingw-w64-freetype2',          'Np1'),
 			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
 		],
-		#'make_options': '', # nor does it like the default make options..
 		#'run_post_install': (
 		#	'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		#),
+		'_info' : { 'version' : '2.7.1', 'fancy_name' : 'freetype2' },
 	},
 	'expat' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.0/expat-2.2.0.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '2.2.0', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
@@ -2522,15 +2585,15 @@ DEPENDS = {
 		'depends_on': [
 			'liblzma', 'iconv'
 		],
+		'_info' : { 'version' : '2.9.4', 'fancy_name' : 'libxml2' },
 	},
 	'libxvid' : {
 		'repo_type' : 'archive',
 		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz',
 		'folder_name' : 'xvidcore',
-		'rename_folder' : 'xvidcore-1.3.4', #why the weird name xvid? never heard of standards?
-		'source_subfolder': './build/generic', # Why that subfolder.. come on
+		'rename_folder' : 'xvidcore-1.3.4',
+		'source_subfolder': './build/generic',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix}',
-		'make_options': '',
 		'cpu_count' : '1',
 		'run_post_configure': (
 			'sed -i.bak "s/-mno-cygwin//" platform.inc',
@@ -2539,17 +2602,18 @@ DEPENDS = {
 			'rm -v {compile_prefix}/lib/xvidcore.dll.a',
 			'mv -v {compile_prefix}/lib/xvidcore.a {compile_prefix}/lib/libxvidcore.a',
 		),
+		'_info' : { 'version' : '1.3.4', 'fancy_name' : 'xvidcore' },
 	},
 	'xavs' : {
-		#compiles fine without LDFLAGS='-lm' apparently
+		#LDFLAGS='-lm'
 		'repo_type' : 'svn',
 		'url' : 'https://svn.code.sf.net/p/xavs/code/trunk',
 		'folder_name' : 'xavs_svn',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --cross-prefix={cross_prefix_bare}',
-		'make_options': '',
 		'run_post_install' : (
-			'rm -f NUL', # I will not even ask.
-		)
+			'rm -f NUL', # uh???
+		),
+		'_info' : { 'version' : 'SVN (master)', 'fancy_name' : 'xavs' },
 	},
 	'libsoxr' : {
 		'repo_type' : 'archive',
@@ -2557,28 +2621,28 @@ DEPENDS = {
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'url' : 'https://sourceforge.net/projects/soxr/files/soxr-0.1.2-Source.tar.xz',
-		'make_options': '',
+		'_info' : { 'version' : '0.1.2', 'fancy_name' : 'soxr' },
 	},
-	# 'libebur128' : {
-	# 	'repo_type' : 'git',
-	# 	'url' : 'https://github.com/jiixyj/libebur128.git',
-	# 	'cmake_options': '{cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
-	# 	'needs_configure' : False,
-	# 	'is_cmake' : True,
-	# 	'make_options': '',
-	# 	'run_post_patch': (
-	# 		'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
-	# 	),
-	# },
-	'libx265' : { #should be a product actually :/ ill move/implement that later.
+	'libebur128' : { # uneeded
+		'repo_type' : 'git',
+		'url' : 'https://github.com/jiixyj/libebur128.git',
+		'cmake_options': '{cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'run_post_patch': (
+			'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
+		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libebur128' },
+	},
+	'libx265' : {
 		'repo_type' : 'hg',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_CLI=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'make_options': '',
 		'source_subfolder': './source',
+		'_info' : { 'version' : 'HG (master)', 'fancy_name' : 'x265 (library)' },
 	},
 	'libopenh264' : {
 		'repo_type' : 'git',
@@ -2587,15 +2651,16 @@ DEPENDS = {
 		'make_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
 		'install_options': '{make_prefix_options} OS=mingw_nt',
 		'install_target' : 'install-static',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'openh264' },
 	},
 	'vamp_plugin' : {
 		'repo_type' : 'archive',
-		'url' : 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz', #todo obv move to a real host. (implement dl without filesize)
+		'url' : 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz',
 		'run_post_patch': (
 			'cp -v build/Makefile.mingw64 Makefile',
 		),
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one.
+			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
 		),
 		'make_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
 		'needs_make_install' : False, # doesnt s support xcompile installing
@@ -2611,24 +2676,26 @@ DEPENDS = {
 			'sed -i.bak \'s/\%PREFIX\%/{compile_prefix_sed_escaped}/\' "{pkg_config_path}/vamp.pc"',
 			'sed -i.bak \'s/\%PREFIX\%/{compile_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-hostsdk.pc"',
 			'sed -i.bak \'s/\%PREFIX\%/{compile_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-sdk.pc"',
-		)
+		),
+		'_info' : { 'version' : '2.7.1', 'fancy_name' : 'vamp-plugin-sdk' },
 	},
 	'fftw3' : {
 		'repo_type' : 'archive',
 		#git tags/master require --enable-maintainer-mode we could but shouldn't use git I guess.
 		'url' : 'http://fftw.org/fftw-3.3.6-pl1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '3.3.6-pl1', 'fancy_name' : 'fftw3' },
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
 		'branch' : '477ce36f8e4bd6a177727f4ac32eba11864dd85d', # commit: Fix win32 compilation # fixed the cross compiling.
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'git-477ce36', 'fancy_name' : 'fftw3' },
 	},
 	'librubberband' : {
 		'repo_type' : 'archive',
+		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
 		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
 			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/ladspa.h',
 		),
@@ -2641,7 +2708,6 @@ DEPENDS = {
 			'STRIP'  : '{cross_prefix_bare}strip',
 			'CXX'    : '{cross_prefix_bare}g++',
 		},
-		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'make_options': '{make_prefix_options}',
 		'needs_make_install' : False,
@@ -2655,6 +2721,7 @@ DEPENDS = {
 		'depends_on': [
 			'libsndfile',
 		],
+		'_info' : { 'version' : '1.8.1', 'fancy_name' : 'librubberband' },
 	},
 	'liblame' : { # todo make it a product too.
 		'repo_type' : 'archive',
@@ -2663,13 +2730,13 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm --disable-frontend',
-		'make_options': '',
+		'_info' : { 'version' : '3.99.5', 'fancy_name' : 'lame (library)' },
 	},
 	'twolame' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/twolame/files/twolame/0.3.13/twolame-0.3.13.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static CPPFLAGS=-DLIBTWOLAME_STATIC',
-		'make_options': '',
+		'_info' : { 'version' : '0.3.13', 'fancy_name' : 'twolame' },
 	},
 	'vidstab' : {
 		'repo_type' : 'git',
@@ -2677,16 +2744,16 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DUSE_OMP=OFF', #fatal error: omp.h: No such file or directory
-		'make_options': '',
 		'run_post_patch': (
 			'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'vid.stab' },
 	},
 	'netcdf' : {
 		'repo_type' : 'archive',
 		'url' : 'https://gfd-dennou.org/arch/ucar/unidata/pub/netcdf/netcdf-4.4.1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
-		'make_options': '',
+		'_info' : { 'version' : '4.4.1', 'fancy_name' : 'netcdf' },
 	},
 	'libcaca' : {
 		'repo_type' : 'archive',
@@ -2701,37 +2768,19 @@ DEPENDS = {
 		),
 		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
-		'make_options': '',
+		'_info' : { 'version' : '0.99.beta19', 'fancy_name' : 'libcaca' },
 	},
-
-
-	#libcaca' : { #why is this thing so hard to compile geez... well works now | nvm.
-	#	'repo_type' : 'archive',
-	#	'patches' : (
-	#		('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libcaca-0.99.beta19.patch', 'p1'),
-	#	),
-	#	'run_post_configure': (
-	#		'sed -i.bak "s/ src examples/ src/" Makefile',
-	#		'sed -i.bak "s/ doc test/ doc/" Makefile',
-	#		'sed -i.bak "s/__declspec(dllexport)//g" *.h',
-	#		'sed -i.bak "s/__declspec(dllimport)//g" *.h',
-	#	),
-	#	#'cflag_addition' : '-DCACA_STATIC -D_WIN64 -D__LIBCACA__ -DDLL_EXPORT',
-	#	'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz', #thanks fedora, I like you better than suse.
-	#	'configure_options': '--host={compile_target} --prefix={compile_prefix} --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
-	#	'make_options': '',
-	#,
 	'libmodplug' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.8.5/libmodplug-0.8.8.5.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
 		'run_post_install': (
 			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] http://trac.ffmpeg.org/ticket/1539
 			'sed -i.bak \'s/-lmodplug.*/-lmodplug -lstdc++/\' "{pkg_config_path}/libmodplug.pc"', # huh ?? c++?
 			'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
 			'sed -i.bak \'s/__declspec(dllimport)//\' "{compile_prefix}/include/libmodplug/modplug.h"',
 		),
+		'_info' : { 'version' : '0.8.8.5', 'fancy_name' : 'libmodplug' },
 	},
 	'zvbi' : {
 		'repo_type' : 'archive',
@@ -2740,27 +2789,27 @@ DEPENDS = {
 			'LIBS' : '-lpng',
 		},
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
-		'make_subdir' : 'src', #this will only run make and make install in said dir... geez..
-		'make_options': '',
+		'make_subdir' : 'src',
 		'patches': (
 		    ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/zvbi-0.2.35_win32.patch', 'p0'),
 			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/zvbi-0.2.35_ioctl.patch', 'p0'),
 		),
-		#   there is no .pc for zvbi, so we add --extra-libs=-lpng to FFmpegs configure TODO there is a .pc file it just doesn't get installed [?]
-		#   sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
+		#there is no .pc for zvbi, so we add --extra-libs=-lpng to FFmpegs configure TODO there is a .pc file it just doesn't get installed [?]
+		#sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
+		'_info' : { 'version' : '0.2.35', 'fancy_name' : 'zvbi' },
 	},
 	'libvpx' : {
-		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around dcd6c87b80f2435ce4f206c5875f3be1f23b6999 if it stops.
+		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around f22b828d685adee4c7a561990302e2d21b5e0047 if it stops.
 		#'branch' : 'tags/v1.6.1',
 		'url' : 'https://chromium.googlesource.com/webm/libvpx', #
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --prefix={compile_prefix} --disable-shared --enable-static --enable-vp9-highbitdepth', # examples,tools crash with x86_64-w64-mingw32-ld: unrecognised emulation mode: 64
-		'make_options': '', #well.. that made it work.. huh.. ok then.
 		'env_exports' : {
 			'CROSS' : '{cross_prefix_bare}',
 		},
 		'patches': (
 			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vpx_160_semaphore.patch', 'p1' ),
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libvpx' },
 	},
 	'libilbc' : {
 		'repo_type' : 'git',
@@ -2769,34 +2818,33 @@ DEPENDS = {
 			'autoreconf -fiv',
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'libilbc' },
 	},
 	'fontconfig' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.1.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-docs',
-		'make_options': '',
 		'run_post_install': (
 			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
 		),
+		'_info' : { 'version' : '2.12.1', 'fancy_name' : 'fontconfig' },
 	},
 	'libfribidi' : {
-		# seems like this patch is not needed anymore in 0.19.7
-		# apply_patch https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
+		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
 		'repo_type' : 'archive',
 		'url' : 'https://fribidi.org/download/fribidi-0.19.7.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : '0.19.7', 'fancy_name' : 'libfribidi' },
 	},
 	'libass' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
-		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git
+		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git..
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
 		),
+		'_info' : { 'version' : 'Git-1be7dc0', 'fancy_name' : 'libass' },
 	},
 	'openjpeg' : {
 		'repo_type' : 'archive',
@@ -2805,7 +2853,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
-		'make_options': '',
+		'_info' : { 'version' : '2.1.2', 'fancy_name' : 'openjpeg' },
 	},
 	'intel_quicksync_mfx' : {
 		'repo_type' : 'git',
@@ -2814,7 +2862,7 @@ DEPENDS = {
 		),
 		'url' : 'https://github.com/lu-zero/mfx_dispatch.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'intel_quicksync_mfx' },
 	},
 	'fdk_aac' : {
 		'repo_type' : 'git',
@@ -2823,7 +2871,7 @@ DEPENDS = {
 		),
 		'url' : 'https://github.com/mstorsjo/fdk-aac.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'fdk-aac' },
 	},
 	'rtmpdump' : {
 		'repo_type' : 'git',
@@ -2834,21 +2882,15 @@ DEPENDS = {
 		'run_post_install':(
 			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
 		),
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'rtmpdump' },
 	},
-	'libx264' : { # this is just depedency x264, x264_10bit and x264 with lavf support is a product now check config of products.
+	'libx264' : {
 		'repo_type' : 'git',
 		'url' : 'http://git.videolan.org/git/x264.git',
+		'rename_folder' : 'libx264_git',
 		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={compile_prefix} --enable-strip --disable-lavf',
-		'make_options': '',
+		'_info' : { 'version' : 'Git (master)', 'fancy_name' : 'x264 (library)' },
 	},
-}
-DOWNLOADERS = {
-	'wget' : {
-		'command_line' : 'wget {url} --retry-connrefused -nv --show-progress -O {output_dir}'
-	},
-	'curl' : {
-		'command_line' : 'curl {url} --retry 50 -O -L --fail'
-	}
 }
 
 

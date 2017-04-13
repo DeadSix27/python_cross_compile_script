@@ -2,23 +2,44 @@
 #### written in Python 3
 
 Kind of a wrapper for cmake/make/gyp/etc, makes cross compiling a single-command thing, useful for nightly builds while being advanced enough to have complex buildscripts yet keep the configuration simple.
-Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers
-and does almost the same thing, just in a pythonic way with a JSON-like program/depency system.
 
-Currently main focus is on building: mpv, ffmpeg, aria2 and x265, but other products will be cared for too.
+Project was very influenced by https://github.com/rdp/ffmpeg-windows-build-helpers and does almost the same thing, just in a pythonic way with a JSON-like program/dependency system.
+
+Menu:
+[->How to use it<-](#usage)
+[->How to configure it<-](#package-requirements-no-auto-check-yet)
+[->What it requires<-](#system-requirements)
+
+### **Currently this script builds these products from git-master**
+- aria2 
+- curl
+- ffmpeg_shared
+- ffmpeg_static
+- flac
+- lame3 
+- mediainfo _(Only .exe)_
+- mkvtoolnix _(Static with QT5)_
+- mpv _(with VapourSynth, Python and LuaJIT)_
+- sox
+- vorbis-tools
+- wget
+- x264_10bit
+- x265_10bit
+
+#### See [VERSIONS.md](VERSIONS.md) for a full list of dependencies and products and their respective version
 
 GCC Version is 6.3.0 and has mutex support.
 
 ---
 
-## System requirements:
+## **System requirements:**
 
 * Python3 (tested on Python 3.5.2)
 * GNU/Linux (Tested on Ubuntu 16.10 (x86_64) and Fedora 25 (x86_64))
 * Works fine in VM, haven't tested Win10's bash thing.
 * For all products & dependencies at least 20GB of free Space (SSD recommended)
 
-## Package requirements (no auto-check yet)
+## **Package requirements (no auto-check yet)**
 ```
 Packages required, tested on:
 
@@ -34,19 +55,21 @@ angle       - gyp
 vapoursynth - p7zip
 ```
 
-## Usage
+## **Usage**
 
+#### **The simple, *"just build it all mode"***:
 ```bash
 wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
-#### Note:
-Products are defined in `PRODUCT_ORDER` like:
-```python
-PRODUCT_ORDER = ('x264_10bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'ffmpeg_shared', 'ffmpeg_static', 'aria2')
-```
-You can just removce specific programs if you do not need them!!
-E.g `PRODUCT_ORDER = ('x264_10bit')` will only build x264 10bit
+**Note:** This will build every product and it's dependencies as defined in `PRODUCT_ORDER`.
+You can just remove or re-order products in it as you like.
+
+#### **The CLI mode**:
+**Note:** As of now you can only build one product at a time in CLI mode (Soon to change).
+
+There is too much to describe it here, to see the full help for this, type:
+`cross_compiler.py --help`
 
 ## Configuration options:
 
@@ -58,11 +81,10 @@ _CPU_COUNT = cpu_count() # cpu_count() automaticlaly sets it to your core-count 
 _MINGW_SCRIPT_URL = "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/mingw-build-script-posix.sh" #modified for mutex support, includes weak ref patch, vapoursynth requires this, so just keep this.
 _LOGFORMAT = '[%(asctime)s][%(levelname)s] %(message)s'
 _LOG_DATEFORMAT = '%H:%M:%S'
-_QUIET = False #not recommended, but sure looks nice...
+_QUIET = False # mutes the build outputs, set this here for the "just build it all mode"
 _WORKDIR = "workdir"
 _MINGW_DIR = "xcompilers"
 _BITNESS = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_DOWNLOADER = "wget" # wget or curl, currently it just uses the internal downloader, so just ignore this
 _ORIG_CFLAGS = "-march=skylake -O3" # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 ```
 
