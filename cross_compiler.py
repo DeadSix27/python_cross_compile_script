@@ -2,7 +2,7 @@
 
 
 # #################################################################################################################
-# Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/modular_cross_compile_script)
+# Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
 #
 # This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 # To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
@@ -42,16 +42,16 @@ _VERSION = "2.0"
 # ################# CONFIGURATION ###################
 # ###################################################
 #
-_CPU_COUNT                      = cpu_count() # cpu_count() automaticlaly sets it to your core-count but you can set it manually too
-_QUIET                          = False # This is only for the 'just build it all mode', in CLI you should use "-q"
-_LOG_DATEFORMAT                 = '%H:%M:%S' 
-_LOGFORMAT                      = '[%(asctime)s][%(levelname)s] %(message)s'
-_WORKDIR                        = 'workdir'
-_MINGW_DIR                      = 'xcompilers'
-_BITNESS                        = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32)
-_ORIG_CFLAGS                    = '-march=nehalem -O3'# If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
-_ENABLE_STATUSFILE              = True # NOT IMPLEMENTED YET ! # if enabled will create the [_STATUS_FILE] and write the current status as json, e.g {'status':'Building product libx264','last_status':'Building product ffmpeg'}
-_STATUS_FILE                    = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
+_CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
+_QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false 
+_LOG_DATEFORMAT    = '%H:%M:%S' default: %H:%M:%S
+_LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' default: [%(asctime)s][%(levelname)s] %(message)s
+_WORKDIR           = 'workdir' # default: workdir
+_MINGW_DIR         = 'xcompilers' # default: xcompilers
+_BITNESS           = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32), this is completely untested .
+_ORIG_CFLAGS       = '-march=nehalem -O3' # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options #default: -march=nehalem -O3
+_ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
+_STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
 PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'x265_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
@@ -102,7 +102,7 @@ class MyFormatter(logging.Formatter):
 		self._style._fmt = format_orig
 		return result
 
-_BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master'
+_BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master'
 _MINGW_SCRIPT_URL               = '/mingw_build_scripts/mingw-build-script.sh'
 _MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix_threads.sh'
 
@@ -258,7 +258,7 @@ class CrossCompileScript:
 			def _split_lines(self, text, width):
 				return text.splitlines()
 			
-		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/modular_cross_compile_script)\n\n This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.\n To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.\n '
+		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.\n To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.\n '
 		if _OUR_VER not in _TESTED_VERS:
 			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
@@ -1399,7 +1399,7 @@ PRODUCTS = {
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
 		#'patches_post_configure' : ( this patch idea is on hold for now.. too fiddly.
-		#	('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'),
+		#	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'),
 		#)
 		'depends_on': (
 			'zlib', 'gnutls'
@@ -1446,9 +1446,9 @@ PRODUCTS = {
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
 		'run_post_patch' : (
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
 	},
@@ -1471,9 +1471,9 @@ PRODUCTS = {
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
 		'run_post_patch' : (
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
 	},
@@ -1544,7 +1544,7 @@ PRODUCTS = {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/lame/files/lame/3.99/lame-3.99.5.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
 		),
 		'configure_options': '--host={compile_target} --prefix={product_prefix}/lame-3.99.5.installed --disable-shared --enable-static --enable-nasm',
 	},
@@ -1553,7 +1553,7 @@ PRODUCTS = {
 		'url' : 'https://github.com/xiph/vorbis-tools.git',
 		'configure_options': '--host={compile_target} --prefix={product_prefix}/vorbis-tools_git.installed --disable-shared --enable-static --without-libintl-prefix',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vorbis_tools_odd_locale.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vorbis_tools_odd_locale.patch','p1'),
 		),
 		'depends_on': [
 			'libvorbis',
@@ -1766,10 +1766,10 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -1836,52 +1836,52 @@ DEPENDS = {
 		'custom_cflag' : '',
 		'depends_on' : [ 'libwebp', 'freetype2', 'libpng', 'libjpeg-turbo', 'pcre'], #openssl, only supports 1.0.1, so no. https://wiki.qt.io/Qt_5.8_Tools_and_Versions # -openssl -openssl-linked -I{compile_prefix}/include/openssl -L{compile_prefix}/lib/
 		'patches' : [ #thanks to the Arch & mxe community for some of those patches!: https://aur.archlinux.org/packages/mingw-w64-qt5-base-angle/                                                                                            'p0'),
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/qtbase-1-fixes_different.patch'                                                                        ,'p1','qtbase'),			
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/winextras/qtwinextras-1.patch'                                                                              ,'p1','qtwinextras'),
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-1.patch'                                                                                ,'p1','qtactiveqt'),		
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/winextras/0001-Fix-condition-for-_WIN32_IE-SHCreateItemFromParsingN.patch'                                  ,'p1','qtwinextras'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/webengine/0044-qt-5.4.0-win32-g%2B%2B-enable-qtwebengine-build.patch'                                       ,'p1'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/tools/0001-Fix-linguist-macro.patch'                                                                        ,'p1','qttools'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/multimedia/0001-Recorder-includes-to-prevent-conflict-with-vsnprintf.patch'                                 ,'p1','qtmultimedia'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/multimedia/0002-Fix-build-with-ANGLE.patch'                                                                 ,'p1','qtmultimedia'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/location/0001-Ensure-static-3rdparty-libs-are-linked-correctly.patch'                                       ,'p1','qtlocation'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/declarative/0001-Build-QML-dev-tools-as-shared-library.patch'                                               ,'p1','qtdeclarative'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/declarative/0002-Ensure-static-plugins-are-exported.patch'                                                  ,'p1','qtdeclarative'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/declarative/0003-Prevent-exporting-QML-parser-symbols-on-static-build.patch'                                ,'p1','qtdeclarative'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qt5-activeqt-fix-compilation.patch'                                                                ,'p0','qtactiveqt'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-fix-build.patch'                                                                        ,'p1','qtactiveqt'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-win64.patch'                                                                            ,'p1','qtactiveqt'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0001-Add-profile-for-cross-compilation-with-mingw-w64.patch'                                           ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0002-Ensure-GLdouble-is-defined-when-using-dynamic-OpenGL.patch'                                       ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0003-Use-external-ANGLE-library.patch'                                                                 ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0004-Fix-too-many-sections-assemler-error-in-OpenGL-facto.patch'                                       ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0005-Make-sure-.pc-files-are-installed-correctly.patch'                                                ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0006-Don-t-add-resource-files-to-LIBS-parameter.patch'                                                 ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0007-Prevent-debug-library-names-in-pkg-config-files.patch'                                            ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0008_5-hacky_non_priv_libs.patch'                                                                      ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0008-Fix-linking-against-shared-static-libpng.patch'                                                   ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0009-Fix-linking-against-static-D-Bus.patch'                                                           ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0010-Fix-linking-against-static-freetype2.patch'                                                       ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0011-Fix-linking-against-static-harfbuzz.patch'                                                        ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0012-Fix-linking-against-static-pcre.patch'                                                            ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0013-Fix-linking-against-shared-static-MariaDB.patch'                                                  ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0014-Fix-linking-against-shared-static-PostgreSQL.patch'                                               ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0015-Rename-qtmain-to-qt5main.patch'                                                                   ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0016-Build-dynamic-host-libraries.patch'                                                               ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0017-Enable-rpath-for-build-tools.patch'                                                               ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0018-Use-system-zlib-for-build-tools.patch'                                                            ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0019-Disable-determing-default-include-and-lib-dirs-at-qm.patch'                                       ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0020-Use-.dll.a-as-import-lib-extension.patch'                                                         ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0021-Merge-shared-and-static-library-trees.patch'                                                      ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0022-Allow-usage-of-static-version-with-CMake.patch'                                                   ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0023-Use-correct-pkg-config-static-flag.patch'                                                         ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0024-Fix-qt5_wrap_ui-macro.patch'                                                                      ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0025-Ignore-errors-about-missing-feature-static.patch'                                                 ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0026-Enable-and-fix-use-of-iconv.patch'                                                                ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0027-Ignore-failing-pkg-config-test.patch'                                                             ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0028-Include-uiviewsettingsinterop.h-correctly.patch'                                                  ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0029-Hardcode-linker-flags-for-libqwindows.dll.patch'                                                  ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/qt5/base/0030-Prevent-qmake-from-messing-static-lib-dependencies.patch'                                         ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/qtbase-1-fixes_different.patch'                                                                        ,'p1','qtbase'),			
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/winextras/qtwinextras-1.patch'                                                                              ,'p1','qtwinextras'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-1.patch'                                                                                ,'p1','qtactiveqt'),		
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/winextras/0001-Fix-condition-for-_WIN32_IE-SHCreateItemFromParsingN.patch'                                  ,'p1','qtwinextras'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/webengine/0044-qt-5.4.0-win32-g%2B%2B-enable-qtwebengine-build.patch'                                       ,'p1'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/tools/0001-Fix-linguist-macro.patch'                                                                        ,'p1','qttools'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/multimedia/0001-Recorder-includes-to-prevent-conflict-with-vsnprintf.patch'                                 ,'p1','qtmultimedia'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/multimedia/0002-Fix-build-with-ANGLE.patch'                                                                 ,'p1','qtmultimedia'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/location/0001-Ensure-static-3rdparty-libs-are-linked-correctly.patch'                                       ,'p1','qtlocation'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/declarative/0001-Build-QML-dev-tools-as-shared-library.patch'                                               ,'p1','qtdeclarative'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/declarative/0002-Ensure-static-plugins-are-exported.patch'                                                  ,'p1','qtdeclarative'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/declarative/0003-Prevent-exporting-QML-parser-symbols-on-static-build.patch'                                ,'p1','qtdeclarative'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qt5-activeqt-fix-compilation.patch'                                                                ,'p0','qtactiveqt'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-fix-build.patch'                                                                        ,'p1','qtactiveqt'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-win64.patch'                                                                            ,'p1','qtactiveqt'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0001-Add-profile-for-cross-compilation-with-mingw-w64.patch'                                           ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0002-Ensure-GLdouble-is-defined-when-using-dynamic-OpenGL.patch'                                       ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0003-Use-external-ANGLE-library.patch'                                                                 ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0004-Fix-too-many-sections-assemler-error-in-OpenGL-facto.patch'                                       ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0005-Make-sure-.pc-files-are-installed-correctly.patch'                                                ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0006-Don-t-add-resource-files-to-LIBS-parameter.patch'                                                 ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0007-Prevent-debug-library-names-in-pkg-config-files.patch'                                            ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0008_5-hacky_non_priv_libs.patch'                                                                      ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0008-Fix-linking-against-shared-static-libpng.patch'                                                   ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0009-Fix-linking-against-static-D-Bus.patch'                                                           ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0010-Fix-linking-against-static-freetype2.patch'                                                       ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0011-Fix-linking-against-static-harfbuzz.patch'                                                        ,'p1','qtbase'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0012-Fix-linking-against-static-pcre.patch'                                                            ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0013-Fix-linking-against-shared-static-MariaDB.patch'                                                  ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0014-Fix-linking-against-shared-static-PostgreSQL.patch'                                               ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0015-Rename-qtmain-to-qt5main.patch'                                                                   ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0016-Build-dynamic-host-libraries.patch'                                                               ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0017-Enable-rpath-for-build-tools.patch'                                                               ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0018-Use-system-zlib-for-build-tools.patch'                                                            ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0019-Disable-determing-default-include-and-lib-dirs-at-qm.patch'                                       ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0020-Use-.dll.a-as-import-lib-extension.patch'                                                         ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0021-Merge-shared-and-static-library-trees.patch'                                                      ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0022-Allow-usage-of-static-version-with-CMake.patch'                                                   ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0023-Use-correct-pkg-config-static-flag.patch'                                                         ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0024-Fix-qt5_wrap_ui-macro.patch'                                                                      ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0025-Ignore-errors-about-missing-feature-static.patch'                                                 ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0026-Enable-and-fix-use-of-iconv.patch'                                                                ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0027-Ignore-failing-pkg-config-test.patch'                                                             ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0028-Include-uiviewsettingsinterop.h-correctly.patch'                                                  ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0029-Hardcode-linker-flags-for-libqwindows.dll.patch'                                                  ,'p1','qtbase'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0030-Prevent-qmake-from-messing-static-lib-dependencies.patch'                                         ,'p1','qtbase'),
 		],
 		#'run_post_patch' : [
 		#	'rm -rf src/3rdparty/angle include/QtANGLE/EGL',
@@ -1912,8 +1912,8 @@ DEPENDS = {
 			'autoreconf -fiv',
 		),
 		'patches': [
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-header-compat.mingw.patch',  'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-libmng-compatibility.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-header-compat.mingw.patch',  'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-libmng-compatibility.patch', 'p1'),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
 	},
@@ -1922,7 +1922,7 @@ DEPENDS = {
 		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.28/libpng-1.6.28.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libpng-1.6.28-apng.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng-1.6.28-apng.patch', 'p0'),
 		],
 		'_info' : { 'version' : '1.6.28', 'fancy_name' : 'libpng' },
 	},
@@ -1958,13 +1958,13 @@ DEPENDS = {
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre' ],
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0004-glib-prefer-constructors-over-DllMain.patch'               ,'Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0017-GSocket-Fix-race-conditions-on-Win32-if-multiple-thr.patch','p1' ),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0027-no_sys_if_nametoindex.patch'                               ,'Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/0028-inode_directory.patch'                                     ,'Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/revert-warn-glib-compile-schemas.patch'                         ,'Rp1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/glib2/use-pkgconfig-file-for-intl.patch'                              ,'p0' ),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0004-glib-prefer-constructors-over-DllMain.patch'               ,'Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0017-GSocket-Fix-race-conditions-on-Win32-if-multiple-thr.patch','p1' ),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0027-no_sys_if_nametoindex.patch'                               ,'Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0028-inode_directory.patch'                                     ,'Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/revert-warn-glib-compile-schemas.patch'                         ,'Rp1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/use-pkgconfig-file-for-intl.patch'                              ,'p0' ),
 
 		],
 		'run_post_patch' : [
@@ -2008,8 +2008,8 @@ DEPENDS = {
 			#'make -f "Makefile.mingw-cross-env" libgnurx.a V=1'
 		],
 		'patches' : [
-			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/mingw-libgnurx-static.patch', 'p1' ),
-			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libgnurx-1-build-static-lib.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mingw-libgnurx-static.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libgnurx-1-build-static-lib.patch', 'p1' ),
 		],
 		'_info' : { 'version' : '2.5.1', 'fancy_name' : 'mingw-libgnurx' },
 	},
@@ -2025,7 +2025,7 @@ DEPENDS = {
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
-			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
 		],
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-fsect-man5',
 		'depends_on' : [ 'mingw-libgnurx', 'libfile_local' ],
@@ -2134,7 +2134,7 @@ DEPENDS = {
 		'url' : 'http://git.videolan.org/git/libbluray.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-examples --disable-doxygen-doc --disable-bdjava --enable-udf', #--without-libxml2 --without-fontconfig .. optional.. I guess
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libbluray_git_remove_strtok_s.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libbluray_git_remove_strtok_s.patch', 'p1'),
 		),
 		'run_post_install' : (
 			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
@@ -2154,7 +2154,7 @@ DEPENDS = {
 			' -DCMAKE_INSTALL_PREFIX={compile_prefix} -DCMAKE_FIND_ROOT_PATH='
 			' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/openal-soft-privlibs.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal-soft-privlibs.patch', 'p1'),
 		),
 		'run_post_patch' : [
 			"sed -i.bak 's/CMAKE_INSTALL_PREFIX \"\${{CMAKE_FIND_ROOT_PATH}}\"/CMAKE_INSTALL_PREFIX \"\"/' XCompile.txt",
@@ -2226,9 +2226,9 @@ DEPENDS = {
 		'custom_cflag' : '-O3',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --disable-python-module --enable-core',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', 'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0002-api.patch', 'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0002-api.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', 'p1'),
 		),
 
 	},
@@ -2252,9 +2252,9 @@ DEPENDS = {
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
 		'run_post_patch' : (
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
+			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
@@ -2262,7 +2262,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/bzip2_cross_compile.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2_cross_compile.diff', "p0"),
 		),
 		"needs_configure": False,
 		"needs_make": True,
@@ -2300,7 +2300,7 @@ DEPENDS = {
 	},
 	'libsnappy' : {
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/DeadSix27/modular_cross_compile_script/blob/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
+		'url' : 'https://github.com/DeadSix27/python_cross_compile_script/blob/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
 		'folder_name' : 'google-snappy-32d6d7d',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.1.3-14', 'fancy_name' : 'libsnappy' },
@@ -2363,8 +2363,8 @@ DEPENDS = {
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libsndfile/0001-more-elegant-and-foolproof-autogen-fallback.all.patch', "p0"),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', "p0"),
 		#],
 		'run_post_patch': [
 			'autoreconf -fi -I M4',
@@ -2416,7 +2416,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'http://www.speech.cs.cmu.edu/flite/packed/flite-1.4/flite-1.4-release.tar.bz2',
 		'patches' : ( # ordered list of patches, first one will be applied first..
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/flite_64.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/flite_64.diff', "p0"),
 		),
 		'cpu_count' : '1', #why do I even have to implement this, fix your stuff flite group.
 		'needs_make_install' : False,
@@ -2436,8 +2436,8 @@ DEPENDS = {
 		'url' : 'http://www.quut.com/gsm/gsm-1.0.16.tar.gz',
 		'folder_name' : 'gsm-1.0-pl16',
 		'patches' : ( # ordered list of patches, first one will be applied first..
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gsm-1.0.16.patch', "p0"),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', 'p0'), # toast fails. so lets just patch it out of the makefile..
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16.patch', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', 'p0'), # toast fails. so lets just patch it out of the makefile..
 		),
 		'needs_configure' : False,
 		'needs_make_install' : False,
@@ -2466,7 +2466,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_post_install": (
@@ -2528,7 +2528,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/theora.git',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', 'p1'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'theora' },
@@ -2558,9 +2558,9 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-zlib={compile_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
 		'patches' : [
-			 ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0002-Enable-subpixel-rendering.patch?h=mingw-w64-freetype2',          'Np1'),
-			#('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
+			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0002-Enable-subpixel-rendering.patch?h=mingw-w64-freetype2',          'Np1'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
 		],
 		#'run_post_install': (
 		#	'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
@@ -2653,12 +2653,12 @@ DEPENDS = {
 	},
 	'vamp_plugin' : {
 		'repo_type' : 'archive',
-		'url' : 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz',
+		'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz',
 		'run_post_patch': (
 			'cp -v build/Makefile.mingw64 Makefile',
 		),
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
 		),
 		'make_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
 		'needs_make_install' : False, # doesnt s support xcompile installing
@@ -2695,7 +2695,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
 		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
-			'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/additional_headers/ladspa.h',
+			'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/ladspa.h',
 		),
 		'env_exports' : {
 			'AR' : '{cross_prefix_bare}ar',
@@ -2725,7 +2725,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/lame/files/lame/3.99/lame-3.99.5.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/lame-3.99.5.patch', 'p0'),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-nasm --disable-frontend',
 		'_info' : { 'version' : '3.99.5', 'fancy_name' : 'lame (library)' },
@@ -2789,8 +2789,8 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
 		'make_subdir' : 'src',
 		'patches': (
-		    ('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/zvbi-0.2.35_win32.patch', 'p0'),
-			('https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/zvbi-0.2.35_ioctl.patch', 'p0'),
+		    ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi-0.2.35_win32.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi-0.2.35_ioctl.patch', 'p0'),
 		),
 		#there is no .pc for zvbi, so we add --extra-libs=-lpng to FFmpegs configure TODO there is a .pc file it just doesn't get installed [?]
 		#sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
@@ -2805,7 +2805,7 @@ DEPENDS = {
 			'CROSS' : '{cross_prefix_bare}',
 		},
 		'patches': (
-			( 'https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/master/patches/vpx_160_semaphore.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vpx_160_semaphore.patch', 'p1' ),
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libvpx' },
 	},
