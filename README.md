@@ -1,5 +1,5 @@
 # A GNU/Linux to Windows cross-compile helper script
-## _almost_ fully written in Python 3
+### _almost_ fully written in Python 3
 
 _python_cross_compile_script_ could be described as a wrapper for various build-helpers (Autotools,C-Make,Rake,..).
 

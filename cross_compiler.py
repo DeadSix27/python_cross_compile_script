@@ -44,8 +44,8 @@ _VERSION = "2.0"
 #
 _CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
 _QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false 
-_LOG_DATEFORMAT    = '%H:%M:%S' default: %H:%M:%S
-_LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' default: [%(asctime)s][%(levelname)s] %(message)s
+_LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
+_LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'xcompilers' # default: xcompilers
 _BITNESS           = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32), this is completely untested .
