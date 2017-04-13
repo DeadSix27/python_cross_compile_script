@@ -65,7 +65,7 @@ _**But wait, there is more!**_ Too much to explain here; to see the full help, t
 
 ### **The simple, *"just build it all mode"***:
 ```
-wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/modular_cross_compile_script/dev/cross_compiler.py"
+wget --content-disposition "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/cross_compiler.py"
 chmod u+x cross_compiler.py && ./cross_compiler.py
 ```
 
@@ -191,7 +191,7 @@ You can always just check the predefined projects for ideas and wether I missed 
 	'depends_on' : (                              # ( Things it depends on, e.g other configs like this ) [FOPTIONAL]
 		'libfoobar',
 	),
+	'_already_built': True,                       # ( Set by system, but theoretically setting this to true will ALWAYS skip and NEVER build this project )
 	'debug_exitafter': True,                      # ( True/False, will exit after this build, useful for testing ) [FOPTIONAL]
-	'_already_built': True                        # ( Set by system, but theoretically setting this to true will ALWAYS skip and NEVER build this project )
 },
 ```
