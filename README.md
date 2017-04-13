@@ -2,10 +2,14 @@
 ## _almost_ fully written in Python 3
 
 _python_cross_compile_script_ could be described as a wrapper for various build-helpers (Autotools,C-Make,Rake,..).
+
 Products and dependencies are written in JSON and thus very easy to host remotely or modify quickly.
+
 It comes with a CLI to compile specific lists of "products/dependencies" or a single one.
+
 This project was heavily influenced by rdp's [ffmpeg-windows-build-helpers](https://github.com/rdp/ffmpeg-windows-build-helpers).
 
+_GCC Version is 6.3.0 and has posix threading (mutex) support._
 
 Menu:
 [->How to use it<-](#usage)
@@ -27,8 +31,6 @@ Menu:
 - x264 & x265 (10bit)
 
 #### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies, products and their respective versions
-
-GCC Version is 6.3.0 and has mutex support.
 
 ---
 
