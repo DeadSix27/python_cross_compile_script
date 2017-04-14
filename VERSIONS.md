@@ -21,6 +21,7 @@
 | x264            | git (master) |
 | x265            | hg (master)  |
 
+
 ## Depenencies:
 
 | Dependency                 | Version      |
@@ -29,18 +30,18 @@
 | Angle                      | git (master) |
 | Boost                      | 1.63         |
 | BZip2 (library)            | 1.0.6        |
-| D-bus (Library)            | 1.10.16      |
+| D-bus (Library)            | 1.10.18      |
 | expat                      | 2.2.0        |
 | fdk-aac                    | git (master) |
-| fftw3                      | 3.3.6-pl1    |
+| fftw3                      | 3.3.6-pl2    |
 | flite                      | 1.4          |
 | fontconfig                 | 2.12.1       |
 | freetype2                  | 2.7.1        |
-| frei0r-plugins             | 1.5.0        |
+| frei0r-plugins             | 1.6.0        |
 | gettext                    | 0.19.8.1     |
-| glib2                      | 2.50.3       |
+| glib2                      | 2.52.0       |
 | gmp                        | 6.1.2        |
-| gnutls                     | 3.5.10       |
+| gnutls                     | 3.5.11       |
 | harfbuzz                   | 1.4.5        |
 | libiconv                   | 1.15         |
 | intel_quicksync_mfx        | git (master) |
@@ -50,7 +51,7 @@
 | libbluray                  | git (master) |
 | libbs2b                    | 3.1.0        |
 | libcaca                    | 0.99.beta19  |
-| libcdio                    | 0.94         |
+| libcdio                    | git (master) |
 | libcdio-paranoia           | git (master) |
 | libcurl                    | git (master) |
 | libdvdcss                  | git (master) |
@@ -59,7 +60,7 @@
 | libebur128                 | git (master) |
 | FFmpeg (library)           | git (master) |
 | file                       | git (master) |
-| FileZilla (libary)         | SVN (master) |
+| FileZilla (libary)         | svn (master) |
 | flac (library)             | git (master) |
 | libfribidi                 | 0.19.7       |
 | game-music-emu             | 0.6.1        |
@@ -74,7 +75,7 @@
 | ogg                        | 1.3.2        |
 | openh264                   | git (master) |
 | opus                       | git (master) |
-| libpng                     | 1.6.28       |
+| libpng                     | 1.6.29       |
 | librubberband              | 1.8.1        |
 | fftw3                      | git (477ce3) |
 | schroedinger               | 1.0.11       |
@@ -93,17 +94,17 @@
 | x265 (library)             | hg (master)  |
 | libxml2                    | 2.9.4        |
 | xvidcore                   | 1.3.4        |
-| zimg                       | 5.2.3        |
+| zimg                       | git (master) |
 | lua                        | 5.3.4        |
 | LuaJIT2                    | git (master) |
 | lzo                        | 2.10         |
 | mingw-libgnurx             | 2.5.1        |
-| netcdf                     | 4.4.1        |
+| netcdf                     | 4.4.1.1      |
 | openal-soft                | git (master) |
-| opencore-amr               | 0.1.3        |
+| opencore-amr               | 0.1.5        |
 | openjpeg                   | 2.1.2        |
 | openssl                    | 1.1.0e       |
-| orc                        | 0.4.18       |
+| orc                        | 0.4.26       |
 | pcre                       | 8.40         |
 | Python (library-only)      | 3.6          |
 | QT5                        | 5.8.0        |
@@ -115,9 +116,9 @@
 | vamp-plugin-sdk            | 2.7.1        |
 | VapourSynth (library-only) | 37           |
 | vid.stab                   | git (master) |
-| vo-amrwbenc                | 0.1.2        |
-| wavpack                    | 5.1.0        |
-| xavs                       | SVN (master) |
+| vo-amrwbenc                | 0.1.3        |
+| wavpack                    | git (master) |
+| xavs                       | svn (master) |
 | zenlib                     | git (v4.35)  |
 | zlib                       | 1.2.11       |
 | zvbi                       | 0.2.35       |
