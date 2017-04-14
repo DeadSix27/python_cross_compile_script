@@ -36,8 +36,8 @@ Menu:
 
 ## **System requirements:**
 
-* Python3 (tested on Python 3.5.2)
-* GNU/Linux (Tested on Ubuntu 16.10 (x86_64) and Fedora 25 (x86_64))
+* Python 3 (tested on Python 3.5.3)
+* GNU/Linux (Tested on Ubuntu 17.04 (x86_64) and Fedora 25 (x86_64))
 * Works fine in a VM, haven't tested using Win10's bash thing.
 * For all products & dependencies at least 20GB of free space needed (SSD recommended)
 
@@ -47,14 +47,16 @@ Packages required, tested on:
 
 (This list is possibly incomplete and differs from OS to OS)
 
-Fedora 25    (Twenty Five)
+Ubuntu 17.04 (Zesty Zapus)
 Ubuntu 16.10 (Yakkety)
+Fedora 25    (Twenty Five)
 
 global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
 mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
 gnutls      - gperf
 angle       - gyp
 vapoursynth - p7zip
+flac        - docbook-to-man
 ```
 
 ## **Usage**

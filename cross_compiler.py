@@ -30,14 +30,16 @@ _VERSION = "2.0"
 # ###################################################
 # Package dependencies (some may be missing):
 # 
-# Fedora 25    (Twenty Five)
+# Ubuntu 17.04 (Zesty Zapus)
 # Ubuntu 16.10 (Yakkety)
+# Fedora 25    (Twenty Five)
 # 
 # global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
 # mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
 # gnutls      - gperf
 # angle       - gyp
 # vapoursynth - p7zip
+# flac        - docbook-to-man
 # ###################################################
 # ################# CONFIGURATION ###################
 # ###################################################
@@ -61,6 +63,7 @@ PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 's
 # ###################################################
 
 class Colors: #ansi colors
+	RESET           = '\033[0m'
 	BLACK           = '\033[30m'
 	RED             = '\033[31m'
 	GREEN           = '\033[32m'
@@ -69,9 +72,14 @@ class Colors: #ansi colors
 	MAGENTA         = '\033[35m'
 	CYAN            = '\033[36m'
 	WHITE           = '\033[37m'
-	RESET           = '\033[0m'
-	LIGHT_RED_EX    = '\033[91m'
+	LIGHTBLACK_EX   = '\033[90m' # those seem to work on the major OS so meh.
+	LIGHTRED_EX     = '\033[91m'
+	LIGHTGREEN_EX   = '\033[92m'
+	LIGHTYELLOW_EX  = '\033[93m'
+	LIGHTBLUE_EX    = '\033[94m'
 	LIGHTMAGENTA_EX = '\033[95m'
+	LIGHTCYAN_EX    = '\033[96m'
+	LIGHTWHITE_EX   = '\033[9m'
 
 class MissingDependency(Exception):
 	__module__ = 'exceptions'
@@ -80,10 +88,10 @@ class MissingDependency(Exception):
 		
 class MyFormatter(logging.Formatter):
 
-	inf_fmt  = Colors.CYAN              + _LOGFORMAT + Colors.RESET
-	err_fmt  = Colors.RED               + _LOGFORMAT + Colors.RESET
-	dbg_fmt  = Colors.YELLOW            + _LOGFORMAT + Colors.RESET
-	war_fmt  = Colors.LIGHTMAGENTA_EX   + _LOGFORMAT + Colors.RESET
+	inf_fmt  = Colors.LIGHTCYAN_EX   + _LOGFORMAT + Colors.RESET
+	err_fmt  = Colors.LIGHTRED_EX    + _LOGFORMAT + Colors.RESET
+	dbg_fmt  = Colors.LIGHTYELLOW_EX + _LOGFORMAT + Colors.RESET
+	war_fmt  = Colors.YELLOW         + _LOGFORMAT + Colors.RESET
 
 	def __init__(self):
 		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')  
@@ -109,7 +117,7 @@ _MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix
 _DEBUG = False # for.. debugging.. purposes.
 
 _OUR_VER = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS = ['3.5.2','3.6.0']
+_TESTED_VERS = ['3.5.3','3.5.2','3.6.0']
 
 class CrossCompileScript:
 	def __init__(self,po,ps,ds):
@@ -295,7 +303,7 @@ class CrossCompileScript:
 		else:
 			def errorOut(p,t,m=None):
 				if m == None:
-					fullStr = Colors.LIGHT_RED_EX + 'Error:\n ' + Colors.CYAN + '\'{0}\'' + Colors.LIGHT_RED_EX + ' is not a valid {2}\n Type: ' + Colors.CYAN + '\'{1} list --products/--dependencies\'' + Colors.LIGHT_RED_EX + ' for a full list'
+					fullStr = Colors.LIGHTRED_EX + 'Error:\n ' + Colors.CYAN + '\'{0}\'' + Colors.LIGHTRED_EX + ' is not a valid {2}\n Type: ' + Colors.CYAN + '\'{1} list --products/--dependencies\'' + Colors.LIGHTRED_EX + ' for a full list'
 					print( fullStr.format ( p, os.path.basename(__file__), "Product" if t == "PRODUCT" else "Dependency" ) + Colors.RESET )
 				else:
 					print(m)
@@ -394,7 +402,7 @@ class CrossCompileScript:
 		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
 		self.makePrefixOptions  = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={compile_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format( cross_prefix_bare=self.bareCrossPrefix, compile_prefix=self.compilePrefix )
-		self.cmakePrefixOptions = "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres".format(cross_prefix_full=self.fullCrossPrefix, compile_prefix=self.compilePrefix )
+		self.cmakePrefixOptions = "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={compile_prefix}".format(cross_prefix_full=self.fullCrossPrefix, compile_prefix=self.compilePrefix )
 		self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.compilePrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
 		self.currentBitness     = b
@@ -644,10 +652,11 @@ class CrossCompileScript:
 		else:
 			if ignoreErrors:
 				return output
-			self.logger.error("Error [%d] running process: '%s'" % (return_code,command))
-			traceback.print_exc()
+			self.logger.error("Error [%d] running process: '%s' in '%s'" % (return_code,command,os.getcwd()))
+			if self.quietMode:
+				self.logger.error("Please check the raw_build.log file")
 			if exitOnError:
-				raise
+				exit(1)
 
 		#p = subprocess.Popen(command, stdout=subprocess.PIPE,stderr=subprocess.STDOUT, universal_newlines = True, shell = True)
 		#for line in iter(p.stdout.readline, b''):
@@ -828,9 +837,7 @@ class CrossCompileScript:
 		if _DEBUG:
 			for tk in os.environ:
 				print("############ " + tk + " : " + os.environ[tk])
-				
-		self.logger.info("Building {0} '{1}'".format(type,name))
-		
+
 		skipDepends = False
 		if 'skip_deps' in data:
 			if data['skip_deps'] == True:
@@ -843,6 +850,13 @@ class CrossCompileScript:
 						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
 					else:
 						self.build_thing(libraryName,self.DEPENDS[libraryName],"DEPENDENCY")
+						
+		self.logger.info("Building {0} '{1}'".format(type,name))
+		
+		if 'warnings' in data:
+			if len(data['warnings']) > 0:
+				for w in data['warnings']:
+					self.logger.warning(w)
 
 		workDir = None
 		renameFolder = None
@@ -1085,13 +1099,18 @@ class CrossCompileScript:
 						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
+			
+			doClean = True
+			if 'clean_post_configure' in data:
+				if data['clean_post_configure'] == False:
+					doClean = False
 
-			mCleanCmd = 'make clean'
-			if isWaf:
-				mCleanCmd = './waf --color=yes clean'
-
-			self.run_process('{0} -j {1}'.format( mCleanCmd, _CPU_COUNT ),True)
-
+			if doClean:
+				mCleanCmd = 'make clean'
+				if isWaf:
+					mCleanCmd = './waf --color=yes clean'
+				self.run_process('{0} -j {1}'.format( mCleanCmd, _CPU_COUNT ),True)
+			
 			self.touch(touch_name)
 			self.logger.info("Finsihed configuring '{0}'".format( name ))
 
@@ -1531,6 +1550,9 @@ PRODUCTS = {
 			'libogg',
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FLAC' },
+		'packages': {
+			'ubuntu' : [ 'docbook-to-man' ],
+		},
 	},
 	'lame3' : {
 		'repo_type' : 'archive',
@@ -1648,6 +1670,12 @@ PRODUCTS = {
 		],
 		#'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla' },
 	},
+	'youtube-dl' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/rg3/youtube-dl.git',
+		'debug_exitafter': True,
+	},
+	
 }
 DEPENDS = {
 	'libfilezilla' : {
@@ -1784,6 +1812,12 @@ DEPENDS = {
 	},
 	
 	'qt5' : { # too... many.... patches....
+		'warnings' : [
+			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it, otherwise report it on https://github.com/DeadSix27/python_cross_compile_script/issues',
+			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393'
+			"(You could set add 'cpu_count' : '1', to the config of QT5 if you can bear a way slower compilation)"
+		],
+		'clean_post_configure' : False,
 		'repo_type' : 'archive',
 		'url' : 'https://download.qt.io/official_releases/qt/5.8/5.8.0/single/qt-everywhere-opensource-src-5.8.0.tar.gz',
 		'configure_options' :
@@ -1911,12 +1945,12 @@ DEPENDS = {
 	},
 	'libpng' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.28/libpng-1.6.28.tar.gz',
+		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.29/libpng-1.6.29.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng-1.6.28-apng.patch', 'p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.29-apng.patch', 'p1'),
 		],
-		'_info' : { 'version' : '1.6.28', 'fancy_name' : 'libpng' },
+		'_info' : { 'version' : '1.6.29', 'fancy_name' : 'libpng' },
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
@@ -1940,13 +1974,13 @@ DEPENDS = {
 	
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.10.16.tar.gz',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.10.18.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.10.16', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.10.18', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.gnome.org/pub/gnome/sources/glib/2.50/glib-2.50.3.tar.xz',
+		'url' : 'https://ftp.gnome.org/pub/gnome/sources/glib/2.52/glib-2.52.0.tar.xz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre' ],
 		'patches' : [
@@ -1962,7 +1996,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
-		'_info' : { 'version' : '2.50.3', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '2.52.0', 'fancy_name' : 'glib2' },
 	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
@@ -1974,17 +2008,6 @@ DEPENDS = {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 		},
 		'_info' : { 'version' : '1.1.0e', 'fancy_name' : 'openssl' },
-	},
-	'libfile_local' : { # local non cross-compiled, to bootstrap libfile-cross-compiled, it needs the actual linux build first uh..
-		'repo_type' : 'git',
-		'url' : 'https://github.com/file/file.git',
-		'rename_folder' : 'libfile_local.git',
-		'configure_options': '--prefix={compile_prefix} --disable-shared --enable-static',
-		'needs_make' : False,
-		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
-		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
-		'run_post_patch' : [ 'autoreconf -fiv' ],
-		
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -2075,8 +2098,8 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
-		'repo_type' : 'archive',
-		'url' : 'http://git.savannah.gnu.org/cgit/libcdio.git/snapshot/libcdio-release-0.94.tar.gz',
+		'repo_type' : 'git',
+		'url' : 'git://git.savannah.gnu.org/libcdio.git', # old: http://git.savannah.gnu.org/cgit/libcdio.git/snapshot/libcdio-release-0.94.tar.gz
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static', #  --enable-maintainer-mode
 		'run_post_patch' : (
 			'touch doc/version.texi', # took me far to long to come up with and find this workaround
@@ -2084,7 +2107,7 @@ DEPENDS = {
 			#'if [ ! -f "configure" ] ; then ./autogen.sh ; fi',
 			#'make -C doc stamp-vti', # idk why it needs this... odd thing: https://lists.gnu.org/archive/html/libcdio-devel/2016-03/msg00007.html
 		),
-		'_info' : { 'version' : '0.94', 'fancy_name' : 'libcdio' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcdio' },
 	},
 	'libcdio-paranoia' : {
 		'repo_type' : 'git',
@@ -2299,16 +2322,16 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '5.2.3', 'fancy_name' : 'zimg' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
 	'libsnappy' : {
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/DeadSix27/python_cross_compile_script/blob/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
+		'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
 		'folder_name' : 'google-snappy-32d6d7d',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.1.3-14', 'fancy_name' : 'libsnappy' },
 	},
-	'gmp' : { #todo try this.
+	'gmp' : {
 		#export CC_FOR_BUILD=/usr/bin/gcc idk if we need this anymore, compiles fine without.
 		#export CPP_FOR_BUILD=usr/bin/cpp
 		#generic_configure "ABI=$bits_target"
@@ -2335,7 +2358,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.10.tar.xz',
+		'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.11.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring',
 		'run_post_install': [
 			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
@@ -2346,11 +2369,11 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
-		'_info' : { 'version' : '3.5.10', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.5.11', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
-		'url' : 'https://files.dyne.org/frei0r/releases/frei0r-plugins-1.5.0.tar.gz',
+		'url' : 'https://files.dyne.org/frei0r/frei0r-plugins-1.6.0.tar.gz',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'run_post_patch': ( # runs commands post the patch process
@@ -2358,7 +2381,7 @@ DEPENDS = {
 		),
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix}',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '1.5.0', 'fancy_name' : 'frei0r-plugins' },
+		'_info' : { 'version' : '1.6.0', 'fancy_name' : 'frei0r-plugins' },
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
@@ -2391,21 +2414,20 @@ DEPENDS = {
 		'_info' : { 'version' : '3.1.0', 'fancy_name' : 'libbs2b' },
 	},
 	'wavpack' : {
-		'repo_type' : 'archive',
-		'url' : 'https://github.com/dbry/WavPack/archive/5.1.0.tar.gz',
-		'folder_name' : 'WavPack-5.1.0',
+		'repo_type' : 'git',
+		'url' : 'https://github.com/dbry/WavPack.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '5.1.0', 'fancy_name' : 'wavpack' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wavpack' },
 	},
 	'libgme_game_music_emu' : {
 		'repo_type' : 'archive',
+		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
 		'needs_configure' : False,
 		'is_cmake' : True,
 		#'run_post_patch': ( # runs commands post the patch process
 		#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
 		#),
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
-		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2',
 		'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : { # why can't everything be so easy to compile
@@ -2484,22 +2506,22 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/opus.git',
 		'patches': (
-			("https://dsix.tech/opus_git_strip_declspec.patch", "p1"),
+			("https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opus/opus_git_strip_declspec.patch", "p1"),
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'opus' },
 	},
 	'opencore-amr' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.3.tar.gz',
+		'url' : 'https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.5.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'opencore-amr' },
+		'_info' : { 'version' : '0.1.5', 'fancy_name' : 'opencore-amr' },
 	},
 	'vo-amrwbenc' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.2.tar.gz',
+		'url' : 'https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.1.2', 'fancy_name' : 'vo-amrwbenc' },
+		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'vo-amrwbenc' },
 	},
 	'libogg' : {
 		'repo_type' : 'archive',
@@ -2538,9 +2560,9 @@ DEPENDS = {
 	},
 	'orc' : {
 		'repo_type' : 'archive',
-		'url' : 'http://download.videolan.org/contrib/orc/orc-0.4.18.tar.gz',
+		'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.26.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.4.18', 'fancy_name' : 'orc' },
+		'_info' : { 'version' : '0.4.26', 'fancy_name' : 'orc' },
 	},
 	'libschroedinger' : {
 		'repo_type' : 'archive',
@@ -2689,9 +2711,9 @@ DEPENDS = {
 	'fftw3' : {
 		'repo_type' : 'archive',
 		#git tags/master require --enable-maintainer-mode we could but shouldn't use git I guess.
-		'url' : 'http://fftw.org/fftw-3.3.6-pl1.tar.gz',
+		'url' : 'http://fftw.org/fftw-3.3.6-pl2.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '3.3.6-pl1', 'fancy_name' : 'fftw3' },
+		'_info' : { 'version' : '3.3.6-pl2', 'fancy_name' : 'fftw3' },
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
@@ -2758,9 +2780,9 @@ DEPENDS = {
 	},
 	'netcdf' : {
 		'repo_type' : 'archive',
-		'url' : 'https://gfd-dennou.org/arch/ucar/unidata/pub/netcdf/netcdf-4.4.1.tar.gz',
+		'url' : 'ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz', 
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
-		'_info' : { 'version' : '4.4.1', 'fancy_name' : 'netcdf' },
+		'_info' : { 'version' : '4.4.1.1', 'fancy_name' : 'netcdf' },
 	},
 	'libcaca' : {
 		'repo_type' : 'archive',
@@ -2854,6 +2876,15 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (1be7dc)', 'fancy_name' : 'libass' },
 	},
 	'openjpeg' : {
+		'env_exports' : {
+			'AR' : '{cross_prefix_bare}ar',
+			'CC' : '{cross_prefix_bare}gcc',
+			'PREFIX' : '{compile_prefix}',
+			'RANLIB' : '{cross_prefix_bare}ranlib',
+			'LD'     : '{cross_prefix_bare}ld',
+			'STRIP'  : '{cross_prefix_bare}strip',
+			'CXX'    : '{cross_prefix_bare}g++',
+		},
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz',
 		'folder_name': 'openjpeg-2.1.2',
