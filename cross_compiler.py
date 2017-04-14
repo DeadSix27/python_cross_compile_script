@@ -712,7 +712,7 @@ class CrossCompileScript:
 		else:
 			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
 			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
-			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
+			self.run_process('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,realFolderName))
 
 		return realFolderName
@@ -762,7 +762,7 @@ class CrossCompileScript:
 				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch == None else branchString))
 				self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
 				self.cchdir("..")
-			os.system('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
+			self.run_process('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url,realFolderName))
 
 		return realFolderName
@@ -899,7 +899,7 @@ class CrossCompileScript:
 		if 'debug_confighelp_and_exit' in data:
 			if data['debug_confighelp_and_exit'] == True:
 				self.bootstrap_configure()
-				os.system("./configure --help")
+				self.run_process("./configure --help")
 				exit()
 
 		if 'cflag_addition' in data:
@@ -1646,7 +1646,7 @@ PRODUCTS = {
 		'depends_on' : [
 			'libfilezilla',
 		],
-		#'_info' : { 'version' : 'SVN (master)', 'fancy_name' : 'FileZilla' },
+		#'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla' },
 	},
 }
 DEPENDS = {
@@ -1661,7 +1661,7 @@ DEPENDS = {
 		'env_exports' : {
 			'CXXFLAGS' : '-O0',
 		},
-		'_info' : { 'version' : 'SVN (master)', 'fancy_name' : 'FileZilla (libary)' },
+		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (libary)' },
 	},
 	'libmediainfo' : {
 		'repo_type' : 'git',
@@ -1975,7 +1975,7 @@ DEPENDS = {
 		},
 		'_info' : { 'version' : '1.1.0e', 'fancy_name' : 'openssl' },
 	},
-	'libfile_local' : {
+	'libfile_local' : { # local non cross-compiled, to bootstrap libfile-cross-compiled, it needs the actual linux build first uh..
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
@@ -2011,6 +2011,17 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
 		'version' : '0.19.8.1',
 		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
+	},
+	'libfile_local' : { # local non cross-compiled, to bootstrap libfile-cross-compiled, it needs the actual linux build first uh..
+		'repo_type' : 'git',
+		'url' : 'https://github.com/file/file.git',
+		'rename_folder' : 'libfile_local.git',
+		'configure_options': '--prefix={compile_prefix} --disable-shared --enable-static',
+		'needs_make' : False,
+		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
+		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
+		'run_post_patch' : [ 'autoreconf -fiv' ],
+		
 	},
 	'libfile' : {
 		'repo_type' : 'git',
@@ -2243,11 +2254,11 @@ DEPENDS = {
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
-		'run_post_patch' : (
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
-			'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
-		),
+		#'run_post_patch' : (
+		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
+		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
+		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
+		#),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
 	'bzip2' : {
@@ -2568,7 +2579,13 @@ DEPENDS = {
 	'libxml2' : {
 		'repo_type' : 'archive',
 		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python --enable-tests=no --enable-programs=no',
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', 'p1'),
+		],
+		'run_post_patch' : [
+			'autoreconf -fiv',
+		],
 		'run_post_install' : (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lxml2/Libs: -L${{libdir}} -lxml2 -lz -llzma -liconv -lws2_32/\' "{pkg_config_path}/libxml-2.0.pc"', # libarchive complaints without this.
 		),
@@ -2603,7 +2620,7 @@ DEPENDS = {
 		'run_post_install' : (
 			'rm -f NUL', # uh???
 		),
-		'_info' : { 'version' : 'SVN (master)', 'fancy_name' : 'xavs' },
+		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'xavs' },
 	},
 	'libsoxr' : {
 		'repo_type' : 'archive',
