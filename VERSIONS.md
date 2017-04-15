@@ -7,6 +7,7 @@
 | Product         | Version      |
 | ---------------:|:------------ |
 | aria2           | git (master) |
+| cuetools        | git (master) |
 | cURL            | git (master) |
 | ffmpeg (shared) | git (master) |
 | ffmpeg (static) | git (master) |
@@ -71,6 +72,7 @@
 | lzma                       | 5.2.3        |
 | libmediainfo               | git (master) |
 | libmodplug                 | 0.8.8.5      |
+| mpv (library)              | git (master) |
 | nettle                     | 3.3          |
 | ogg                        | 1.3.2        |
 | openh264                   | git (master) |
@@ -79,7 +81,7 @@
 | librubberband              | 1.8.1        |
 | fftw3                      | git (477ce3) |
 | schroedinger               | 1.0.11       |
-| libsnappy                  | 1.1.3-14     |
+| libsnappy                  | git (master) |
 | libsndfile                 | git (master) |
 | soxr                       | 0.1.2        |
 | speex                      | git (master) |
@@ -95,6 +97,7 @@
 | libxml2                    | 2.9.4        |
 | xvidcore                   | 1.3.4        |
 | zimg                       | git (master) |
+| libjpeg-turbo              | git (master) |
 | lua                        | 5.3.4        |
 | LuaJIT2                    | git (master) |
 | lzo                        | 2.10         |

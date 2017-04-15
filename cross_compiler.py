@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-
 # #################################################################################################################
 # Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
 #
-# This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
-# To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,6 +39,7 @@ _VERSION = "2.0"
 # gnutls      - gperf
 # angle       - gyp
 # vapoursynth - p7zip
+# youtube-dl  - pando
 # flac        - docbook-to-man
 # ###################################################
 # ################# CONFIGURATION ###################
@@ -56,7 +57,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER                   = ( 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mkvtoolnix', 'curl', 'wget', 'mpv', 'x264_10bit', 'x265_10bit', 'ffmpeg_shared', 'ffmpeg_static' )
+PRODUCT_ORDER                   = ( 'cuetools', 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'x265_10bit', 'curl', 'wget', 'mpv', 'youtube-dl', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'mkvtoolnix' )
 #
 # ###################################################
 # ###################################################
@@ -125,24 +126,18 @@ class CrossCompileScript:
 		self.PRODUCT_ORDER          = po
 		self.PRODUCTS               = ps
 		self.DEPENDS                = ds
-
 		fmt                         = MyFormatter()
 		hdlr                        = logging.StreamHandler(sys.stdout)
 		hdlr.setFormatter(fmt)
 		self.logger                 = logging.getLogger(__name__)
-		#logging.basicConfig(level   = logging.INFO,  format=Colors.CYAN + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
-		#logging.basicConfig(level   = logging.DEBUG,  format=Colors.RED + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
-		#logging.basicConfig(level   = logging.ERROR, format=Colors.RED  + _LOGFORMAT + Colors.RESET, datefmt=_LOG_DATEFORMAT)
 		self.logger.setLevel(logging.INFO) #DEBUG
 		self.logger.addHandler(hdlr) 
-
 		self.fullCurrentPath        = os.getcwd()
 		self.fullWorkDir            = os.path.join(self.fullCurrentPath,_WORKDIR)
 		self.fullProductDir         = None
 		self.targetBitness          = _BITNESS
 		self.originalPATH           = os.environ["PATH"]
 		self.mingwScriptURL         = _BASE_URL + _MINGW_SCRIPT_URL_POSIX_THREADS
-
 		#init some stuff.
 		self.compileTarget          = None
 		self.compilePrefix          = None
@@ -255,6 +250,31 @@ class CrossCompileScript:
 				setattr(args, self.dest, values)
 				parser.exit()
 		return customArgsAction
+		
+	def assembleConfigHelps(self,pdlist,type,main):
+		class customArgsAction(argparse.Action):
+			def __call__(self, parser, args, values, option_string=None):
+				main.quietMode = True
+				main.init_quietMode()
+				main.prepareBuilding(64)
+				main.build_mingw(64)
+				main.initBuildFolders()
+				for k,v in pdlist.items():
+					if '_disabled' not in v:
+						if '_info' in v:
+							beforePath = os.getcwd()
+							path = main.get_thing_path(k,v,type)
+							print(path)
+							main.cchdir(path)
+							if os.path.isfile(os.path.join(path,"configure")):
+								os.system("./configure --help")
+							if os.path.isfile(os.path.join(path,"waf")):
+								os.system("./waf --help")
+							main.cchdir(beforePath)
+							print("-------------------")
+				setattr(args, self.dest, values)
+				parser.exit()
+		return customArgsAction
 	
 	def commandLineEntrace(self):
 		class epiFormatter(argparse.RawDescriptionHelpFormatter):
@@ -283,10 +303,15 @@ class CrossCompileScript:
 		
 		list_p.add_argument('-md', '--markdown', help='Print list in markdown format', action='store_true')
 		list_p.add_argument('-cv', '--csv', help='Print list as CSV-like string', action='store_true')
-			
 		list_p_group1 = list_p.add_mutually_exclusive_group(required=True)
 		list_p_group1.add_argument('-p', '--productss',    nargs=0, help='List all products',     action=self.listify_pdeps(self.PRODUCTS,"P"))
 		list_p_group1.add_argument('-d', '--dependencies', nargs=0, help='List all dependencies', action=self.listify_pdeps(self.DEPENDS, "D"))
+		
+		
+		chelps_p = subparsers.add_parser('chelps', help= 'Type: \'' + parser.prog + ' chelps --help\' for more help')
+		chelps_p_group1 = chelps_p.add_mutually_exclusive_group(required=True)
+		chelps_p_group1.add_argument('-p', '--productss',    nargs=0, help='Write all product config helps to confighelps.txt',     action=self.assembleConfigHelps(self.PRODUCTS,"P",self))
+		chelps_p_group1.add_argument('-d', '--dependencies', nargs=0, help='Write all dependency config helps to confighelps.txt',  action=self.assembleConfigHelps(self.DEPENDS, "D",self))
 		
 		
 		group2 = parser.add_mutually_exclusive_group(required=True)
@@ -297,7 +322,7 @@ class CrossCompileScript:
 		group2.add_argument('-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true')
 		parser.add_argument('-q',  '--quiet',                                         help='Only show info lines',                    action='store_true')
 		parser.add_argument('-f',  '--force',                                         help='Force rebuild, deletes already files',    action='store_true')
-				
+		
 		if len(sys.argv)==1:
 			self.defaultEntrace()
 		else:
@@ -370,7 +395,10 @@ class CrossCompileScript:
 					main.prepareBuilding(b)
 					main.build_mingw(b)
 					main.initBuildFolders()
-					self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild)
+					if buildType == "PRODUCT":
+						self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild)
+					else:
+						self.build_thing(thing,self.DEPENDS[thing],buildType,forceRebuild)
 					main.finishBuilding()
 	
 	def defaultEntrace(self):
@@ -764,7 +792,7 @@ class CrossCompileScript:
 			if recursive:
 				recur = " --recursive"
 				
-			self.logger.info("GIT cloning '%s' to '%s'" % (url,realFolderName))
+			self.logger.info("GIT cloning '%s' to '%s'" % (url,os.getcwd() +"/"+ realFolderName))
 			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				self.cchdir(realFolderName + ".tmp")
@@ -828,16 +856,56 @@ class CrossCompileScript:
 			self.logger.debug("{0} already downloaded".format( fileName ))
 			return folderName
 	#:
+	
+	def get_thing_path(self,name,data,type): # type = PRODUCT or DEPENDENCY		
+		outPath = os.getcwd()
+		workDir = None
+		renameFolder = None
+		if 'rename_folder' in data:
+			if data['rename_folder'] != None:
+				renameFolder = data['rename_folder']
+		if type == "P": 
+			outPath = os.path.join(outPath,self.bitnessDir + "_products")
+			self.cchdir(self.bitnessDir + "_products")
+		else:
+			outPath = os.path.join(outPath,self.bitnessDir)
+			self.cchdir(self.bitnessDir)
+		
+		if data["repo_type"] == "git":
+			branch     = self.getValueOrNone(data,'branch')
+			recursive  = self.getValueOrNone(data,'recursive_git')
+			folderName = self.getValueOrNone(data,'folder_name')
+			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
+		if data["repo_type"] == "svn":
+			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
+		if data['repo_type'] == "hg":
+			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder)
+		if data["repo_type"] == "archive":
+			if "folder_name" in data:
+				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
+			else:
+				workDir = self.download_unpack_file(data["url"],None,workDir)
+
+		if workDir == None:
+			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
+			raise
+
+		if 'rename_folder' in data: # this should be moved inside the download functions, TODO.. but lazy
+			if data['rename_folder'] != None:
+				if not os.path.isdir(data['rename_folder']):
+					shutil.move(workDir, data['rename_folder'])
+				workDir = data['rename_folder']
+		self.cchdir("..")
+		return os.path.join(outPath,workDir)
+	
 	def build_thing(self,name,data,type,force_rebuild = False): # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
 		#we are in workdir
 		if '_already_built' in data:
 			if data['_already_built'] == True:
-				return
-				
+				return				
 		if _DEBUG:
 			for tk in os.environ:
 				print("############ " + tk + " : " + os.environ[tk])
-
 		skipDepends = False
 		if 'skip_deps' in data:
 			if data['skip_deps'] == True:
@@ -901,6 +969,7 @@ class CrossCompileScript:
 					
 		self.cchdir(workDir) #descend into x86_64/[DEPENDENCY_OR_PRODUCT_FOLDER]
 		self.defaultCFLAGS()
+		oldPath = self.getKeyOrBlankString(os.environ,"PATH")
 		currentFullDir = os.getcwd()
 
 		if 'source_subfolder' in data:
@@ -925,7 +994,11 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
-
+				
+		if 'custom_path' in data:
+			if data['custom_path'] != None:
+				self.logger.debug("Setting PATH to '{0}'".format( self.replaceVariables(data['custom_path']) ))
+				os.environ["PATH"] = self.replaceVariables(data['custom_path'])
 
 		if 'flipped_path' in data:
 			if data['flipped_path'] == True:
@@ -1032,18 +1105,28 @@ class CrossCompileScript:
 		self.logger.info("Building {0} '{1}': Done!".format(type,name))
 		if 'debug_exitafter' in data:
 			exit()
+			
+		if 'custom_path' in data:
+			if data['custom_path'] != None:
+				self.logger.debug("Re-setting PATH to '{0}'".format( oldPath ))
+				os.environ["PATH"] = oldPath
+			
 		self.cchdir("..") #asecond into workdir
 	#:
 	def bootstrap_configure(self):
 		if not os.path.isfile("configure"):
 			if os.path.isfile("bootstrap.sh"):
 				self.run_process('./bootstrap.sh')
-			if os.path.isfile("autogen.sh"):
+			elif os.path.isfile("autogen.sh"):
 				self.run_process('./autogen.sh')
-			if os.path.isfile("buildconf"):
+			elif os.path.isfile("buildconf"):
 				self.run_process('./buildconf')
-			if os.path.isfile("bootstrap"):
+			elif os.path.isfile("bootstrap"):
 				self.run_process('./bootstrap')
+			elif os.path.isfile("bootstrap"):
+				self.run_process('./bootstrap')
+			elif os.path.isfile("configure.ac"):
+				self.run_process('autoreconf -fiv')
 	
 	def configure_source(self,name,data):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
@@ -1069,15 +1152,7 @@ class CrossCompileScript:
 						if os.path.isfile("bootstrap.py"):
 							self.run_process('./bootstrap.py')
 				else:
-					if not os.path.isfile("configure"):
-						if os.path.isfile("bootstrap.sh"):
-							self.run_process('./bootstrap.sh')
-						if os.path.isfile("autogen.sh"):
-							self.run_process('./autogen.sh')
-						if os.path.isfile("buildconf"):
-							self.run_process('./buildconf')
-						if os.path.isfile("bootstrap"):
-							self.run_process('./bootstrap')
+					self.bootstrap_configure()
 
 			configOpts = ''
 			if 'configure_options' in data:
@@ -1340,7 +1415,9 @@ class CrossCompileScript:
 			compile_prefix_sed_escaped = self.compilePrefix.replace("/","\\/"),
 			make_cpu_count             = "-j {0}".format(self.cpuCount),
 			original_cflags            = self.originalCflags,
-			cflag_string               = self.generateCflagString('--extra-cflags=')
+			cflag_string               = self.generateCflagString('--extra-cflags='),
+			current_path               = os.getcwd(),
+			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH")
 		)
 		# needed actual commands sometimes, so I made this custom command support, compareable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
 		m = re.search(r'\!CMD\((.*)\)CMD!',cmd)
@@ -1402,6 +1479,12 @@ PRODUCTS = {
 			'libffmpeg',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
+	},
+	'cuetools' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/svend/cuetools.git',
+		'configure_options': '--host={compile_target} --prefix={product_prefix}/cuetools_git.installed --disable-shared --enable-static',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cuetools' },
 	},
 	'curl' : {
 		'repo_type' : 'git',
@@ -1512,6 +1595,7 @@ PRODUCTS = {
 			'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_6.h',
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'VLC (git)' },
+		'_disabled' : True,
 	},
 	'x265_10bit' : {
 		'repo_type' : 'hg',
@@ -1637,6 +1721,7 @@ PRODUCTS = {
 			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfo' },
+		'_disabled' : True,
 	},
 	'mediainfo_dll' : {
 		'repo_type' : 'git',
@@ -1673,11 +1758,73 @@ PRODUCTS = {
 	'youtube-dl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/rg3/youtube-dl.git',
-		'debug_exitafter': True,
+		'install_options' : 'PREFIX="{product_prefix}/youtube-dl_git.installed"',
+		'run_post_install' : [
+			'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
+		],
+		'needs_configure' : False,
+		'packages': {
+			'ubuntu' : [ 'pandoc' ],
+		},
+	},
+	'mpv_gui_qt5' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/DeadSix27/Baka-MPlayer',
+		'rename_folder' : 'mpv_gui_qt5_git',
+		'configure_options' :
+			'CONFIG+=embed_translations lupdate="{host_target}/bin/lupdate" lrelease="{host_target}/bin/lrelease" PKG_CONFIG={cross_prefix_full}pkg-config INSTALL_ROOT={product_prefix}/mpv_gui_qt5_git.installed'
+			' LIBS+=-L{host_target}/lib INCLUDEPATH+=-I{host_target}/include'
+		,
+		'run_post_patch' : [
+			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"'
+		],
+		'install_options' : 'INSTALL_ROOT={product_prefix}/mpv_gui_qt5_git.installed',
+		'env_exports' : {
+			'QTROOT' : '{host_target}/bin',
+			'QMAKE' : '{host_target}/bin/qmake',
+			'PKG_CONFIG' : '{cross_prefix_full}pkg-config'
+		},
+		'depends_on' : [
+			'qt5', 'libmpv', 'libzip'
+		],
 	},
 	
 }
 DEPENDS = {
+	'libzip' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/nih-at/libzip.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-libzip-git-20170415-fix-static-build.patch','p1'),
+		],
+		'run_post_patch' : (
+			'autoreconf -fiv',
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
+	},
+	'libmpv' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/mpv-player/mpv.git',
+		'is_waf' : True,
+		'rename_folder' : "libmpv_git",
+		'env_exports' : {
+			'DEST_OS' : 'win32',
+			'TARGET'  : '{compile_target}',
+		},
+		'run_post_patch' : (
+			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
+		),
+		'configure_options':
+			'--enable-libmpv-shared --disable-debug-build --prefix={compile_prefix}'
+			' --enable-sdl2 --enable-egl-angle-lib --enable-rubberband --enable-lcms2 --enable-dvdread --enable-openal --enable-dvdnav'
+			' --enable-libbluray --enable-cdda --enable-libass --enable-lua --enable-encoding --enable-uchardet --enable-libarchive'
+			' TARGET={compile_target} DEST_OS=win32',
+		'depends_on' : (
+			'angle', 'python36_libs', 'vapoursynth_libs', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
+	},
 	'libfilezilla' : {
 		'repo_type' : 'svn',
 		'folder_name' : 'libfilezilla_svn',
@@ -1810,6 +1957,56 @@ DEPENDS = {
 		},
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
 	},
+	#'angle_full' : { # ugh
+	#	'repo_type' : 'git',
+	#	'url' : 'https://chromium.googlesource.com/angle/angle',
+	#	'patches' : (
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
+	#	),
+	#	'recursive_git' : True,
+	#	'needs_make':False,
+	#	'needs_make_install':False,
+	#	'needs_configure':False,
+	#	'custom_path' : '{current_path}/depot_tools:{current_envpath}',
+	#	'env_exports' : {
+	#		'GYP_GENERATORS':'ninja',
+	#		'AR' : '{cross_prefix_bare}ar',
+	#		'CC' : '{cross_prefix_bare}gcc',
+	#		'PREFIX' : '{compile_prefix}',
+	#		'RANLIB' : '{cross_prefix_bare}ranlib',
+	#		'LD'     : '{cross_prefix_bare}ld',
+	#		'STRIP'  : '{cross_prefix_bare}strip',
+	#		'CXX'    : '{cross_prefix_bare}g++',
+	#	},
+	#	'run_post_patch': (
+	#		'if [ ! -f "already_done"                             ] ; then echo $PATH ; fi',
+	#		'if [ ! -f "already_done"                             ] ; then make uninstall PREFIX={compile_prefix} ; fi',
+	#		'if [ ! -f "already_done"                             ] ; then cmake -E remove_directory generated ; fi',
+	#		'if [ ! -d "depot_tools"                              ] ; then git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git ; fi',
+	#		'if [ ! -f "already_done"                             ] ; then python scripts/bootstrap.py ; fi',
+	#		# 'if [ ! -d "third_party/vulkan-validation-layers/src" ] ; then git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git third_party/vulkan-validation-layers/src ; fi',
+	#		# 'if [ ! -d "third_party/glslang-angle/src"            ] ; then git clone https://github.com/google/glslang.git third_party/glslang-angle/src ; fi',
+	#		# 'if [ ! -d "third_party/deqp/src"                     ] ; then git clone -b deqp-dev https://android.googlesource.com/platform/external/deqp/ third_party/deqp/src ; fi',
+	#		# 'if [ ! -d "third_party/spirv-headers/src"            ] ; then git clone https://github.com/KhronosGroup/SPIRV-Headers.git third_party/spirv-headers/src ; fi',
+	#		'if [ ! -d "third_party/spirv-tools-angle/src"        ] ; then git clone https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools third_party/spirv-tools-angle/src ; fi',
+	#		'if [ ! -f "already_done"                             ] ; then gyp -Duse_ozone=0 -Duse_x11=0 -DOS=win -Dangle_gl_library_type=static_library --depth . -I gyp/common.gypi src/angle.gyp --generator-output=generated -Dangle_enable_vulkan=1 ; fi',
+	#		'if [ ! -f "already_done"                             ] ; then ninja -C generated/out/Release_x64 -j 4 ; fi',
+	#		
+	#		#'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
+	#		#'if [ ! -f "already_done" ] ; then cmake -E copy generated/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
+	#		#'if [ ! -f "already_done" ] ; then make -C generated {make_prefix_options} BUILDTYPE=Release {make_cpu_count} ; fi',
+	#		#'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
+	#		#'if [ ! -f "already_done" ] ; then make install PREFIX={compile_prefix} ; fi',
+	#		#'if [ ! -f "already_done" ] ; then touch already_done ; fi',
+	#	),
+	#	'packages': {
+	#		'ubuntu' : [ 'gyp' ],
+	#	},
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
+	#},
 	
 	'qt5' : { # too... many.... patches....
 		'warnings' : [
@@ -2325,11 +2522,14 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
 	'libsnappy' : {
-		'repo_type' : 'archive',
-		'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz',
-		'folder_name' : 'google-snappy-32d6d7d',
+		'repo_type' : 'git',
+		'url' : 'https://github.com/google/snappy.git', #old: https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz
+		#'folder_name' : 'google-snappy-32d6d7d',
+		'run_post_make' : [
+			'cp -n README.md README'
+		],
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '1.1.3-14', 'fancy_name' : 'libsnappy' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsnappy' },
 	},
 	'gmp' : {
 		#export CC_FOR_BUILD=/usr/bin/gcc idk if we need this anymore, compiles fine without.
@@ -2721,6 +2921,9 @@ DEPENDS = {
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (477ce3)', 'fancy_name' : 'fftw3' },
+		'depends_on' : [
+			'libflac',
+		],
 	},
 	'librubberband' : {
 		'repo_type' : 'archive',
