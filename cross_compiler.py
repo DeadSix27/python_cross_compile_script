@@ -121,11 +121,14 @@ _OUR_VER = ".".join(str(x) for x in sys.version_info[0:3])
 _TESTED_VERS = ['3.5.3','3.5.2','3.6.0']
 
 class CrossCompileScript:
-	def __init__(self,po,ps,ds):
-		# print(Colors.GREEN+ "Starting {0} v{1}".format( self.__class__.__name__,_VERSION ) + Colors.RESET )
-		self.PRODUCT_ORDER          = po
-		self.PRODUCTS               = ps
-		self.DEPENDS                = ds
+		
+	def __init__(self,product_order,products,depends):
+		self.PRODUCT_ORDER          = product_order
+		self.PRODUCTS               = products
+		self.DEPENDS                = depends
+		self.init()
+		
+	def init(self):
 		fmt                         = MyFormatter()
 		hdlr                        = logging.StreamHandler(sys.stdout)
 		hdlr.setFormatter(fmt)
@@ -156,7 +159,7 @@ class CrossCompileScript:
 		if self.quietMode:
 			self.logger.warning('Quiet mode is enabled')
 			self.init_quietMode()
-	#:
+			
 	def init_quietMode(self):
 		self.buildLogFile = codecs.open("raw_build.log","w","utf-8")
 	
@@ -403,12 +406,12 @@ class CrossCompileScript:
 	
 	def defaultEntrace(self):
 		for b in self.targetBitness:
-			main.prepareBuilding(b)
-			main.build_mingw(b)
-			main.initBuildFolders()
+			self.prepareBuilding(b)
+			self.build_mingw(b)
+			self.initBuildFolders()
 			for p in self.PRODUCT_ORDER:
 				self.build_thing(p,self.PRODUCTS[p],"PRODUCT")
-			main.finishBuilding()
+			self.finishBuilding()
 
 	def finishBuilding(self):
 		self.cchdir("..")
@@ -899,7 +902,7 @@ class CrossCompileScript:
 		self.cchdir("..")
 		return os.path.join(outPath,workDir)
 	
-	def build_thing(self,name,data,type,force_rebuild = False): # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
+	def build_thing(self,name,data,type,force_rebuild = False, skipDepends = False): # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
 		#we are in workdir
 		if '_already_built' in data:
 			if data['_already_built'] == True:
@@ -907,7 +910,7 @@ class CrossCompileScript:
 		if _DEBUG:
 			for tk in os.environ:
 				print("############ " + tk + " : " + os.environ[tk])
-		skipDepends = False
+		
 		if 'skip_deps' in data:
 			if data['skip_deps'] == True:
 				skipDepends = True
