@@ -1,5 +1,4 @@
-# A GNU/Linux to Windows cross-compile helper script
-### _almost_ fully written in Python 3
+# A GNU/Linux to Windows cross-compile helper script 
 
 _python_cross_compile_script_ could be described as a wrapper for various build-helpers (Autotools,C-Make,Rake,..).
 
@@ -57,6 +56,7 @@ gnutls      - gperf
 angle       - gyp
 vapoursynth - p7zip
 flac        - docbook-to-man
+youtube-dl  - pando
 ```
 
 ## **Usage**
@@ -199,3 +199,10 @@ You can always just check the predefined projects for ideas and wether I missed 
 	'debug_exitafter': True,                      # ( True/False, will exit after this build, useful for testing ) [FOPTIONAL]
 },
 ```
+
+### Thanks to
+
+- [mxe](https://github.com/mxe/mxe)
+- [ArchLinux](https://aur.archlinux.org/packages/)
+- [MSYS](https://github.com/Alexpux/MSYS2-packages/)
+- and many more..

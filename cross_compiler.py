@@ -39,8 +39,8 @@ _VERSION = "2.0"
 # gnutls      - gperf
 # angle       - gyp
 # vapoursynth - p7zip
-# youtube-dl  - pando
 # flac        - docbook-to-man
+# youtube-dl  - pando
 # ###################################################
 # ################# CONFIGURATION ###################
 # ###################################################
@@ -774,15 +774,16 @@ class CrossCompileScript:
 			self.cchdir(realFolderName)
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
 			self.logger.debug("GIT Checking out:{0}".format( " master" if desiredBranch == None else branchString ))
-			self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
+			self.run_process('git remote update')#.format(" master" if desiredBranch == None else branchString))
+			self.run_process('git checkout -f{0}'.format(" master" if desiredBranch == None else branchString))
 			self.run_process('git merge{0}'.format(" origin/master" if desiredBranch == None else branchString))
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
 				self.logger.debug("GIT clone has code changes, updating")
-				self.run_process('git fetch')
-				self.run_process('git reset --hard FETCH_HEAD')	
-				self.run_process('git clean -df')
+				self.run_process('git reset --hard HEAD')
+				self.run_process('git clean -f')
 				self.run_process('git pull')
+				
 				self.removeAlreadyFiles()
 			else:
 				self.logger.debug("GIT clone '{0}' already up to date: {1} -> {2}".format(realFolderName,gitVersion,gitVersionNew))
