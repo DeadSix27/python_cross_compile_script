@@ -1,3 +1,4 @@
 sources/* linguist-vendored
 additional_headers/* linguist-vendored
 patches/* linguist-vendored
+mingw_build_scripts/* linguist-vendored
