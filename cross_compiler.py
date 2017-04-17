@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+#- * -coding: utf - 8 - * -
 
-# #################################################################################################################
+# ####################################################
 # Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -12,18 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# #################################################################################################################
-
-
-import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
-import hashlib,glob,traceback,time,zlib,codecs,argparse
-import http.cookiejar
-from multiprocessing import cpu_count
-from pathlib import Path
-from urllib.parse import urlparse
-from collections import OrderedDict
-
-_VERSION = "2.0"
+# ###################################################
 
 # ###################################################
 # ################ REQUIRED PACKAGES ################
@@ -45,6 +35,15 @@ _VERSION = "2.0"
 # ################# CONFIGURATION ###################
 # ###################################################
 #
+
+import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
+import hashlib,glob,traceback,time,zlib,codecs,argparse
+import http.cookiejar
+from multiprocessing import cpu_count
+from pathlib import Path
+from urllib.parse import urlparse
+from collections import OrderedDict
+
 _CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
 _QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false 
 _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
@@ -122,10 +121,11 @@ _TESTED_VERS = ['3.5.3','3.5.2','3.6.0']
 
 class CrossCompileScript:
 		
-	def __init__(self,product_order,products,depends):
+	def __init__(self,product_order,products,depends,variables):
 		self.PRODUCT_ORDER          = product_order
 		self.PRODUCTS               = products
 		self.DEPENDS                = depends
+		self.VARIABLES              = variables
 		self.init()
 		
 	def init(self):
@@ -141,7 +141,6 @@ class CrossCompileScript:
 		self.targetBitness          = _BITNESS
 		self.originalPATH           = os.environ["PATH"]
 		self.mingwScriptURL         = _BASE_URL + _MINGW_SCRIPT_URL_POSIX_THREADS
-		#init some stuff.
 		self.compileTarget          = None
 		self.compilePrefix          = None
 		self.mingwBinpath           = None
@@ -293,7 +292,7 @@ class CrossCompileScript:
 		if _OUR_VER not in _TESTED_VERS:
 			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
-		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper v' + _VERSION + Colors.RESET + '\n\nExample usages:' \
+		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper' + Colors.RESET + '\n\nExample usages:' \
 			'\n "{0} list -p"             - lists all the products' \
 			'\n "{0} -a"                  - builds everything' \
 			'\n "{0} -f -d libx264"       - forces the rebuilding of libx264' \
@@ -317,14 +316,14 @@ class CrossCompileScript:
 		chelps_p_group1.add_argument('-d', '--dependencies', nargs=0, help='Write all dependency config helps to confighelps.txt',  action=self.assembleConfigHelps(self.DEPENDS, "D",self))
 		
 		
-		group2 = parser.add_mutually_exclusive_group(required=True)
-		group2.add_argument('-p',  '--build_product_list',    dest='PRODUCT',         help='Build this product (and dependencies)')
-		group2.add_argument('-pl', '--build_product',         dest='PRODUCT_LIST',    help='Build this product (and dependencies)')
-		group2.add_argument('-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency')
-		group2.add_argument('-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency')
-		group2.add_argument('-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true')
-		parser.add_argument('-q',  '--quiet',                                         help='Only show info lines',                    action='store_true')
-		parser.add_argument('-f',  '--force',                                         help='Force rebuild, deletes already files',    action='store_true')
+		group2 = parser.add_mutually_exclusive_group( required = True )
+		group2.add_argument( '-p',  '--build_product_list',    dest='PRODUCT',         help='Build this product (and dependencies)'                        )
+		group2.add_argument( '-pl', '--build_product',         dest='PRODUCT_LIST',    help='Build this product (and dependencies)'                        )
+		group2.add_argument( '-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
+		group2.add_argument( '-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency'                                        )
+		group2.add_argument( '-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true' )
+		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                   , action='store_true' )
+		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'   , action='store_true' )
 		
 		if len(sys.argv)==1:
 			self.defaultEntrace()
@@ -1400,6 +1399,15 @@ class CrossCompileScript:
 		return ''
 			
 	def replaceVariables(self,cmd):
+	
+		m = re.search(r'\!VAR\((.*)\)VAR!',cmd)
+		if m != None:
+			varName = m.groups()[0]
+			if varName in self.VARIABLES:
+				cmdReplacer = self.VARIABLES[varName]
+				mr = re.sub(r"\!VAR\((.*)\)VAR!", r"{0}".format(cmdReplacer), cmd, flags=re.DOTALL)
+				cmd = mr
+				
 		cmd = cmd.format(
 			cmake_prefix_options       = self.cmakePrefixOptions,
 			make_prefix_options        = self.makePrefixOptions,
@@ -1424,11 +1432,12 @@ class CrossCompileScript:
 			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH")
 		)
 		# needed actual commands sometimes, so I made this custom command support, compareable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
+		
 		m = re.search(r'\!CMD\((.*)\)CMD!',cmd)
 		if m != None:
 			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n","").replace("\r","")
 			mr = re.sub(r"\!CMD\((.*)\)CMD!", r"{0}".format(cmdReplacer), cmd, flags=re.DOTALL)
-			return mr
+			cmd = mr
 		return cmd
 	#:
 	def getValueOrNone(self,db,k):
@@ -1467,7 +1476,23 @@ class CrossCompileScript:
 		if _DEBUG:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
-
+VARIABLES = {
+	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
+		'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --enable-w32threads ' #--disable-w32threads
+		'--enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv --enable-libtwolame '
+		'--extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ '
+		'--extra-libs=-lpng --extra-libs=-loleaut32 --enable-libmp3lame --enable-version3 --enable-zlib '
+		'--enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg '
+		'--enable-gnutls --enable-libgsm --enable-libfreetype --enable-libopus --enable-bzlib '
+		'--enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger '
+		'--enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp --enable-dxva2 --enable-avisynth '
+		'--enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy '
+		'--enable-libzimg --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r '
+		'--enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample '
+		'--extra-libs=-lpsapi --extra-libs=-lspeexdsp --enable-libgme --enable-runtime-cpudetect '
+		'--enable-libmfx' # remove this if you don't want quicksync.
+	,
+}
 PRODUCTS = {
 	'x264_10bit' : {
 		'repo_type' : 'git',
@@ -1539,17 +1564,10 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
-		'configure_options':
-			' --arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv'
-			' --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --extra-libs=-loleaut32'
-			' --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype'
-			' --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp'
-			' --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg --enable-gpl --enable-libx264 --enable-libx265'
-			' --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample --extra-libs=-lpsapi --extra-libs=-lspeexdsp'
-			' --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
@@ -1559,14 +1577,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_shared_git',
-		'configure_options':
-			' --arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv'
-			' --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --extra-libs=-loleaut32'
-			' --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype'
-			' --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp'
-			' --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg --enable-gpl --enable-libx264 --enable-libx265'
-			' --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample --extra-libs=-lpsapi --extra-libs=-lspeexdsp'
-			' --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme --enable-runtime-cpudetect', #' --extra-cflags=-march=skylake'#' --extra-cflags=-O3' # dont seem needed
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
@@ -1792,9 +1803,28 @@ PRODUCTS = {
 			'qt5', 'libmpv', 'libzip'
 		],
 	},
-	
 }
 DEPENDS = {
+	'opencl_icd' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
+		'needs_configure' : False,
+		'needs_make_install':False,
+		'is_cmake' : True,
+		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'depends_on' : [ 'opencl_headers' ],
+	},
+	'opencl_headers' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
+		'run_post_patch' : (
+			'if [ ! -d "{compile_prefix}/include/CL/" ] ; then mkdir "{compile_prefix}/include/CL" ; fi',
+			'cp -v *.h "{compile_prefix}/include/CL/"',
+		),
+		'needs_make':False,
+		'needs_make_install':False,
+		'needs_configure':False,
+	},
 	'libzip' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/nih-at/libzip.git',
@@ -2463,15 +2493,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
-		'configure_options':
-			' --arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads --enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv'
-			' --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ --extra-libs=-lpng --extra-libs=-loleaut32'
-			' --enable-libmp3lame --enable-version3 --enable-zlib --enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg --enable-gnutls --enable-libgsm --enable-libfreetype'
-			' --enable-libopus --enable-bzlib --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger --enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp'
-			' --enable-dxva2 --enable-avisynth --enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy --enable-libzimg --enable-gpl --enable-libx264 --enable-libx265'
-			' --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample --extra-libs=-lpsapi --extra-libs=-lspeexdsp'
-			' --prefix={compile_prefix} --disable-shared --enable-static --enable-libgme --enable-runtime-cpudetect'
-			' --disable-doc --disable-programs',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={compile_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
@@ -3140,5 +3162,5 @@ DEPENDS = {
 
 
 if __name__ == "__main__": # use this as an example on how to implement this in custom building scripts.
-	main = CrossCompileScript(PRODUCT_ORDER,PRODUCTS,DEPENDS)
+	main = CrossCompileScript(PRODUCT_ORDER,PRODUCTS,DEPENDS,VARIABLES)
 	main.commandLineEntrace()
