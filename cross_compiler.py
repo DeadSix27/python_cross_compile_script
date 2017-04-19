@@ -783,8 +783,9 @@ class CrossCompileScript:
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
 				self.logger.debug("GIT clone has code changes, updating")
-				self.run_process('git reset --hard HEAD')
-				self.run_process('git clean -fd')
+				self.run_process('git fetch origin')
+				self.run_process('git reset --hard{0}'.format(" origin/master" if desiredBranch == None else branchString))
+				self.run_process('git clean -fxd')
 				self.run_process('git pull')
 				
 				self.removeAlreadyFiles()
@@ -1976,6 +1977,12 @@ DEPENDS = {
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
+		'run_pre_patch' : {
+			'if [ -f "Makefile" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
+			'if [ -f "Makefile" ] ; then rm Makefile ; fi',
+			'if [ ! -f "already_done" ] ; then git clean -fxd ; fi',
+			'if [ ! -f "already_done" ] ; then git reset --hard origin/master ; fi',
+		},
 		'run_post_patch': (
 			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',
