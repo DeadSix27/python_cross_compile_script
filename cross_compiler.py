@@ -306,13 +306,13 @@ class CrossCompileScript:
 		list_p.add_argument('-md', '--markdown', help='Print list in markdown format', action='store_true')
 		list_p.add_argument('-cv', '--csv', help='Print list as CSV-like string', action='store_true')
 		list_p_group1 = list_p.add_mutually_exclusive_group(required=True)
-		list_p_group1.add_argument('-p', '--productss',    nargs=0, help='List all products',     action=self.listify_pdeps(self.PRODUCTS,"P"))
+		list_p_group1.add_argument('-p', '--products',    nargs=0, help='List all products',     action=self.listify_pdeps(self.PRODUCTS,"P"))
 		list_p_group1.add_argument('-d', '--dependencies', nargs=0, help='List all dependencies', action=self.listify_pdeps(self.DEPENDS, "D"))
 		
 		
 		chelps_p = subparsers.add_parser('chelps', help= 'Type: \'' + parser.prog + ' chelps --help\' for more help')
 		chelps_p_group1 = chelps_p.add_mutually_exclusive_group(required=True)
-		chelps_p_group1.add_argument('-p', '--productss',    nargs=0, help='Write all product config helps to confighelps.txt',     action=self.assembleConfigHelps(self.PRODUCTS,"P",self))
+		chelps_p_group1.add_argument('-p', '--products',    nargs=0, help='Write all product config helps to confighelps.txt',     action=self.assembleConfigHelps(self.PRODUCTS,"P",self))
 		chelps_p_group1.add_argument('-d', '--dependencies', nargs=0, help='Write all dependency config helps to confighelps.txt',  action=self.assembleConfigHelps(self.DEPENDS, "D",self))
 		
 		
@@ -682,7 +682,8 @@ class CrossCompileScript:
 		else:
 			if ignoreErrors:
 				return output
-			self.logger.error("Error [%d] running process: '%s' in '%s'" % (return_code,command,os.getcwd()))
+			self.logger.error("Error [{0}] running process: '{1}' in '{2}'".format(return_code,command,os.getcwd()))
+			self.logger.error("You can try deleting the product/dependency folder: '{0}' and re-run the script".format(os.getcwd()))
 			if self.quietMode:
 				self.logger.error("Please check the raw_build.log file")
 			if exitOnError:
@@ -783,7 +784,7 @@ class CrossCompileScript:
 			if gitVersion != gitVersionNew:
 				self.logger.debug("GIT clone has code changes, updating")
 				self.run_process('git reset --hard HEAD')
-				self.run_process('git clean -f')
+				self.run_process('git clean -fd')
 				self.run_process('git pull')
 				
 				self.removeAlreadyFiles()
