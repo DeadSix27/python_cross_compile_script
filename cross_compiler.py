@@ -133,7 +133,10 @@ class CrossCompileScript:
 		hdlr                        = logging.StreamHandler(sys.stdout)
 		hdlr.setFormatter(fmt)
 		self.logger                 = logging.getLogger(__name__)
-		self.logger.setLevel(logging.INFO) #DEBUG
+		if _DEBUG:
+			self.logger.setLevel(logging.DEBUG)
+		else:
+			self.logger.setLevel(logging.INFO)
 		self.logger.addHandler(hdlr) 
 		self.fullCurrentPath        = os.getcwd()
 		self.fullWorkDir            = os.path.join(self.fullCurrentPath,_WORKDIR)
@@ -725,7 +728,7 @@ class CrossCompileScript:
 		os.chmod(file, st.st_mode | stat.S_IXUSR) #S_IEXEC would be just +x
 	#:
 
-	def hg_clone(self,url,virtFolderName=None,renameTo=None): # hg repo type, todo: take this pretty new repo clone function and improve the clunky git one with it.
+	def hg_clone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None):
 		if virtFolderName == None:
 			virtFolderName = self.sanitize_filename(os.path.basename(url))
 			if not virtFolderName.endswith(".hg"): virtFolderName += ".hg"
@@ -736,12 +739,16 @@ class CrossCompileScript:
 		realFolderName = virtFolderName
 		if renameTo != None:
 			realFolderName = renameTo
+			
+		branchString = ""
+		if desiredBranch != None:
+			branchString = " {0}".format( desiredBranch )
 
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
 			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
 			self.run_process('hg pull -u')
-			self.run_process('hg update')
+			self.run_process('hg update{0}'.format("" if desiredBranch == None else branchString))
 			hgVersionNew = subprocess.check_output('hg --debug id -i', shell=True)
 			if hgVersion != hgVersionNew:
 				self.logger.debug("HG clone has code changes, updating")
@@ -752,6 +759,11 @@ class CrossCompileScript:
 		else:
 			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
 			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
+			if desiredBranch != None:
+				self.cchdir(realFolderName + ".tmp")
+				self.logger.debug("HG updating to:{0}".format(" master" if desiredBranch == None else branchString))
+				self.run_process('hg up{0}'.format("" if desiredBranch == None else branchString))
+				self.cchdir("..")
 			self.run_process('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,realFolderName))
 
@@ -884,7 +896,8 @@ class CrossCompileScript:
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
 		if data['repo_type'] == "hg":
-			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder)
+			branch = self.getValueOrNone(data,'branch')
+			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
 		if data["repo_type"] == "archive":
 			if "folder_name" in data:
 				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
@@ -950,7 +963,8 @@ class CrossCompileScript:
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
 		if data['repo_type'] == "hg":
-			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder)
+			branch = self.getValueOrNone(data,'branch')
+			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
 		if data["repo_type"] == "archive":
 			if "folder_name" in data:
 				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
@@ -1021,7 +1035,7 @@ class CrossCompileScript:
 					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
 
-		if not self.wildCardIsFile('already_configured'):
+		if not self.anyFileStartsWith('already_configured'):
 			if 'run_pre_patch' in data:
 				if data['run_pre_patch'] != None:
 					for cmd in data['run_pre_patch']:
@@ -1034,7 +1048,7 @@ class CrossCompileScript:
 				for p in data['patches']:
 					self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
 
-		if not self.wildCardIsFile('already_ran_make'):
+		if not self.anyFileStartsWith('already_ran_make'):
 			if 'run_post_patch' in data:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
@@ -1372,7 +1386,7 @@ class CrossCompileScript:
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
-	def wildCardIsFile(self,wild):
+	def anyFileStartsWith(self,wild):
 		for file in os.listdir('.'):
 			if file.startswith(wild):
 				return True
@@ -1621,6 +1635,7 @@ PRODUCTS = {
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
 		'needs_configure' : False,
 		'is_cmake' : True,
+		'branch' : 'stable', # stable until I find out what x265 is up to with that sudden new stable branch. 
 		'source_subfolder': './source',
 		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265' },
 	},
@@ -1693,6 +1708,17 @@ PRODUCTS = {
 			'libvorbis','gettext',
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SoX' },
+	},
+	'mpd' : { # doesn't compile, feel free to contribute patches or w/e if you care.
+		'repo_type' : 'git',
+		'url' : 'https://github.com/MaxKellermann/MPD.git',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-wavpack --disable-gme --disable-bzip2 --disable-cdio-paranoia --disable-sqlite --enable-silent-rules --disable-icu LDFLAGS="-static" LIBS="-static-libgcc -static-libstdc++ -lz -lole32"',
+		'env_exports' : {
+			'LDFLAGS' : '-static',
+			'LIBS' : '-static-libgcc -static-libstdc++ -lz -lole32',
+			'CXXFLAGS' : '-O2 -g',
+		},
+		'_disabled' : True,
 	},
 	'mpv' : {
 		'repo_type' : 'git',
@@ -1977,12 +2003,12 @@ DEPENDS = {
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
-		'run_pre_patch' : {
-			'if [ -f "Makefile" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
-			'if [ -f "Makefile" ] ; then rm Makefile ; fi',
-			'if [ ! -f "already_done" ] ; then git clean -fxd ; fi',
-			'if [ ! -f "already_done" ] ; then git reset --hard origin/master ; fi',
-		},
+		#'run_pre_patch' : {
+		#	'if [ -f "Makefile" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
+		#	'if [ -f "Makefile" ] ; then rm Makefile ; fi',
+		#	'if [ ! -f "already_done" ] ; then git clean -fxd ; fi',
+		#	'if [ ! -f "already_done" ] ; then git reset --hard origin/master ; fi',
+		#},
 		'run_post_patch': (
 			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',
@@ -2052,9 +2078,9 @@ DEPENDS = {
 	
 	'qt5' : { # too... many.... patches....
 		'warnings' : [
-			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it, otherwise report it on https://github.com/DeadSix27/python_cross_compile_script/issues',
-			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393'
-			"(You could set add 'cpu_count' : '1', to the config of QT5 if you can bear a way slower compilation)"
+			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it',
+			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393',
+			'(You could add \'cpu_count\' : \'1\', to the config of QT5 if the slower speed is acceptable for you)'
 		],
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
@@ -2901,6 +2927,7 @@ DEPENDS = {
 		'repo_type' : 'hg',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
+		'branch' : 'stable',  # stable until I find out what x265 is up to with that sudden new stable branch.
 		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_CLI=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
 		'needs_configure' : False,
 		'is_cmake' : True,
