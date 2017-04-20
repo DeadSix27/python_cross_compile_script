@@ -291,11 +291,11 @@ class CrossCompileScript:
 			def _split_lines(self, text, width):
 				return text.splitlines()
 			
-		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.\n To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.\n '
+		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at http://mozilla.org/MPL/2.0/.\n '
 		if _OUR_VER not in _TESTED_VERS:
 			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
-		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper' + Colors.RESET + '\n\nExample usages:' \
+		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper (MPL2.0)' + Colors.RESET + '\n\nExample usages:' \
 			'\n "{0} list -p"             - lists all the products' \
 			'\n "{0} -a"                  - builds everything' \
 			'\n "{0} -f -d libx264"       - forces the rebuilding of libx264' \
