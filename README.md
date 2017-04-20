@@ -27,7 +27,8 @@ Menu:
 - SoX tools _(sox,play,..)
 - Vobis tools _(oggenc,ogginfo,..)_
 - wGet
-- x264 & x265 (10bit)
+- x264 (10bit)
+- x265 (Multi-bit (12,10,8))
 
 #### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies, products and their respective versions
 

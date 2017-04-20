@@ -56,7 +56,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER                   = ( 'cuetools', 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'x265_multibit', 'curl', 'wget', 'mpv', 'youtube-dl', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'mkvtoolnix' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'x265_multibit', 'curl', 'wget', 'mpv', 'youtube-dl', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'mkvtoolnix' )
 #
 # ###################################################
 # ###################################################
@@ -940,6 +940,9 @@ class CrossCompileScript:
 						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
 					else:
 						self.build_thing(libraryName,self.DEPENDS[libraryName],"DEPENDENCY")
+		if 'is_dep_inheriter' in data:
+			if data['is_dep_inheriter'] == True:
+				return
 						
 		self.logger.info("Building {0} '{1}'".format(type,name))
 		
@@ -1590,25 +1593,23 @@ PRODUCTS = {
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
-		'depends_on': (
-			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
-		),
+		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
+	},
+	'ffmpeg_static_opencl' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'rename_folder' : 'ffmpeg_static_opencl_git',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
+		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
 	},
 	'ffmpeg_shared' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_shared_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme',
-		'depends_on': (
-			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
-			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
-		),
+		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
 	},
 	'vlc' : { # not working
@@ -1854,6 +1855,15 @@ PRODUCTS = {
 	},
 }
 DEPENDS = {
+	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
+		'is_dep_inheriter' : True,
+		'depends_on' : [
+			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
+			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
+		],
+	},
 	'opencl_icd' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
