@@ -56,7 +56,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER                   = ( 'cuetools', 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'x265_10bit', 'curl', 'wget', 'mpv', 'youtube-dl', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'mkvtoolnix' )
+PRODUCT_ORDER                   = ( 'cuetools', 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'x265_multibit', 'curl', 'wget', 'mpv', 'youtube-dl', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'mkvtoolnix' )
 #
 # ###################################################
 # ###################################################
@@ -430,12 +430,13 @@ class CrossCompileScript:
 		self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
 		self.compileTarget      = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
 		self.compilePrefix      = "{0}/{1}/mingw-w64-{2}/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.compileTarget ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+		self.offtreePrefix      = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir + "_offtree") ) # workdir/x86_64_offtree
 		self.hostTarget         = "{0}/{1}/mingw-w64-{2}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir )
 		self.mingwBinpath       = "{0}/{1}/mingw-w64-{2}/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
 		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
 		self.makePrefixOptions  = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={compile_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format( cross_prefix_bare=self.bareCrossPrefix, compile_prefix=self.compilePrefix )
-		self.cmakePrefixOptions = "-G\"Unix Makefiles\" . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={compile_prefix}".format(cross_prefix_full=self.fullCrossPrefix, compile_prefix=self.compilePrefix )
+		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={compile_prefix}".format(cross_prefix_full=self.fullCrossPrefix, compile_prefix=self.compilePrefix )
 		self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.compilePrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
 		self.currentBitness     = b
@@ -464,7 +465,6 @@ class CrossCompileScript:
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 	def initBuildFolders(self):
-
 		if not os.path.isdir(self.bitnessDir):
 			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir ))
 			os.makedirs(self.bitnessDir, exist_ok=True)
@@ -472,6 +472,10 @@ class CrossCompileScript:
 		if not os.path.isdir(self.bitnessDir + "_products"):
 			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir + "_products" ))
 			os.makedirs(self.bitnessDir + "_products", exist_ok=True)
+
+		if not os.path.isdir(self.bitnessDir + "_offtree"):
+			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir + "_offtree" ))
+			os.makedirs(self.bitnessDir + "_offtree", exist_ok=True)
 
 	def build_mingw(self,bitness):
 		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessDir + "-w64-mingw32-gcc")
@@ -993,6 +997,8 @@ class CrossCompileScript:
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
+				if not os.path.isdir(data['source_subfolder']):
+					os.makedirs(data['source_subfolder'], exist_ok=True)
 				self.cchdir(data['source_subfolder'])
 		
 		if force_rebuild:
@@ -1101,6 +1107,8 @@ class CrossCompileScript:
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
+				if not os.path.isdir(data['source_subfolder']):
+					os.makedirs(data['source_subfolder'], exist_ok=True)
 				self.cchdir(currentFullDir)
 
 		if 'make_subdir' in data:
@@ -1432,6 +1440,7 @@ class CrossCompileScript:
 			cross_prefix_bare          = self.bareCrossPrefix,
 			cross_prefix_full          = self.fullCrossPrefix,
 			compile_prefix             = self.compilePrefix,
+			offtree_prefix             = self.offtreePrefix,
 			compile_target             = self.compileTarget,
 			host_target                = self.hostTarget,
 			bit_name                   = self.bitnessDir,
@@ -1584,7 +1593,7 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
@@ -1597,7 +1606,7 @@ PRODUCTS = {
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
-			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
@@ -1632,12 +1641,24 @@ PRODUCTS = {
 		'repo_type' : 'hg',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_10bit',
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'branch' : 'stable', # stable until I find out what x265 is up to with that sudden new stable branch. 
-		'source_subfolder': './source',
+		'source_subfolder': 'source',
 		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265' },
+	},
+	'x265_multibit' : {
+		'repo_type' : 'hg',
+		'url' : 'https://bitbucket.org/multicoreware/x265',
+		'rename_folder' : 'x265_multibit',
+		'source_subfolder': 'source',
+		'branch' : 'stable',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit.installed',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
+		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
 	},
 	'mkvtoolnix': {
 		'repo_type' : 'git',
@@ -1839,7 +1860,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install':False,
 		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'depends_on' : [ 'opencl_headers' ],
 	},
 	'opencl_headers' : {
@@ -2359,7 +2380,7 @@ DEPENDS = {
 		'url' : 'https://github.com/BYVoid/uchardet.git',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
@@ -2441,7 +2462,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': 
-			'{cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={compile_target}'
+			'. {cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={compile_target}'
 			' -DCMAKE_INSTALL_PREFIX={compile_prefix} -DCMAKE_FIND_ROOT_PATH='
 			' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
 		'patches' : (
@@ -2531,7 +2552,7 @@ DEPENDS = {
 		'depends_on': (
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
-			'libx265', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		),
 		#'run_post_patch' : (
@@ -2639,7 +2660,7 @@ DEPENDS = {
 		'run_post_patch': ( # runs commands post the patch process
 			'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
 		),
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix}',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix}',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.6.0', 'fancy_name' : 'frei0r-plugins' },
 	},
@@ -2687,7 +2708,7 @@ DEPENDS = {
 		#'run_post_patch': ( # runs commands post the patch process
 		#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
 		#),
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : { # why can't everything be so easy to compile
@@ -2881,7 +2902,7 @@ DEPENDS = {
 		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz',
 		'folder_name' : 'xvidcore',
 		'rename_folder' : 'xvidcore-1.3.4',
-		'source_subfolder': './build/generic',
+		'source_subfolder': 'build/generic',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix}',
 		'cpu_count' : '1',
 		'run_post_configure': (
@@ -2908,14 +2929,14 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'url' : 'https://sourceforge.net/projects/soxr/files/soxr-0.1.2-Source.tar.xz',
 		'_info' : { 'version' : '0.1.2', 'fancy_name' : 'soxr' },
 	},
 	'libebur128' : { # uneeded
 		'repo_type' : 'git',
 		'url' : 'https://github.com/jiixyj/libebur128.git',
-		'cmake_options': '{cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'cmake_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'run_post_patch': (
@@ -2928,11 +2949,57 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
 		'branch' : 'stable',  # stable until I find out what x265 is up to with that sudden new stable branch.
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_CLI=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'source_subfolder': './source',
+		'source_subfolder': 'source',
 		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library)' },
+	},
+	'libx265_multibit' : {
+		'repo_type' : 'hg',
+		'url' : 'https://bitbucket.org/multicoreware/x265',
+		'rename_folder' : 'libx265_hg_multibit',
+		'source_subfolder': 'source',
+		'branch' : 'stable',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={compile_prefix}',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'run_post_make' : [
+			'mv -vf libx265.a libx265_main.a',
+			'cp -vf {offtree_prefix}/libx265_10bit/lib/libx265_main10.a libx265_main10.a',
+			'cp -vf {offtree_prefix}/libx265_12bit/lib/libx265_main12.a libx265_main12.a',
+			'"{cross_prefix_full}ar" -M <<EOF\nCREATE libx265.a\nADDLIB libx265_main.a\nADDLIB libx265_main10.a\nADDLIB libx265_main12.a\nSAVE\nEND\nEOF',
+		],
+		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
+		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (multibit library 12/10/8)' },
+	},
+	'libx265_multibit_10' : {
+		'repo_type' : 'hg',
+		'url' : 'https://bitbucket.org/multicoreware/x265',
+		'rename_folder' : 'libx265_hg_10bit',
+		'source_subfolder' : 'source',
+		'branch' : 'stable',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
+		'run_post_install' : [
+			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
+		],
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library (10))' },
+	},
+	'libx265_multibit_12' : {
+		'repo_type' : 'hg',
+		'url' : 'https://bitbucket.org/multicoreware/x265',
+		'rename_folder' : 'libx265_hg_12bit',
+		'source_subfolder' : 'source',
+		'branch' : 'stable',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
+		'run_post_install' : [
+			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
+		],
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library (12))' },
 	},
 	'libopenh264' : {
 		'repo_type' : 'git',
@@ -3154,7 +3221,7 @@ DEPENDS = {
 		'folder_name': 'openjpeg-2.1.2',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
 		'_info' : { 'version' : '2.1.2', 'fancy_name' : 'openjpeg' },
 	},
 	'intel_quicksync_mfx' : {
