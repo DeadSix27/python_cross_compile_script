@@ -6,7 +6,7 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,10 +32,21 @@
 # flac        - docbook-to-man
 # youtube-dl  - pando
 # filezilla   - wxrc (aka wx-common)
+
+# ###################################################
+# #################     TODO      ###################
+# ###################################################
+
+# ## Feel free to help out with whatever is in this list (or any other thing) ##
+
+# List:
+# - Basic optional config file.
+# - Remote hosting of product/dependency hosting as json files.
+# - Implement hash support for archives, mostly for the self hosted ones.
+
 # ###################################################
 # ################# CONFIGURATION ###################
 # ###################################################
-#
 
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
 import hashlib,glob,traceback,time,zlib,codecs,argparse
@@ -295,7 +306,7 @@ class CrossCompileScript:
 			def _split_lines(self, text, width):
 				return text.splitlines()
 			
-		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at http://mozilla.org/MPL/2.0/.\n '
+		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
 		if _OUR_VER not in _TESTED_VERS:
 			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
@@ -540,7 +551,7 @@ class CrossCompileScript:
 				result.status = code
 				return result
 
-		def sizeof_fmt(num, suffix='B'): # sizeof_fmt is courtesy of http://stackoverflow.com/a/1094933
+		def sizeof_fmt(num, suffix='B'): # sizeof_fmt is courtesy of https://stackoverflow.com/a/1094933
 			for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
 				if abs(num) < 1024.0:
 					return "%3.1f%s%s" % (num, unit, suffix)
@@ -1531,7 +1542,7 @@ VARIABLES = {
 PRODUCTS = {
 	'x264_10bit' : {
 		'repo_type' : 'git',
-		'url' : 'http://git.videolan.org/git/x264.git',
+		'url' : 'https://git.videolan.org/git/x264.git',
 		'rename_folder' : 'x264_10bit',
 		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_10bit.installed --enable-strip --enable-lavf --bit-depth=10 {cflag_string}',
 		'env_exports': {
@@ -2051,7 +2062,7 @@ DEPENDS = {
 	'libsqlite3' : {
 		'repo_type' : 'archive',
 		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
-		'url' : 'http://sqlite.org/2017/sqlite-autoconf-3180000.tar.gz',
+		'url' : 'https://sqlite.org/2017/sqlite-autoconf-3180000.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
 		'depends_on': (
 			'zlib',
@@ -2417,7 +2428,7 @@ DEPENDS = {
 	},
 	'gettext' : {
 		'repo_type' : 'archive',
-		'url' : 'http://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz',
+		'url' : 'https://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
 		'version' : '0.19.8.1',
 		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
@@ -2471,7 +2482,7 @@ DEPENDS = {
 	},
 	'lzo': {
 		'repo_type' : 'archive',
-		'url' : 'http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz',
+		'url' : 'https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'version' : '2.10',
 		'_info' : { 'version' : '2.10', 'fancy_name' : 'lzo' },
@@ -2544,7 +2555,7 @@ DEPENDS = {
 	'libbluray' : {
 		'repo_type' : 'git',
 		'recursive_git' : True,
-		'url' : 'http://git.videolan.org/git/libbluray.git',
+		'url' : 'https://git.videolan.org/git/libbluray.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-examples --disable-doxygen-doc --disable-bdjava --enable-udf', #--without-libxml2 --without-fontconfig .. optional.. I guess
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libbluray_git_remove_strtok_s.patch', 'p1'),
@@ -2693,7 +2704,7 @@ DEPENDS = {
 	},
 	'liblzma' : {
 		'repo_type' : 'archive',
-		'url' : 'http://tukaani.org/xz/xz-5.2.3.tar.bz2',
+		'url' : 'https://tukaani.org/xz/xz-5.2.3.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
 	},
@@ -2906,18 +2917,17 @@ DEPENDS = {
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'vo-amrwbenc' },
 	},
 	'libogg' : {
-		'repo_type' : 'archive',
-		'url' : 'https://github.com/xiph/ogg/archive/v1.3.2.tar.gz',
-		'folder_name' : 'ogg-1.3.2',
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/ogg.git',
+		# 'folder_name' : 'ogg-1.3.2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '1.3.2', 'fancy_name' : 'ogg' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ogg' },
 	},
 	'libspeexdsp' : {
-		'repo_type' : 'archive',
-		'url' : 'https://github.com/xiph/speexdsp/archive/SpeexDSP-1.2rc3.tar.gz',
-		'folder_name' : 'speexdsp-SpeexDSP-1.2rc3',
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/speexdsp.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '1.2rc3', 'fancy_name' : 'speexdsp' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'speexdsp' },
 	},
 	'libspeex' : {
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
@@ -2948,7 +2958,7 @@ DEPENDS = {
 	},
 	'libschroedinger' : {
 		'repo_type' : 'archive',
-		'url' : 'http://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
+		'url' : 'https://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'run_post_configure': (
 			'sed -i.bak \'s/testsuite//\' Makefile',
@@ -3227,7 +3237,7 @@ DEPENDS = {
 			'sed -i.bak "s/__declspec(dllimport)//g" caca/caca.h',
 			'sed -i.bak "s/__declspec(dllimport)//g" caca/caca0.h',
 		),
-		'url' : 'http://pkgs.fedoraproject.org/repo/extras/libcaca/libcaca-0.99.beta19.tar.gz/a3d4441cdef488099f4a92f4c6c1da00/libcaca-0.99.beta19.tar.gz',
+		'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/libcaca-0.99.beta19.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --libdir={compile_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
 		'_info' : { 'version' : '0.99.beta19', 'fancy_name' : 'libcaca' },
 	},
@@ -3236,7 +3246,7 @@ DEPENDS = {
 		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.8.5/libmodplug-0.8.8.5.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'run_post_install': (
-			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] http://trac.ffmpeg.org/ticket/1539
+			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] https://trac.ffmpeg.org/ticket/1539
 			'sed -i.bak \'s/-lmodplug.*/-lmodplug -lstdc++/\' "{pkg_config_path}/libmodplug.pc"', # huh ?? c++?
 			'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
 			'sed -i.bak \'s/__declspec(dllimport)//\' "{compile_prefix}/include/libmodplug/modplug.h"',
@@ -3356,7 +3366,7 @@ DEPENDS = {
 	},
 	'libx264' : {
 		'repo_type' : 'git',
-		'url' : 'http://git.videolan.org/git/x264.git',
+		'url' : 'https://git.videolan.org/git/x264.git',
 		'rename_folder' : 'libx264_git',
 		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={compile_prefix} --enable-strip --disable-lavf',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264 (library)' },
