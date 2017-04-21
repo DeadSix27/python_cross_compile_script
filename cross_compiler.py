@@ -2095,7 +2095,7 @@ DEPENDS = {
 	},
 	'boost' : { # oh god no.. 
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.bz2',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
