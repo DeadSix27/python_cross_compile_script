@@ -201,9 +201,10 @@ You can always just check the predefined projects for ideas and wether I missed 
 },
 ```
 
-### Thanks to
+### Thanks to these people for some patches and hints:
 
 - [mxe](https://github.com/mxe/mxe)
 - [ArchLinux](https://aur.archlinux.org/packages/)
 - [MSYS](https://github.com/Alexpux/MSYS2-packages/)
+- [Martchus](https://github.com/Martchus/PKGBUILDs/commits/master)
 - and many more..

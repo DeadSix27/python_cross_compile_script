@@ -31,6 +31,7 @@
 # vapoursynth - p7zip
 # flac        - docbook-to-man
 # youtube-dl  - pando
+# filezilla   - wxrc (aka wx-common)
 # ###################################################
 # ################# CONFIGURATION ###################
 # ###################################################
@@ -94,7 +95,7 @@ class MyFormatter(logging.Formatter):
 	war_fmt  = Colors.YELLOW         + _LOGFORMAT + Colors.RESET
 
 	def __init__(self):
-		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=None, style='%')  
+		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=_LOG_DATEFORMAT, style='%')  
 
 	def format(self, record):
 		format_orig = self._style._fmt
@@ -114,7 +115,7 @@ _BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/p
 _MINGW_SCRIPT_URL               = '/mingw_build_scripts/mingw-build-script.sh'
 _MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix_threads.sh'
 
-_DEBUG = False # for.. debugging.. purposes.
+_DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
 _OUR_VER = ".".join(str(x) for x in sys.version_info[0:3])
 _TESTED_VERS = ['3.5.3','3.5.2','3.6.0']
@@ -133,10 +134,6 @@ class CrossCompileScript:
 		hdlr                        = logging.StreamHandler(sys.stdout)
 		hdlr.setFormatter(fmt)
 		self.logger                 = logging.getLogger(__name__)
-		if _DEBUG:
-			self.logger.setLevel(logging.DEBUG)
-		else:
-			self.logger.setLevel(logging.INFO)
 		self.logger.addHandler(hdlr) 
 		self.fullCurrentPath        = os.getcwd()
 		self.fullWorkDir            = os.path.join(self.fullCurrentPath,_WORKDIR)
@@ -158,12 +155,19 @@ class CrossCompileScript:
 		self.originalCflags         = None
 		self.buildLogFile           = None
 		self.quietMode              = _QUIET
+		self.debugMode              = _DEBUG
+		self.logger.setLevel(logging.INFO)
+		if self.debugMode:
+			self.init_debugMode()
 		if self.quietMode:
-			self.logger.warning('Quiet mode is enabled')
 			self.init_quietMode()
-			
+
 	def init_quietMode(self):
+		self.logger.warning('Quiet mode is enabled')
 		self.buildLogFile = codecs.open("raw_build.log","w","utf-8")
+	def init_debugMode(self):
+		self.logger.setLevel(logging.DEBUG)
+		self.logger.debug('Debugging is on')
 	
 	def listify_pdeps(self,pdlist,type):
 		class customArgsAction(argparse.Action):
@@ -320,13 +324,14 @@ class CrossCompileScript:
 		
 		
 		group2 = parser.add_mutually_exclusive_group( required = True )
-		group2.add_argument( '-p',  '--build_product_list',    dest='PRODUCT',         help='Build this product (and dependencies)'                        )
+		group2.add_argument( '-p',  '--build_product_list',    dest='PRODUCT',         help='Build this product list'                                      )
 		group2.add_argument( '-pl', '--build_product',         dest='PRODUCT_LIST',    help='Build this product (and dependencies)'                        )
 		group2.add_argument( '-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
-		group2.add_argument( '-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency'                                        )
+		group2.add_argument( '-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency list'                                   )
 		group2.add_argument( '-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true' )
 		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                   , action='store_true' )
 		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'   , action='store_true' )
+		parser.add_argument( '-g',  '--debug',                                         help='Show debug information'                 , action='store_true' )
 		
 		if len(sys.argv)==1:
 			self.defaultEntrace()
@@ -340,8 +345,10 @@ class CrossCompileScript:
 				exit(1)
 			args = parser.parse_args()
 			forceRebuild = False
+			if args.debug:
+				self.debugMode = True
+				self.init_debugMode()
 			if args.quiet:
-				self.logger.warning('Quiet mode is enabled')
 				self.quietMode = True
 				self.init_quietMode()
 			if args.force:
@@ -443,7 +450,7 @@ class CrossCompileScript:
 		self.cpuCount           = _CPU_COUNT
 		self.originalCflags     = _ORIG_CFLAGS
 
-		if _DEBUG:
+		if self.debugMode:
 			print('self.bitnessDir = \n'         + self.bitnessDir + '\n\n')
 			print('self.bitnessDir2 = \n'        + self.bitnessDir2 + '\n\n')
 			print('self.winBitnessDir = \n'      + self.winBitnessDir + '\n\n')
@@ -925,7 +932,7 @@ class CrossCompileScript:
 		if '_already_built' in data:
 			if data['_already_built'] == True:
 				return				
-		if _DEBUG:
+		if self.debugMode:
 			for tk in os.environ:
 				print("############ " + tk + " : " + os.environ[tk])
 		
@@ -1501,7 +1508,7 @@ class CrossCompileScript:
 			return ""
 	#:
 	def cchdir(self,dir):
-		if _DEBUG:
+		if self.debugMode:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
 VARIABLES = {
@@ -1742,6 +1749,35 @@ PRODUCTS = {
 		},
 		'_disabled' : True,
 	},
+	'clementine' : { # requires qt4....... so no. we'll keep it for future reference.
+		'repo_type' : 'git',
+		'url' : 'https://github.com/clementine-player/Clementine.git',
+		'needs_configure' : False,
+		'needs_make_install':False,
+		'is_cmake' : True,
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'depends_on': [
+			'qt4',
+		],
+		'_disabled': True,
+	},
+	'amarok' : { # requires qt4....... so no. we'll keep it for future reference.
+		'repo_type' : 'git',
+		'url' : 'git://anongit.kde.org/amarok.git',
+		'needs_configure' : False,
+		'needs_make_install':False,
+		'is_cmake' : True,
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix}',
+		# 'custom_cflag' : '-DTAGLIB_STATIC',
+		'env_exports' : {
+			'CPPDEFINES' : '-DTAGLIB_STATIC',
+			# build.env.Append(CPPDEFINES = 'TAGLIB_STATIC')
+		},
+		'depends_on': [
+			'taglib',
+		],
+	},
+	
 	'mpv' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
@@ -1807,18 +1843,32 @@ PRODUCTS = {
 		],
 		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
 	},
-	'filezilla_svn' : {
+	'filezilla_svn' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
 		'repo_type' : 'svn',
 		'folder_name' : 'filezilla_svn',
 		'url' : 'https://svn.filezilla-project.org/svn/FileZilla3/trunk',
 		'configure_options': '--host={compile_target} --prefix={product_prefix}/filezilla_svn.installed --disable-shared --enable-static --disable-manualupdatecheck --disable-autoupdatecheck --with-pugixml=builtin host_os=mingw',
-		# 'run_post_patch' : [
-			# 'autoreconf -fiv',
-		# ],
-		'depends_on' : [
-			'libfilezilla',
+		'run_post_patch' : [
+			'autoreconf -fiv',
+			'sed -i.bak \'s/extern _SYM_EXPORT gnutls_free/extern gnutls_free/\' "{compile_prefix}/include/gnutls/gnutls.h"', #edit gnutls.h and remove the _SYM_EXPORT part apparently...? : https://forum.filezilla-project.org/viewtopic.php?t=1227&start=180
 		],
-		#'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla' },
+		'depends_on' : [ 'libfilezilla', 'gnutls', 'wxwidgets' ],
+		'env_exports' : {
+			'LIBGNUTLS_LIBS' : '"-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
+			'LIBS' : '-lgnutls',
+			'CXXFLAGS' : '-g -Wall -O2',
+		},
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/filezilla/0001-filezilla_svn_disable_32bit.patch','p1'),
+		],
+		'run_post_install' : [
+			'mv "{compile_prefix}/include/gnutls/gnutls.h.bak" "{compile_prefix}/include/gnutls/gnutls.h"'
+		],
+		'packages': {
+			'ubuntu' : [ 'wxrc' ],
+		},
+		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (64Bit only)' },
+		
 	},
 	'youtube-dl' : {
 		'repo_type' : 'git',
@@ -1855,6 +1905,40 @@ PRODUCTS = {
 	},
 }
 DEPENDS = {
+	'libfilezilla' : {
+		'repo_type' : 'svn',
+		'folder_name' : 'libfilezilla_svn',
+		'url' : 'https://svn.filezilla-project.org/svn/libfilezilla/trunk',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'run_post_patch' : [
+			'autoreconf -fiv',
+		],
+		'env_exports' : {
+			'CXXFLAGS' : '-O0',
+		},
+		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (libary)' },
+	},	
+	'wxwidgets' : {
+		'repo_type' : 'archive',
+		'url' : 'https://sourceforge.net/projects/wxwindows/files/3.0.2/wxWidgets-3.0.2.tar.bz2',
+		'configure_options':
+			' --host={compile_target} --build=x86_64-unknown-linux-gnu --prefix={host_target} --disable-shared --enable-static --build='
+			' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
+			' --enable-graphics_ctx --enable-webview --enable-mediactrl --with-libpng=sys --with-libxpm=builtin --with-libjpeg=sys'
+			' --with-libtiff=builtin --without-mac --without-dmalloc --without-wine --with-sdl --with-themes=all --disable-stl --enable-threads --enable-gui'
+		,
+		# 'run_post_install' : [
+			# 'cp -fv "{host_target}/bin/wxrc-3.0" "{host_target}/bin/wxrc"',
+		# ],
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wxwidgets/0001-wxWidgets-c++11-PR2222.patch','p1'),
+		],
+		'env_exports': {
+			'CXXFLAGS' : '-std=gnu++11',
+			'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
+		},
+		'_info' : { 'version' : '3.0.2', 'fancy_name' : 'wxWidgets (libary)' },
+	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
 		'depends_on' : [
@@ -1864,6 +1948,14 @@ DEPENDS = {
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
 		],
 	},
+	'taglib' : {
+		'repo_type' : 'archive',
+		'url' : 'http://taglib.org/releases/taglib-1.11.1.tar.gz',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DWITH_MP4=ON -DWITH_ASF=ON',
+	},
+	
 	'opencl_icd' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
@@ -1917,19 +2009,6 @@ DEPENDS = {
 			'angle', 'python36_libs', 'vapoursynth_libs', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
-	},
-	'libfilezilla' : {
-		'repo_type' : 'svn',
-		'folder_name' : 'libfilezilla_svn',
-		'url' : 'https://svn.filezilla-project.org/svn/libfilezilla/trunk',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'run_post_patch' : [
-			'autoreconf -fiv',
-		],
-		'env_exports' : {
-			'CXXFLAGS' : '-O0',
-		},
-		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (libary)' },
 	},
 	'libmediainfo' : {
 		'repo_type' : 'git',
