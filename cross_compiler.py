@@ -1852,9 +1852,9 @@ PRODUCTS = {
 			'autoreconf -fiv',
 			'sed -i.bak \'s/extern _SYM_EXPORT gnutls_free/extern gnutls_free/\' "{compile_prefix}/include/gnutls/gnutls.h"', #edit gnutls.h and remove the _SYM_EXPORT part apparently...? : https://forum.filezilla-project.org/viewtopic.php?t=1227&start=180
 		],
-		'depends_on' : [ 'libfilezilla', 'gnutls', 'wxwidgets' ],
+		'depends_on' : [ 'libfilezilla', 'gnutls', 'wxwidgets', 'libsqlite3' ],
 		'env_exports' : {
-			'LIBGNUTLS_LIBS' : '"-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz"',
+			'LIBGNUTLS_LIBS' : '"-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -lz"',
 			'LIBS' : '-lgnutls',
 			'CXXFLAGS' : '-g -Wall -O2',
 		},
@@ -1917,10 +1917,20 @@ DEPENDS = {
 			'CXXFLAGS' : '-O0',
 		},
 		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (libary)' },
-	},	
+	},
+	'freeglut' : {
+		'repo_type' : 'archive',
+		'url' : 'https://downloads.sourceforge.net/project/freeglut/freeglut/3.0.0/freeglut-3.0.0.tar.gz',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'needs_configure' : False,
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DFREEGLUT_GLES=OFF -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_REPLACE_GLUT=ON -DFREEGLUT_BUILD_STATIC_LIBS=ON -DFREEGLUT_BUILD_SHARED_LIBS=OFF',
+		'is_cmake' : True,
+		'_info' : { 'version' : '3.7', 'fancy_name' : 'FreeGLUT (libary?)' },
+	},
+	
 	'wxwidgets' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/wxwindows/files/3.0.2/wxWidgets-3.0.2.tar.bz2',
+		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.2/wxWidgets-3.0.2.tar.bz2',
 		'configure_options':
 			' --host={compile_target} --build=x86_64-unknown-linux-gnu --prefix={host_target} --disable-shared --enable-static --build='
 			' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
@@ -1938,6 +1948,7 @@ DEPENDS = {
 			'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
 		},
 		'_info' : { 'version' : '3.0.2', 'fancy_name' : 'wxWidgets (libary)' },
+		'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
 	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
@@ -2325,6 +2336,7 @@ DEPENDS = {
 		'patches' : [
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.29-apng.patch', 'p1'),
 		],
+		'depends_on' : [ 'zlib', ],
 		'_info' : { 'version' : '1.6.29', 'fancy_name' : 'libpng' },
 	},
 	'harfbuzz' : {
