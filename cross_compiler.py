@@ -985,17 +985,24 @@ class CrossCompileScript:
 			recursive  = self.getValueOrNone(data,'recursive_git')
 			folderName = self.getValueOrNone(data,'folder_name')
 			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
-		if data["repo_type"] == "svn":
+		elif data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
-		if data['repo_type'] == "hg":
+		elif data['repo_type'] == "hg":
 			branch = self.getValueOrNone(data,'branch')
 			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
-		if data["repo_type"] == "archive":
+		elif data["repo_type"] == "archive":
 			if "folder_name" in data:
 				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
 			else:
 				workDir = self.download_unpack_file(data["url"],None,workDir)
-
+		elif data["repo_type"] == "none":
+			if "folder_name" in data:
+				workDir = data["folder_name"]
+				os.makedirs(workDir, exist_ok=True)
+			else:
+				print("Error: When using repo_type 'none' you have to set folder_name as well.")
+				exit(1)
+		
 		if workDir == None:
 			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
 			raise
@@ -1526,7 +1533,7 @@ class CrossCompileScript:
 		os.chdir(dir)
 VARIABLES = {
 	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
-		'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --enable-w32threads ' #--disable-w32threads
+		'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads '
 		'--enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv --enable-libtwolame '
 		'--extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ '
 		'--extra-libs=-lpng --extra-libs=-loleaut32 --enable-libmp3lame --enable-version3 --enable-zlib '
@@ -1623,6 +1630,14 @@ PRODUCTS = {
 		'rename_folder' : 'ffmpeg_static_opencl_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
 		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
+	},
+	'ffmpeg_static_non_free_opencl' : { # with decklink, fdk-aac and opencl
+		'repo_type' : 'git',
+		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'rename_folder' : 'ffmpeg_static_non_free_opencl',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac  --enable-decklink',
+		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
 	},
 	'ffmpeg_shared' : {
@@ -1971,7 +1986,7 @@ DEPENDS = {
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
+			'openjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264',
 		],
 	},
 	'taglib' : {
@@ -1990,13 +2005,18 @@ DEPENDS = {
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'depends_on' : [ 'opencl_headers' ],
+		'run_post_make' : [
+			'if [ ! -f "already_ran_make_install" ] ; then cp -vf "libOpenCL.dll.a" "{compile_prefix}/lib/libOpenCL.dll.a" ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
+		],
 	},
 	'opencl_headers' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
 		'run_post_patch' : (
-			'if [ ! -d "{compile_prefix}/include/CL/" ] ; then mkdir "{compile_prefix}/include/CL" ; fi',
-			'cp -v *.h "{compile_prefix}/include/CL/"',
+			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{compile_prefix}/include/CL" ] ; then mkdir "{compile_prefix}/include/CL" ; fi ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then cp -v *.h "{compile_prefix}/include/CL/" ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2666,11 +2686,6 @@ DEPENDS = {
 		'rename_folder' : 'libffmpeg_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={compile_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
 		'depends_on': [ 'ffmpeg_depends' ],
-		#'run_post_patch' : ( todo make this a library
-		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
-		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
-		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
-		#),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
 	'bzip2' : {
@@ -2684,6 +2699,22 @@ DEPENDS = {
 		"needs_make_install": False,
 		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install',
 		'_info' : { 'version' : '1.0.6', 'fancy_name' : 'BZip2 (library)' },
+	},
+	'decklink_headers' : { # seem to be broken in ffmpeg anyway
+		'repo_type' : 'none',
+		'folder_name' : 'decklink_headers',
+		'run_post_patch' : (
+			'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h ; fi',
+			'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c ; fi',
+			'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h ; fi',
+			'if [ ! -f "already_done" ] ; then cp -nv "DeckLinkAPI.h" "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
+			'if [ ! -f "already_done" ] ; then cp -nv "DeckLinkAPI_i.c" "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
+			'if [ ! -f "already_done" ] ; then cp -nv "DeckLinkAPIVersion.h" "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
+			'if [ ! -f "already_done" ] ; then touch  "already_done" ; fi',
+		),
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'needs_configure' : False,
 	},
 	'zlib' : {
 		'repo_type' : 'archive',
