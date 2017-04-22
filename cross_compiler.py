@@ -2009,6 +2009,9 @@ DEPENDS = {
 			'if [ ! -f "already_ran_make_install" ] ; then cp -vf "libOpenCL.dll.a" "{compile_prefix}/lib/libOpenCL.dll.a" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
 		],
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opencl/0001-OpenCL-git-prefix.patch','p1'),
+		],
 	},
 	'opencl_headers' : {
 		'repo_type' : 'git',

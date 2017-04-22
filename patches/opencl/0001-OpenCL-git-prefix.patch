@@ -1,0 +1,11 @@
+diff -Nur OpenCL-ICD-Loader_git/CMakeLists.txt OpenCL-ICD-Loader_git.patched/CMakeLists.txt
+--- OpenCL-ICD-Loader_git/CMakeLists.txt	2017-04-22 16:24:31.188142113 +0200
++++ OpenCL-ICD-Loader_git.patched/CMakeLists.txt	2017-04-22 16:24:29.163896055 +0200
+@@ -20,6 +20,7 @@
+ 
+ add_library (OpenCL SHARED ${OPENCL_ICD_LOADER_SOURCES})
+ set_target_properties (OpenCL PROPERTIES VERSION "1.2" SOVERSION "1")
++set_target_properties (OpenCL PROPERTIES PREFIX "")
+ 
+ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+     set_target_properties (OpenCL PROPERTIES LINK_FLAGS "-pthread -Wl,--version-script -Wl,${CMAKE_SOURCE_DIR}/icd_exports.map")
