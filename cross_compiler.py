@@ -1100,6 +1100,8 @@ class CrossCompileScript:
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
+				if not os.path.isdir(data['make_subdir']):
+					os.makedirs(data['make_subdir'], exist_ok=True)
 				self.cchdir(data['make_subdir'])
 
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
@@ -1574,6 +1576,7 @@ PRODUCTS = {
 	'wget' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.savannah.gnu.org/git/wget.git',
+		'branch' : 'v1.19.1', #switch to stable branch until the gnutls issue is resolved.
 		'rename_folder' : 'wget_git',
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
@@ -1665,7 +1668,7 @@ PRODUCTS = {
 		'is_cmake' : True,
 		'branch' : 'stable', # stable until I find out what x265 is up to with that sudden new stable branch. 
 		'source_subfolder': 'source',
-		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
 	},
 	'x265_multibit' : {
 		'repo_type' : 'hg',
@@ -1676,7 +1679,7 @@ PRODUCTS = {
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit.installed',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
 	},
 	'mkvtoolnix': {
@@ -1812,6 +1815,7 @@ PRODUCTS = {
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 		),
 		'run_post_install': (
+			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
 		),
@@ -1854,7 +1858,7 @@ PRODUCTS = {
 		],
 		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
 	},
-	'filezilla_svn' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
+	'filezilla_' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
 		'repo_type' : 'svn',
 		'folder_name' : 'filezilla_svn',
 		'url' : 'https://svn.filezilla-project.org/svn/FileZilla3/trunk',
@@ -1964,7 +1968,7 @@ DEPENDS = {
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
 		'depends_on' : [
-			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
+			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
@@ -2121,7 +2125,7 @@ DEPENDS = {
 			#' ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
-		'_info' : { 'version' : '1.63', 'fancy_name' : 'Boost' },
+		'_info' : { 'version' : '1.64', 'fancy_name' : 'Boost' },
 	},
 	'angle' : { # implenting gyp support just for this would be a waste of time, so a mnaual process shall suffice.
 		'repo_type' : 'git',
@@ -2656,18 +2660,13 @@ DEPENDS = {
 		),
 
 	},
-	'libffmpeg' : { # static, as we use static on everything, my derp in the first place.
+	'libffmpeg' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={compile_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
-		'depends_on': (
-			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr', # 'libebur128',
-			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'openjpeg', 'intel_quicksync_mfx', 'fdk_aac', 'rtmpdump', 'libx264',
-		),
-		#'run_post_patch' : (
+		'depends_on': [ 'ffmpeg_depends' ],
+		#'run_post_patch' : ( todo make this a library
 		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPI.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h -O "{compile_prefix}/include/DeckLinkAPI.h" ; fi',
 		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPI_i.c" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c -O "{compile_prefix}/include/DeckLinkAPI_i.c" ; fi',
 		#	'if [ ! -f "{compile_prefix}/include/DeckLinkAPIVersion.h" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h -O "{compile_prefix}/include/DeckLinkAPIVersion.h" ; fi',
@@ -2752,6 +2751,33 @@ DEPENDS = {
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.11.tar.xz',
+		'configure_options':
+			'--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-included-unistring '
+			'--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
+			'CPPFLAGS="-DWINVER=0x0501 -DAI_ADDRCONFIG=0x0400 -DIPV6_V6ONLY=27" LIBS="-lws2_32" ac_cv_prog_AR="{cross_prefix_full}ar"'
+		,
+		'run_post_install': [
+			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
+		],
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gnutls/0001-gnutls-3.5.11-arpainet_pkgconfig.patch', 'p1'),
+		],
+		'depends_on' : [
+			'gmp', 'libnettle',
+		],
+		'env_exports' : {
+			'CPPFLAGS' : '-DWINVER=0x0501 -DAI_ADDRCONFIG=0x0400 -DIPV6_V6ONLY=27',
+			'LIBS' : '-lws2_32',
+			'ac_cv_prog_AR' : '{cross_prefix_full}ar',
+		},
+		'packages': {
+			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
+		},
+		'_info' : { 'version' : '3.5.11', 'fancy_name' : 'gnutls' },
+	},
+	'gnutls_old' : { # in case the other breaks
+		'repo_type' : 'archive',
+		'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.11.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring',
 		'run_post_install': [
 			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
@@ -2763,6 +2789,7 @@ DEPENDS = {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
 		'_info' : { 'version' : '3.5.11', 'fancy_name' : 'gnutls' },
+		'_disabled' : True,
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -2880,7 +2907,7 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.2.15', 'fancy_name' : 'SDL1' },
 	},
-	'sdl2' : {
+	'sdl2_hg' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
 		'patches' : (
@@ -2894,6 +2921,23 @@ DEPENDS = {
 		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '2.0.5', 'fancy_name' : 'SDL2' },
+	},
+	'sdl2' : {
+		'repo_type' : 'hg',
+		'source_subfolder' : '_build_folder',
+		'url' : 'https://hg.libsdl.org/SDL',
+		'configure_path' : '../configure',
+		'patches' : (
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
+		),
+		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
+		# "run_post_install": (
+			# 'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+			# 'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			# 'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+		# ),
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
 	},
 	'libopus' : {
 		'repo_type' : 'git',
@@ -3064,7 +3108,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': 'source',
-		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library)' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library)' },
 	},
 	'libx265_multibit' : {
 		'repo_type' : 'hg',
@@ -3082,7 +3126,7 @@ DEPENDS = {
 			'"{cross_prefix_full}ar" -M <<EOF\nCREATE libx265.a\nADDLIB libx265_main.a\nADDLIB libx265_main10.a\nADDLIB libx265_main12.a\nSAVE\nEND\nEOF',
 		],
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
-		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (multibit library 12/10/8)' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit library 12/10/8)' },
 	},
 	'libx265_multibit_10' : {
 		'repo_type' : 'hg',
@@ -3096,7 +3140,7 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library (10))' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
 	},
 	'libx265_multibit_12' : {
 		'repo_type' : 'hg',
@@ -3110,7 +3154,7 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'_info' : { 'version' : 'hg (master)', 'fancy_name' : 'x265 (library (12))' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
 	},
 	'libopenh264' : {
 		'repo_type' : 'git',
