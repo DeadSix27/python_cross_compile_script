@@ -1858,7 +1858,7 @@ PRODUCTS = {
 		],
 		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
 	},
-	'filezilla_' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
+	'filezilla' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
 		'repo_type' : 'svn',
 		'folder_name' : 'filezilla_svn',
 		'url' : 'https://svn.filezilla-project.org/svn/FileZilla3/trunk',
