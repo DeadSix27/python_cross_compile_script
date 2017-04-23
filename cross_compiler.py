@@ -24,7 +24,7 @@
 # Ubuntu 16.10 (Yakkety)
 # Fedora 25    (Twenty Five)
 # 
-# global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
+# global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm mercurial cmake gettext-autopoint
 # mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
 # gnutls      - gperf
 # angle       - gyp
@@ -750,7 +750,7 @@ class CrossCompileScript:
 		os.chmod(file, st.st_mode | stat.S_IXUSR) #S_IEXEC would be just +x
 	#:
 
-	def hg_clone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None):
+	def mercurial_clone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None):
 		if virtFolderName == None:
 			virtFolderName = self.sanitize_filename(os.path.basename(url))
 			if not virtFolderName.endswith(".hg"): virtFolderName += ".hg"
@@ -769,8 +769,8 @@ class CrossCompileScript:
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
 			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
-			self.run_process('hg pull -u')
-			self.run_process('hg update{0}'.format("" if desiredBranch == None else branchString))
+			self.run_process('hg pull -vu')
+			self.run_process('hg update{0} -v'.format("" if desiredBranch == None else branchString))
 			hgVersionNew = subprocess.check_output('hg --debug id -i', shell=True)
 			if hgVersion != hgVersionNew:
 				self.logger.debug("HG clone has code changes, updating")
@@ -780,11 +780,11 @@ class CrossCompileScript:
 			self.cchdir("..")
 		else:
 			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
-			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
+			self.run_process('hg -v clone {0} {1}'.format(url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.debug("HG updating to:{0}".format(" master" if desiredBranch == None else branchString))
-				self.run_process('hg up{0}'.format("" if desiredBranch == None else branchString))
+				self.run_process('hg up{0} -v'.format("" if desiredBranch == None else branchString))
 				self.cchdir("..")
 			self.run_process('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,realFolderName))
@@ -812,7 +812,7 @@ class CrossCompileScript:
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
 			self.logger.debug("GIT Checking out:{0}".format( " master" if desiredBranch == None else branchString ))
 			self.run_process('git remote update')#.format(" master" if desiredBranch == None else branchString))
-			self.run_process('git checkout -f{0}'.format(" master" if desiredBranch == None else branchString))
+			self.run_process('git checkout {0}'.format(" master" if desiredBranch == None else branchString))
 			self.run_process('git merge{0}'.format(" origin/master" if desiredBranch == None else branchString))
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
@@ -820,6 +820,7 @@ class CrossCompileScript:
 				self.run_process('git fetch origin')
 				self.run_process('git reset --hard{0}'.format(" origin/master" if desiredBranch == None else branchString))
 				self.run_process('git clean -fxd')
+				self.run_process('git checkout {0}'.format(" master" if desiredBranch == None else branchString))
 				self.run_process('git pull')
 				
 				self.removeAlreadyFiles()
@@ -917,9 +918,9 @@ class CrossCompileScript:
 			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
 		if data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
-		if data['repo_type'] == "hg":
+		if data['repo_type'] == 'mercurial':
 			branch = self.getValueOrNone(data,'branch')
-			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
+			workDir = self.mercurial_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
 		if data["repo_type"] == "archive":
 			if "folder_name" in data:
 				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
@@ -987,9 +988,9 @@ class CrossCompileScript:
 			workDir    = self.git_clone(data["url"],folderName,renameFolder,branch,recursive)
 		elif data["repo_type"] == "svn":
 			workDir = self.svn_clone(data["url"],data["folder_name"],renameFolder)
-		elif data['repo_type'] == "hg":
+		elif data['repo_type'] == 'mercurial':
 			branch = self.getValueOrNone(data,'branch')
-			workDir = self.hg_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
+			workDir = self.mercurial_clone(data["url"],self.getValueOrNone(data,'folder_name'),renameFolder,branch)
 		elif data["repo_type"] == "archive":
 			if "folder_name" in data:
 				workDir = self.download_unpack_file(data["url"],data["folder_name"],workDir)
@@ -1675,7 +1676,7 @@ PRODUCTS = {
 		'_disabled' : True,
 	},
 	'x265_10bit' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_10bit',
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
@@ -1686,7 +1687,7 @@ PRODUCTS = {
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
 	},
 	'x265_multibit' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_multibit',
 		'source_subfolder': 'source',
@@ -2957,7 +2958,7 @@ DEPENDS = {
 		'_info' : { 'version' : '2.0.5', 'fancy_name' : 'SDL2' },
 	},
 	'sdl2' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'source_subfolder' : '_build_folder',
 		'url' : 'https://hg.libsdl.org/SDL',
 		'configure_path' : '../configure',
@@ -3134,7 +3135,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libebur128' },
 	},
 	'libx265' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
 		'branch' : 'stable',  # stable until I find out what x265 is up to with that sudden new stable branch.
@@ -3145,7 +3146,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library)' },
 	},
 	'libx265_multibit' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
@@ -3163,7 +3164,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit library 12/10/8)' },
 	},
 	'libx265_multibit_10' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_10bit',
 		'source_subfolder' : 'source',
@@ -3177,7 +3178,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
 	},
 	'libx265_multibit_12' : {
-		'repo_type' : 'hg',
+		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_12bit',
 		'source_subfolder' : 'source',
