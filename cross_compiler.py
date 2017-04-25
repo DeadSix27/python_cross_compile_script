@@ -1833,7 +1833,7 @@ PRODUCTS = {
 		'run_post_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
-			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/lib/mpv-1.dll',
+			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv-1.dll',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv' },
 	},
