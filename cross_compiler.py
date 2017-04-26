@@ -63,7 +63,7 @@ _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(as
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'xcompilers' # default: xcompilers
 _BITNESS           = ( 64, ) # as of now only 64 is tested, 32 could work, for multi-bit write it like (64, 32), this is completely untested .
-_ORIG_CFLAGS       = '-march=nehalem -O3' # If you compile for AMD Ryzen and Skylake or newer system use: znver1, or skylake, if older use sandybridge or ivybridge or so, see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options #default: -march=nehalem -O3
+_ORIG_CFLAGS       = '-march=sandybridge -O3' # I've had issues recently with the binaries not working on older systems despite using a old march, so stick to sandybridge for now, for others see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
@@ -122,9 +122,13 @@ class MyFormatter(logging.Formatter):
 		self._style._fmt = format_orig
 		return result
 
-_BASE_URL                       = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master'
-_MINGW_SCRIPT_URL               = '/mingw_build_scripts/mingw-build-script.sh'
-_MINGW_SCRIPT_URL_POSIX_THREADS = '/mingw_build_scripts/mingw-build-script-posix_threads.sh'
+_BASE_URL         = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master'
+
+_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
+#_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script.sh' # without the above
+#_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads-gcc7-test.sh' # if you want to test gcc7, make sure to set --gcc-ver=6.3.0 to 7.0.1-RC-20170425
+
+_GCC_VER          = "6.3.0" # change to 7.0.1-RC-20170425 if you use the gcc7 script above.
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -151,7 +155,7 @@ class CrossCompileScript:
 		self.fullProductDir         = None
 		self.targetBitness          = _BITNESS
 		self.originalPATH           = os.environ["PATH"]
-		self.mingwScriptURL         = _BASE_URL + _MINGW_SCRIPT_URL_POSIX_THREADS
+		self.mingwScriptURL         = _BASE_URL + _MINGW_SCRIPT_URL
 		self.compileTarget          = None
 		self.compilePrefix          = None
 		self.mingwBinpath           = None
@@ -512,7 +516,7 @@ class CrossCompileScript:
 
 		mingw_script_file    = self.download_file(self.mingwScriptURL)
 		#mingw_script_options = "--clean-build --disable-shared --default-configure --threads=pthreads-w32 --pthreads-w32-ver=2-9-1 --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
-		mingw_script_options = "--clean-build --disable-shared --default-configure --threads=winpthreads --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
+		mingw_script_options = "--clean-build --disable-shared --default-configure --threads=winpthreads --cpu-count={0} --mingw-w64-ver=git --gcc-ver={1} --enable-gendef".format ( _CPU_COUNT, _GCC_VER )
 		self.chmodpux(mingw_script_file)
 		try:
 			self.run_process( [ "bash " + mingw_script_file, mingw_script_options, "--build-type={0}".format( self.winBitnessDir ) ], False, False )
@@ -769,8 +773,8 @@ class CrossCompileScript:
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
 			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
-			self.run_process('hg pull -vu')
-			self.run_process('hg update{0} -v'.format("" if desiredBranch == None else branchString))
+			self.run_process('hg pull -u')
+			self.run_process('hg update -C{0}'.format(" default" if desiredBranch == None else branchString))
 			hgVersionNew = subprocess.check_output('hg --debug id -i', shell=True)
 			if hgVersion != hgVersionNew:
 				self.logger.debug("HG clone has code changes, updating")
@@ -780,7 +784,7 @@ class CrossCompileScript:
 			self.cchdir("..")
 		else:
 			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
-			self.run_process('hg -v clone {0} {1}'.format(url,realFolderName + ".tmp" ))
+			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.debug("HG updating to:{0}".format(" master" if desiredBranch == None else branchString))
@@ -812,16 +816,16 @@ class CrossCompileScript:
 			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
 			self.logger.debug("GIT Checking out:{0}".format( " master" if desiredBranch == None else branchString ))
 			self.run_process('git remote update')#.format(" master" if desiredBranch == None else branchString))
-			self.run_process('git checkout {0}'.format(" master" if desiredBranch == None else branchString))
-			self.run_process('git merge{0}'.format(" origin/master" if desiredBranch == None else branchString))
+			self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
+			self.run_process('git fetch')#.format(" master" if desiredBranch == None else branchString))
 			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
 			if gitVersion != gitVersionNew:
 				self.logger.debug("GIT clone has code changes, updating")
 				self.run_process('git fetch origin')
 				self.run_process('git reset --hard{0}'.format(" origin/master" if desiredBranch == None else branchString))
 				self.run_process('git clean -fxd')
-				self.run_process('git checkout {0}'.format(" master" if desiredBranch == None else branchString))
-				self.run_process('git pull')
+				self.run_process('git checkout{0}'.format(" origin/master" if desiredBranch == None else branchString))
+				self.run_process('git pull origin{0}'.format(" master" if desiredBranch == None else branchString))
 				
 				self.removeAlreadyFiles()
 			else:
@@ -1691,7 +1695,6 @@ PRODUCTS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_multibit',
 		'source_subfolder': 'source',
-		'branch' : 'stable',
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit.installed',
 		'needs_configure' : False,
 		'is_cmake' : True,
@@ -3138,7 +3141,6 @@ DEPENDS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
-		'branch' : 'stable',  # stable until I find out what x265 is up to with that sudden new stable branch.
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
 		'needs_configure' : False,
 		'is_cmake' : True,
@@ -3150,7 +3152,6 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
-		'branch' : 'stable',
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={compile_prefix}',
 		'needs_configure' : False,
 		'is_cmake' : True,
@@ -3168,7 +3169,6 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_10bit',
 		'source_subfolder' : 'source',
-		'branch' : 'stable',
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
@@ -3182,7 +3182,6 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_12bit',
 		'source_subfolder' : 'source',
-		'branch' : 'stable',
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
