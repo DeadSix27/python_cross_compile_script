@@ -638,7 +638,7 @@ build_mingw_w64 () {
 local mingw_w64_target="$1"
 local mingw_w64_prefix="$2"
 
-if [ "$gcc_ver" == "6.3.0" ]; then # We only support 6.3.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
+if [ "$gcc_ver" = "6.3.0" -o "$gcc_ver" = "7.0.1-RC-20170425" ]; then # We only support 6.3.0 and 7.0.1 RC1, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
 	cd "mingw-w64-$mingw_w64_ver"
 		echo "Patching mingw headers"
 		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
@@ -731,15 +731,15 @@ create_pkg_dirs 'gcc'
 cd "$pkgs_dir/gcc/source" || print_error
 if [[ "$gcc_ver" != 'svn' ]]; then
 	download_extract "ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/$gcc_ver/gcc-$gcc_ver.tar.bz2" "ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/$gcc_ver/gcc-$gcc_ver.tar.bz2" 
-	# if [ "$gcc_ver" == "6.3.0" ]; then #DeadSix27: Patch gcc 6.3.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
-		# cd gcc-"$gcc_ver"
-			# echo "Patching GCC 6.3.0 weak refs"
-			# curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0001-gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
-			# echo "applying patch"
-			# patch -p1 < "0001-gcc_6_3_0_weak_refs_x86_64.patch"
-			# echo "Done"
-		# cd ..
-	# fi
+	if [ "$gcc_ver" = "6.3.0" -o "$gcc_ver" = "7.0.1-RC-20170425" ]; then #DeadSix27: Patch gcc 6.3.0 and 7.0.1 RC1, for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
+		cd gcc-"$gcc_ver"
+			echo "Patching GCC 6.3.0 weak refs"
+			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0001-gcc_6_3_0_weak_refs_x86_64.patch" -O --fail || exit 1
+			echo "applying patch"
+			patch -p1 < "0001-gcc_6_3_0_weak_refs_x86_64.patch"
+			echo "Done"
+		cd ..
+	fi
 else
   if cd 'gcc-svn' 2>/dev/null; then
     build_progress 'gcc-svn' 'Updating'
