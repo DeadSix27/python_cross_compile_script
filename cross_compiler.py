@@ -1828,7 +1828,7 @@ PRODUCTS = {
 			' --enable-libbluray --enable-cdda --enable-libass --enable-lua --enable-encoding --enable-uchardet --enable-libarchive'
 			' TARGET={compile_target} DEST_OS=win32',
 		'depends_on' : (
-			'angle', 'python36_libs', 'vapoursynth_libs', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
+			'angle', 'python36_libs', 'vapoursynth_libs','sdl2_hg', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
 		),
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
@@ -2945,7 +2945,7 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.2.15', 'fancy_name' : 'SDL1' },
 	},
-	'sdl2_hg' : {
+	'sdl2' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
 		'patches' : (
@@ -2960,7 +2960,7 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '2.0.5', 'fancy_name' : 'SDL2' },
 	},
-	'sdl2' : {
+	'sdl2_hg' : {
 		'repo_type' : 'mercurial',
 		'source_subfolder' : '_build_folder',
 		'url' : 'https://hg.libsdl.org/SDL',
