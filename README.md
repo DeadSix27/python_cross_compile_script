@@ -24,11 +24,11 @@ Menu:
 - MediaInfo _(Only .exe)_
 - mkvToolNix _(Static with QT5)_
 - mpv Player _(with VapourSynth, Python and LuaJIT)_
-- SoX tools _(sox,play,..)
+- SoX tools _(sox,play,..)_
 - Vobis tools _(oggenc,ogginfo,..)_
 - wGet
-- x264 (10bit)
-- x265 (Multi-bit (12,10,8))
+- x264 _(10bit)_
+- x265 _(Multi-bit (12,10,8))_
 
 #### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies, products and their respective versions
 
