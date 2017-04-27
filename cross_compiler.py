@@ -126,7 +126,7 @@ _BASE_URL         = 'https://raw.githubusercontent.com/DeadSix27/python_cross_co
 
 _MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
 #_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script.sh' # without the above
-#_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads-gcc7-test.sh' # if you want to test gcc7, make sure to set --gcc-ver=6.3.0 to 7.0.1-RC-20170425
+#_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads-gcc7-test.sh' # if you want to test gcc7, make sure to set _GCC_VER to "7.0.1-RC-20170425"
 
 _GCC_VER          = "6.3.0" # change to 7.0.1-RC-20170425 if you use the gcc7 script above.
 
@@ -1024,6 +1024,10 @@ class CrossCompileScript:
 					self.downloadHeader(h)
 					
 		self.cchdir(workDir) #descend into x86_64/[DEPENDENCY_OR_PRODUCT_FOLDER]
+		if 'debug_downloadonly' in data:
+			self.cchdir("..")
+			exit()
+			
 		self.defaultCFLAGS()
 		oldPath = self.getKeyOrBlankString(os.environ,"PATH")
 		currentFullDir = os.getcwd()
@@ -1287,7 +1291,7 @@ class CrossCompileScript:
 			self.logger.debug("Patch '{0}' already applied".format( fileName ))
 			
 		if folderToPatchIn != None:
-			self.cchdir("..")
+			self.cchdir(originalFolder)
 	#:
 
 	def cmake_source(self,name,data):
@@ -2163,6 +2167,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
 		),
+		'branch' : 'chromium/3081',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2949,7 +2954,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2-2.0.5.xinput.diff', "p0"),
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_post_install": (
@@ -2961,19 +2966,20 @@ DEPENDS = {
 		'_info' : { 'version' : '2.0.5', 'fancy_name' : 'SDL2' },
 	},
 	'sdl2_hg' : {
+		'folder_name' : 'sdl2_hg',
 		'repo_type' : 'mercurial',
 		'source_subfolder' : '_build_folder',
 		'url' : 'https://hg.libsdl.org/SDL',
 		'configure_path' : '../configure',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/SDL2-2.0.5.xinput.diff', "p0"),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2_hg.xinput_state_ex.patch', 'p1', '..'),
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
-		# "run_post_install": (
-			# 'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
-			# 'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
-			# 'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
-		# ),
+		"run_post_install": (
+			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+		),
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
 	},

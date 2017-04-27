@@ -1,0 +1,29 @@
+diff -Nur SDL_hg/src/core/windows/SDL_xinput.h SDL_hg.patched/src/core/windows/SDL_xinput.h
+--- SDL_hg/src/core/windows/SDL_xinput.h	2017-04-27 04:26:43.503808753 +0200
++++ SDL_hg.patched/src/core/windows/SDL_xinput.h	2017-04-27 04:35:14.472357122 +0200
+@@ -110,13 +110,13 @@
+     SHORT sThumbRX;
+     SHORT sThumbRY;
+     DWORD dwPaddingReserved;
+-} XINPUT_GAMEPAD_EX;
++} XINPUT_GAMEPAD_EX2;
+ 
+ typedef struct
+ {
+     DWORD dwPacketNumber;
+-    XINPUT_GAMEPAD_EX Gamepad;
+-} XINPUT_STATE_EX;
++    XINPUT_GAMEPAD_EX2 Gamepad;
++} XINPUT_STATE_EX2;
+ 
+ typedef struct
+ {
+@@ -128,7 +128,7 @@
+ typedef DWORD (WINAPI *XInputGetState_t)
+     (
+     DWORD         dwUserIndex,  /* [in] Index of the gamer associated with the device */
+-    XINPUT_STATE_EX* pState     /* [out] Receives the current state */
++    XINPUT_STATE_EX2* pState     /* [out] Receives the current state */
+     );
+ 
+ typedef DWORD (WINAPI *XInputSetState_t)
