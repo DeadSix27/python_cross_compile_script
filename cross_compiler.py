@@ -810,32 +810,76 @@ class CrossCompileScript:
 		branchString = ""
 		if desiredBranch != None:
 			branchString = " {0}".format( desiredBranch )
+			
+		properBranchString = "master"
+		if desiredBranch != None:
+			properBranchString  = desiredBranch
 
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
-			gitVersion = subprocess.check_output('git rev-parse HEAD', shell=True)
-			self.logger.debug("GIT Checking out:{0}".format( " master" if desiredBranch == None else branchString ))
-			self.run_process('git remote update')#.format(" master" if desiredBranch == None else branchString))
-			self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
-			self.run_process('git fetch')#.format(" master" if desiredBranch == None else branchString))
-			gitVersionNew = subprocess.check_output('git rev-parse HEAD', shell=True)
-			if gitVersion != gitVersionNew:
-				self.logger.debug("GIT clone has code changes, updating")
-				self.run_process('git fetch origin')
-				self.run_process('git reset --hard{0}'.format(" origin/master" if desiredBranch == None else branchString))
-				self.run_process('git clean -fxd')
-				self.run_process('git checkout{0}'.format(" origin/master" if desiredBranch == None else branchString))
-				self.run_process('git pull origin{0}'.format(" master" if desiredBranch == None else branchString))
-				
-				self.removeAlreadyFiles()
+
+			self.run_process('git remote update')
+			
+			print(os.getcwd() + " " + url)
+			
+			UPSTREAM = '@{u}' # or branchName i guess
+			if desiredBranch != None:
+				UPSTREAM = properBranchString
+			LOCAL    = subprocess.check_output('git rev-parse @',shell=True).decode("utf-8")
+			REMOTE   = subprocess.check_output('git rev-parse "{0}"'.format(UPSTREAM),shell=True).decode("utf-8")
+			BASE     = subprocess.check_output('git merge-base @ "{0}"'.format(UPSTREAM),shell=True).decode("utf-8")
+			
+			self.run_process('git checkout -f')
+			self.run_process('git checkout {0}'.format(properBranchString))
+			
+			if LOCAL == REMOTE:
+				self.logger.debug("####################")
+				self.logger.debug("Up to date")
+				self.logger.debug("LOCAL:  " + LOCAL)
+				self.logger.debug("REMOTE: " + REMOTE)
+				self.logger.debug("BASE:   " + BASE)
+				self.logger.debug("####################")
+			elif LOCAL == BASE:
+				self.logger.debug("####################")
+				self.logger.debug("Need to pull")
+				self.logger.debug("LOCAL:  " + LOCAL)
+				self.logger.debug("REMOTE: " + REMOTE)
+				self.logger.debug("BASE:   " + BASE)
+				self.logger.debug("####################")
+				if desiredBranch != None:
+					#bsSplit = properBranchString.split("/")
+					#if len(bsSplit) == 2:
+					#	self.run_process('git pull origin {1}'.format(bsSplit[0],bsSplit[1]))
+					#else:
+					self.run_process('git pull origin {0}'.format(properBranchString))
+				else:
+					self.run_process('git pull'.format(properBranchString))
+				self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
+				self.run_process('git submodule foreach --recursive git clean -xfdf')
+				self.run_process('git reset --hard')
+				self.run_process('git submodule foreach --recursive git reset --hard')
+				self.run_process('git submodule update --init --recursive')
+			elif REMOTE == BASE:
+				self.logger.debug("####################")
+				self.logger.debug("need to push")
+				self.logger.debug("LOCAL:  " + LOCAL)
+				self.logger.debug("REMOTE: " + REMOTE)
+				self.logger.debug("BASE:   " + BASE)
+				self.logger.debug("####################")
 			else:
-				self.logger.debug("GIT clone '{0}' already up to date: {1} -> {2}".format(realFolderName,gitVersion,gitVersionNew))
+				self.logger.debug("####################")
+				self.logger.debug("diverged?")
+				self.logger.debug("LOCAL:  " + LOCAL)
+				self.logger.debug("REMOTE: " + REMOTE)
+				self.logger.debug("BASE    " + BASE)
+				self.logger.debug("####################")
 			self.cchdir("..")
+			
+			
 		else:
 			recur = ""
 			if recursive:
 				recur = " --recursive"
-				
 			self.logger.info("GIT cloning '%s' to '%s'" % (url,os.getcwd() +"/"+ realFolderName))
 			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
 			if desiredBranch != None:
@@ -1592,7 +1636,7 @@ PRODUCTS = {
 	'wget' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.savannah.gnu.org/git/wget.git',
-		'branch' : 'v1.19.1', #switch to stable branch until the gnutls issue is resolved.
+		'branch' : 'tags/v1.19.1', #switch to stable branch until the gnutls issue is resolved.
 		'rename_folder' : 'wget_git',
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-ssl=gnutls --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : '-DGNUTLS_INTERNAL_BUILD -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL',
@@ -2167,7 +2211,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
 		),
-		'branch' : 'chromium/3081',
+		'branch' : 'chromium/3087',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2261,7 +2305,7 @@ DEPENDS = {
 			' -xplatform win32-g++'
 			' -device-option CROSS_COMPILE={cross_prefix_bare}'
 			' -no-use-gold-linker'
-			' -release'
+			' -debug-and-release'
 			' -static'
 			' -hostprefix {host_target}'
 			' -hostdatadir {host_target}/lib/qt'
