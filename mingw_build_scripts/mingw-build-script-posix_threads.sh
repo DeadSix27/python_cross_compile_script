@@ -1,5 +1,5 @@
 #!/bin/bash
-script_ver='3.6.8' #3.6.7 is without weak refs patch.
+script_ver='3.6.9' #3.6.7 is without weak refs patch.
 # local version: 4
 ################################################################################
 # MingGW-w64 Build Script
@@ -75,8 +75,8 @@ target_x86_64='x86_64-w64-mingw32'
 
 ## Versions
 mingw_w64_release_ver='git' #4.0.6 we just use git anyway :)
-gcc_release_ver='6.3.0' # 6.1.0 has problems with 64 bit ffmpeg with c++ deps
-gcc_old_release_ver='4.9.4' # default if none specified, was 4.9.4 cannot be same as gcc_release_ver above, apparently, as a note...
+gcc_release_ver='7.1.0' # 6.1.0 has problems with 64 bit ffmpeg with c++ deps
+gcc_old_release_ver='6.3.0' # default if none specified, was 4.9.4 cannot be same as gcc_release_ver above, apparently, as a note...
 mpfr_release_ver='3.1.5' #3.1.3
 mpc_release_ver='1.0.3'
 binutils_release_ver='2.28' #2.27
@@ -738,6 +738,19 @@ if [[ "$gcc_ver" != 'svn' ]]; then
 			echo "applying patch"
 			patch -p1 < "0001-gcc_6_3_0_weak_refs_x86_64.patch"
 			echo "Done"
+		cd ..
+	fi
+	if [ "$gcc_ver" = "7.1.0" ]; then #DeadSix27: Patch gcc 7.1.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
+		cd gcc-"$gcc_ver"
+			echo "Patching GCC 7.1.0 weak refs"
+			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch" -O --fail || exit 1
+			echo "applying patch"
+			patch -p1 < "0001-gcc_7_1_0_weak_refs_x86_64.patch"
+			echo "Done"
+			cd 'libstdc++-v3'
+			sed -i 's/\b__in\b/___in/g' include/ext/random.tcc include/ext/vstring.tcc include/std/utility include/std/tuple include/std/istream include/tr2/bool_set.tcc include/tr2/bool_set include/bits/basic_string.h include/bits/basic_string.tcc include/bits/locale_facets.h include/bits/istream.tcc include/tr1/utility include/tr1/tuple
+			sed -i 's/\b__out\b/___out/g' include/ext/random.tcc include/ext/algorithm include/ext/pb_ds/detail/debug_map_base.hpp include/std/ostream include/std/thread include/tr2/bool_set include/bits/ostream.tcc include/bits/regex.tcc include/bits/stl_algo.h include/bits/locale_conv.h include/bits/regex.h include/bits/ostream_insert.h include/tr1/regex include/parallel/algo.h include/parallel/set_operations.h include/parallel/multiway_merge.h include/parallel/unique_copy.h include/experimental/algorithm config/locale/dragonfly/c_locale.h config/locale/generic/c_locale.h config/locale/gnu/c_locale.h
+			cd ..
 		cd ..
 	fi
 else

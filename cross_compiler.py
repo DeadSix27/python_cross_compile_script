@@ -40,6 +40,7 @@
 # ## Feel free to help out with whatever is in this list (or any other thing) ##
 
 # List:
+# - Fix libbluray in shared.
 # - Basic optional config file.
 # - Remote hosting of product/dependency hosting as json files.
 # - Implement hash support for archives, mostly for the self hosted ones.
@@ -68,7 +69,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2', 'flac', 'vorbis-tools', 'lame3', 'sox', 'x265_multibit', 'curl', 'wget', 'mpv', 'youtube-dl', 'x264_10bit', 'ffmpeg_shared', 'ffmpeg_static', 'mkvtoolnix' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'youtube-dl', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
 #
 # ###################################################
 # ###################################################
@@ -128,7 +129,7 @@ _MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' #
 #_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script.sh' # without the above
 #_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads-gcc7-test.sh' # if you want to test gcc7, make sure to set _GCC_VER to "7.0.1-RC-20170425"
 
-_GCC_VER          = "6.3.0" # change to 7.0.1-RC-20170425 if you use the gcc7 script above.
+_GCC_VER          = "7.1.0" # change to 7.0.1-RC-20170425 if you use the gcc7 script above.
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -1305,7 +1306,7 @@ class CrossCompileScript:
 		
 		if folderToPatchIn != None:
 			self.cchdir(folderToPatchIn)
-			self.logger.debug("Moving to patch folder: {0}" .format( folderToPatchIn ))
+			self.logger.info("Moving to patch folder: {0}" .format( os.getcwd() ))
 	
 		fileName = os.path.basename(urlparse(url).path)
 
@@ -1587,7 +1588,7 @@ class CrossCompileScript:
 VARIABLES = {
 	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads '
-		'--enable-libsoxr --enable-fontconfig --enable-libass --enable-libbluray --enable-iconv --enable-libtwolame '
+		'--enable-libsoxr --enable-fontconfig --enable-libass --enable-iconv --enable-libtwolame '
 		'--extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ '
 		'--extra-libs=-lpng --extra-libs=-loleaut32 --enable-libmp3lame --enable-version3 --enable-zlib '
 		'--enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg '
@@ -1629,7 +1630,7 @@ PRODUCTS = {
 		'rename_folder' : 'curl_git',
 		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={compile_target} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
 		'depends_on': (
-			'zlib',
+			'zlib', 'libssh2',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cURL' },
 	},
@@ -1673,7 +1674,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
 	},
@@ -1681,7 +1682,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_opencl_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
 		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
 	},
@@ -1689,7 +1690,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free_opencl',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac  --enable-decklink',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
 	},
@@ -1734,7 +1735,6 @@ PRODUCTS = {
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'branch' : 'stable', # stable until I find out what x265 is up to with that sudden new stable branch. 
 		'source_subfolder': 'source',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
 	},
@@ -1906,25 +1906,6 @@ PRODUCTS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfo' },
 		'_disabled' : True,
 	},
-	'mediainfo_dll' : {
-		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
-		'source_subfolder' : 'Project/GNU/Library',
-		'rename_folder' : 'mediainfo_dll',
-		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
-		'configure_options' : '--host={compile_target} --prefix={product_prefix}/mediainfo_dll.installed --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo', # --enable-static --disable-shared --enable-shared=no
-		'run_post_patch' : [
-			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
-			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
-		],
-		'run_post_configure' : [
-			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
-		],
-		'depends_on': [
-			'zenlib', 'libcurl',
-		],
-		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
-	},
 	'filezilla' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
 		'repo_type' : 'svn',
 		'folder_name' : 'filezilla_svn',
@@ -1985,8 +1966,50 @@ PRODUCTS = {
 			'qt5', 'libmpv', 'libzip'
 		],
 	},
+	'mediainfo_dll' : {
+		# 'debug_downloadonly': True,
+		'repo_type' : 'git',
+		'branch' : 'v0.7.94',
+		'source_subfolder' : 'Project/GNU/Library',
+		'rename_folder' : 'mediainfo_dll',
+		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
+		'configure_options' : '--host={compile_target} --target={bit_name2}-{bit_name_win}-gcc --prefix={product_prefix}/mediainfo_dll.installed --disable-static --enable-shared', # --enable-static --disable-shared --enable-shared=no
+		'run_post_patch' : [
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
+		],
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'make_options': '{make_prefix_options}',
+		'depends_on': [
+			'zenlib', 'libcurl',
+		],
+		'patches' : [
+			('libmediainfo-1-fixes.patch','p1', '../../..'),
+		],
+		'env_exports' : { 'PKG_CONFIG' : 'pkg-config' },
+		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
+	},
 }
 DEPENDS = {
+	'zenlib' : {
+		'repo_type' : 'git',
+		'branch' : 'v0.4.35',
+		'source_subfolder' : 'Project/GNU/Library',
+		'url' : 'https://github.com/MediaArea/ZenLib.git',
+		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --enable-static --disable-shared --enable-shared=no',
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'patches' : (
+			('libzen-1-fixes.patch', 'p1','../../..'),
+		),
+		# 'run_post_patch' : [
+			# 'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
+		# ],
+		'_info' : { 'version' : 'git (v4.35)', 'fancy_name' : 'zenlib' },
+	},
 	'libfilezilla' : {
 		'repo_type' : 'svn',
 		'folder_name' : 'libfilezilla_svn',
@@ -2158,20 +2181,6 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
 	},
-	'zenlib' : {
-		'repo_type' : 'git',
-		'branch' : 'v0.4.35',
-		'source_subfolder' : 'Project/GNU/Library',
-		'url' : 'https://github.com/MediaArea/ZenLib.git',
-		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --enable-static --disable-shared --enable-shared=no',
-		'run_post_configure' : [
-			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
-		],
-		'run_post_patch' : [
-			'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
-		],
-		'_info' : { 'version' : 'git (v4.35)', 'fancy_name' : 'zenlib' },
-	},
 	'boost' : { # oh god no.. 
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.bz2',
@@ -2206,6 +2215,10 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
+			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch','p1'),
+			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch','p1'),
+			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch','p1'),
+			#('https://dsix.site/angle__mbstowcs.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
@@ -2223,8 +2236,8 @@ DEPENDS = {
 		#},
 		'run_post_patch': (
 			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
-			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',
-			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 ; fi',
+			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',			
+			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
 			'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E copy generated/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
 			'if [ ! -f "already_done" ] ; then make -C generated {make_prefix_options} BUILDTYPE=Release {make_cpu_count} ; fi',
@@ -2512,6 +2525,7 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
 		'version' : '0.19.8.1',
 		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
+		'depends_on' : [ 'iconv' ],
 	},
 	'libfile_local' : { # local non cross-compiled, to bootstrap libfile-cross-compiled, it needs the actual linux build first uh..
 		'repo_type' : 'git',
@@ -2636,12 +2650,12 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'recursive_git' : True,
 		'url' : 'https://git.videolan.org/git/libbluray.git',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-examples --disable-doxygen-doc --disable-bdjava --enable-udf', #--without-libxml2 --without-fontconfig .. optional.. I guess
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-examples --disable-doxygen-doc --disable-bdjava-jar --enable-udf', #--without-libxml2 --without-fontconfig .. optional.. I guess
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libbluray_git_remove_strtok_s.patch', 'p1'),
 		),
 		'run_post_install' : (
-			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
+			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -lgdi32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
 		),
 		'depends_on' : (
 			'freetype2',

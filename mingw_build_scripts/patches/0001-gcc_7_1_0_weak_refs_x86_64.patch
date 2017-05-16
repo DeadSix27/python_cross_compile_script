@@ -1,0 +1,12 @@
+diff -Nur a/os_defines.h b/os_defines.h
+--- a/libstdc++-v3/config/os/mingw32-w64/os_defines.h	2017-05-15 21:11:04.539087395 +0200
++++ b/libstdc++-v3/config/os/mingw32-w64/os_defines.h	2017-05-15 21:11:15.924292947 +0200
+@@ -76,6 +76,8 @@
+ 
+ #ifdef __x86_64__
+ #define _GLIBCXX_LLP64 1
++// See https://github.com/Alexpux/MINGW-packages/issues/1580
++#define _GLIBCXX_USE_WEAK_REF 0
+ #endif
+ 
+ // Enable use of GetModuleHandleEx (requires Windows XP/2003) in
