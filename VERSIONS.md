@@ -4,25 +4,27 @@
 
 ## Products:
 
-| Product                  | Version             |
-| ------------------------:|:------------------- |
-| aria2                    | git (master)        |
-| cuetools                 | git (master)        |
-| cURL                     | git (master)        |
-| ffmpeg (shared)          | git (master)        |
-| ffmpeg (static)          | git (master)        |
-| ffmpeg (static (OpenCL)) | git (master)        |
-| FileZilla (64Bit only)   | svn (master)        |
-| FLAC                     | git (master)        |
-| MediaInfo                | git (master)        |
-| mkvtoolnix               | git (master)        |
-| mpv                      | git (master)        |
-| SoX                      | git (master)        |
-| VLC (git)                | git (master)        |
-| vorbis-tools             | git (master)        |
-| wget                     | git (master)        |
-| x264                     | git (master)        |
-| x265 (multibit 12/10/8)  | mercurial (default) |
+| Product                          | Version             |
+| --------------------------------:|:------------------- |
+| aria2                            | git (master)        |
+| cuetools                         | git (master)        |
+| cURL                             | git (master)        |
+| ffmpeg (shared)                  | git (master)        |
+| ffmpeg (static)                  | git (master)        |
+| ffmpeg NonFree (static (OpenCL)) | git (master)        |
+| ffmpeg (static (OpenCL))         | git (master)        |
+| FileZilla (64Bit only)           | svn (master)        |
+| FLAC                             | git (master)        |
+| MediaInfo                        | git (master)        |
+| mkvtoolnix                       | git (master)        |
+| mpv                              | git (master)        |
+| SoX                              | git (master)        |
+| VLC (git)                        | git (master)        |
+| vorbis-tools                     | git (master)        |
+| wget                             | git (master)        |
+| x264                             | git (master)        |
+| x265                             | mercurial (default) |
+| x265 (multibit 12/10/8)          | mercurial (default) 
 
 
 ## Depenencies:
@@ -30,7 +32,7 @@
 | Dependency                      | Version             |
 | -------------------------------:|:------------------- |
 | a52dec                          | 0.7.4               |
-| Angle                           | git (master)        |
+| Angle                           | git (3103)          |
 | Boost                           | 1.64                |
 | BZip2 (library)                 | 1.0.6               |
 | D-bus (Library)                 | 1.10.18             |
@@ -40,14 +42,14 @@
 | flite                           | 1.4                 |
 | fontconfig                      | 2.12.1              |
 | FreeGLUT (libary?)              | 3.7                 |
-| freetype2                       | 2.7.1               |
+| freetype2                       | 2.8                 |
 | frei0r-plugins                  | 1.6.0               |
 | gettext                         | 0.19.8.1            |
 | glib2                           | 2.52.0              |
 | gmp                             | 6.1.2               |
+| gnutls                          | 3.5.12              |
 | gnutls                          | 3.5.11              |
-| gnutls                          | 3.5.11              |
-| harfbuzz                        | 1.4.5               |
+| harfbuzz                        | 1.4.6               |
 | libiconv                        | 1.15                |
 | intel_quicksync_mfx             | git (master)        |
 | Little-CMS2                     | git (master)        |
@@ -75,7 +77,7 @@
 | lame (library)                  | 3.99.5              |
 | lzma                            | 5.2.3               |
 | libmediainfo                    | git (master)        |
-| libmodplug                      | 0.8.8.5             |
+| libmodplug                      | 0.8.9.0             |
 | mpv (library)                   | git (master)        |
 | nettle                          | 3.3                 |
 | ogg                             | git (master)        |
@@ -120,8 +122,8 @@
 | QT5                             | 5.8.0               |
 | rtmpdump                        | git (master)        |
 | SDL1                            | 1.2.15              |
-| SDL2                            | mercurial (default) |
 | SDL2                            | 2.0.5               |
+| SDL2                            | mercurial (default) |
 | twolame                         | 0.3.13              |
 | uchardet                        | git (master)        |
 | vamp-plugin-sdk                 | 2.7.1               |
@@ -129,7 +131,7 @@
 | vid.stab                        | git (master)        |
 | vo-amrwbenc                     | 0.1.3               |
 | wavpack                         | git (master)        |
-| wxWidgets (libary)              | 3.0.2               |
+| wxWidgets (libary)              | 3.0.3.1             |
 | xavs                            | svn (master)        |
 | zenlib                          | git (v4.35)         |
 | zlib                            | 1.2.11              |

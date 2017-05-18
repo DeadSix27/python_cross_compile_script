@@ -69,7 +69,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'youtube-dl', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'youtube-dl', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget', 'mkvtoolnix' )
 #
 # ###################################################
 # ###################################################
@@ -820,9 +820,7 @@ class CrossCompileScript:
 			self.cchdir(realFolderName)
 
 			self.run_process('git remote update')
-			
-			print(os.getcwd() + " " + url)
-			
+						
 			UPSTREAM = '@{u}' # or branchName i guess
 			if desiredBranch != None:
 				UPSTREAM = properBranchString
@@ -1077,6 +1075,14 @@ class CrossCompileScript:
 		oldPath = self.getKeyOrBlankString(os.environ,"PATH")
 		currentFullDir = os.getcwd()
 
+		if not self.anyFileStartsWith('already_configured'):
+			if 'run_pre_patch' in data:
+				if data['run_pre_patch'] != None:
+					for cmd in data['run_pre_patch']:
+						cmd = self.replaceVariables(cmd)
+						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
+		
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
 				if not os.path.isdir(data['source_subfolder']):
@@ -1122,14 +1128,6 @@ class CrossCompileScript:
 						prevEnv = os.environ[key]
 					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
-
-		if not self.anyFileStartsWith('already_configured'):
-			if 'run_pre_patch' in data:
-				if data['run_pre_patch'] != None:
-					for cmd in data['run_pre_patch']:
-						cmd = self.replaceVariables(cmd)
-						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
-						self.run_process(cmd)
 
 		if 'patches' in data:
 			if data['patches'] != None:
@@ -1599,7 +1597,7 @@ VARIABLES = {
 		'--enable-libzimg --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r '
 		'--enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample '
 		'--extra-libs=-lpsapi --extra-libs=-lspeexdsp --enable-libgme --enable-runtime-cpudetect '
-		'--enable-libmfx' # remove this if you don't want quicksync.
+		'--enable-libmfx --enable-libfribidi --enable-libbs2b'
 	,
 }
 PRODUCTS = {
@@ -1672,7 +1670,7 @@ PRODUCTS = {
 	},
 	'ffmpeg_static' : {
 		'repo_type' : 'git',
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
 		'depends_on': [ 'ffmpeg_depends' ],
@@ -1680,7 +1678,7 @@ PRODUCTS = {
 	},
 	'ffmpeg_static_opencl' : {
 		'repo_type' : 'git',
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_opencl_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
 		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
@@ -1688,15 +1686,15 @@ PRODUCTS = {
 	},
 	'ffmpeg_static_non_free_opencl' : { # with decklink, fdk-aac and opencl
 		'repo_type' : 'git',
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free_opencl',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static (OpenCL))' },
 	},
 	'ffmpeg_shared' : {
 		'repo_type' : 'git',
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_shared_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme',
 		'depends_on': [ 'ffmpeg_depends' ],
@@ -1874,7 +1872,7 @@ PRODUCTS = {
 			'--enable-libmpv-shared --disable-debug-build --prefix={product_prefix}/mpv_git.installed'
 			' --enable-sdl2 --enable-egl-angle-lib --enable-rubberband --enable-lcms2 --enable-dvdread --enable-openal --enable-dvdnav'
 			' --enable-libbluray --enable-cdda --enable-libass --enable-lua --enable-encoding --enable-uchardet --enable-libarchive'
-			' TARGET={compile_target} DEST_OS=win32',
+			' --enable-encoding TARGET={compile_target} DEST_OS=win32',
 		'depends_on' : (
 			'angle', 'python36_libs', 'vapoursynth_libs','sdl2_hg', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
 		),
@@ -2035,7 +2033,7 @@ DEPENDS = {
 	
 	'wxwidgets' : {
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.2/wxWidgets-3.0.2.tar.bz2',
+		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.3.1/wxWidgets-3.0.3.1.tar.bz2',
 		'configure_options':
 			' --host={compile_target} --build=x86_64-unknown-linux-gnu --prefix={host_target} --disable-shared --enable-static --build='
 			' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
@@ -2052,7 +2050,7 @@ DEPENDS = {
 			'CXXFLAGS' : '-std=gnu++11',
 			'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
 		},
-		'_info' : { 'version' : '3.0.2', 'fancy_name' : 'wxWidgets (libary)' },
+		'_info' : { 'version' : '3.0.3.1', 'fancy_name' : 'wxWidgets (libary)' },
 		'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
 	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
@@ -2061,7 +2059,7 @@ DEPENDS = {
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'openjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264',
+			'openjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio',
 		],
 	},
 	'taglib' : {
@@ -2218,13 +2216,12 @@ DEPENDS = {
 			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch','p1'),
 			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch','p1'),
 			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch','p1'),
-			#('https://dsix.site/angle__mbstowcs.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
 		),
-		'branch' : 'chromium/3087',
+		'branch' : 'origin/chromium/3103', 
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2235,6 +2232,7 @@ DEPENDS = {
 		#	'if [ ! -f "already_done" ] ; then git reset --hard origin/master ; fi',
 		#},
 		'run_post_patch': (
+			'if [ ! -f "already_done" ] ; then sed -i.bak \'s/sprintf_s(adapterLuidString/sprintf(adapterLuidString/\' "src/libANGLE/renderer/d3d/RendererD3D.cpp" ; fi',
 			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',			
 			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
@@ -2248,7 +2246,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (3103)', 'fancy_name' : 'Angle' },
 	},
 	#'angle_full' : { # ugh
 	#	'repo_type' : 'git',
@@ -2445,13 +2443,13 @@ DEPENDS = {
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.5.tar.bz2',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --with-freetype --with-glib --enable-static=yes --enable-shared=no', #--with-graphite2 --with-cairo --with-icu --with-gobject 
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.6.tar.bz2',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject 
 		'env_exports' : {
 			'CFLAGS'   : '-DGRAPHITE2_STATIC',
 			'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		},
-		'_info' : { 'version' : '1.4.5', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.4.6', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
@@ -2752,7 +2750,7 @@ DEPENDS = {
 	},
 	'libffmpeg' : {
 		'repo_type' : 'git',
-		'url' : 'https://git.ffmpeg.org/ffmpeg.git',
+		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={compile_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
 		'depends_on': [ 'ffmpeg_depends' ],
@@ -2760,7 +2758,7 @@ DEPENDS = {
 	},
 	'bzip2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz',
+		'url' : 'http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2_cross_compile.diff', "p0"),
 		),
@@ -2851,7 +2849,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.11.tar.xz',
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.12.tar.xz',
 		'configure_options':
 			'--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-included-unistring '
 			'--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
@@ -2874,7 +2872,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
-		'_info' : { 'version' : '3.5.11', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.5.12', 'fancy_name' : 'gnutls' },
 	},
 	'gnutls_old' : { # in case the other breaks
 		'repo_type' : 'archive',
@@ -3016,17 +3014,17 @@ DEPENDS = {
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_post_install": (
-			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
-			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+			'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'configure_options': '--prefix={compile_prefix} --host={compile_target} --disable-shared --enable-static',
 		'_info' : { 'version' : '2.0.5', 'fancy_name' : 'SDL2' },
 	},
 	'sdl2_hg' : {
-		'folder_name' : 'sdl2_hg',
+		'folder_name' : 'sdl2_merc',
 		'repo_type' : 'mercurial',
-		'source_subfolder' : '_build_folder',
+		'source_subfolder' : '_build',
 		'url' : 'https://hg.libsdl.org/SDL',
 		'configure_path' : '../configure',
 		'patches' : (
@@ -3034,11 +3032,11 @@ DEPENDS = {
 		),
 		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 		"run_post_install": (
-			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
-			'sed -i.bak "s/-mwindows//" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+			'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{compile_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 			'cp -v "{compile_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'configure_options': '--prefix={compile_prefix} --host={compile_target} --disable-shared --enable-static',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
 	},
 	'libopus' : {
@@ -3117,18 +3115,18 @@ DEPENDS = {
 	},
 	'freetype2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://download.savannah.gnu.org/releases/freetype/freetype-2.7.1.tar.bz2',
+		'url' : 'https://download.savannah.gnu.org/releases/freetype/freetype-2.8.tar.gz',
 		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-zlib={compile_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
 		'patches' : [
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
+			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
 			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0002-Enable-subpixel-rendering.patch?h=mingw-w64-freetype2',          'Np1'),
 			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
 		],
 		#'run_post_install': (
 		#	'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		#),
-		'_info' : { 'version' : '2.7.1', 'fancy_name' : 'freetype2' },
+		'_info' : { 'version' : '2.8', 'fancy_name' : 'freetype2' },
 	},
 	'expat' : {
 		'repo_type' : 'archive',
@@ -3385,7 +3383,7 @@ DEPENDS = {
 	},
 	'libmodplug' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.8.5/libmodplug-0.8.8.5.tar.gz',
+		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.9.0/libmodplug-0.8.9.0.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'run_post_install': (
 			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] https://trac.ffmpeg.org/ticket/1539
@@ -3393,7 +3391,7 @@ DEPENDS = {
 			'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
 			'sed -i.bak \'s/__declspec(dllimport)//\' "{compile_prefix}/include/libmodplug/modplug.h"',
 		),
-		'_info' : { 'version' : '0.8.8.5', 'fancy_name' : 'libmodplug' },
+		'_info' : { 'version' : '0.8.9.0', 'fancy_name' : 'libmodplug' },
 	},
 	'zvbi' : {
 		'repo_type' : 'archive',
@@ -3453,10 +3451,11 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
 		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git..
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-silent-rules',
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
 		),
+		'depends_on' : [ 'harfbuzz', 'libfribidi','freetype2', 'iconv', ],
 		'_info' : { 'version' : 'git (1be7dc)', 'fancy_name' : 'libass' },
 	},
 	'openjpeg' : {
