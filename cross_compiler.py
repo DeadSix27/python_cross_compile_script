@@ -1597,7 +1597,7 @@ VARIABLES = {
 		'--enable-libzimg --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r '
 		'--enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample '
 		'--extra-libs=-lpsapi --extra-libs=-lspeexdsp --enable-libgme --enable-runtime-cpudetect '
-		'--enable-libmfx --enable-libfribidi --enable-libbs2b'
+		'--enable-libmfx --enable-libfribidi'
 	,
 }
 PRODUCTS = {
