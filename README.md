@@ -58,7 +58,7 @@ angle       - gyp
 vapoursynth - p7zip
 flac        - docbook-to-man
 youtube-dl  - pando
-x264        - nasm 1.13
+x264        - nasm 2.13
 ```
 
 ## **Usage**
