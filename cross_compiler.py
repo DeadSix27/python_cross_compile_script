@@ -128,9 +128,8 @@ _BASE_URL         = 'https://raw.githubusercontent.com/DeadSix27/python_cross_co
 
 _MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
 #_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script.sh' # without the above
-#_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads-gcc7-test.sh' # if you want to test gcc7, make sure to set _GCC_VER to "7.0.1-RC-20170425"
 
-_GCC_VER          = "7.1.0" # change to 7.0.1-RC-20170425 if you use the gcc7 script above.
+_GCC_VER          = "7.1.0" # old was 6.3.0, but is not supported by me anymore.
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -1919,10 +1918,10 @@ PRODUCTS = {
 		'env_exports' : {
 			'LIBGNUTLS_LIBS' : '"-L{compile_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -lz"',
 			'LIBS' : '-lgnutls',
-			'CXXFLAGS' : '-g -Wall -O2',
+			'CXXFLAGS' : '-Wall -O2',
 		},
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/filezilla/0001-filezilla_svn_disable_32bit.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/filezilla/0001-remove-32bit-fzshellext.patch','p1'),
 		],
 		'run_post_install' : [
 			'mv "{compile_prefix}/include/gnutls/gnutls.h.bak" "{compile_prefix}/include/gnutls/gnutls.h"'
@@ -2043,15 +2042,15 @@ DEPENDS = {
 			' --with-libtiff=builtin --without-mac --without-dmalloc --without-wine --with-sdl --with-themes=all --disable-stl --enable-threads --enable-gui'
 		,
 		# 'run_post_install' : [
-			# 'cp -fv "{host_target}/bin/wxrc-3.0" "{host_target}/bin/wxrc"',
+		# 	'cp -fv "{host_target}/bin/wxrc-3.0" "{host_target}/bin/wxrc"',
 		# ],
-		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wxwidgets/0001-wxWidgets-c++11-PR2222.patch','p1'),
-		],
-		'env_exports': {
-			'CXXFLAGS' : '-std=gnu++11',
-			'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
-		},
+		# 'patches' : [
+		# 	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wxwidgets/0001-wxWidgets-c++11-PR2222.patch','p1'),
+		# ],
+		# 'env_exports': {
+		# 	'CXXFLAGS' : '-std=gnu++11',
+		# 	'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
+		# },
 		'_info' : { 'version' : '3.0.3.1', 'fancy_name' : 'wxWidgets (libary)' },
 		'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
 	},

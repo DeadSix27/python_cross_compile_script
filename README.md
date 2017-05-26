@@ -208,4 +208,5 @@ You can always just check the predefined projects for ideas and wether I missed 
 - [MSYS](https://github.com/Alexpux/MSYS2-packages/)
 - [Martchus](https://github.com/Martchus/PKGBUILDs/commits/master)
 - [Alexpux](https://github.com/Alexpux/MINGW-packages)
+- [shinchiro](https://github.com/shinchiro/mpv-winbuild-cmake)
 - and many more..

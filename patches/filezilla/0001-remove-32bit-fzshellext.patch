@@ -1,0 +1,37 @@
+diff -Nur trunk.original/configure.ac trunk/configure.ac
+--- trunk.original/configure.ac	2017-05-26 12:24:31.698261459 +0200
++++ trunk/configure.ac	2017-05-26 12:25:35.185833776 +0200
+@@ -121,15 +121,12 @@
+ fi
+ 
+ OLD_DIR="`pwd`"
+-mkdir -p "$OLD_DIR/src/fzshellext/32"
+ mkdir -p "$OLD_DIR/src/fzshellext/64"
+ 
+ AC_ARG_ENABLE(shellext, [], \
+         [shellext="$enableval"], [shellext="yes"])
+ 
+ if test "$localesonly" != "yes" && echo $host_os | grep "cygwin\|mingw" > /dev/null 2>&1 && test "$shellext" = "yes"; then
+-  cd "$OLD_DIR/src/fzshellext/32" || exit 1
+-  "$ac_abs_confdir/src/fzshellext/configure" --prefix="$prefix" --exec-prefix="$exec_prefix" --host=i686-w64-mingw32 || exit 1
+   cd "$OLD_DIR/src/fzshellext/64" || exit 1
+   "$ac_abs_confdir/src/fzshellext/configure" --prefix="$prefix" --exec-prefix="$exec_prefix" --host=x86_64-w64-mingw32 || exit 1
+ else
+diff -Nur trunk.original/src/Makefile.am trunk/src/Makefile.am
+--- trunk.original/src/Makefile.am	2017-05-26 12:24:31.670259679 +0200
++++ trunk/src/Makefile.am	2017-05-26 12:25:04.040642419 +0200
+@@ -1,5 +1,5 @@
+ if MINGW
+-  MAYBE_FZSHELLEXT = fzshellext/32 fzshellext/64
++  MAYBE_FZSHELLEXT = fzshellext/64
+ endif
+ 
+ if HAVE_LIBPUGIXML
+@@ -17,7 +17,6 @@
+ dist_noinst_DATA = FileZilla.sln Dependencies.props.example
+ 
+ dist-hook:
+-	mkdir -p $(distdir)/fzshellext/32
+ 	mv -f $(distdir)/fzshellext/64/* $(distdir)/fzshellext
+ 	rm -rf $(distdir)/config
+ 	rm -rf $(distdir)/m4
