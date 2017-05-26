@@ -32,6 +32,7 @@
 # flac        - docbook-to-man
 # youtube-dl  - pando
 # filezilla   - wxrc (aka wx-common)
+# x264        - nasm 1.13
 
 # ###################################################
 # #################     TODO      ###################
@@ -69,7 +70,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'youtube-dl', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget', 'mkvtoolnix' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget', 'mkvtoolnix' )
 #
 # ###################################################
 # ###################################################
@@ -1587,7 +1588,8 @@ VARIABLES = {
 	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads '
 		'--enable-libsoxr --enable-fontconfig --enable-libass --enable-iconv --enable-libtwolame '
-		'--extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --enable-libmodplug --extra-libs=-lstdc++ '
+		'--extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --extra-libs=-lstdc++ '
+		'--enable-libmodplug --extra-libs=\'-lsecurity -lschannel\' --extra-cflags=-DMODPLUG_STATIC --enable-cuvid '
 		'--extra-libs=-lpng --extra-libs=-loleaut32 --enable-libmp3lame --enable-version3 --enable-zlib '
 		'--enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg '
 		'--enable-gnutls --enable-libgsm --enable-libfreetype --enable-libopus --enable-bzlib '
@@ -1595,9 +1597,9 @@ VARIABLES = {
 		'--enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp --enable-dxva2 --enable-avisynth '
 		'--enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy '
 		'--enable-libzimg --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r '
-		'--enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-libmfx --enable-avresample '
-		'--extra-libs=-lpsapi --extra-libs=-lspeexdsp --enable-libgme --enable-runtime-cpudetect '
-		'--enable-libmfx --enable-libfribidi'
+		'--enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-avresample '
+		'--extra-libs=-lpsapi --extra-libs=-lspeexdsp --enable-libgme --enable-runtime-cpudetect --enable-libfribidi '
+		'--enable-libmfx'
 	,
 }
 PRODUCTS = {
@@ -2179,60 +2181,39 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
 	},
-	'boost' : { # oh god no.. 
+	'boost' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.bz2',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
-		'run_post_patch': ( # this is a very good example for a fully custom dependency
+		'run_post_patch': (
 			'if [ ! -f "already_configured_0" ] ; then ./bootstrap.sh mingw --prefix={compile_prefix} ; fi',
 			'if [ ! -f "already_configured_0" ] ; then sed -i.bak \'s/case \*       : option = -pthread ; libs = rt ;/case *      : option = -pthread ;/\' tools/build/src/tools/gcc.jam ; fi',
 			'if [ ! -f "already_configured_0" ] ; then touch already_configured_0 ; fi',
-			'if [ ! -f "already_ran_make_0" ] ; then'
-				' echo "using gcc : mingw : {cross_prefix_bare}g++ : <rc>{cross_prefix_bare}windres <archiver>{cross_prefix_bare}ar <ranlib>{cross_prefix_bare}ranlib ;" > user-config.jam'
-			' ; fi',
-			'if [ ! -f "already_ran_make_0" ] ; then'
-				' ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={compile_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install'
-			' ; fi',
-			#'if [ ! -f "already_ran_make_0" ] ; then'
-			#	' ./b2 -a -d+2 --debug-configuration --prefix={compile_prefix} variant=release target-os=windows toolset=gcc-mingw address-model=64'
-			#	' link=shared runtime-link=shared threading=multi threadapi=win32 architecture=x86 binary-format=pe --with-system --with-filesystem --with-regex'
-			#	' --with-date_time --with-thread --with-test --user-config=user-config.jam install'
-			#' ; fi',
-			#'if [ ! -f "already_ran_make_0" ] ; then'
-			#	' ./b2 -a -d+2 --debug-configuration --prefix={compile_prefix} variant=debug target-os=windows toolset=gcc-mingw address-model=64'
-			#	' link=shared runtime-link=shared threading=multi threadapi=win32 architecture=x86 binary-format=pe boost.locale.winapi=on boost.locale.std=on'
-			#	' boost.locale.icu=on boost.locale.iconv=on boost.locale.posix=off --with-locale --user-config=user-config.jam install'
-			#' ; fi',
+			'if [ ! -f "already_ran_make_0" ] ; then echo "using gcc : mingw : {cross_prefix_bare}g++ : <rc>{cross_prefix_bare}windres <archiver>{cross_prefix_bare}ar <ranlib>{cross_prefix_bare}ranlib ;" > user-config.jam ; fi',
+			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={compile_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
 		'_info' : { 'version' : '1.64', 'fancy_name' : 'Boost' },
 	},
-	'angle' : { # implenting gyp support just for this would be a waste of time, so a mnaual process shall suffice.
+	
+	'angle' : {
+		'branch' : 'bb580b1b8b124bacb44fc3de06a57ddd375bd987',
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
-			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch','p1'),
-			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch','p1'),
-			#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0001-Cross-compile-hacks.patch'          ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'          ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'             ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'             ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0005-angle-static-build-workaround.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-fix-d3d11-error.patch'              ,'p1'),
 		),
-		'branch' : 'origin/chromium/3103', 
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
-		#'run_pre_patch' : {
-		#	'if [ -f "Makefile" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
-		#	'if [ -f "Makefile" ] ; then rm Makefile ; fi',
-		#	'if [ ! -f "already_done" ] ; then git clean -fxd ; fi',
-		#	'if [ ! -f "already_done" ] ; then git reset --hard origin/master ; fi',
-		#},
-		'run_post_patch': (
-			'if [ ! -f "already_done" ] ; then sed -i.bak \'s/sprintf_s(adapterLuidString/sprintf(adapterLuidString/\' "src/libANGLE/renderer/d3d/RendererD3D.cpp" ; fi',
+		'run_post_patch': (																																								
 			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',			
 			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
@@ -2246,59 +2227,59 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (3103)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (chromium/3109)', 'fancy_name' : 'Angle' },
 	},
-	#'angle_full' : { # ugh
+	#'angle_old' : {
+	#	'branch' : '9f10b775c9b17f901d940157e43e5a74b75c2708',
 	#	'repo_type' : 'git',
 	#	'url' : 'https://chromium.googlesource.com/angle/angle',
 	#	'patches' : (
+	#		('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-angleproject-git/0001-static-build-workaround.patch','p1'),
+	#		#('https://localhost/angle_test2.patch','p1'),
+	#		#('https://localhost/angle_git.test.debug.patch','p1'),
+	#		#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch','p1'),
+	#		#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch','p1'),
+	#		#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch','p1'),
+	#		#('https://localhost/angle__mbstowcs.patch','p1'),
+	#		#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
+	#		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
+	#		#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
+	#		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
+	#		#('https://localhost/angle__mbstowcs.patch','p1'),
 	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
+	#		#('https://localhost/angle_git.test.patch','p1'),
 	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
-	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
+	#		#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
 	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
+	#		('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-angleproject-git/0001-static-build-workaround.patch','p1'),
+	#		#('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-angleproject-git/angleproject-include-import-library-and-use-def-file.patch', 'p1'),
+	#		
 	#	),
-	#	'recursive_git' : True,
 	#	'needs_make':False,
 	#	'needs_make_install':False,
 	#	'needs_configure':False,
-	#	'custom_path' : '{current_path}/depot_tools:{current_envpath}',
-	#	'env_exports' : {
-	#		'GYP_GENERATORS':'ninja',
-	#		'AR' : '{cross_prefix_bare}ar',
-	#		'CC' : '{cross_prefix_bare}gcc',
-	#		'PREFIX' : '{compile_prefix}',
-	#		'RANLIB' : '{cross_prefix_bare}ranlib',
-	#		'LD'     : '{cross_prefix_bare}ld',
-	#		'STRIP'  : '{cross_prefix_bare}strip',
-	#		'CXX'    : '{cross_prefix_bare}g++',
-	#	},
-	#	'run_post_patch': (
-	#		'if [ ! -f "already_done"                             ] ; then echo $PATH ; fi',
-	#		'if [ ! -f "already_done"                             ] ; then make uninstall PREFIX={compile_prefix} ; fi',
-	#		'if [ ! -f "already_done"                             ] ; then cmake -E remove_directory generated ; fi',
-	#		'if [ ! -d "depot_tools"                              ] ; then git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git ; fi',
-	#		'if [ ! -f "already_done"                             ] ; then python scripts/bootstrap.py ; fi',
-	#		# 'if [ ! -d "third_party/vulkan-validation-layers/src" ] ; then git clone https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git third_party/vulkan-validation-layers/src ; fi',
-	#		# 'if [ ! -d "third_party/glslang-angle/src"            ] ; then git clone https://github.com/google/glslang.git third_party/glslang-angle/src ; fi',
-	#		# 'if [ ! -d "third_party/deqp/src"                     ] ; then git clone -b deqp-dev https://android.googlesource.com/platform/external/deqp/ third_party/deqp/src ; fi',
-	#		# 'if [ ! -d "third_party/spirv-headers/src"            ] ; then git clone https://github.com/KhronosGroup/SPIRV-Headers.git third_party/spirv-headers/src ; fi',
-	#		'if [ ! -d "third_party/spirv-tools-angle/src"        ] ; then git clone https://chromium.googlesource.com/external/github.com/KhronosGroup/SPIRV-Tools third_party/spirv-tools-angle/src ; fi',
-	#		'if [ ! -f "already_done"                             ] ; then gyp -Duse_ozone=0 -Duse_x11=0 -DOS=win -Dangle_gl_library_type=static_library --depth . -I gyp/common.gypi src/angle.gyp --generator-output=generated -Dangle_enable_vulkan=1 ; fi',
-	#		'if [ ! -f "already_done"                             ] ; then ninja -C generated/out/Release_x64 -j 4 ; fi',
-	#		
-	#		#'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
-	#		#'if [ ! -f "already_done" ] ; then cmake -E copy generated/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
-	#		#'if [ ! -f "already_done" ] ; then make -C generated {make_prefix_options} BUILDTYPE=Release {make_cpu_count} ; fi',
-	#		#'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
-	#		#'if [ ! -f "already_done" ] ; then make install PREFIX={compile_prefix} ; fi',
-	#		#'if [ ! -f "already_done" ] ; then touch already_done ; fi',
+	#	'run_post_patch': (																																								
+	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/sprintf_s(adapterLuidString/_snprintf(adapterLuidString/\' "src/libANGLE/renderer/d3d/RendererD3D.cpp" ; fi',
+	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/\'-O2\'/\'-O3\'/\' "gyp/common_defines.gypi" ; fi',
+	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/-Wno-conversion-null/-msse4 -msse2 -msse4.1 -msse4.2/\' "gyp/common_defines.gypi" ; fi',			
+	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/-Wno-deprecated-declarations/-DUNICODE -D_UNICODE/\' "gyp/common_defines.gypi" ; fi',
+	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/-fpermissive/-Wall/\' "gyp/common_defines.gypi" ; fi',
+	#		'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
+	#		'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',			
+	#		'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
+	#		'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
+	#		'if [ ! -f "already_done" ] ; then cmake -E copy generated/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
+	#		'if [ ! -f "already_done" ] ; then make -C generated {make_prefix_options} BUILDTYPE=Release {make_cpu_count} ; fi',
+	#		# 'if [ ! -f "already_done" ] ; then mv generated/out/Debug generated/out/Release ; fi',
+	#		'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
+	#		'if [ ! -f "already_done" ] ; then make install PREFIX={compile_prefix} ; fi',
+	#		'if [ ! -f "already_done" ] ; then touch already_done ; fi',
 	#	),
 	#	'packages': {
 	#		'ubuntu' : [ 'gyp' ],
 	#	},
 	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
 	#},
-	
 	'qt5' : { # too... many.... patches....
 		'warnings' : [
 			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it',
@@ -2574,17 +2555,17 @@ DEPENDS = {
 	},
 	'lzo': {
 		'repo_type' : 'archive',
-		'url' : 'https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz',
+		'url' : 'http://ftp.oregonstate.edu/.1/blfs/conglomeration/lzo/lzo-2.10.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'version' : '2.10',
 		'_info' : { 'version' : '2.10', 'fancy_name' : 'lzo' },
 	},
 	'uchardet': {
 		'repo_type' : 'git',
-		'url' : 'https://github.com/BYVoid/uchardet.git',
+		'url' : 'git://anongit.freedesktop.org/uchardet/uchardet',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
@@ -2800,10 +2781,17 @@ DEPENDS = {
 		'make_options': '{make_prefix_options} ARFLAGS=rcs',
 		'_info' : { 'version' : '1.2.11', 'fancy_name' : 'zlib' },
 	},
+	#'liblzma' : {
+		# 'repo_type' : 'archive',
+		# 'custom_cflag': '',
+		# 'url' : 'https://tukaani.org/xz/xz-5.2.3.tar.bz2',
+		# 'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		# '_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
+	# },
 	'liblzma' : {
-		'repo_type' : 'archive',
-		'url' : 'https://tukaani.org/xz/xz-5.2.3.tar.bz2',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'repo_type' : 'git',
+		'url' : 'http://git.tukaani.org/xz.git',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-doc',
 		'_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
 	},
 	'libzimg' : {
@@ -2844,7 +2832,7 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		# CFLAGS=-O2 # ??
 		'url' : 'https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-nls --enable-extra-encodings',
 		'_info' : { 'version' : '1.15', 'fancy_name' : 'libiconv' },
 	},
 	'gnutls' : {
@@ -2938,21 +2926,29 @@ DEPENDS = {
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wavpack' },
 	},
+	#'libgme_game_music_emu' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
+	#	'needs_configure' : False,
+	#	'is_cmake' : True,
+	#	#'run_post_patch': ( # runs commands post the patch process
+	#	#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
+	#	#),
+	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+	#	'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
+	#},
 	'libgme_game_music_emu' : {
-		'repo_type' : 'archive',
-		'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
+		'repo_type' : 'git',
+		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git', # ffmpeg doesnt like git
 		'needs_configure' : False,
 		'is_cmake' : True,
-		#'run_post_patch': ( # runs commands post the patch process
-		#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
-		#),
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=NO',
 		'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : { # why can't everything be so easy to compile
 		'repo_type' : 'git',
-		#'url' : 'http://downloads.webmproject.org/releases/webp/libwebp-0.6.0.tar.gz',
 		'url' : 'https://chromium.googlesource.com/webm/libwebp',
+		'branch' : 'e4eb458741f61a95679a44995c212b5f412cf5a1',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libwebp' },
 	},
@@ -3384,12 +3380,12 @@ DEPENDS = {
 	'libmodplug' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.9.0/libmodplug-0.8.9.0.tar.gz',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={compile_target} --prefix={compile_prefix} --enable-static --disable-shared',
 		'run_post_install': (
 			# unfortunately this sed isn't enough, though I think it should be [so we add --extra-libs=-lstdc++ to FFmpegs configure] https://trac.ffmpeg.org/ticket/1539
 			'sed -i.bak \'s/-lmodplug.*/-lmodplug -lstdc++/\' "{pkg_config_path}/libmodplug.pc"', # huh ?? c++?
-			'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
-			'sed -i.bak \'s/__declspec(dllimport)//\' "{compile_prefix}/include/libmodplug/modplug.h"',
+			#'sed -i.bak \'s/__declspec(dllexport)//\' "{compile_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
+			#'sed -i.bak \'s/__declspec(dllimport)//\' "{compile_prefix}/include/libmodplug/modplug.h"',
 		),
 		'_info' : { 'version' : '0.8.9.0', 'fancy_name' : 'libmodplug' },
 	},

@@ -207,4 +207,5 @@ You can always just check the predefined projects for ideas and wether I missed 
 - [ArchLinux](https://aur.archlinux.org/packages/)
 - [MSYS](https://github.com/Alexpux/MSYS2-packages/)
 - [Martchus](https://github.com/Martchus/PKGBUILDs/commits/master)
+- [Alexpux](https://github.com/Alexpux/MINGW-packages)
 - and many more..

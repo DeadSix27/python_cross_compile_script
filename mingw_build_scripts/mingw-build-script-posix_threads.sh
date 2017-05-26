@@ -75,6 +75,7 @@ target_x86_64='x86_64-w64-mingw32'
 
 ## Versions
 mingw_w64_release_ver='git' #4.0.6 we just use git anyway :)
+mingw_branch='50db904f0520d1d2969db986c0189d3e12a0577c'
 gcc_release_ver='7.1.0' # 6.1.0 has problems with 64 bit ffmpeg with c++ deps
 gcc_old_release_ver='6.3.0' # default if none specified, was 4.9.4 cannot be same as gcc_release_ver above, apparently, as a note...
 mpfr_release_ver='3.1.5' #3.1.3
@@ -519,6 +520,7 @@ cd 'build' || print_error
 git_dl () {
 local pkg="$1"
 local git_url="$2"
+local commit="$3"
 shift 2
 
 if cd "$pkg" 2>/dev/null; then
@@ -531,9 +533,14 @@ if cd "$pkg" 2>/dev/null; then
     fi
   fi
 else
-
   build_progress "$pkg" 'Downloading'
   git clone "$git_url" "$pkg-git" > >(build_log) 2>&1 || print_error
+  if [ ! -z "$1" ]; then
+	cd "$pkg-git"
+	git checkout "$commit"
+	git reset --hard "$commit"
+	cd ".."
+  fi
   build_progress 'done'
 fi
 }
@@ -638,7 +645,7 @@ build_mingw_w64 () {
 local mingw_w64_target="$1"
 local mingw_w64_prefix="$2"
 
-if [ "$gcc_ver" = "6.3.0" ]; then # We only support 6.3.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
+if [ "$gcc_ver" = "6.3.0" -o "$gcc_ver" = "7.1.0" ]; then # We only support 6.3.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
 	cd "mingw-w64-$mingw_w64_ver"
 		echo "Patching mingw headers"
 		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
@@ -747,10 +754,15 @@ if [[ "$gcc_ver" != 'svn' ]]; then
 			echo "applying patch"
 			patch -p1 < "0001-gcc_7_1_0_weak_refs_x86_64.patch"
 			echo "Done"
-			cd 'libstdc++-v3'
-			sed -i 's/\b__in\b/___in/g' include/ext/random.tcc include/ext/vstring.tcc include/std/utility include/std/tuple include/std/istream include/tr2/bool_set.tcc include/tr2/bool_set include/bits/basic_string.h include/bits/basic_string.tcc include/bits/locale_facets.h include/bits/istream.tcc include/tr1/utility include/tr1/tuple
-			sed -i 's/\b__out\b/___out/g' include/ext/random.tcc include/ext/algorithm include/ext/pb_ds/detail/debug_map_base.hpp include/std/ostream include/std/thread include/tr2/bool_set include/bits/ostream.tcc include/bits/regex.tcc include/bits/stl_algo.h include/bits/locale_conv.h include/bits/regex.h include/bits/ostream_insert.h include/tr1/regex include/parallel/algo.h include/parallel/set_operations.h include/parallel/multiway_merge.h include/parallel/unique_copy.h include/experimental/algorithm config/locale/dragonfly/c_locale.h config/locale/generic/c_locale.h config/locale/gnu/c_locale.h
-			cd ..
+			# https://gcc.gnu.org/ml/gcc-help/2017-05/msg00152.html
+			# curl --retry 5 "https://dsix.site/gcc-7.1.0.libstdcpp-in-out.patch" -O --fail || exit 1
+			# echo "applying libstdc++ patch"
+			# patch -p1 < "gcc-7.1.0.libstdcpp-in-out.patch"
+			# echo "Done"
+			# cd 'libstdc++-v3'
+			# sed -i 's/\b__in\b/___in/g' include/ext/random.tcc include/ext/vstring.tcc include/std/utility include/std/tuple include/std/istream include/tr2/bool_set.tcc include/tr2/bool_set include/bits/basic_string.h include/bits/basic_string.tcc include/bits/locale_facets.h include/bits/istream.tcc include/tr1/utility include/tr1/tuple
+			# sed -i 's/\b__out\b/___out/g' include/ext/random.tcc include/ext/algorithm include/ext/pb_ds/detail/debug_map_base.hpp include/std/ostream include/std/thread include/tr2/bool_set include/bits/ostream.tcc include/bits/regex.tcc include/bits/stl_algo.h include/bits/locale_conv.h include/bits/regex.h include/bits/ostream_insert.h include/tr1/regex include/parallel/algo.h include/parallel/set_operations.h include/parallel/multiway_merge.h include/parallel/unique_copy.h include/experimental/algorithm config/locale/dragonfly/c_locale.h config/locale/generic/c_locale.h config/locale/gnu/c_locale.h
+			# cd ..
 		cd ..
 	fi
 else
@@ -907,7 +919,7 @@ system_type="$(sh config.guess)"
 
 cd "$mingw_w64_source_dir" || print_error
 if [[ "$mingw_w64_ver" = 'git' ]]; then
-  git_dl "mingw-w64" "https://git.code.sf.net/p/mingw-w64/mingw-w64"
+  git_dl "mingw-w64" "https://git.code.sf.net/p/mingw-w64/mingw-w64" "$mingw_branch"
 else
   if [[ -d "mingw-w64-$mingw_w64_release_ver" && "$allow_overwrite" != 'yes' &&  "$prefix_present" = 'yes' ]]; then
     if ! yes_no_sel "MinGW-w64 is already the latest version, continue with the build anyway? You can set this option with: '--allow-overwrite', see '--help' for more information."; then
