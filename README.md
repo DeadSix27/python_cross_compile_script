@@ -8,7 +8,7 @@ It comes with a CLI to compile specific lists of "products/dependencies" or a si
 
 This project was heavily influenced by rdp's [ffmpeg-windows-build-helpers](https://github.com/rdp/ffmpeg-windows-build-helpers).
 
-_GCC Version is 6.3.0 and has posix threading (mutex) support._
+_GCC Version is 7.1.0 and has posix threading (mutex) support._
 
 Menu:
 [->How to use it<-](#usage)
@@ -18,7 +18,7 @@ Menu:
 ### **Currently this script builds these products from git-master**
 - Aria2 
 - cURL
-- FFmpeg (shared & static)
+- FFmpeg _(shared & static)_
 - FLAC
 - LAME3 
 - MediaInfo _(Only .exe)_
@@ -26,7 +26,7 @@ Menu:
 - mpv Player _(with VapourSynth, Python and LuaJIT)_
 - SoX tools _(sox,play,..)_
 - Vobis tools _(oggenc,ogginfo,..)_
-- wGet
+- wget
 - x264 _(10bit)_
 - x265 _(Multi-bit (12,10,8))_
 
@@ -58,6 +58,7 @@ angle       - gyp
 vapoursynth - p7zip
 flac        - docbook-to-man
 youtube-dl  - pando
+x264        - nasm 1.13
 ```
 
 ## **Usage**
