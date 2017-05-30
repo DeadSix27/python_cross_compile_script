@@ -1592,7 +1592,7 @@ VARIABLES = {
 		'--extra-libs=-lpng --extra-libs=-loleaut32 --enable-libmp3lame --enable-version3 --enable-zlib '
 		'--enable-librtmp --enable-libvorbis --enable-libtheora --enable-libspeex --enable-libopenjpeg '
 		'--enable-gnutls --enable-libgsm --enable-libfreetype --enable-libopus --enable-bzlib '
-		'--enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc --enable-libschroedinger '
+		'--enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc '
 		'--enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp --enable-dxva2 --enable-avisynth '
 		'--enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy '
 		'--enable-libzimg --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r '
@@ -2058,7 +2058,7 @@ DEPENDS = {
 		'is_dep_inheriter' : True,
 		'depends_on' : [
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'orc', 'libschroedinger', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
+			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio',
 		],
@@ -3105,6 +3105,7 @@ DEPENDS = {
 		'run_post_install': (
 			'sed -i.bak \'s/-lschroedinger-1.0$/-lschroedinger-1.0 -lorc-0.4/\' "{pkg_config_path}/schroedinger-1.0.pc"',
 		),
+		'depends_on' : [ 'orc' ],
 		'_info' : { 'version' : '1.0.11', 'fancy_name' : 'schroedinger' },
 
 	},
