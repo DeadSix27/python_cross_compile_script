@@ -32,20 +32,20 @@
 | Dependency                      | Version             |
 | -------------------------------:|:------------------- |
 | a52dec                          | 0.7.4               |
-| Angle                           | git (3103)          |
+| Angle                           | git (63d8c2)        |
 | Boost                           | 1.64                |
 | BZip2 (library)                 | 1.0.6               |
-| D-bus (Library)                 | 1.10.18             |
+| D-bus (Library)                 | 1.11.12             |
 | expat                           | 2.2.0               |
 | fdk-aac                         | git (master)        |
 | fftw3                           | 3.3.6-pl2           |
 | flite                           | 1.4                 |
-| fontconfig                      | 2.12.1              |
+| fontconfig                      | 2.12.3              |
 | FreeGLUT (libary?)              | 3.7                 |
 | freetype2                       | 2.8                 |
 | frei0r-plugins                  | 1.6.0               |
 | gettext                         | 0.19.8.1            |
-| glib2                           | 2.52.0              |
+| glib2                           | 2.53.2              |
 | gmp                             | 6.1.2               |
 | gnutls                          | 3.5.12              |
 | gnutls                          | 3.5.11              |
@@ -92,7 +92,7 @@
 | soxr                            | 0.1.2               |
 | speex                           | git (master)        |
 | speexdsp                        | git (master)        |
-| libsqlite3)                     | 3.1.8               |
+| libsqlite3)                     | 3.19.2              |
 | libssh2                         | git (master)        |
 | theora                          | git (master)        |
 | vorbis                          | git (master)        |
@@ -115,7 +115,7 @@
 | openal-soft                     | git (master)        |
 | opencore-amr                    | 0.1.5               |
 | openjpeg                        | 2.1.2               |
-| openssl                         | 1.1.0e              |
+| openssl                         | 1.1.0f              |
 | orc                             | 0.4.26              |
 | pcre                            | 8.40                |
 | Python (library-only)           | 3.6                 |

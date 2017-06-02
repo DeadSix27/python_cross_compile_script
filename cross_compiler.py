@@ -2163,12 +2163,12 @@ DEPENDS = {
 	'libsqlite3' : {
 		'repo_type' : 'archive',
 		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
-		'url' : 'https://sqlite.org/2017/sqlite-autoconf-3180000.tar.gz',
+		'url' : 'https://www.sqlite.org/2017/sqlite-autoconf-3190200.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : '3.1.8', 'fancy_name' : 'libsqlite3)' },
+		'_info' : { 'version' : '3.19.2', 'fancy_name' : 'libsqlite3)' },
 	},
 	'libcurl' : {
 		'repo_type' : 'git',
@@ -2198,7 +2198,7 @@ DEPENDS = {
 	},
 	
 	'angle' : {
-		'branch' : 'bb580b1b8b124bacb44fc3de06a57ddd375bd987',
+		'branch' : '63d8c2662c284955459eccbf7f40fcf8a8f51651',
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2207,7 +2207,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'             ,'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'             ,'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0005-angle-static-build-workaround.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-fix-d3d11-error.patch'              ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-forward-declare-function.patch'     ,'p1'),
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2226,7 +2226,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (chromium/3109)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (63d8c2)', 'fancy_name' : 'Angle' },
 	},
 	#'angle_old' : {
 	#	'branch' : '9f10b775c9b17f901d940157e43e5a74b75c2708',
@@ -2443,13 +2443,13 @@ DEPENDS = {
 	
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.10.18.tar.gz',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.12.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.10.18', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.11.12', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.gnome.org/pub/gnome/sources/glib/2.52/glib-2.52.0.tar.xz',
+		'url' : 'https://ftp.acc.umu.se/pub/gnome/sources/glib/2.53/glib-2.53.2.tar.xz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre' ],
 		'patches' : [
@@ -2465,18 +2465,18 @@ DEPENDS = {
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
-		'_info' : { 'version' : '2.52.0', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '2.53.2', 'fancy_name' : 'glib2' },
 	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.openssl.org/source/openssl-1.1.0e.tar.gz',
+		'url' : 'https://www.openssl.org/source/openssl-1.1.0f.tar.gz',
 		'configure_options' : '{bit_name3} --prefix={compile_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
 		'install_target' : 'install_sw', # we don't need the docs..
 		'env_exports' : {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 		},
-		'_info' : { 'version' : '1.1.0e', 'fancy_name' : 'openssl' },
+		'_info' : { 'version' : '1.1.0f', 'fancy_name' : 'openssl' },
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -3429,12 +3429,12 @@ DEPENDS = {
 	},
 	'fontconfig' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.1.tar.gz',
+		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.3.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-docs',
 		'run_post_install': (
 			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
 		),
-		'_info' : { 'version' : '2.12.1', 'fancy_name' : 'fontconfig' },
+		'_info' : { 'version' : '2.12.3', 'fancy_name' : 'fontconfig' },
 	},
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
