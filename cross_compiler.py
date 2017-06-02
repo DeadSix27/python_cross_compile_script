@@ -2879,7 +2879,7 @@ DEPENDS = {
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
-		'url' : 'https://files.dyne.org/frei0r/frei0r-plugins-1.6.0.tar.gz',
+		'url' : 'https://files.dyne.org/frei0r/frei0r-plugins-1.6.1.tar.gz',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'run_post_patch': ( # runs commands post the patch process
