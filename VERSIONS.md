@@ -32,7 +32,7 @@
 | Dependency                      | Version             |
 | -------------------------------:|:------------------- |
 | a52dec                          | 0.7.4               |
-| Angle                           | git (63d8c2)        |
+| Angle                           | git (b7d5e3)        |
 | Boost                           | 1.64                |
 | BZip2 (library)                 | 1.0.6               |
 | D-bus (Library)                 | 1.11.12             |

@@ -2168,7 +2168,7 @@ DEPENDS = {
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : '3.19.2', 'fancy_name' : 'libsqlite3)' },
+		'_info' : { 'version' : '3.19.2', 'fancy_name' : 'libsqlite3' },
 	},
 	'libcurl' : {
 		'repo_type' : 'git',
@@ -2198,7 +2198,7 @@ DEPENDS = {
 	},
 	
 	'angle' : {
-		'branch' : '63d8c2662c284955459eccbf7f40fcf8a8f51651',
+		'branch' : 'b7d5e303339bb90447e12f05ee50e6269f97493e',
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2207,7 +2207,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'             ,'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'             ,'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0005-angle-static-build-workaround.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-forward-declare-function.patch'     ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-forward-declare-function-2.patch'   ,'p1'),
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2226,7 +2226,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (63d8c2)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (b7d5e3)', 'fancy_name' : 'Angle' },
 	},
 	#'angle_old' : {
 	#	'branch' : '9f10b775c9b17f901d940157e43e5a74b75c2708',
@@ -2279,6 +2279,7 @@ DEPENDS = {
 	#	},
 	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
 	#},
+	
 	'qt5' : { # too... many.... patches....
 		'warnings' : [
 			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it',
