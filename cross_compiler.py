@@ -1594,7 +1594,7 @@ VARIABLES = {
 		'--enable-gnutls --enable-libgsm --enable-libfreetype --enable-libopus --enable-bzlib '
 		'--enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-amrwbenc '
 		'--enable-libvpx --enable-libilbc --enable-libwavpack --enable-libwebp --enable-dxva2 --enable-avisynth '
-		'--enable-gray --enable-libopenh264 --enable-netcdf --enable-libflite --enable-lzma --enable-libsnappy '
+		'--enable-gray --enable-libopenh264 --enable-libmysofa  --enable-libflite --enable-lzma --enable-libsnappy '
 		'--enable-libzimg --enable-gpl --enable-libx264 --enable-libx265 --enable-frei0r --enable-filter=frei0r '
 		'--enable-librubberband --enable-libvidstab --enable-libxavs --enable-libxvid --enable-avresample '
 		'--extra-libs=-lpsapi --extra-libs=-lspeexdsp --enable-libgme --enable-runtime-cpudetect --enable-libfribidi '
@@ -2059,7 +2059,7 @@ DEPENDS = {
 		'depends_on' : [
 			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'netcdf', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio',
 		],
 	},
@@ -2228,59 +2228,7 @@ DEPENDS = {
 		},
 		'_info' : { 'version' : 'git (b7d5e3)', 'fancy_name' : 'Angle' },
 	},
-	#'angle_old' : {
-	#	'branch' : '9f10b775c9b17f901d940157e43e5a74b75c2708',
-	#	'repo_type' : 'git',
-	#	'url' : 'https://chromium.googlesource.com/angle/angle',
-	#	'patches' : (
-	#		('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-angleproject-git/0001-static-build-workaround.patch','p1'),
-	#		#('https://localhost/angle_test2.patch','p1'),
-	#		#('https://localhost/angle_git.test.debug.patch','p1'),
-	#		#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch','p1'),
-	#		#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch','p1'),
-	#		#('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch','p1'),
-	#		#('https://localhost/angle__mbstowcs.patch','p1'),
-	#		#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
-	#		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
-	#		#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
-	#		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
-	#		#('https://localhost/angle__mbstowcs.patch','p1'),
-	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0001-Cross-compile-hacks-for-mpv.patch','p1'),
-	#		#('https://localhost/angle_git.test.patch','p1'),
-	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0002-std-c-14-is-required-for-GCC-lt-6.patch','p1'),
-	#		#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0003-RendererD3D-cpp.patch','p1'),
-	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle-0004-string_utils-cpp.patch','p1'),
-	#		('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-angleproject-git/0001-static-build-workaround.patch','p1'),
-	#		#('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-angleproject-git/angleproject-include-import-library-and-use-def-file.patch', 'p1'),
-	#		
-	#	),
-	#	'needs_make':False,
-	#	'needs_make_install':False,
-	#	'needs_configure':False,
-	#	'run_post_patch': (																																								
-	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/sprintf_s(adapterLuidString/_snprintf(adapterLuidString/\' "src/libANGLE/renderer/d3d/RendererD3D.cpp" ; fi',
-	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/\'-O2\'/\'-O3\'/\' "gyp/common_defines.gypi" ; fi',
-	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/-Wno-conversion-null/-msse4 -msse2 -msse4.1 -msse4.2/\' "gyp/common_defines.gypi" ; fi',			
-	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/-Wno-deprecated-declarations/-DUNICODE -D_UNICODE/\' "gyp/common_defines.gypi" ; fi',
-	#		'if [ ! -f "already_done" ] ; then sed -i.bak \'s/-fpermissive/-Wall/\' "gyp/common_defines.gypi" ; fi',
-	#		'if [ ! -f "already_done" ] ; then make uninstall PREFIX={compile_prefix} ; fi',
-	#		'if [ ! -f "already_done" ] ; then cmake -E remove_directory generated ; fi',			
-	#		'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=generated -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
-	#		'if [ ! -f "already_done" ] ; then make -C generated/ commit_id ; fi',
-	#		'if [ ! -f "already_done" ] ; then cmake -E copy generated/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
-	#		'if [ ! -f "already_done" ] ; then make -C generated {make_prefix_options} BUILDTYPE=Release {make_cpu_count} ; fi',
-	#		# 'if [ ! -f "already_done" ] ; then mv generated/out/Debug generated/out/Release ; fi',
-	#		'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
-	#		'if [ ! -f "already_done" ] ; then make install PREFIX={compile_prefix} ; fi',
-	#		'if [ ! -f "already_done" ] ; then touch already_done ; fi',
-	#	),
-	#	'packages': {
-	#		'ubuntu' : [ 'gyp' ],
-	#	},
-	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
-	#},
-	
-	'qt5' : { # too... many.... patches....
+	'qt5' : {
 		'warnings' : [
 			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it',
 			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393',
@@ -3362,6 +3310,15 @@ DEPENDS = {
 		'url' : 'ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.1.tar.gz', 
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
 		'_info' : { 'version' : '4.4.1.1', 'fancy_name' : 'netcdf' },
+	},
+	'libmysofa' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/hoene/libmysofa', 
+		'source_subfolder' : '_build',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS=no',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmysofa' },
 	},
 	'libcaca' : {
 		'repo_type' : 'archive',
