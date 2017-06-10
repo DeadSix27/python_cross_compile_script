@@ -2198,7 +2198,7 @@ DEPENDS = {
 	},
 	
 	'angle' : {
-		'branch' : 'b7d5e303339bb90447e12f05ee50e6269f97493e',
+		'branch' : '982f6e0125af4eaa40ee05157d27cbbd9259d969',
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2226,7 +2226,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (b7d5e3)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (982f6e)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
 		'warnings' : [
