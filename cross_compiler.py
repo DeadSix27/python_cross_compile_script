@@ -1872,10 +1872,10 @@ PRODUCTS = {
 		'configure_options':
 			'--enable-libmpv-shared --disable-debug-build --prefix={product_prefix}/mpv_git.installed'
 			' --enable-sdl2 --enable-egl-angle-lib --enable-rubberband --enable-lcms2 --enable-dvdread --enable-openal --enable-dvdnav'
-			' --enable-libbluray --enable-cdda --enable-libass --enable-lua --enable-encoding --enable-uchardet --enable-libarchive'
+			' --enable-libbluray --enable-cdda --enable-libass --enable-lua --enable-encoding --enable-uchardet --enable-libarchive --enable-javascript'
 			' --enable-encoding TARGET={compile_target} DEST_OS=win32',
 		'depends_on' : (
-			'angle', 'python36_libs', 'vapoursynth_libs','sdl2_hg', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
+			'angle', 'python36_libs', 'vapoursynth_libs','sdl2_hg', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal-soft', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs'
 		),
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
@@ -2196,18 +2196,26 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : '1.64', 'fancy_name' : 'Boost' },
 	},
-	
+	'mujs' : {
+		'repo_type' : 'git',
+		'url' : 'git://git.ghostscript.com/mujs.git',
+		'needs_configure' : False,
+		'make_options': '{make_prefix_options} prefix={compile_prefix}',
+		'install_options' : '{make_prefix_options} prefix={compile_prefix}',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
+	},
 	'angle' : {
-		'branch' : '982f6e0125af4eaa40ee05157d27cbbd9259d969',
+		'branch' : '0492d4479799f296c4b1db4cb4ea465bacc8cec0',
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0001-Cross-compile-hacks.patch'          ,'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'          ,'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'             ,'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'             ,'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0005-angle-static-build-workaround.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-forward-declare-function-2.patch'   ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0001-Cross-compile-hacks.patch'                      ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                      ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                         ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                         ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0005-add-option-for-targeting-cpu-architecture.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-forward-declare-function.patch'                 ,'p1'),
+
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2226,7 +2234,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (982f6e)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (0492d4)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
 		'warnings' : [
@@ -3201,6 +3209,9 @@ DEPENDS = {
 	'libopenh264' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/cisco/openh264.git',
+		'patches' : (
+			('https://dsix.site/angle/0001-remove-fma3-call.patch','p1'),
+		),
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
 		'install_options': '{make_prefix_options} OS=mingw_nt',
