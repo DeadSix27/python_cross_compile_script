@@ -3210,7 +3210,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/cisco/openh264.git',
 		'patches' : (
-			('https://dsix.site/angle/0001-remove-fma3-call.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openh264/0001-remove-fma3-call.patch','p1'),
 		),
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
