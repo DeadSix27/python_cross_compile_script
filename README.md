@@ -25,7 +25,7 @@ Menu:
 - mkvToolNix _(Static with QT5)_
 - mpv Player _(with VapourSynth, Python and LuaJIT)_
 - SoX tools _(sox,play,..)_
-- Vobis tools _(oggenc,ogginfo,..)_
+- Vorbis tools _(oggenc,ogginfo,..)_
 - wget
 - x264 _(10bit)_
 - x265 _(Multi-bit (12,10,8))_

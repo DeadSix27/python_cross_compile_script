@@ -2205,7 +2205,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
 	'angle' : {
-		'branch' : '0492d4479799f296c4b1db4cb4ea465bacc8cec0',
+		'branch' : '6be3d4cd9be84888b2767a07b65df3970a246125', #angle seems to breaks often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2214,8 +2214,6 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                         ,'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                         ,'p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0005-add-option-for-targeting-cpu-architecture.patch','p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0006-forward-declare-function.patch'                 ,'p1'),
-
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2234,7 +2232,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (0492d4)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (6be3d4)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
 		'warnings' : [

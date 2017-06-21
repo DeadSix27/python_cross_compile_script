@@ -1,0 +1,20 @@
+Date: Fri, 19 May 2017 11:47:33 +0200
+From: myfreeer <DeadSix27@users.noreply.github.com>
+Subject: [PATCH] angle patch
+
+ src/libANGLE/renderer/d3d/RendererD3D.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libANGLE/renderer/d3d/RendererD3D.cpp b/src/libANGLE/renderer/d3d/RendererD3D.cpp
+index e0cb86d..ad3b680 100644
+--- a/src/libANGLE/renderer/d3d/RendererD3D.cpp
++++ b/src/libANGLE/renderer/d3d/RendererD3D.cpp
+@@ -313,7 +313,7 @@ std::string RendererD3D::getVendorString() const
+     if (getLUID(&adapterLuid))
+     {
+         char adapterLuidString[64];
+-        sprintf_s(adapterLuidString, sizeof(adapterLuidString), "(adapter LUID: %08x%08x)",
++        _snprintf(adapterLuidString, sizeof(adapterLuidString), "(adapter LUID: %08x%08x)",
+                   adapterLuid.HighPart, adapterLuid.LowPart);
+         return std::string(adapterLuidString);
+     }
