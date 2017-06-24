@@ -75,7 +75,7 @@ target_x86_64='x86_64-w64-mingw32'
 
 ## Versions
 mingw_w64_release_ver='git' #4.0.6 we just use git anyway :)
-mingw_branch='b33fcd03af215e9d2a561125487cf3aa83114d60'
+mingw_branch='657f4ac2d571ace8ce5e0af5d6807ef00fc35994'
 gcc_release_ver='7.1.0' # 6.1.0 has problems with 64 bit ffmpeg with c++ deps
 gcc_old_release_ver='6.3.0' # default if none specified, was 4.9.4 cannot be same as gcc_release_ver above, apparently, as a note...
 mpfr_release_ver='3.1.5' #3.1.3
@@ -123,6 +123,9 @@ Compile Options:
   --binutils-ver=VERSION      compile with binutils VERSION ($binutils_release_ver, git)
                               [$binutils_release_ver]
   --gcc-ver=VERSION           compile with GCC VERSION ($gcc_release_ver, $gcc_old_release_ver, svn)
+  
+  --mingw-branch=COMMIT_OR_BRANCH The commit or branch to checkout of the mingw git repo ($mingw_branch)
+  
                               [$gcc_old_release_ver]
   --pthreads-w32-ver=VERSION  compile with Pthreads-w32 VERSION ($pthreads_w32_release_ver, cvs)
                               [cvs]
@@ -1216,6 +1219,7 @@ while true; do
     --cpu-count=* ) cpu_count_opt="${1#*=}"; shift ;;
     --binutils-ver=* ) binutils_ver="${1#*=}"; shift ;;
     --gcc-ver=* ) gcc_ver="${1#*=}"; shift ;;
+	--mingw-branch=* ) mingw_branch="${1#*=}"; shift ;;
     --pthreads-w32-ver=* ) pthreads_w32_ver="${1#*=}" ; shift ;;
     --gcc-langs=* ) enabled_langs="${1#*=}"; shift ;;
     --enable-nls ) disable_nls=('--enable-nls'); shift ;;

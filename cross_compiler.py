@@ -124,12 +124,12 @@ class MyFormatter(logging.Formatter):
 		self._style._fmt = format_orig
 		return result
 
-_BASE_URL         = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master'
+_BASE_URL                = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master'
 
-_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
-#_MINGW_SCRIPT_URL = '/mingw_build_scripts/mingw-build-script.sh' # without the above
+_MINGW_SCRIPT_URL        = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
 
-_GCC_VER          = "7.1.0" # old was 6.3.0, but is not supported by me anymore.
+_GCC_VER                 = "7.1.0" # old was 6.3.0, but is not supported by me anymore.
+_MINGW_GIT_COMMIT_BRANCH = "657f4ac2d571ace8ce5e0af5d6807ef00fc35994"
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -517,7 +517,7 @@ class CrossCompileScript:
 
 		mingw_script_file    = self.download_file(self.mingwScriptURL)
 		#mingw_script_options = "--clean-build --disable-shared --default-configure --threads=pthreads-w32 --pthreads-w32-ver=2-9-1 --cpu-count={0} --mingw-w64-ver=git --gcc-ver=6.3.0 --enable-gendef".format ( _CPU_COUNT )
-		mingw_script_options = "--clean-build --disable-shared --default-configure --threads=winpthreads --cpu-count={0} --mingw-w64-ver=git --gcc-ver={1} --enable-gendef".format ( _CPU_COUNT, _GCC_VER )
+		mingw_script_options = "--clean-build --disable-shared --default-configure --threads=winpthreads --cpu-count={0} --mingw-w64-ver=git --gcc-ver={1} --mingw-branch={2} --enable-gendef".format ( _CPU_COUNT, _GCC_VER, _MINGW_GIT_COMMIT_BRANCH )
 		self.chmodpux(mingw_script_file)
 		try:
 			self.run_process( [ "bash " + mingw_script_file, mingw_script_options, "--build-type={0}".format( self.winBitnessDir ) ], False, False )
@@ -2163,12 +2163,12 @@ DEPENDS = {
 	'libsqlite3' : {
 		'repo_type' : 'archive',
 		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
-		'url' : 'https://www.sqlite.org/2017/sqlite-autoconf-3190200.tar.gz',
+		'url' : 'https://www.sqlite.org/2017/sqlite-autoconf-3190300.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : '3.19.2', 'fancy_name' : 'libsqlite3' },
+		'_info' : { 'version' : '3.19.3', 'fancy_name' : 'libsqlite3' },
 	},
 	'libcurl' : {
 		'repo_type' : 'git',
@@ -2205,7 +2205,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
 	'angle' : {
-		'branch' : '6be3d4cd9be84888b2767a07b65df3970a246125', #angle seems to breaks often so we settle on the newest working commit for a while.
+		'branch' : '579d8c7dfcfaeb44fc7a650cd151539d87eedcd2', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2232,7 +2232,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (6be3d4)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (579d8c)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
 		'warnings' : [
@@ -2637,7 +2637,7 @@ DEPENDS = {
 			'ubuntu' : [ 'p7zip-full' ],
 			'fedora' : [ 'p7zip.' ],
 		},
-		'_info' : { 'version' : '37', 'fancy_name' : 'VapourSynth (library-only)' },
+		'_info' : { 'version' : '38', 'fancy_name' : 'VapourSynth (library-only)' },
 	},
 	'luajit': {
 		'repo_type' : 'git',
@@ -2791,7 +2791,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.12.tar.xz',
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.13.tar.xz',
 		'configure_options':
 			'--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-included-unistring '
 			'--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
@@ -2814,7 +2814,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
-		'_info' : { 'version' : '3.5.12', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.5.13', 'fancy_name' : 'gnutls' },
 	},
 	'gnutls_old' : { # in case the other breaks
 		'repo_type' : 'archive',
@@ -3082,9 +3082,9 @@ DEPENDS = {
 	},
 	'expat' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.0/expat-2.2.0.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.1/expat-2.2.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '2.2.0', 'fancy_name' : 'expat' },
+		'_info' : { 'version' : '2.2.1', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',

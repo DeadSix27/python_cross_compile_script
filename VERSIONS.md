@@ -32,11 +32,11 @@
 | Dependency                      | Version             |
 | -------------------------------:|:------------------- |
 | a52dec                          | 0.7.4               |
-| Angle                           | git (b7d5e3)        |
+| Angle                           | git (579d8c)        |
 | Boost                           | 1.64                |
 | BZip2 (library)                 | 1.0.6               |
 | D-bus (Library)                 | 1.11.12             |
-| expat                           | 2.2.0               |
+| expat                           | 2.2.1               |
 | fdk-aac                         | git (master)        |
 | fftw3                           | 3.3.6-pl2           |
 | flite                           | 1.4                 |
@@ -47,7 +47,7 @@
 | gettext                         | 0.19.8.1            |
 | glib2                           | 2.53.2              |
 | gmp                             | 6.1.2               |
-| gnutls                          | 3.5.12              |
+| gnutls                          | 3.5.13              |
 | gnutls                          | 3.5.11              |
 | harfbuzz                        | 1.4.6               |
 | libiconv                        | 1.15                |
@@ -79,6 +79,7 @@
 | libmediainfo                    | git (master)        |
 | libmodplug                      | 0.8.9.0             |
 | mpv (library)                   | git (master)        |
+| libmysofa                       | git (master)        |
 | nettle                          | 3.3                 |
 | ogg                             | git (master)        |
 | openh264                        | git (master)        |
@@ -92,7 +93,7 @@
 | soxr                            | 0.1.2               |
 | speex                           | git (master)        |
 | speexdsp                        | git (master)        |
-| libsqlite3)                     | 3.19.2              |
+| libsqlite3                      | 3.19.3              |
 | libssh2                         | git (master)        |
 | theora                          | git (master)        |
 | vorbis                          | git (master)        |
@@ -111,6 +112,7 @@
 | LuaJIT2                         | git (master)        |
 | lzo                             | 2.10                |
 | mingw-libgnurx                  | 2.5.1               |
+| mujs                            | git (master)        |
 | netcdf                          | 4.4.1.1             |
 | openal-soft                     | git (master)        |
 | opencore-amr                    | 0.1.5               |
@@ -127,7 +129,7 @@
 | twolame                         | 0.3.13              |
 | uchardet                        | git (master)        |
 | vamp-plugin-sdk                 | 2.7.1               |
-| VapourSynth (library-only)      | 37                  |
+| VapourSynth (library-only)      | 38                  |
 | vid.stab                        | git (master)        |
 | vo-amrwbenc                     | 0.1.3               |
 | wavpack                         | git (master)        |
