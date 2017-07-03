@@ -1,0 +1,15 @@
+diff -uprN a/source/x265-extras.h b/source/x265-extras.h
+--- a/source/x265-extras.h      2017-06-14 22:07:01.485283923 -0700
++++ b/source/x265-extras.h      2017-06-14 22:38:28.945923631 -0700
+@@ -33,11 +33,7 @@
+ extern "C" {
+ #endif
+
+-#if _WIN32
+-#define LIBAPI __declspec(dllexport)
+-#else
+ #define LIBAPI
+-#endif
+
+ /* Open a CSV log file. On success it returns a file handle which must be passed
+  * to x265_csvlog_frame() and/or x265_csvlog_encode(). The file handle must be

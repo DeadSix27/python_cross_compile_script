@@ -70,7 +70,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget', 'mkvtoolnix' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
 #
 # ###################################################
 # ###################################################
@@ -1586,6 +1586,7 @@ class CrossCompileScript:
 VARIABLES = {
 	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} --target-os=mingw32 --cross-prefix={cross_prefix_bare} --pkg-config=pkg-config --disable-w32threads '
+		'--enable-schannel --enable-cross-compile --enable-pic '
 		'--enable-libsoxr --enable-fontconfig --enable-libass --enable-iconv --enable-libtwolame '
 		'--extra-cflags=-DLIBTWOLAME_STATIC --enable-libzvbi --enable-libcaca --extra-libs=-lstdc++ '
 		'--enable-libmodplug --extra-libs=\'-lsecurity -lschannel\' --extra-cflags=-DMODPLUG_STATIC --enable-cuvid '
@@ -1697,7 +1698,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_shared_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libgme',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libbluray --disable-libgme',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
 	},
@@ -2205,7 +2206,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
 	'angle' : {
-		'branch' : '579d8c7dfcfaeb44fc7a650cd151539d87eedcd2', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : '834dd263c85c8d89176719983d2d512e6ec3c368', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2232,7 +2233,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (579d8c)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (834dd2)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
 		'warnings' : [
@@ -3176,6 +3177,9 @@ DEPENDS = {
 			'"{cross_prefix_full}ar" -M <<EOF\nCREATE libx265.a\nADDLIB libx265_main.a\nADDLIB libx265_main10.a\nADDLIB libx265_main12.a\nSAVE\nEND\nEOF',
 		],
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
+		'patches': [
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', 'p1', '..' ],
+		],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit library 12/10/8)' },
 	},
 	'libx265_multibit_10' : {
@@ -3189,6 +3193,9 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
+		'patches': [
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', 'p1', '..' ],
+		],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
 	},
 	'libx265_multibit_12' : {
@@ -3202,6 +3209,9 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
+		'patches': [
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', 'p1', '..' ],
+		],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
 	},
 	'libopenh264' : {
@@ -3324,6 +3334,7 @@ DEPENDS = {
 	'libmysofa' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/hoene/libmysofa', 
+		'branch' : '65d92e6463537c9f7907b69c2c768a7c8c3a02b5', # the commit after (https://github.com/hoene/libmysofa/commit/41c9a75e83db49648a324209e62e47f7f9f4a5e4) fails to build, we stay here until that's resolved.
 		'source_subfolder' : '_build',
 		'needs_configure' : False,
 		'is_cmake' : True,
