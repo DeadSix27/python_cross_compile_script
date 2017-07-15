@@ -74,10 +74,10 @@ target_i686='i686-w64-mingw32'
 target_x86_64='x86_64-w64-mingw32'
 
 ## Versions
-mingw_w64_release_ver='git' #4.0.6 we just use git anyway :)
-mingw_branch='657f4ac2d571ace8ce5e0af5d6807ef00fc35994'
-gcc_release_ver='7.1.0' # 6.1.0 has problems with 64 bit ffmpeg with c++ deps
-gcc_old_release_ver='6.3.0' # default if none specified, was 4.9.4 cannot be same as gcc_release_ver above, apparently, as a note...
+mingw_w64_release_ver='git' #4.0.6
+mingw_branch='1259532ff8f5a7ac625b2f28d499ee93a0c0841e'
+gcc_release_ver='7.1.0'
+gcc_old_release_ver='6.3.0'
 mpfr_release_ver='3.1.5' #3.1.3
 mpc_release_ver='1.0.3'
 binutils_release_ver='2.28' #2.27
