@@ -1,0 +1,12 @@
+diff -Nur libarchive-3.3.2/libarchive/archive_cryptor_private.h libarchive-3.3.2.patched/libarchive/archive_cryptor_private.h
+--- libarchive-3.3.2/libarchive/archive_cryptor_private.h	2017-01-29 06:06:27.000000000 +0100
++++ libarchive-3.3.2.patched/libarchive/archive_cryptor_private.h	2017-07-16 17:54:44.961606108 +0200
+@@ -64,7 +64,7 @@
+ } archive_crypto_ctx;
+ 
+ #elif defined(_WIN32) && !defined(__CYGWIN__) && defined(HAVE_BCRYPT_H)
+-#include <Bcrypt.h>
++#include <bcrypt.h>
+ 
+ /* Common in other bcrypt implementations, but missing from VS2008. */
+ #ifndef BCRYPT_SUCCESS

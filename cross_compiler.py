@@ -24,15 +24,7 @@
 # Ubuntu 16.10 (Yakkety)
 # Fedora 25    (Twenty Five)
 # 
-# global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm mercurial cmake gettext-autopoint
-# mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
-# gnutls      - gperf
-# angle       - gyp
-# vapoursynth - p7zip
-# flac        - docbook-to-man
-# youtube-dl  - pando
-# filezilla   - wxrc (aka wx-common)
-# x264        - nasm 1.13
+# sudo apt install build-essential autoget texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc
 
 # ###################################################
 # #################     TODO      ###################
@@ -129,7 +121,7 @@ _BASE_URL                = 'https://raw.githubusercontent.com/DeadSix27/python_c
 _MINGW_SCRIPT_URL        = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
 
 _GCC_VER                 = "7.1.0" # old was 6.3.0, but is not supported by me anymore.
-_MINGW_GIT_COMMIT_BRANCH = "657f4ac2d571ace8ce5e0af5d6807ef00fc35994"
+_MINGW_GIT_COMMIT_BRANCH = "1259532ff8f5a7ac625b2f28d499ee93a0c0841e"
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -2206,7 +2198,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
 	'angle' : {
-		'branch' : '834dd263c85c8d89176719983d2d512e6ec3c368', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : '0f68463f00f0aaca437c68ce4db4b5d67b577c3a', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2233,7 +2225,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (834dd2)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (0f6846)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
 		'warnings' : [
@@ -2389,17 +2381,17 @@ DEPENDS = {
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.40.tar.gz',
+		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.41.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-unicode-properties --enable-jit --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2',
 		'depends_on' : [
 			'bzip2',
 		],
-		'_info' : { 'version' : '8.40', 'fancy_name' : 'pcre' },
+		'_info' : { 'version' : '8.44', 'fancy_name' : 'pcre' },
 	},
 	
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.12.tar.gz',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.14.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
 		'_info' : { 'version' : '1.11.12', 'fancy_name' : 'D-bus (Library)' },
 	},
@@ -2497,16 +2489,19 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'flac (library)' },
 	},
 	'libarchive': {
-		'repo_type' : 'archive',
-		'url' : 'https://www.libarchive.org/downloads/libarchive-3.3.1.tar.gz',
+		'repo_type' : 'git',
+		'patches' : [
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libarchive/0001-libarchive-3.3.2.bcrypt.patch', 'p1' ],
+		],
+		'url' : 'https://github.com/libarchive/libarchive.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-bsdtar --disable-bsdcat --disable-bsdcpio --without-openssl', #--without-xml2 --without-nettle
 		'depends_on' : [
 			'bzip2', 'expat', 'zlib', 'liblzma', 'lzo'
 		],
 		'run_post_install' : [
-			'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
+			'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma -lbcrypt/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
 		],
-		'_info' : { 'version' : '3.3.1', 'fancy_name' : 'libarchive' },
+		'_info' : { 'version' : '3.3.2', 'fancy_name' : 'libarchive' },
 	},
 	'lzo': {
 		'repo_type' : 'archive',
@@ -2792,7 +2787,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.13.tar.xz',
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.14.tar.xz',
 		'configure_options':
 			'--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-included-unistring '
 			'--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
@@ -2815,23 +2810,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
-		'_info' : { 'version' : '3.5.13', 'fancy_name' : 'gnutls' },
-	},
-	'gnutls_old' : { # in case the other breaks
-		'repo_type' : 'archive',
-		'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.5/gnutls-3.5.11.tar.xz',
-		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-cxx --disable-doc --enable-local-libopts --disable-guile -with-included-libtasn1 --without-p11-kit --with-included-unistring',
-		'run_post_install': [
-			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"",
-		],
-		'depends_on' : [
-			'gmp', 'libnettle',
-		],
-		'packages': {
-			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
-		},
-		'_info' : { 'version' : '3.5.11', 'fancy_name' : 'gnutls' },
-		'_disabled' : True,
+		'_info' : { 'version' : '3.5.14', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -2928,9 +2907,9 @@ DEPENDS = {
 	},
 	'libgsm' : {
 		'repo_type' : 'archive',
-		'url' : 'http://www.quut.com/gsm/gsm-1.0.16.tar.gz',
-		'folder_name' : 'gsm-1.0-pl16',
-		'patches' : ( # ordered list of patches, first one will be applied first..
+		'url' : 'http://www.quut.com/gsm/gsm-1.0.17.tar.gz',
+		'folder_name' : 'gsm-1.0-pl17',
+		'patches' : ( 
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16.patch', "p0"),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', 'p0'), # toast fails. so lets just patch it out of the makefile..
 		),
@@ -2941,9 +2920,9 @@ DEPENDS = {
 			'mkdir -pv {compile_prefix}/include/gsm',
 			'cp -v inc/gsm.h {compile_prefix}/include/gsm',
 		),
-		'cpu_count' : '1',
+		#'cpu_count' : '1',
 		'make_options': '{make_prefix_options} INSTALL_ROOT={compile_prefix}',
-		'_info' : { 'version' : '1.0.16', 'fancy_name' : 'gsm' },
+		'_info' : { 'version' : '1.0.17', 'fancy_name' : 'gsm' },
 	},
 	'sdl1' : {
 		'repo_type' : 'archive',
@@ -3083,9 +3062,9 @@ DEPENDS = {
 	},
 	'expat' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.1/expat-2.2.1.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.2/expat-2.2.2.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '2.2.1', 'fancy_name' : 'expat' },
+		'_info' : { 'version' : '2.2.2', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
@@ -3261,10 +3240,10 @@ DEPENDS = {
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
-		'branch' : '477ce36f8e4bd6a177727f4ac32eba11864dd85d', # commit: Fix win32 compilation # fixed the cross compiling.
+		'branch' : 'c99874886185de0ecf53d0ce5a1a64d4173116f8', # revert to 477ce36f8e4bd6a177727f4ac32eba11864dd85d if failing
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'git (477ce3)', 'fancy_name' : 'fftw3' },
+		'_info' : { 'version' : 'git (c99874)', 'fancy_name' : 'fftw3' },
 		'depends_on' : [
 			'libflac',
 		],
@@ -3408,12 +3387,12 @@ DEPENDS = {
 	},
 	'fontconfig' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.3.tar.bz2',
+		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.4.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-docs',
 		'run_post_install': (
 			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
 		),
-		'_info' : { 'version' : '2.12.3', 'fancy_name' : 'fontconfig' },
+		'_info' : { 'version' : '2.12.4', 'fancy_name' : 'fontconfig' },
 	},
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
