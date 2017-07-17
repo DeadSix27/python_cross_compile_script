@@ -2490,9 +2490,6 @@ DEPENDS = {
 	},
 	'libarchive': {
 		'repo_type' : 'git',
-		'patches' : [
-			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libarchive/0001-libarchive-3.3.2.bcrypt.patch', 'p1' ],
-		],
 		'url' : 'https://github.com/libarchive/libarchive.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --disable-bsdtar --disable-bsdcat --disable-bsdcpio --without-openssl', #--without-xml2 --without-nettle
 		'depends_on' : [
