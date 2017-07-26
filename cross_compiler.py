@@ -2198,7 +2198,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
 	'angle' : {
-		'branch' : '0f68463f00f0aaca437c68ce4db4b5d67b577c3a', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : '6caf405c370e531770804f26367ee7ef7996703a', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2749,12 +2749,13 @@ DEPENDS = {
 	},
 	'libsnappy' : {
 		'repo_type' : 'git',
-		'url' : 'https://github.com/google/snappy.git', #old: https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/google-snappy-1.1.3-14-g32d6d7d.tar.gz
-		#'folder_name' : 'google-snappy-32d6d7d',
-		'run_post_make' : [
-			'cp -n README.md README'
+		'url' : 'https://github.com/google/snappy.git',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'patches' : [
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/snappy/0001-snappy-remove-tests-and-shared', 'p1'),
 		],
-		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsnappy' },
 	},
 	'gmp' : {
