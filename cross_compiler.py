@@ -1758,7 +1758,16 @@ PRODUCTS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
 		},
+		'run_post_install': (
+			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvmerge.exe',
+			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvtoolnix-gui.exe',
+			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvextract.exe',
+			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo-gui.exe',
+			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvpropedit.exe',
+			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo.exe',
+		),	
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mkvtoolnix' },
+		
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -2050,7 +2059,7 @@ DEPENDS = {
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
 		'depends_on' : [
-			'zlib', 'bzip2', 'liblzma', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
+			'zlib', 'bzip2', 'liblzma', 'libzimg',	 'libsnappy', 'libpng', 'gmp', 'libnettle', 'iconv', 'gnutls', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl1', 'sdl2_hg',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
 			'openjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio',
@@ -2197,8 +2206,25 @@ DEPENDS = {
 		'install_options' : '{make_prefix_options} prefix={compile_prefix}',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
+	'pcre2' : 
+	{
+		# 'debug_downloadonly' : True,
+		'repo_type' : 'archive',
+		'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.23.tar.gz',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'patches' : (
+			('https://dsix.site/0001-pcre2-iswild.patch', 'p1'),
+		),
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
+		'depends_on' : [
+			'bzip2',
+		],
+		'_info' : { 'version' : '10.23', 'fancy_name' : 'pcre2' },
+	},
+	
 	'angle' : {
-		'branch' : '6caf405c370e531770804f26367ee7ef7996703a', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : '53440f39c8c21c0caec2efaf7d88f211658e113c', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2228,6 +2254,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (0f6846)', 'fancy_name' : 'Angle' },
 	},
 	'qt5' : {
+		# 'debug_downloadonly': True,
 		'warnings' : [
 			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it',
 			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393',
@@ -2235,16 +2262,17 @@ DEPENDS = {
 		],
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
-		'url' : 'https://download.qt.io/official_releases/qt/5.8/5.8.0/single/qt-everywhere-opensource-src-5.8.0.tar.gz',
+		'url' : 'https://download.qt.io/official_releases/qt/5.9/5.9.1/single/qt-everywhere-opensource-src-5.9.1.tar.xz',
 		'configure_options' :
 			' -opensource'
 			' -force-pkg-config'
 			' -confirm-license'
-			' -c++std c++11'
-			' -xplatform win32-g++'
+			# ' -c++std c++11'
+			' -xplatform mingw-w64-g++'
+			' -optimized-qmake'
 			' -device-option CROSS_COMPILE={cross_prefix_bare}'
-			' -no-use-gold-linker'
-			' -debug-and-release'
+			# ' -no-use-gold-linker'
+			' -release'
 			' -static'
 			' -hostprefix {host_target}'
 			' -hostdatadir {host_target}/lib/qt'
@@ -2273,70 +2301,24 @@ DEPENDS = {
 			' -no-dbus'
 			' -no-direct2d'
 			' -no-openssl'
+			' -device-option CROSS_COMPILE_CFLAGS=-fpch-preprocess'
 			' !CMD(pkg-config --cflags-only-I freetype2 zlib)CMD!'
 		,
 		'custom_cflag' : '',
-		'depends_on' : [ 'libwebp', 'freetype2', 'libpng', 'libjpeg-turbo', 'pcre'], #openssl, only supports 1.0.1, so no. https://wiki.qt.io/Qt_5.8_Tools_and_Versions # -openssl -openssl-linked -I{compile_prefix}/include/openssl -L{compile_prefix}/lib/
+		'depends_on' : [ 'libwebp', 'freetype2', 'libpng', 'libjpeg-turbo', 'pcre2', 'd-bus' ], #openssl, only supports 1.0.1, so no. https://wiki.qt.io/Qt_5.8_Tools_and_Versions # -openssl -openssl-linked -I{compile_prefix}/include/openssl -L{compile_prefix}/lib/
 		'patches' : [ #thanks to the Arch & mxe community for some of those patches!: https://aur.archlinux.org/packages/mingw-w64-qt5-base-angle/                                                                                            'p0'),
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/qtbase-1-fixes_different.patch'                                                                        ,'p1','qtbase'),			
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/winextras/qtwinextras-1.patch'                                                                              ,'p1','qtwinextras'),
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-1.patch'                                                                                ,'p1','qtactiveqt'),		
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/winextras/0001-Fix-condition-for-_WIN32_IE-SHCreateItemFromParsingN.patch'                                  ,'p1','qtwinextras'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/webengine/0044-qt-5.4.0-win32-g%2B%2B-enable-qtwebengine-build.patch'                                       ,'p1'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/tools/0001-Fix-linguist-macro.patch'                                                                        ,'p1','qttools'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/multimedia/0001-Recorder-includes-to-prevent-conflict-with-vsnprintf.patch'                                 ,'p1','qtmultimedia'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/multimedia/0002-Fix-build-with-ANGLE.patch'                                                                 ,'p1','qtmultimedia'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/location/0001-Ensure-static-3rdparty-libs-are-linked-correctly.patch'                                       ,'p1','qtlocation'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/declarative/0001-Build-QML-dev-tools-as-shared-library.patch'                                               ,'p1','qtdeclarative'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/declarative/0002-Ensure-static-plugins-are-exported.patch'                                                  ,'p1','qtdeclarative'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/declarative/0003-Prevent-exporting-QML-parser-symbols-on-static-build.patch'                                ,'p1','qtdeclarative'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qt5-activeqt-fix-compilation.patch'                                                                ,'p0','qtactiveqt'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-fix-build.patch'                                                                        ,'p1','qtactiveqt'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/activeqt/qtactiveqt-win64.patch'                                                                            ,'p1','qtactiveqt'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0001-Add-profile-for-cross-compilation-with-mingw-w64.patch'                                           ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0002-Ensure-GLdouble-is-defined-when-using-dynamic-OpenGL.patch'                                       ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0003-Use-external-ANGLE-library.patch'                                                                 ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0004-Fix-too-many-sections-assemler-error-in-OpenGL-facto.patch'                                       ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0005-Make-sure-.pc-files-are-installed-correctly.patch'                                                ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0006-Don-t-add-resource-files-to-LIBS-parameter.patch'                                                 ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0007-Prevent-debug-library-names-in-pkg-config-files.patch'                                            ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0008_5-hacky_non_priv_libs.patch'                                                                      ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0008-Fix-linking-against-shared-static-libpng.patch'                                                   ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0009-Fix-linking-against-static-D-Bus.patch'                                                           ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0010-Fix-linking-against-static-freetype2.patch'                                                       ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0011-Fix-linking-against-static-harfbuzz.patch'                                                        ,'p1','qtbase'),
-			 ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0012-Fix-linking-against-static-pcre.patch'                                                            ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0013-Fix-linking-against-shared-static-MariaDB.patch'                                                  ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0014-Fix-linking-against-shared-static-PostgreSQL.patch'                                               ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0015-Rename-qtmain-to-qt5main.patch'                                                                   ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0016-Build-dynamic-host-libraries.patch'                                                               ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0017-Enable-rpath-for-build-tools.patch'                                                               ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0018-Use-system-zlib-for-build-tools.patch'                                                            ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0019-Disable-determing-default-include-and-lib-dirs-at-qm.patch'                                       ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0020-Use-.dll.a-as-import-lib-extension.patch'                                                         ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0021-Merge-shared-and-static-library-trees.patch'                                                      ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0022-Allow-usage-of-static-version-with-CMake.patch'                                                   ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0023-Use-correct-pkg-config-static-flag.patch'                                                         ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0024-Fix-qt5_wrap_ui-macro.patch'                                                                      ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0025-Ignore-errors-about-missing-feature-static.patch'                                                 ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0026-Enable-and-fix-use-of-iconv.patch'                                                                ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0027-Ignore-failing-pkg-config-test.patch'                                                             ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0028-Include-uiviewsettingsinterop.h-correctly.patch'                                                  ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0029-Hardcode-linker-flags-for-libqwindows.dll.patch'                                                  ,'p1','qtbase'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/base/0030-Prevent-qmake-from-messing-static-lib-dependencies.patch'                                         ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0001-Fix-condition-for-_WIN32_IE-SHCreateItemFromParsingN.patch'    ,'p1','qtwinextras'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0001-Don-t-require-windows.h-when-using-native-Linux-gcc.patch'     ,'p1','qtactiveqt'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0002-Handle-win64-in-dumpcpp-and-MetaObjectGenerator-read.patch'    ,'p1','qtactiveqt'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0001-Add-profile-for-cross-compilation-with-mingw-w64.patch'        ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0009-Fix-linking-against-static-D-Bus.patch				'        ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0010-Don-t-try-to-use-debug-version-of-D-Bus-library.patch'         ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0005-Make-sure-.pc-files-are-installed-correctly.patch'             ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0007-Prevent-debug-library-names-in-pkg-config-files.patch'         ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0011-Fix-linking-against-static-freetype2.patch'                    ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0013-Fix-linking-against-static-pcre.patch'                         ,'p1','qtbase'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0016-Rename-qtmain-to-qt5main.patch'                                ,'p1','qtbase'),
 		],
-		#'run_post_patch' : [
-		#	'rm -rf src/3rdparty/angle include/QtANGLE/EGL',
-		#	'rm -rf src/3rdparty/angle include/QtANGLE/GLES2',
-		#	'rm -rf src/3rdparty/angle include/QtANGLE/GLES3',
-		#	'rm -rf src/3rdparty/angle include/QtANGLE/KHR',
-		#	'rm -rf src/3rdparty/pcre',
-		#	'rm -rf src/3rdparty/zlib',
-		#],
-		#'run_post_patch' : [
-		#	'if [ ! -f "{mingw_binpath}/pkg-config" ] ; then cp -nv "!CMD(which pkg-config)CMD!" "{mingw_binpath}/pkg-config" ; fi',
-		#	'if [ ! -f "{compile_prefix}/include/UIViewSettingsInterop.h" ] ; then cp -nv "{compile_prefix}/include/uiviewsettingsinterop.h" "{compile_prefix}/include/UIViewSettingsInterop.h" ; fi', # no clue why its lower case and why qt5 doesn't know either #fatal error: UIViewSettingsInterop.h: No such file or directory
-		#],
 		'env_exports' : {
 			'PKG_CONFIG' : '{cross_prefix_full}pkg-config',
 			'PKG_CONFIG_SYSROOT_DIR' : '/',
@@ -2371,13 +2353,13 @@ DEPENDS = {
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.6.tar.bz2',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.7.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject 
 		'env_exports' : {
 			'CFLAGS'   : '-DGRAPHITE2_STATIC',
 			'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		},
-		'_info' : { 'version' : '1.4.6', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.4.7', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
@@ -2391,9 +2373,9 @@ DEPENDS = {
 	
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.14.tar.gz',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.16.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.11.12', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.11.16', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
@@ -2744,6 +2726,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
+		'branch' : 'e6069fa9e883e0e637e0dd2023d444a07b4dc73c',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3060,9 +3043,9 @@ DEPENDS = {
 	},
 	'expat' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.2/expat-2.2.2.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.3/expat-2.2.3.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '2.2.2', 'fancy_name' : 'expat' },
+		'_info' : { 'version' : '2.2.3', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
@@ -3238,7 +3221,7 @@ DEPENDS = {
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
-		'branch' : 'c99874886185de0ecf53d0ce5a1a64d4173116f8', # revert to 477ce36f8e4bd6a177727f4ac32eba11864dd85d if failing
+		'branch' : '83a9482e8049c7eb96a305516fe5efca570b0a3a', # revert to c99874886185de0ecf53d0ce5a1a64d4173116f8 if failing
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (c99874)', 'fancy_name' : 'fftw3' },
@@ -3402,7 +3385,7 @@ DEPENDS = {
 	'libass' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
-		'branch' : '1be7dc0bdcf4ef44786bfc84c6307e6d47530a42', # latest still working on git..
+		'branch' : '6092e276de387133de4dfb17843a5d8d0b8de3f0', # latest still working on git..
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-silent-rules',
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
