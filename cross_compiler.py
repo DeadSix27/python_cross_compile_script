@@ -62,7 +62,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2','x265_multibit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2', 'x265_multibit', 'x264_10bit', 'x264_8bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
 #
 # ###################################################
 # ###################################################
@@ -120,8 +120,8 @@ _BASE_URL                = 'https://raw.githubusercontent.com/DeadSix27/python_c
 
 _MINGW_SCRIPT_URL        = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
 
-_GCC_VER                 = "7.1.0" # old was 6.3.0, but is not supported by me anymore.
-_MINGW_GIT_COMMIT_BRANCH = "1259532ff8f5a7ac625b2f28d499ee93a0c0841e"
+_GCC_VER                 = "7.2.0" # old was 7.1.0, 6.3.0, but is not supported by me anymore.
+_MINGW_GIT_COMMIT_BRANCH = "d3a74e38ba2a1ea3eb971b501d05cef364bb25ff"
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -1610,6 +1610,21 @@ PRODUCTS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
 	},
+	'x264_8bit' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.videolan.org/git/x264.git',
+		'rename_folder' : 'x264_8bit',
+		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_8bit.installed --enable-strip --enable-lavf --bit-depth=10 {cflag_string}',
+		'env_exports': {
+			'LAVF_LIBS' : '!CMD(pkg-config --libs libavformat libavcodec libavutil libswscale)CMD!',
+			'LAVF_CFLAGS' : '!CMD(pkg-config --cflags libavformat libavcodec libavutil libswscale)CMD!',
+			'SWSCALE_LIBS' : '!CMD(pkg-config --libs libswscale)CMD!',
+		},
+		'depends_on' : (
+			'libffmpeg',
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
+	},
 	'cuetools' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/svend/cuetools.git',
@@ -1724,7 +1739,7 @@ PRODUCTS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_10bit',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': 'source',
@@ -1735,7 +1750,7 @@ PRODUCTS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_multibit',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit.installed',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit.installed',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
@@ -2165,12 +2180,12 @@ DEPENDS = {
 	'libsqlite3' : {
 		'repo_type' : 'archive',
 		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
-		'url' : 'https://www.sqlite.org/2017/sqlite-autoconf-3190300.tar.gz',
+		'url' : 'https://www.sqlite.org/2017/sqlite-autoconf-3200100.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : '3.19.3', 'fancy_name' : 'libsqlite3' },
+		'_info' : { 'version' : '3.20.1', 'fancy_name' : 'libsqlite3' },
 	},
 	'libcurl' : {
 		'repo_type' : 'git',
@@ -2184,7 +2199,7 @@ DEPENDS = {
 	},
 	'boost' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.64.0/boost_1_64_0.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.65.0/boost_1_65_0.tar.bz2',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2196,7 +2211,7 @@ DEPENDS = {
 			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={compile_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
-		'_info' : { 'version' : '1.64', 'fancy_name' : 'Boost' },
+		'_info' : { 'version' : '1.65', 'fancy_name' : 'Boost' },
 	},
 	'mujs' : {
 		'repo_type' : 'git',
@@ -2210,21 +2225,21 @@ DEPENDS = {
 	{
 		# 'debug_downloadonly' : True,
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.23.tar.gz',
+		'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.30.tar.bz2',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'patches' : (
-			('https://dsix.site/0001-pcre2-iswild.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', 'p1'),
 		),
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
 		'depends_on' : [
 			'bzip2',
 		],
-		'_info' : { 'version' : '10.23', 'fancy_name' : 'pcre2' },
+		'_info' : { 'version' : '10.30', 'fancy_name' : 'pcre2' },
 	},
 	
 	'angle' : {
-		'branch' : '53440f39c8c21c0caec2efaf7d88f211658e113c', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : '72b4e1e5bbbb2b6749bf49bdba287a85abade649', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2343,23 +2358,23 @@ DEPENDS = {
 	},
 	'libpng' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.29/libpng-1.6.29.tar.gz',
+		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.32/libpng-1.6.32.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.29-apng.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.32-apng.patch', 'p1'),
 		],
 		'depends_on' : [ 'zlib', ],
-		'_info' : { 'version' : '1.6.29', 'fancy_name' : 'libpng' },
+		'_info' : { 'version' : '1.6.32', 'fancy_name' : 'libpng' },
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.4.7.tar.bz2',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.5.0.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject 
 		'env_exports' : {
 			'CFLAGS'   : '-DGRAPHITE2_STATIC',
 			'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		},
-		'_info' : { 'version' : '1.4.7', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.5.0', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
@@ -2379,7 +2394,7 @@ DEPENDS = {
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.acc.umu.se/pub/gnome/sources/glib/2.53/glib-2.53.2.tar.xz',
+		'url' : 'https://ftp.acc.umu.se/pub/gnome/sources/glib/2.53/glib-2.53.7.tar.xz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre' ],
 		'patches' : [
@@ -2395,7 +2410,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
-		'_info' : { 'version' : '2.53.2', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '2.53.7', 'fancy_name' : 'glib2' },
 	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
@@ -2484,7 +2499,7 @@ DEPENDS = {
 	},
 	'lzo': {
 		'repo_type' : 'archive',
-		'url' : 'http://ftp.oregonstate.edu/.1/blfs/conglomeration/lzo/lzo-2.10.tar.gz',
+		'url' : 'http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz', #http://ftp.oregonstate.edu/.1/blfs/conglomeration/lzo/lzo-2.10.tar.gz
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'version' : '2.10',
 		'_info' : { 'version' : '2.10', 'fancy_name' : 'lzo' },
@@ -2616,7 +2631,7 @@ DEPENDS = {
 	},
 	'luajit': {
 		'repo_type' : 'git',
-		'url' : 'https://luajit.org/git/luajit-2.0.git',
+		'url' : 'http://luajit.org/git/luajit-2.0.git',
 		'needs_configure' : False,
 		'custom_cflag' : '-O3', # doesn't like march's past ivybridge (yet), so we override it.
 		'install_options' : 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static FILE_T=luajit.exe PREFIX={compile_prefix}',
@@ -2735,10 +2750,10 @@ DEPENDS = {
 		'url' : 'https://github.com/google/snappy.git',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/snappy/0001-snappy-remove-tests-and-shared', 'p1'),
-		],
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DSNAPPY_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release',
+		'run_post_install': (
+			'rm -vf {compile_prefix}/lib/libsnappy.dll.a',
+		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsnappy' },
 	},
 	'gmp' : {
@@ -2768,7 +2783,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.14.tar.xz',
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.14.tar.xz', #todo https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.0.tar.xz
 		'configure_options':
 			'--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-included-unistring '
 			'--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
@@ -2919,7 +2934,7 @@ DEPENDS = {
 	},
 	'sdl2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.libsdl.org/release/SDL2-2.0.5.tar.gz',
+		'url' : 'https://www.libsdl.org/tmp/SDL-2.0.6-11330.tar.gz',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2-2.0.5.xinput.diff', "p0"),
 		),
@@ -3008,9 +3023,9 @@ DEPENDS = {
 	},
 	'orc' : {
 		'repo_type' : 'archive',
-		'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.26.tar.xz',
+		'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.27.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.4.26', 'fancy_name' : 'orc' },
+		'_info' : { 'version' : '0.4.27', 'fancy_name' : 'orc' },
 	},
 	'libschroedinger' : {
 		'repo_type' : 'archive',
@@ -3043,17 +3058,17 @@ DEPENDS = {
 	},
 	'expat' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.3/expat-2.2.3.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/expat/files/expat/2.2.4/expat-2.2.4.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '2.2.3', 'fancy_name' : 'expat' },
+		'_info' : { 'version' : '2.2.4', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
-		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz',
+		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.5.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python --enable-tests=no --enable-programs=no',
-		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', 'p1'),
-		],
+		# 'patches' : [ #todo remake this patch
+			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', 'p1'), 
+		# ],
 		'run_post_patch' : [
 			'autoreconf -fiv',
 		],
@@ -3063,7 +3078,7 @@ DEPENDS = {
 		'depends_on': [
 			'liblzma', 'iconv'
 		],
-		'_info' : { 'version' : '2.9.4', 'fancy_name' : 'libxml2' },
+		'_info' : { 'version' : '2.9.5', 'fancy_name' : 'libxml2' },
 	},
 	'libxvid' : {
 		'repo_type' : 'archive',
@@ -3116,7 +3131,7 @@ DEPENDS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': 'source',
@@ -3127,7 +3142,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={compile_prefix}',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={compile_prefix}',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'run_post_make' : [
@@ -3147,7 +3162,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_10bit',
 		'source_subfolder' : 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
 		],
@@ -3163,7 +3178,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_12bit',
 		'source_subfolder' : 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
 		],
@@ -3346,9 +3361,9 @@ DEPENDS = {
 	},
 	'libvpx' : {
 		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around f22b828d685adee4c7a561990302e2d21b5e0047 if it stops.
-		#'branch' : 'tags/v1.6.1',
+		'branch' : 'd49a1a5329ea43968faaf295f7da5f72b28f971e',
 		'url' : 'https://chromium.googlesource.com/webm/libvpx', #
-		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --prefix={compile_prefix} --disable-shared --enable-static --enable-vp9-highbitdepth', # examples,tools crash with x86_64-w64-mingw32-ld: unrecognised emulation mode: 64
+		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --prefix={compile_prefix} --disable-shared --enable-static --enable-vp9-highbitdepth --disable-install-docs --disable-unit-tests --as=yasm', # examples,tools crash with x86_64-w64-mingw32-ld: unrecognised emulation mode: 64
 		'env_exports' : {
 			'CROSS' : '{cross_prefix_bare}',
 		},
@@ -3404,12 +3419,12 @@ DEPENDS = {
 			'CXX'    : '{cross_prefix_bare}g++',
 		},
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/uclouvain/openjpeg/archive/v2.1.2.tar.gz',
-		'folder_name': 'openjpeg-2.1.2',
+		'url' : 'https://github.com/uclouvain/openjpeg/archive/v2.2.0.tar.gz',
+		'folder_name': 'openjpeg-2.2.0',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
-		'_info' : { 'version' : '2.1.2', 'fancy_name' : 'openjpeg' },
+		'_info' : { 'version' : '2.2.0', 'fancy_name' : 'openjpeg' },
 	},
 	'intel_quicksync_mfx' : {
 		'repo_type' : 'git',

@@ -8,7 +8,7 @@ It comes with a CLI to compile specific lists of "products/dependencies" or a si
 
 This project was heavily influenced by rdp's [ffmpeg-windows-build-helpers](https://github.com/rdp/ffmpeg-windows-build-helpers).
 
-_GCC Version is 7.1.0 and has posix threading (mutex) support._
+_GCC Version is 7.2.0 and has posix threading (mutex) support._
 
 Menu:
 [->How to use it<-](#usage)
@@ -56,7 +56,7 @@ mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
 gnutls      - gperf
 angle       - gyp
 vapoursynth - p7zip
-flac        - docbook-to-man
+flac,expat  - docbook-to-man / docbook2x-man
 youtube-dl  - pando
 x264        - nasm 2.13
 ```

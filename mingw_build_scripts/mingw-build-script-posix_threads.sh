@@ -1,5 +1,5 @@
 #!/bin/bash
-script_ver='3.6.9' #3.6.7 is without weak refs patch.
+script_ver='3.7.0' #3.6.7 is without weak refs patch.
 # local version: 4
 ################################################################################
 # MingGW-w64 Build Script
@@ -76,7 +76,7 @@ target_x86_64='x86_64-w64-mingw32'
 ## Versions
 mingw_w64_release_ver='git' #4.0.6
 mingw_branch='1259532ff8f5a7ac625b2f28d499ee93a0c0841e'
-gcc_release_ver='7.1.0'
+gcc_release_ver='7.2.0'
 gcc_old_release_ver='6.3.0'
 mpfr_release_ver='3.1.5' #3.1.3
 mpc_release_ver='1.0.3'
@@ -465,52 +465,29 @@ fi
 }
 
 download_extract () {
-local download_urls=("$1" "$2")
-shift 2 
-
-
-for download_url in "${download_urls[@]}"; do
-archive="${download_url##*/}"
-package_name="${archive%.tar*}"
-if [[ -d "$package_name" ]]; then
-  return 0
-fi
-
-case "$archive" in
-  *.tar.gz ) archive_type='gzip' ;;
-  *.tar.bz2 ) archive_type='bzip2' ;;
-  *.tar.xz ) archive_type='xz' ;;
-esac
-if [[ ! -f "$archive" ]]; then
-  build_progress "$archive" 'Downloading'
-  (wget -nv -t 5 "$download_url" > >(build_log) 2>&1) || (wget -nv -t 5 "$download_url" > >(build_log) 2>&1) || exit "unable to download $download_url"
-  if [[ -f "$archive" ]]; then
-    build_progress 'done'
-  else
-    exit 1
-  fi
-fi
-
-if [[ ! -d "$package_name" ]]; then
-  build_progress "$archive" 'Extracting'
-  if "$archive_type" -d <"$archive" | pax -r ; then
-    build_progress 'done'
-    return 0
-  else
-    rm -rf "$archive" "$package_name"
-    build_progress "$archive" 'Downloading'
-    wget -nv "$download_url" > >(build_log) 2>&1
-    build_progress 'done'
-    build_progress "$archive" 'Extracting'
-    "$archive_type" -d <"$archive" | pax -r
-    build_progress 'done'
-  fi
-fi
-done
-
-if [[ ! -d "$package_name" ]]; then
-  print_error
-fi
+	local url="$1"
+	local package="${url##*/}"
+	local package_folder=$(echo $package | cut -f 1 -d '.')
+	
+	build_progress "$package" 'Downloading'
+	wget "$url"
+	if [[ -f "$package" ]]; then
+		build_progress "$package" 'Extracting'
+		tar -xf "$package"
+	else
+		echo "Package did not properly download"
+		print_error
+	fi
+	if [[ -d "$package_folder" ]]; then
+		echo "Package did not properly extract to: $package_folder"
+		exit 1
+	else
+		print_error 
+	fi
+	
+	if [[ ! -d "$package_name" ]]; then
+		print_error
+	fi
 }
 
 clean_build () {
@@ -648,7 +625,7 @@ build_mingw_w64 () {
 local mingw_w64_target="$1"
 local mingw_w64_prefix="$2"
 
-if [ "$gcc_ver" = "6.3.0" -o "$gcc_ver" = "7.1.0" ]; then # We only support 6.3.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
+if [ "$gcc_ver" = "6.3.0" -o "$gcc_ver" = "7.1.0" -o "$gcc_ver" = "7.2.0" ]; then # We only support 6.3.0/7.1.0/7.2.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
 	cd "mingw-w64-$mingw_w64_ver"
 		echo "Patching mingw headers"
 		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
@@ -740,7 +717,7 @@ cd "$pkgs_dir" || print_error
 create_pkg_dirs 'gcc'
 cd "$pkgs_dir/gcc/source" || print_error
 if [[ "$gcc_ver" != 'svn' ]]; then
-	download_extract "https://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2" "ftp://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.bz2"
+	download_extract "https://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.gz" "ftp://ftp.gnu.org/gnu/gcc/gcc-$gcc_ver/gcc-$gcc_ver.tar.gz"
 	if [ "$gcc_ver" = "6.3.0" ]; then #DeadSix27: Patch gcc 6.3.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
 		cd gcc-"$gcc_ver"
 			echo "Patching GCC 6.3.0 weak refs"
@@ -750,22 +727,13 @@ if [[ "$gcc_ver" != 'svn' ]]; then
 			echo "Done"
 		cd ..
 	fi
-	if [ "$gcc_ver" = "7.1.0" ]; then #DeadSix27: Patch gcc 7.1.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
+	if [ "$gcc_ver" = "7.1.0" -o "$gcc_ver" = "7.2.0" ]; then #DeadSix27: Patch gcc 7.1.0/7.2.0 for mingw: https://github.com/Alexpux/MINGW-packages/issues/1580
 		cd gcc-"$gcc_ver"
-			echo "Patching GCC 7.1.0 weak refs"
+			echo "Patching GCC 7.1.0/7.2.0 weak refs"
 			curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch" -O --fail || exit 1
 			echo "applying patch"
 			patch -p1 < "0001-gcc_7_1_0_weak_refs_x86_64.patch"
 			echo "Done"
-			# https://gcc.gnu.org/ml/gcc-help/2017-05/msg00152.html
-			# curl --retry 5 "https://dsix.site/gcc-7.1.0.libstdcpp-in-out.patch" -O --fail || exit 1
-			# echo "applying libstdc++ patch"
-			# patch -p1 < "gcc-7.1.0.libstdcpp-in-out.patch"
-			# echo "Done"
-			# cd 'libstdc++-v3'
-			# sed -i 's/\b__in\b/___in/g' include/ext/random.tcc include/ext/vstring.tcc include/std/utility include/std/tuple include/std/istream include/tr2/bool_set.tcc include/tr2/bool_set include/bits/basic_string.h include/bits/basic_string.tcc include/bits/locale_facets.h include/bits/istream.tcc include/tr1/utility include/tr1/tuple
-			# sed -i 's/\b__out\b/___out/g' include/ext/random.tcc include/ext/algorithm include/ext/pb_ds/detail/debug_map_base.hpp include/std/ostream include/std/thread include/tr2/bool_set include/bits/ostream.tcc include/bits/regex.tcc include/bits/stl_algo.h include/bits/locale_conv.h include/bits/regex.h include/bits/ostream_insert.h include/tr1/regex include/parallel/algo.h include/parallel/set_operations.h include/parallel/multiway_merge.h include/parallel/unique_copy.h include/experimental/algorithm config/locale/dragonfly/c_locale.h config/locale/generic/c_locale.h config/locale/gnu/c_locale.h
-			# cd ..
 		cd ..
 	fi
 else
