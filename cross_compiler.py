@@ -1614,7 +1614,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/x264.git',
 		'rename_folder' : 'x264_8bit',
-		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_8bit.installed --enable-strip --enable-lavf --bit-depth=10 {cflag_string}',
+		'configure_options': '--host={compile_target} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_8bit.installed --enable-strip --enable-lavf --bit-depth=8 {cflag_string}',
 		'env_exports': {
 			'LAVF_LIBS' : '!CMD(pkg-config --libs libavformat libavcodec libavutil libswscale)CMD!',
 			'LAVF_CFLAGS' : '!CMD(pkg-config --cflags libavformat libavcodec libavutil libswscale)CMD!',
