@@ -30,7 +30,6 @@ Menu:
 - x264 _(10bit)_
 - x265 _(Multi-bit (12,10,8))_
 
-#### See [->VERSIONS.md<-](VERSIONS.md) for a full list of dependencies, products and their respective versions
 
 ---
 
@@ -56,7 +55,7 @@ mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
 gnutls      - gperf
 angle       - gyp
 vapoursynth - p7zip
-flac,expat  - docbook-to-man / docbook2x-man
+flac,expat  - docbook-to-man / docbook2x
 youtube-dl  - pando
 x264        - nasm 2.13
 ```
