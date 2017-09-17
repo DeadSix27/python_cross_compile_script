@@ -479,6 +479,7 @@ download_extract () {
 		print_error
 	fi
 	if [[ -d "$package_folder" ]]; then
+		build_progress 'done'
 		return 0 
 	else
 		echo "Package did not properly extract to: $package_folder"
