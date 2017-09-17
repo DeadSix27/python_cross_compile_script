@@ -3043,7 +3043,7 @@ DEPENDS = {
 	},
 	'freetype2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://download.savannah.gnu.org/releases/freetype/freetype-2.8.tar.gz',
+		'url' : 'https://downloads.sourceforge.net/project/freetype/freetype2/2.8/freetype-2.8.tar.gz',
 		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-zlib={compile_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
 		'patches' : [
