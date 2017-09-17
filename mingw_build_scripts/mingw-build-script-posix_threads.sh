@@ -479,13 +479,9 @@ download_extract () {
 		print_error
 	fi
 	if [[ -d "$package_folder" ]]; then
-		echo "Package did not properly extract to: $package_folder"
-		exit 1
+		return 0 
 	else
-		print_error 
-	fi
-	
-	if [[ ! -d "$package_name" ]]; then
+		echo "Package did not properly extract to: $package_folder"
 		print_error
 	fi
 }
