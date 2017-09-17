@@ -467,10 +467,10 @@ fi
 download_extract () {
 	local url="$1"
 	local package="${url##*/}"
-	local package_folder=$(echo $package | cut -f 1 -d '.')
+	local package_folder="${package%.tar*}"
 	
 	build_progress "$package" 'Downloading'
-	wget "$url"
+	wget -c -t 10 -T 20 "$url"
 	if [[ -f "$package" ]]; then
 		build_progress "$package" 'Extracting'
 		tar -xf "$package"
