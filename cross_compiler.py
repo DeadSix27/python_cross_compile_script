@@ -62,7 +62,7 @@ _ENABLE_STATUSFILE = True # NOT IMPLEMENTED YET !
 _STATUS_FILE       = os.getcwd() + "/status_file" # NOT IMPLEMENTED YET !
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2', 'x265_multibit', 'x264_10bit', 'x264_8bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'mpv', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
+PRODUCT_ORDER      = ( 'cuetools', 'aria2', 'mpv', 'x265_multibit', 'x264_10bit', 'x264_8bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
 #
 # ###################################################
 # ###################################################
@@ -121,7 +121,7 @@ _BASE_URL                = 'https://raw.githubusercontent.com/DeadSix27/python_c
 _MINGW_SCRIPT_URL        = '/mingw_build_scripts/mingw-build-script-posix_threads.sh' # with win32 posix threading support
 
 _GCC_VER                 = "7.2.0" # old was 7.1.0, 6.3.0, but is not supported by me anymore.
-_MINGW_GIT_COMMIT_BRANCH = "d3a74e38ba2a1ea3eb971b501d05cef364bb25ff"
+_MINGW_GIT_COMMIT_BRANCH = "705bdc43a143e39bb55bfc1369edc769b4271654"
 
 _DEBUG = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 
@@ -609,6 +609,7 @@ class CrossCompileScript:
 					olink = response.geturl()
 
 		except Exception as e:
+			print("Error downloading: " + link)
 			traceback.print_exc()
 			f.close()
 
@@ -2239,7 +2240,7 @@ DEPENDS = {
 	},
 	
 	'angle' : {
-		'branch' : '72b4e1e5bbbb2b6749bf49bdba287a85abade649', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : '634909433d563285106fa9c48cf98581cb8b657b', #angle seems to break often so we settle on the newest working commit for a while.
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -3043,7 +3044,7 @@ DEPENDS = {
 	},
 	'freetype2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://download.savannah.gnu.org/releases/freetype/freetype-2.8.tar.gz',
+		'url' : 'https://sourceforge.net/projects/freetype/files/freetype2/2.8.1/freetype-2.8.1.tar.bz2',
 		'configure_options': '--host={compile_target} --build=x86_64-linux-gnu --prefix={compile_prefix} --disable-shared --enable-static --with-zlib={compile_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
 		'patches' : [
@@ -3054,7 +3055,7 @@ DEPENDS = {
 		#'run_post_install': (
 		#	'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		#),
-		'_info' : { 'version' : '2.8', 'fancy_name' : 'freetype2' },
+		'_info' : { 'version' : '2.8.1', 'fancy_name' : 'freetype2' },
 	},
 	'expat' : {
 		'repo_type' : 'archive',
@@ -3360,8 +3361,8 @@ DEPENDS = {
 		'_info' : { 'version' : '0.2.35', 'fancy_name' : 'zvbi' },
 	},
 	'libvpx' : {
-		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around f22b828d685adee4c7a561990302e2d21b5e0047 if it stops.
-		'branch' : 'd49a1a5329ea43968faaf295f7da5f72b28f971e',
+		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around d49a1a5329ea43968faaf295f7da5f72b28f971e if it stops.
+		'branch' : '2aacfa1acd016864af0f996193e957286c494603',
 		'url' : 'https://chromium.googlesource.com/webm/libvpx', #
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --prefix={compile_prefix} --disable-shared --enable-static --enable-vp9-highbitdepth --disable-install-docs --disable-unit-tests --as=yasm', # examples,tools crash with x86_64-w64-mingw32-ld: unrecognised emulation mode: 64
 		'env_exports' : {

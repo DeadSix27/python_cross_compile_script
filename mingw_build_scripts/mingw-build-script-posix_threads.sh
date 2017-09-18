@@ -75,12 +75,12 @@ target_x86_64='x86_64-w64-mingw32'
 
 ## Versions
 mingw_w64_release_ver='git' #4.0.6
-mingw_branch='1259532ff8f5a7ac625b2f28d499ee93a0c0841e'
+mingw_branch='705bdc43a143e39bb55bfc1369edc769b4271654'
 gcc_release_ver='7.2.0'
 gcc_old_release_ver='6.3.0'
-mpfr_release_ver='3.1.5' #3.1.3
+mpfr_release_ver='3.1.6' #3.1.3
 mpc_release_ver='1.0.3'
-binutils_release_ver='2.28' #2.27
+binutils_release_ver='2.29' #2.27
 gmp_release_ver='6.1.2' # 6.1.1
 isl_release_ver='0.16.1'
 pthreads_w32_release_ver='2-9-1'
@@ -149,6 +149,7 @@ EOF
 
 print_error ()
 {
+  printf "$@"
   printf 'error\n\nSee build.log for more details.\n'
   exit 1
 }
@@ -467,26 +468,18 @@ fi
 download_extract () {
 	local url="$1"
 	local package="${url##*/}"
-	local package_folder=$(echo $package | cut -f 1 -d '.')
+	local package_folder="${package%.tar*}"
 	
 	build_progress "$package" 'Downloading'
-	wget "$url"
+	curl --retry 5 "$url" -O --fail || exit 1
 	if [[ -f "$package" ]]; then
 		build_progress "$package" 'Extracting'
 		tar -xf "$package"
 	else
-		echo "Package did not properly download"
-		print_error
+		print_error "Package did not properly download"
 	fi
-	if [[ -d "$package_folder" ]]; then
-		echo "Package did not properly extract to: $package_folder"
-		exit 1
-	else
-		print_error 
-	fi
-	
-	if [[ ! -d "$package_name" ]]; then
-		print_error
+	if [[ ! -d "$package_folder" ]]; then
+		print_error "Package did not properly extract to: $package_folder"
 	fi
 }
 
@@ -627,19 +620,28 @@ local mingw_w64_prefix="$2"
 
 if [ "$gcc_ver" = "6.3.0" -o "$gcc_ver" = "7.1.0" -o "$gcc_ver" = "7.2.0" ]; then # We only support 6.3.0/7.1.0/7.2.0, patch the directx headers to work with vlc snd possibly other things, credits to: https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-headers-git for the patches.
 	cd "mingw-w64-$mingw_w64_ver"
-		echo "Patching mingw headers"
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0004-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch" -O --fail || exit 1
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0005-bessel_complex.patch" -O --fail || exit 1
-		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0006-processor_format.patch" -O --fail || exit 1
-		echo "applying patch 0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch"
-		patch -p1 < "0003-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch"
-		echo "applying patch 0004-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch"
-		patch -p1 < "0004-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch"
-		echo "applying patch 0005-bessel_complex.patch"
-		patch -p1 < "0005-bessel_complex.patch"
-		echo "applying patch 0006-processor_format.patch"
-		patch -p1 < "0006-processor_format.patch"
+		echo "Downloading DirectX patches"
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0001-workaround-for-isystem-flag.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0002-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0003-add-32-bit-defs-for-schannel-security.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0004-d311-add-missing-d3d11-feature-enum.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0005-dxgi-add-dxgi1_3.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0006-d3d11-add-d3d11_2.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0007-d3d11-add-d3d11_3.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0008-bessel_complex.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0009-processor_format.patch" -O --fail || exit 1
+		curl --retry 5 "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_build_scripts/patches/0010-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch" -O --fail || exit 1
+		echo "Applying DirectX Patches"
+		patch -p1 < "0001-workaround-for-isystem-flag.patch" || exit 1
+		patch -p1 < "0002-dxgi-Add-missing-dxgi-1.2-structs-and-interfaces.patch" || exit 1
+		patch -p1 < "0003-add-32-bit-defs-for-schannel-security.patch" || exit 1
+		patch -p1 < "0004-d311-add-missing-d3d11-feature-enum.patch" || exit 1
+		patch -p1 < "0005-dxgi-add-dxgi1_3.patch" || exit 1
+		patch -p1 < "0006-d3d11-add-d3d11_2.patch" || exit 1
+		patch -p1 < "0007-d3d11-add-d3d11_3.patch" || exit 1
+		patch -p1 < "0008-bessel_complex.patch" || exit 1
+		patch -p1 < "0009-processor_format.patch" || exit 1
+		patch -p1 < "0010-d3d11-Add-missing-d3d11-1.1-structs-and-interfaces.patch" || exit 1
 		echo "Done"
 	cd ..
 fi
