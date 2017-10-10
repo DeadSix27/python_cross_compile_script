@@ -2200,7 +2200,7 @@ DEPENDS = {
 	},
 	'boost' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.65.0/boost_1_65_0.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.65.1/boost_1_65_1.tar.bz2',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2212,7 +2212,7 @@ DEPENDS = {
 			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={compile_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
-		'_info' : { 'version' : '1.65', 'fancy_name' : 'Boost' },
+		'_info' : { 'version' : '1.65.1', 'fancy_name' : 'Boost' },
 	},
 	'mujs' : {
 		'repo_type' : 'git',
@@ -2240,7 +2240,7 @@ DEPENDS = {
 	},
 	
 	'angle' : {
-		'branch' : '634909433d563285106fa9c48cf98581cb8b657b', #angle seems to break often so we settle on the newest working commit for a while.
+		'branch' : 'd63d0007c1192063eef1e409de681e4fb6f40041', #angle seems to break often so we settle on the newest working commit for a while. #old: a9c60e9f9a23e78d0d2aefca1f125ee4f715a9ee
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
 		'patches' : (
@@ -2278,7 +2278,7 @@ DEPENDS = {
 		],
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
-		'url' : 'https://download.qt.io/official_releases/qt/5.9/5.9.1/single/qt-everywhere-opensource-src-5.9.1.tar.xz',
+		'url' : 'https://download.qt.io/official_releases/qt/5.9/5.9.2/single/qt-everywhere-opensource-src-5.9.2.tar.xz',
 		'configure_options' :
 			' -opensource'
 			' -force-pkg-config'
@@ -2342,7 +2342,7 @@ DEPENDS = {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 			#'OPENSSL_LIBS' : '!CMD({cross_prefix_full}pkg-config --libs-only-l openssl)CMD!',
 		},
-		'_info' : { 'version' : '5.8.0', 'fancy_name' : 'QT5' },
+		'_info' : { 'version' : '5.9.1', 'fancy_name' : 'QT5' },
 	},
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
@@ -2359,23 +2359,23 @@ DEPENDS = {
 	},
 	'libpng' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.32/libpng-1.6.32.tar.xz',
+		'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.xz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.32-apng.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.34-apng.patch', 'p1'),
 		],
 		'depends_on' : [ 'zlib', ],
-		'_info' : { 'version' : '1.6.32', 'fancy_name' : 'libpng' },
+		'_info' : { 'version' : '1.6.34', 'fancy_name' : 'libpng' },
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.5.0.tar.bz2',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.5.1.tar.bz2',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject 
 		'env_exports' : {
 			'CFLAGS'   : '-DGRAPHITE2_STATIC',
 			'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		},
-		'_info' : { 'version' : '1.5.0', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.5.1', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
@@ -2389,13 +2389,13 @@ DEPENDS = {
 	
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.16.tar.gz',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.11.20.tar.gz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.11.16', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.11.20', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.acc.umu.se/pub/gnome/sources/glib/2.53/glib-2.53.7.tar.xz',
+		'url' : 'https://ftp.acc.umu.se/pub/gnome/sources/glib/2.54/glib-2.54.1.tar.xz',
 		'configure_options' : '--host={compile_target} --prefix={compile_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre' ],
 		'patches' : [
@@ -2411,7 +2411,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
-		'_info' : { 'version' : '2.53.7', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '2.54.1', 'fancy_name' : 'glib2' },
 	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
@@ -2590,7 +2590,10 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/kcat/openal-soft.git',
 		'needs_configure' : False,
+		# 'branch' : '46f18ba114831ff26e8f270c6b5c881b45838439',
 		'is_cmake' : True,
+		# 'source_subfolder' : '_build',
+		'custom_cflag' : '-O3', # native tools have to use the same march as end product else it fails*
 		'cmake_options': 
 			'. {cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={compile_target}'
 			' -DCMAKE_INSTALL_PREFIX={compile_prefix} -DCMAKE_FIND_ROOT_PATH='
@@ -2615,7 +2618,7 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.3',
 		'_info' : { 'version' : '3.6', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
@@ -2623,7 +2626,7 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/vapoursynth_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool',
+		'make_options': 'PREFIX={compile_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R39',
 		'packages': {
 			'ubuntu' : [ 'p7zip-full' ],
 			'fedora' : [ 'p7zip.' ],
@@ -2742,7 +2745,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : 'e6069fa9e883e0e637e0dd2023d444a07b4dc73c',
+		'branch' : 'dc68ac8557b34975c3662153d524b6fc05b99e00', #last working: e6069fa9e883e0e637e0dd2023d444a07b4dc73c
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -2784,7 +2787,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.14.tar.xz', #todo https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.0.tar.xz
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.5/gnutls-3.5.15.tar.xz', #todo https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.0.tar.xz
 		'configure_options':
 			'--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --with-included-unistring '
 			'--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
@@ -2807,7 +2810,7 @@ DEPENDS = {
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'gperf' ],
 		},
-		'_info' : { 'version' : '3.5.14', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.5.15', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -2879,7 +2882,7 @@ DEPENDS = {
 	'libwebp' : { # why can't everything be so easy to compile
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/webm/libwebp',
-		'branch' : 'e4eb458741f61a95679a44995c212b5f412cf5a1',
+		'branch' : '082757087332f55c7daa5a869a19f1598d0be401', # old: e4eb458741f61a95679a44995c212b5f412cf5a1
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libwebp' },
 	},
@@ -3065,7 +3068,7 @@ DEPENDS = {
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
-		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.5.tar.gz',
+		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.6.tar.gz',
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --without-python --enable-tests=no --enable-programs=no',
 		# 'patches' : [ #todo remake this patch
 			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', 'p1'), 
@@ -3079,7 +3082,7 @@ DEPENDS = {
 		'depends_on': [
 			'liblzma', 'iconv'
 		],
-		'_info' : { 'version' : '2.9.5', 'fancy_name' : 'libxml2' },
+		'_info' : { 'version' : '2.9.6', 'fancy_name' : 'libxml2' },
 	},
 	'libxvid' : {
 		'repo_type' : 'archive',
@@ -3310,7 +3313,7 @@ DEPENDS = {
 	'libmysofa' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/hoene/libmysofa', 
-		'branch' : '65d92e6463537c9f7907b69c2c768a7c8c3a02b5', # the commit after (https://github.com/hoene/libmysofa/commit/41c9a75e83db49648a324209e62e47f7f9f4a5e4) fails to build, we stay here until that's resolved.
+		'branch' : '73a4bc12b5ad7c43018a794c8e72c031ebac9bfc', # old: 65d92e6463537c9f7907b69c2c768a7c8c3a02b5 the commit after (https://github.com/hoene/libmysofa/commit/41c9a75e83db49648a324209e62e47f7f9f4a5e4) fails to build, we stay here until that's resolved.
 		'source_subfolder' : '_build',
 		'needs_configure' : False,
 		'is_cmake' : True,
@@ -3361,8 +3364,8 @@ DEPENDS = {
 		'_info' : { 'version' : '0.2.35', 'fancy_name' : 'zvbi' },
 	},
 	'libvpx' : {
-		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around d49a1a5329ea43968faaf295f7da5f72b28f971e if it stops.
-		'branch' : '2aacfa1acd016864af0f996193e957286c494603',
+		'repo_type' : 'git', #master seems to work.. suprisingly .. go back to somewhere around 4cae64c32c65a70e7c7d228f885cfc4bce0d5c41 if it stops.
+		'branch' : 'e1ae3772da960ce616c6204491e7f57cb05dcd28',
 		'url' : 'https://chromium.googlesource.com/webm/libvpx', #
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --prefix={compile_prefix} --disable-shared --enable-static --enable-vp9-highbitdepth --disable-install-docs --disable-unit-tests --as=yasm', # examples,tools crash with x86_64-w64-mingw32-ld: unrecognised emulation mode: 64
 		'env_exports' : {
@@ -3401,7 +3404,7 @@ DEPENDS = {
 	'libass' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
-		'branch' : '6092e276de387133de4dfb17843a5d8d0b8de3f0', # latest still working on git..
+		'branch' : '9b874841274ef0262872c53f9b9eb5d2bc054c8f', # latest still working on git was: 6092e276de387133de4dfb17843a5d8d0b8de3f0
 		'configure_options': '--host={compile_target} --prefix={compile_prefix} --disable-shared --enable-static --enable-silent-rules',
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
@@ -3420,12 +3423,12 @@ DEPENDS = {
 			'CXX'    : '{cross_prefix_bare}g++',
 		},
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/uclouvain/openjpeg/archive/v2.2.0.tar.gz',
+		'url' : 'https://github.com/uclouvain/openjpeg/archive/v2.3.0.tar.gz',
 		'folder_name': 'openjpeg-2.2.0',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={compile_prefix} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
-		'_info' : { 'version' : '2.2.0', 'fancy_name' : 'openjpeg' },
+		'_info' : { 'version' : '2.3.0', 'fancy_name' : 'openjpeg' },
 	},
 	'intel_quicksync_mfx' : {
 		'repo_type' : 'git',
