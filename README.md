@@ -1,3 +1,5 @@
+[![Discord](https://img.shields.io/badge/Discord-Join-blue.svg)](https://discord.gg/gAvufS2)
+
 # A GNU/Linux to Windows cross-compile helper script 
 
 _python_cross_compile_script_ could be described as a wrapper for various build-helpers (Autotools,C-Make,Rake,..).
@@ -14,6 +16,8 @@ Menu:
 [->How to use it<-](#usage)
 [->How to configure it<-](#package-requirements-no-auto-check-yet)
 [->What it requires<-](#system-requirements)
+
+### Feel free to join my Discord: https://discord.gg/gAvufS2
 
 ### **Currently this script builds these products from git-master**
 - Aria2 
