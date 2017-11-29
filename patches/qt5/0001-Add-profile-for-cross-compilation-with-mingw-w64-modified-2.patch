@@ -1,6 +1,6 @@
-diff -Nur test_unpatched/mkspecs/mingw-w64-g++/qmake.conf test/mkspecs/mingw-w64-g++/qmake.conf
---- test_unpatched/mkspecs/mingw-w64-g++/qmake.conf	1970-01-01 01:00:00.000000000 +0100
-+++ test/mkspecs/mingw-w64-g++/qmake.conf	2017-10-24 07:29:35.643065430 +0200
+diff -Nur qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qmake.conf qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qmake.conf
+--- qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qmake.conf	1970-01-01 01:00:00.000000000 +0100
++++ qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qmake.conf	2017-11-29 10:09:40.588529798 +0100
 @@ -0,0 +1,127 @@
 +#
 +# qmake configuration for i686-w64-mingw32-g++ and x86_64-w64-mingw32-g++
@@ -126,12 +126,12 @@ diff -Nur test_unpatched/mkspecs/mingw-w64-g++/qmake.conf test/mkspecs/mingw-w64
 +QMAKE_LIBS_OPENGL_ES2       = -l$${LIBEGL_NAME} -l$${LIBGLESV2_NAME} -ld3d9 -ldxguid -lgdi32 -luser32
 +QMAKE_LIBS_OPENGL_ES2_DEBUG = -l$${LIBEGL_NAME} -l$${LIBGLESV2_NAME} -ld3d9 -ldxguid -lgdi32 -luser32
 +QMAKE_LIBS_COMPAT           = -ladvapi32 -lshell32 -lcomdlg32 -luser32 -lgdi32 -lws2_32
-+QMAKE_LIBS_QT_ENTRY         = -lmingw32 -lqt5main
++QMAKE_LIBS_QT_ENTRY         = -lmingw32 -lqtmain
 +
 +load(qt_config)
-diff -Nur test_unpatched/mkspecs/mingw-w64-g++/qplatformdefs.h test/mkspecs/mingw-w64-g++/qplatformdefs.h
---- test_unpatched/mkspecs/mingw-w64-g++/qplatformdefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ test/mkspecs/mingw-w64-g++/qplatformdefs.h	2017-10-24 07:02:55.717702300 +0200
+diff -Nur qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h
+--- qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h	1970-01-01 01:00:00.000000000 +0100
++++ qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h	2017-11-29 10:09:04.025059060 +0100
 @@ -0,0 +1,155 @@
 +/****************************************************************************
 +**
