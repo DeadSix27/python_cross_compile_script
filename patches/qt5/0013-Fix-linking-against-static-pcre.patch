@@ -1,15 +1,15 @@
 diff -Nur qt-everywhere-opensource-src-5.9.3/qtbase/src/corelib/tools/qregularexpression.cpp qt-everywhere-opensource-src-5.9.3.patched/qtbase/src/corelib/tools/qregularexpression.cpp
---- qt-everywhere-opensource-src-5.9.3/qtbase/src/corelib/tools/qregularexpression.cpp  2017-11-16 06:15:28.000000000 +0100
-+++ qt-everywhere-opensource-src-5.9.3.patched/qtbase/src/corelib/tools/qregularexpression.cpp  2017-11-29 16:15:24.815263359 +0100
+--- qt-everywhere-opensource-src-5.9.3/qtbase/src/corelib/tools/qregularexpression.cpp	2017-11-16 06:15:28.000000000 +0100
++++ qt-everywhere-opensource-src-5.9.3.patched/qtbase/src/corelib/tools/qregularexpression.cpp	2017-11-29 16:27:40.751582263 +0100
 @@ -56,6 +56,11 @@
-
+ 
  #define PCRE2_CODE_UNIT_WIDTH 16
-
+ 
 +#ifdef QT_STATIC
 +#define PCRE_STATIC
 +#define PCRE2_STATIC
-+#endif´
++#endif
 +
  #include <pcre2.h>
-
+ 
  QT_BEGIN_NAMESPACE
