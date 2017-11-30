@@ -575,6 +575,19 @@ class CrossCompileScript:
 			fullOutputPath = os.path.join(outputPath,fileName)
 			urllib.request.urlretrieve(url, fullOutputPath)
 			return fullOutputPath
+			
+		if url.lower().startswith("file://"):
+			url = url.replace("file://","")
+			self.logger.info("Copying : {0}".format(url))
+			if outputFileName != None:
+				fileName = outputFileName
+			fullOutputPath = os.path.join(outputPath,fileName)
+			try:
+				shutil.copyfile(url, fullOutputPath)
+			except Exception as e:
+				print(e)
+				exit(1)
+			return fullOutputPath
 
 		req = requests.get(url, stream=True, headers = { "User-Agent": userAgent } )
 
@@ -877,12 +890,13 @@ class CrossCompileScript:
 	#:
 
 	def run_process(self,command,ignoreErrors = False, exitOnError = True):
-		self.logger.debug("Running '{0}' in '{1}'".format(command,os.getcwd()))
 		isSvn = False
 		if not isinstance(command, str):
 			command = " ".join(command) # could fail I guess
 		if command.lower().startswith("svn"):
 			isSvn = True
+		command = 'bash -c "' + command.replace('"','\\"') + '"'
+		self.logger.debug("Running '{0}' in '{1}'".format(command,os.getcwd()))
 		process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 		while True:
 			nextline = process.stdout.readline()
@@ -2085,7 +2099,7 @@ PRODUCTS = {
 			'libfile','libflac','boost','qt5', 'gettext'
 		],
 		'packages': {
-			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake' ],
+			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'docbook-xsl' ],
 		},
 		'run_post_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvmerge.exe',
@@ -2474,11 +2488,15 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git',
 		'needs_configure' : False,
+		'recursive_git' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_ICD=OFF -DCMAKE_C_FLAGS="${{CMAKE_C_FLAGS}} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_DEMOS=OFF -DBUILD_TESTS=OFF -DBUILD_LAYERS=OFF -DBUILD_VKJSON=OFF',
 		'is_cmake' : True,
 		'needs_make_install' : False,
 		'patches' : [
 			['https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vulkan-0001-cross-compile-static-linking-hacks.patch', 'p1'], #thanks shin :)
+		],
+		'run_post_patch' : [
+			'./update_external_sources.sh --no-build',
 		],
 		'run_post_make' : (
 			'cp -rv "include/vulkan/" "{target_prefix}/include/"',
@@ -2778,7 +2796,7 @@ DEPENDS = {
 		'cpu_count' : '1',
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
-		'url' : 'https://download.qt.io/official_releases/qt/5.9/5.9.2/single/qt-everywhere-opensource-src-5.9.2.tar.xz',
+		'url' : 'https://download.qt.io/official_releases/qt/5.9/5.9.3/single/qt-everywhere-opensource-src-5.9.3.tar.xz',
 		'configure_options' :
 			'-static'
 			' -no-dbus'
@@ -2838,14 +2856,14 @@ DEPENDS = {
 		'depends_on' : [ 'libwebp', 'freetype2', 'libpng', 'libjpeg-turbo', 'pcre2', 'd-bus', ],
 
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0001-Add-profile-for-cross-compilation-with-mingw-w64-modified-2.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0001-Don-t-require-windows.h-when-using-native-Linux-gcc.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0002-Handle-win64-in-dumpcpp-and-MetaObjectGenerator-read.patch','p1','qtbase'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0001-Add-profile-for-cross-compilation-with-mingw-w64-modified-2.patch','p1'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0001-Don-t-require-windows.h-when-using-native-Linux-gcc.patch','p1','qtactiveqt'],
+			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0002-Handle-win64-in-dumpcpp-and-MetaObjectGenerator-read.patch','p1','qtbase'],
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0005-Make-sure-.pc-files-are-installed-correctly.patch','p1','qtbase'],
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0006-Don-t-add-resource-files-to-LIBS-parameter.patch','p1','qtbase'],
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0007-Prevent-debug-library-names-in-pkg-config-files.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0013-Fix-linking-against-static-pcre.patch','p1','qtactiveqt'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0016-Rename-qtmain-to-qt5main.patch','p1','qtactiveqt'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0013-Fix-linking-against-static-pcre.patch','p1'],
+			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/qt5/0016-Rename-qtmain-to-qt5main.patch','p1','qtactiveqt'],
 		],
 		'_info' : { 'version' : '5.9.2', 'fancy_name' : 'QT5' },
 	},
@@ -3223,12 +3241,9 @@ DEPENDS = {
 	'libffmpeg' : {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/ffmpeg/0001-ffmpeg-vp9-use-superframe-split-bsf.patch','p1'], 
-		],
 		'rename_folder' : 'libffmpeg_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
-		'depends_on': [ 'ffmpeg_depends' ],
+		# 'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
 	'bzip2' : {
@@ -3293,7 +3308,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : 'ae9a2789247d075441191fec469a3a076d314c15', # Last working 'ae9a2789247d075441191fec469a3a076d314c15' 'dc68ac8557b34975c3662153d524b6fc05b99e00',
+		'branch' : 'c1689d4b9abbf4becadcbd4f436e2f3b2bf1c2f1', # Last working 'ae9a2789247d075441191fec469a3a076d314c15'
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
