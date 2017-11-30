@@ -2574,7 +2574,7 @@ DEPENDS = {
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
-			'libopenjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio',
+			'libopenjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers',
 		],
 	},
 	'taglib' : {
@@ -3237,6 +3237,22 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/vapoursynth-0003-windows-header.patch', 'p1'),
 		),
 
+	},
+	'amf_headers' : {
+		'debug_exitafter' : True,
+		'repo_type' : 'git',
+		'url' : 'https://github.com/GPUOpen-LibrariesAndSDKs/AMF',
+		'rename_folder' : 'amd_media_framework_headers',
+		"needs_configure": False,
+		"needs_make": False,
+		"needs_make_install": False,
+		'run_post_patch' : (
+			'if [ ! -f "already_done" ] ; then if [ ! -d "{target_prefix}/include/AMF" ]; then mkdir -p "{target_prefix}/include/AMF" ; fi ; fi',
+			'if [ ! -f "already_done" ] ; then pwd ; fi',
+			'if [ ! -f "already_done" ] ; then cp -av "amf/public/include/." "{target_prefix}/include/AMF" ; fi',
+			'if [ ! -f "already_done" ] ; then touch  "already_done" ; fi',
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'AMF (headers)' },
 	},
 	'libffmpeg' : {
 		'repo_type' : 'git',
