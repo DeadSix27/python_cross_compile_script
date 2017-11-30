@@ -1,21 +1,7 @@
-From 519d5f635192522a5dd273a19446071fd4c6970a Mon Sep 17 00:00:00 2001
-From: Martchus <martchus@gmx.net>
-Date: Fri, 3 Feb 2017 18:30:51 +0100
-Subject: [PATCH 01/31] Add profile for cross compilation with mingw-w64
-
----
- mkspecs/mingw-w64-g++/qmake.conf      | 126 +++++++++++++++++++++++++++
- mkspecs/mingw-w64-g++/qplatformdefs.h | 155 ++++++++++++++++++++++++++++++++++
- 2 files changed, 281 insertions(+)
- create mode 100644 mkspecs/mingw-w64-g++/qmake.conf
- create mode 100644 mkspecs/mingw-w64-g++/qplatformdefs.h
-
-diff --git a/mkspecs/mingw-w64-g++/qmake.conf b/mkspecs/mingw-w64-g++/qmake.conf
-new file mode 100644
-index 0000000000..c929483fcd
---- /dev/null
-+++ b/mkspecs/mingw-w64-g++/qmake.conf
-@@ -0,0 +1,126 @@
+diff -Nur qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qmake.conf qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qmake.conf
+--- qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qmake.conf	1970-01-01 01:00:00.000000000 +0100
++++ qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qmake.conf	2017-11-29 10:09:40.588529798 +0100
+@@ -0,0 +1,127 @@
 +#
 +# qmake configuration for i686-w64-mingw32-g++ and x86_64-w64-mingw32-g++
 +#
@@ -84,7 +70,8 @@ index 0000000000..c929483fcd
 +QMAKE_CXXFLAGS_GNUCXX1Z     = -std=gnu++1z
 +QMAKE_CXXFLAGS_SPLIT_SECTIONS = $$QMAKE_CFLAGS_SPLIT_SECTIONS
 +
-+QMAKE_INCDIR                =
++QMAKE_INCDIR                = $${QMAKE_INCDIR} $${CUSTOM_INC_DIR}
++QMAKE_LIBDIR                = $${QMAKE_LIBDIR} $${CUSTOM_LIB_DIR}
 +
 +QMAKE_RUN_CC                = $(CC) -c $(CFLAGS) $(INCPATH) -o $obj $src
 +QMAKE_RUN_CC_IMP            = $(CC) -c $(CFLAGS) $(INCPATH) -o $@ $<
@@ -133,20 +120,18 @@ index 0000000000..c929483fcd
 +                              $$system($${QMAKE_PKG_CONFIG} --static --libs harfbuzz) \
 +                              $$system($${QMAKE_PKG_CONFIG} --static --libs freetype2)
 +QMAKE_LIBS_NETWORK          = -lws2_32 -lcrypt32 -ldnsapi
-+QMAKE_LIBS_NETWORK_STATIC   = $${CROSS_COMPILE_PREFIX}/lib/openssl-1.0/libssl.a $${CROSS_COMPILE_PREFIX}/lib/openssl-1.0/libcrypto.a -lgdi32
++QMAKE_LIBS_NETWORK_STATIC   = -lgdi32 -liphlpapi
 +QMAKE_LIBS_DBUS             = $$system($${QMAKE_PKG_CONFIG} --static --libs dbus-1)
 +QMAKE_LIBS_OPENGL           = -lglu32 -lopengl32 -lgdi32 -luser32
 +QMAKE_LIBS_OPENGL_ES2       = -l$${LIBEGL_NAME} -l$${LIBGLESV2_NAME} -ld3d9 -ldxguid -lgdi32 -luser32
 +QMAKE_LIBS_OPENGL_ES2_DEBUG = -l$${LIBEGL_NAME} -l$${LIBGLESV2_NAME} -ld3d9 -ldxguid -lgdi32 -luser32
 +QMAKE_LIBS_COMPAT           = -ladvapi32 -lshell32 -lcomdlg32 -luser32 -lgdi32 -lws2_32
-+QMAKE_LIBS_QT_ENTRY         = -lmingw32 -lqt5main
++QMAKE_LIBS_QT_ENTRY         = -lmingw32 -lqtmain
 +
 +load(qt_config)
-diff --git a/mkspecs/mingw-w64-g++/qplatformdefs.h b/mkspecs/mingw-w64-g++/qplatformdefs.h
-new file mode 100644
-index 0000000000..c5a70b1445
---- /dev/null
-+++ b/mkspecs/mingw-w64-g++/qplatformdefs.h
+diff -Nur qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h
+--- qt-everywhere-opensource-src-5.9.3/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h	1970-01-01 01:00:00.000000000 +0100
++++ qt-everywhere-opensource-src-5.9.3.patched/qtbase/mkspecs/mingw-w64-g++/qplatformdefs.h	2017-11-29 10:09:04.025059060 +0100
 @@ -0,0 +1,155 @@
 +/****************************************************************************
 +**
@@ -303,6 +288,3 @@ index 0000000000..c5a70b1445
 +
 +
 +#endif // QPLATFORMDEFS_H
--- 
-2.13.2
-

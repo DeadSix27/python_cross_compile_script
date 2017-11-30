@@ -1,0 +1,11 @@
+diff -Nur wget_git/src/init.c wget_git.patched/src/init.c
+--- wget_git/src/init.c	2017-11-01 16:53:08.482853941 +0100
++++ wget_git.patched/src/init.c	2017-11-01 16:53:04.685720512 +0100
+@@ -397,6 +397,7 @@
+   opt.metalink_index = -1;
+ #endif
+ 
++  opt.ca_cert = "ca-bundle.trust.crt"; // Default ca-bundle for windows
+   opt.cookies = true;
+   opt.verbose = -1;
+   opt.ntry = 20;
