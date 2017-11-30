@@ -3239,7 +3239,6 @@ DEPENDS = {
 
 	},
 	'amf_headers' : {
-		'debug_exitafter' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/GPUOpen-LibrariesAndSDKs/AMF',
 		'rename_folder' : 'amd_media_framework_headers',
