@@ -1886,6 +1886,7 @@ VARIABLES = {
 		'--enable-libgme '
 		'--enable-runtime-cpudetect '
 		'--enable-libfribidi '
+		'--disable-amf ' # doesn't work yet
 		'--enable-gnutls '
 		'--disable-openssl '
 		'--enable-opengl '
@@ -2009,7 +2010,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --disable-amf',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
 	},
@@ -2017,7 +2018,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_opencl_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl --disable-amf',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
 		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
 	},
@@ -2025,7 +2026,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free_opencl',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink --disable-amf',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static (OpenCL))' },
 	},
