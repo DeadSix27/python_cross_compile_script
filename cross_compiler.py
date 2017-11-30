@@ -1886,7 +1886,6 @@ VARIABLES = {
 		'--enable-libgme '
 		'--enable-runtime-cpudetect '
 		'--enable-libfribidi '
-		'--disable-amf ' # doesn't work yet
 		'--enable-gnutls '
 		'--disable-openssl '
 		'--enable-opengl '
@@ -3259,7 +3258,7 @@ DEPENDS = {
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
-		# 'depends_on': [ 'ffmpeg_depends' ],
+		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
 	'bzip2' : {
