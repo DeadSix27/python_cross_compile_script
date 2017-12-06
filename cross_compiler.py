@@ -895,7 +895,6 @@ class CrossCompileScript:
 			command = " ".join(command) # could fail I guess
 		if command.lower().startswith("svn"):
 			isSvn = True
-		command = 'bash -c "' + command.replace('"','\\"') + '"'
 		self.logger.debug("Running '{0}' in '{1}'".format(command,os.getcwd()))
 		process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 		while True:
@@ -2257,13 +2256,12 @@ PRODUCTS = {
 			'--enable-javascript '
 			'--disable-manpage-build '
 			'--enable-pdf-build '
-			'--enable-ffmpeg-upstream '
 			'TARGET={target_host} '
 			'DEST_OS=win32 '
 		,
-		'depends_on' : (
+		'depends_on' : [
 			'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
-		),
+		],
 		
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -2358,7 +2356,9 @@ PRODUCTS = {
 			'PKG_CONFIG' : '{cross_prefix_full}pkg-config'
 		},
 		'depends_on' : [
-			'qt5', 'libmpv', 'libzip'
+			'qt5',
+			'libmpv',
+			'libzip'
 		],
 	},
 	'mediainfo_dll' : {
@@ -2493,7 +2493,7 @@ DEPENDS = {
 		'is_cmake' : True,
 		'needs_make_install' : False,
 		'patches' : [
-			['https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vulkan-0001-cross-compile-static-linking-hacks.patch', 'p1'], #thanks shin :)
+			['https://raw.githubusercontent.com/DeadSix27/mpv-winbuild-cmake/patch/packages/vulkan-0001-cross-compile-static-linking-hacks.patch', 'p1'], #thanks shin :)
 		],
 		'run_post_patch' : [
 			'./update_external_sources.sh --no-build',
@@ -2619,9 +2619,12 @@ DEPENDS = {
 	'libzip' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/nih-at/libzip.git',
+		# 'branch' : 'b89ee3286ea11ad79a934f143f18e007d9f21385',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/libzip/0001-libzip-git-20170415-fix-static-build.patch','p1'),
+			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/libzip/0001-libzip-git-20170415-fix-static-build.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-Fix-building-statically-on-mingw64.patch','p1'),
+			
 		],
 		'run_post_patch' : (
 			'autoreconf -fiv',
@@ -2636,20 +2639,53 @@ DEPENDS = {
 		'env_exports' : {
 			'DEST_OS' : 'win32',
 			'TARGET'  : '{target_host}',
+			'LDFLAGS' : '-ld3d11',
 		},
 		'run_post_patch' : (
-			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
+			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
 		),
+		'patches' : {
+			( 'https://patch-diff.githubusercontent.com/raw/mpv-player/mpv/pull/4933.patch' , 'p1' ),
+			# ( 'https://-/patches/0001-mpv-add-vulkan-ver.diff' , 'p1' ),
+			# ( 'https://-/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
+		},
 		'configure_options':
-			'--enable-libmpv-shared --disable-debug-build --prefix={target_prefix}'
-			' --enable-sdl2 --enable-egl-angle-lib --enable-rubberband --enable-lcms2 --enable-dvdread --enable-openal --enable-dvdnav'
-			' --enable-libbluray --enable-cdda --enable-libass --enable-lua --enable-encoding --enable-uchardet --enable-libarchive'
-			' TARGET={target_host} DEST_OS=win32',
-		'depends_on' : (
-			'angle', 'python36_libs', 'vapoursynth_libs', 'libffmpeg', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive',
+			'--enable-libmpv-shared '
+			'--disable-debug-build '
+			'--prefix={target_prefix} '
+			'--enable-sdl2 '
+			'--enable-egl-angle-lib '
+			'--enable-rubberband '
+			'--enable-lcms2 '
+			'--enable-dvdread '
+			'--enable-openal '
+			'--enable-dvdnav '
+			'--enable-libbluray '
+			'--enable-cdda '
+			'--enable-libass '
+			'--enable-lua '
+			'--enable-vapoursynth '
+			'--enable-encoding '
+			'--enable-uchardet '
+			'--enable-libarchive '
+			'--enable-javascript '
+			'--disable-manpage-build '
+			'--enable-pdf-build '
+			'TARGET={target_host} '
+			'DEST_OS=win32 '
+		,
+		# 'depends_on' : (
+			# 'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+		# ),
+		'packages': {
+			'arch' : [ 'rst2pdf' ],
+		},
+		'run_post_configure': (
+			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
 	},
+	
 	'libmediainfo' : {
 		'repo_type' : 'git',
 		'branch' : 'v0.7.94',
@@ -2750,6 +2786,7 @@ DEPENDS = {
 	'angle' : {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
+		'branch' : 'ded7923b2553d825633c18cf092770a10be47a1f',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/angle/0002-Cross-compile-hacks.patch'                      ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
 			# ('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch', 'p1' ),
@@ -3257,7 +3294,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs --enable-amf',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
