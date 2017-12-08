@@ -302,7 +302,7 @@ class CrossCompileScript:
 
 		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
 		if _OUR_VER not in _TESTED_VERS:
-			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
+			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version, it may or may not work properly.: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 		
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
 		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper (MPL2.0)' + Colors.RESET + '\n\nExample usages:' \
@@ -2651,7 +2651,7 @@ DEPENDS = {
 		'patches' : {
 			( 'https://patch-diff.githubusercontent.com/raw/mpv-player/mpv/pull/4933.patch' , 'p1' ),
 			# ( 'https://-/patches/0001-mpv-add-vulkan-ver.diff' , 'p1' ),
-			( 'https://dsix.site/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
+			# ( 'https://-/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
 		},
 		'configure_options':
 			'--enable-libmpv-shared '
