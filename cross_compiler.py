@@ -384,23 +384,23 @@ class CrossCompileScript:
 				buildType = "DEPENDENCY"
 				thingToBuild = args.DEPENDENCY_LIST
 				if "," not in thingToBuild:
-					errorOut(None,None,"Error: are you sure the list format is correct? It must be dependency1;dependency2;dependency3;...")
+					errorOut(None,None,"Error: are you sure the list format is correct? It must be dependency1,dependency2,dependency3, ...")
 				for d in thingToBuild.split(","):
 					if d in self.DEPENDS:
 						finalThingList.append(d)
 					else:
-						errorOut(thingToBuild,buildType)
+						errorOut(d,buildType)
 
 			elif args.PRODUCT_LIST:
 				buildType = "PRODUCT"
 				thingToBuild = args.PRODUCT_LIST
 				if "," not in thingToBuild:
-					errorOut(None,None,"Error: are you sure the list format is correct? It must be product1;product2;product3,...")
+					errorOut(None,None,"Error: are you sure the list format is correct? It must be product1,product2,product3, ...")
 				for d in thingToBuild.split(","):
 					if d in self.PRODUCTS:
 						finalThingList.append(d)
 					else:
-						errorOut(thingToBuild,buildType)
+						errorOut(d,buildType)
 
 			elif args.build_all:
 				self.defaultEntrace()
@@ -2493,11 +2493,12 @@ DEPENDS = {
 		'is_cmake' : True,
 		'needs_make_install' : False,
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/mpv-winbuild-cmake/patch/packages/vulkan-0001-cross-compile-static-linking-hacks.patch', 'p1'], #thanks shin :)
+			['https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vulkan-0001-cross-compile-static-linking-hacks.patch',        'p1'], #thanks shin :)
+			['https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vulkan-0002-ignore-generating-spirv_tools_commit_id.h.patch', 'p1'], 
 		],
-		'run_post_patch' : [
-			'./update_external_sources.sh --no-build',
-		],
+		# 'run_post_patch' : [
+			# './update_external_sources.sh --no-build',
+		# ],
 		'run_post_make' : (
 			'cp -rv "include/vulkan/" "{target_prefix}/include/"',
 			'cp -rv "loader/libvulkan.a" "{target_prefix}/lib/libvulkan.a"',
@@ -2786,7 +2787,7 @@ DEPENDS = {
 	'angle' : {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
-		'branch' : 'ded7923b2553d825633c18cf092770a10be47a1f',
+		# 'branch' : 'ded7923b2553d825633c18cf092770a10be47a1f',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/testing/patches/angle/0002-Cross-compile-hacks.patch'                      ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
 			# ('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch', 'p1' ),
