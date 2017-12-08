@@ -2333,6 +2333,9 @@ PRODUCTS = {
 		'run_post_install' : [
 			'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
 		],
+		'patches' : [
+			( 'https://github.com/DeadSix27/youtube-dl/commit/4a386648cf85511d9eb283ba488858b6a5dc2444.patch', 'p1' ),
+		],
 		'needs_configure' : False,
 		'packages': {
 			'ubuntu' : [ 'pandoc' ],
@@ -2648,7 +2651,7 @@ DEPENDS = {
 		'patches' : {
 			( 'https://patch-diff.githubusercontent.com/raw/mpv-player/mpv/pull/4933.patch' , 'p1' ),
 			# ( 'https://-/patches/0001-mpv-add-vulkan-ver.diff' , 'p1' ),
-			# ( 'https://-/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
+			( 'https://dsix.site/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
 		},
 		'configure_options':
 			'--enable-libmpv-shared '
