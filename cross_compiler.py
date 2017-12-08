@@ -1569,7 +1569,7 @@ class CrossCompileScript:
 			exitOn = False
 
 		if not os.path.isfile(patch_touch_name):
-			self.logger.info("Patching source uising: '{0}'".format( fileName ))
+			self.logger.info("Patching source using: '{0}'".format( fileName ))
 			self.run_process('patch {2}-{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
 			self.touch(patch_touch_name)
 			if not postConf:
