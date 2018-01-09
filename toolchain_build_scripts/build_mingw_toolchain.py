@@ -41,7 +41,7 @@ SOURCES['mingw-w64'] = {
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
 	],
-	'checkout' : '5e5361fe3fe0be7f182170ccb7f9220d616a5555',
+	'checkout' : '66fab9591c250ade399e9fe91ceda239a735649c',
 	'builds' : [
 		'mingw-w64-crt',
 		'mingw-w64-headers',
