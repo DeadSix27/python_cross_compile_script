@@ -3543,11 +3543,14 @@ DEPENDS = {
 	#},
 	'libgme_game_music_emu' : {
 		'repo_type' : 'git',
-		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git', # ffmpeg doesnt like git
+		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=NO',
-		'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
+		'run_post_install' : [
+			'sed -i.bak \'s/^Libs: -L${{libdir}} -lgme$/Libs: -L${{libdir}} -lgme -lz/\' "{pkg_config_path}/libgme.pc"', # requires zlib, doesn't add it itself.
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : {
 		'repo_type' : 'git',
