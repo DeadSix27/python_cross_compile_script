@@ -1,9 +1,9 @@
-diff -ur openal-soft/CMakeLists.txt openal-soft.patched/CMakeLists.txt
---- openal-soft/CMakeLists.txt	2017-04-10 19:30:07.037950001 +0200
-+++ openal-soft.patched/CMakeLists.txt	2017-04-10 19:31:38.360780061 +0200
-@@ -1152,6 +1152,11 @@
+diff -Nur openal-soft/CMakeLists.txt openal-soft.b/CMakeLists.txt
+--- openal-soft/CMakeLists.txt	2018-01-30 17:20:40.964580459 +0100
++++ openal-soft.b/CMakeLists.txt	2018-01-30 17:20:38.284512764 +0100
+@@ -1228,6 +1228,11 @@
+ SET(PACKAGE_VERSION "${LIB_VERSION}")
  IF(LIBTYPE STREQUAL "STATIC")
-     ADD_DEFINITIONS(-DAL_LIBTYPE_STATIC)
      SET(PKG_CONFIG_CFLAGS -DAL_LIBTYPE_STATIC ${PKG_CONFIG_CFLAGS})
 +    FOREACH(l ${EXTRA_LIBS})
 +        IF(NOT l MATCHES "^-.*")
@@ -12,10 +12,10 @@ diff -ur openal-soft/CMakeLists.txt openal-soft.patched/CMakeLists.txt
 +    ENDFOREACH()
  ENDIF()
  
- IF(NOT WIN32)
-diff -ur openal-soft/openal.pc.in openal-soft.patched/openal.pc.in
---- openal-soft/openal.pc.in	2017-04-10 19:30:07.045950297 +0200
-+++ openal-soft.patched/openal.pc.in	2017-04-10 19:32:01.919742629 +0200
+ # End configuration
+diff -Nur openal-soft/openal.pc.in openal-soft.b/openal.pc.in
+--- openal-soft/openal.pc.in	2018-01-30 17:20:42.828515067 +0100
++++ openal-soft.b/openal.pc.in	2018-01-30 17:20:38.291179499 +0100
 @@ -8,4 +8,5 @@
  Requires: @PKG_CONFIG_REQUIRES@
  Version: @PACKAGE_VERSION@

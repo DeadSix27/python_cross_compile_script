@@ -1,6 +1,7 @@
---- openal-soft-1.18.0/CMakeLists.txt.orig	2017-06-09 09:58:31.540585400 +0200
-+++ openal-soft-1.18.0/CMakeLists.txt	2017-06-09 10:00:24.729585500 +0200
-@@ -1152,7 +1152,11 @@
+diff -Nur openal-soft/CMakeLists.txt openal-soft.not32/CMakeLists.txt
+--- openal-soft/CMakeLists.txt	2018-01-30 17:28:52.006735588 +0100
++++ openal-soft.not32/CMakeLists.txt	2018-01-30 17:28:48.902896015 +0100
+@@ -1216,7 +1216,11 @@
  IF(NOT WIN32)
      SET(LIBNAME "openal")
  ELSE()
@@ -12,4 +13,4 @@
 +    ENDIF()
  ENDIF()
  
- FIND_PACKAGE(Git)
+ # Needed for openal.pc.in
