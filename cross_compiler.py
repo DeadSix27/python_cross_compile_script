@@ -3555,9 +3555,6 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=NO',
-		'run_post_install' : [
-			'sed -i.bak \'s/^Libs: -L${{libdir}} -lgme$/Libs: -L${{libdir}} -lgme -lz/\' "{pkg_config_path}/libgme.pc"', # requires zlib, doesn't add it itself.
-		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : {
