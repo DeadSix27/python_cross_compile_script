@@ -3757,6 +3757,7 @@ DEPENDS = {
 		},
 		'run_post_patch': (
 			'sed -i.bak "s/SUBDIRS += xmlwf doc/SUBDIRS += xmlwf/" Makefile.am',
+			'aclocal',
 			'automake',
 		),
 		'repo_type' : 'archive',
