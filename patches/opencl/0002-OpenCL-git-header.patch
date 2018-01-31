@@ -1,7 +1,7 @@
-diff --git a/icd_windows_hkr.h b/icd_windows_hkr.patched.h
+diff --git a/icd_windows_hkr.h b/icd_windows_hkr.h
 index b10d15a..c3a4540 100644
 --- a/icd_windows_hkr.h
-+++ b/icd_windows_hkr.patched.h
++++ b/icd_windows_hkr.h
 @@ -36,5 +36,23 @@
   */
  
