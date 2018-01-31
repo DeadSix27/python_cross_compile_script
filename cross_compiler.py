@@ -2605,15 +2605,16 @@ DEPENDS = {
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'depends_on' : [ 'opencl_headers' ],
-		'run_post_patch' : {
+		'run_post_patch' : [
 			'sed -i.bak \'s/Devpkey.h/devpkey.h/\' icd_windows_hkr.c',
-		},
+		],
 		'run_post_make' : [
 			'if [ ! -f "already_ran_make_install" ] ; then cp -vf "libOpenCL.dll.a" "{target_prefix}/lib/libOpenCL.dll.a" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
 		],
 		'patches' : [
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opencl/0001-OpenCL-git-prefix.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opencl/0002-OpenCL-git-header.patch','p1'),
 		],
 	},
 	'opencl_headers' : {
@@ -3555,9 +3556,6 @@ DEPENDS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=NO',
-		'run_post_install' : [
-			'sed -i.bak \'s/^Libs: -L${{libdir}} -lgme$/Libs: -L${{libdir}} -lgme -lz/\' "{pkg_config_path}/libgme.pc"', # requires zlib, doesn't add it itself.
-		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : {
@@ -3757,6 +3755,7 @@ DEPENDS = {
 		},
 		'run_post_patch': (
 			'sed -i.bak "s/SUBDIRS += xmlwf doc/SUBDIRS += xmlwf/" Makefile.am',
+			'aclocal',
 			'automake',
 		),
 		'repo_type' : 'archive',
