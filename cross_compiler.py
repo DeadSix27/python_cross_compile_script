@@ -66,7 +66,6 @@ _ORIG_CFLAGS       = '-march=sandybridge -O3' # I've had issues recently with th
 
 
 # Remove a product, re-order them or add your own, do as you like.
-PRODUCT_ORDER      = ( 'cuetools', 'aria2', 'mpv', 'x265_multibit', 'x264_10bit', 'x264_8bit', 'flac', 'vorbis-tools', 'lame3', 'sox', 'ffmpeg_static', 'ffmpeg_shared', 'curl', 'wget' )
 
 #
 # ###################################################
@@ -2267,9 +2266,9 @@ PRODUCTS = {
 			'TARGET={target_host} '
 			'DEST_OS=win32 '
 		,
-		#'depends_on' : [
-		#	'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
-		#],
+		'depends_on' : [
+			'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+		],
 		
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -2687,9 +2686,9 @@ DEPENDS = {
 			'TARGET={target_host} '
 			'DEST_OS=win32 '
 		,
-		# 'depends_on' : (
-			# 'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
-		# ),
+		'depends_on' : (
+			 'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+		),
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
 		},
