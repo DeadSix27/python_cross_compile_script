@@ -2807,6 +2807,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                         ,'p1'),
 			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch'                                          ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
 			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch'        ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0007-angle-fix-aligned_memory.patch','p1'),
 		),
 		'needs_make':False,
 		'needs_make_install':False,
