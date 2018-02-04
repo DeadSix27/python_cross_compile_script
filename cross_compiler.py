@@ -27,6 +27,7 @@ import requests # Run pip3 install requests
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
 import hashlib,glob,traceback,time,zlib,codecs,argparse
 import http.cookiejar
+import datetime as dt, json
 from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
@@ -47,7 +48,7 @@ _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
 _USER_AGENT        = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36 " # change this as you like, default is most popular according to http://www.browser-info.net/useragents
-
+_BUILDDB           = 'build-db' # keep track of product and dependency build dates for intelligent rebuilds
 
 # Remove a product, re-order them or add your own, do as you like, the default order only builds mpv & ffmpeg (shared & static)
 PRODUCT_ORDER      = ( 'mpv', 'ffmpeg_static', 'ffmpeg_shared' )
@@ -147,6 +148,7 @@ class CrossCompileScript:
 		self.buildLogFile           = None
 		self.quietMode              = _QUIET
 		self.debugMode              = _DEBUG
+		self.rebuildMode            = False
 		self.logger.setLevel(logging.INFO)
 		if self.debugMode:
 			self.init_debugMode()
@@ -320,9 +322,11 @@ class CrossCompileScript:
 		group2.add_argument( '-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
 		group2.add_argument( '-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency list'                                   )
 		group2.add_argument( '-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true' )
+		
 		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                   , action='store_true' )
 		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'   , action='store_true' )
 		parser.add_argument( '-g',  '--debug',                                         help='Show debug information'                 , action='store_true' )
+		parser.add_argument( '-r',  '--rebuild',                                       help='Rebuild when a dependency was updated'  , action='store_true' )
 
 		if len(sys.argv)==1:
 			self.defaultEntrace()
@@ -344,6 +348,8 @@ class CrossCompileScript:
 				self.init_quietMode()
 			if args.force:
 				forceRebuild = True
+			if args.rebuild:
+				self.rebuildMode = True
 			thingToBuild = None
 			buildType = None
 
@@ -440,6 +446,13 @@ class CrossCompileScript:
 		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefix, target_prefix=self.targetPrefix,bitness=self.bitnessDir )
 		self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.targetPrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
+		self.buildDbPath        = os.path.join(self.fullWorkDir, _BUILDDB)
+		self.buildDb            = {}
+		try:
+			with open(self.buildDbPath, "r") as fp:
+				self.buildDb = json.load(fp)
+		except:
+			pass
 		self.currentBitness     = b
 		self.cpuCount           = _CPU_COUNT
 		self.originalCflags     = _ORIG_CFLAGS
@@ -1311,6 +1324,8 @@ class CrossCompileScript:
 						self.build_thing(libraryName,self.DEPENDS[libraryName],"DEPENDENCY")
 		if 'is_dep_inheriter' in data:
 			if data['is_dep_inheriter'] == True:
+				if self.depNeedsBuilding(name, data, True)[0]:
+					self.updateBuildDb(name)
 				return
 
 		self.logger.info("Building {0} '{1}'".format(type,name))
@@ -1400,14 +1415,24 @@ class CrossCompileScript:
 					os.makedirs(data['source_subfolder'], exist_ok=True)
 				self.cchdir(data['source_subfolder'])
 
-		if force_rebuild:
+		didMake = False
+		if not self.anyFileStartsWith('already_'):
+			didMake = True
+
+		needsRebuild = self.depNeedsBuilding(name, data)
+		if needsRebuild[0]:
+			self.logger.info("Forcing rebuild of {0} '{1}', {2}".format(type, name, needsRebuild[1]))
+		
+		if force_rebuild or needsRebuild[0]:
+			didMake = True
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
-			self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
-			self.run_process('git submodule foreach --recursive git clean -xfdf')
-			self.run_process('git reset --hard')
-			self.run_process('git submodule foreach --recursive git reset --hard')
-			self.run_process('git submodule update --init --recursive')
+			if data['repo_type'] == 'git':
+				self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
+				self.run_process('git submodule foreach --recursive git clean -xfdf')
+				self.run_process('git reset --hard')
+				self.run_process('git submodule foreach --recursive git reset --hard')
+				self.run_process('git submodule update --init --recursive')
 
 		if 'debug_confighelp_and_exit' in data:
 			if data['debug_confighelp_and_exit'] == True:
@@ -1449,7 +1474,7 @@ class CrossCompileScript:
 		if 'patches' in data:
 			if data['patches'] != None:
 				for p in data['patches']:
-					self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
+					didMake |= self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
 
 		if not self.anyFileStartsWith('already_ran_make'):
 			if 'run_post_patch' in data:
@@ -1464,18 +1489,18 @@ class CrossCompileScript:
 
 		if 'needs_configure' in data:
 			if data['needs_configure'] == True:
-				self.configure_source(name,data)
+				didMake |= self.configure_source(name,data)
 		else:
-			self.configure_source(name,data)
+			didMake |= self.configure_source(name,data)
 
 		if 'patches_post_configure' in data:
 			if data['patches_post_configure'] != None:
 				for p in data['patches_post_configure']:
-					self.apply_patch(p[0],p[1],True)
+					didMake |= self.apply_patch(p[0],p[1],True)
 
 		if 'is_cmake' in data:
 			if data['is_cmake'] == True:
-				self.cmake_source(name,data)
+				didMake |= self.cmake_source(name,data)
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
@@ -1485,15 +1510,15 @@ class CrossCompileScript:
 
 		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
 			if data['needs_make'] == True:
-				self.make_source(name,data)
+				didMake |= self.make_source(name,data)
 		else:
-			self.make_source(name,data)
+			didMake |= self.make_source(name,data)
 
 		if 'needs_make_install' in data:
 			if data['needs_make_install'] == True:
-				self.make_install_source(name,data)
+				didMake |= self.make_install_source(name,data)
 		else:
-			self.make_install_source(name,data)
+			didMake |= self.make_install_source(name,data)
 
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -1522,6 +1547,9 @@ class CrossCompileScript:
 			self.PRODUCTS[name]["_already_built"] = True
 		else:
 			self.DEPENDS[name]["_already_built"] = True
+
+		if didMake:
+			self.updateBuildDb(name)
 
 		self.logger.info("Building {0} '{1}': Done!".format(type,name))
 		if 'debug_exitafter' in data:
@@ -1552,7 +1580,6 @@ class CrossCompileScript:
 
 	def configure_source(self,name,data):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
-
 
 		isWaf = False
 		if 'is_waf' in data:
@@ -1610,9 +1637,11 @@ class CrossCompileScript:
 
 			self.touch(touch_name)
 			self.logger.info("Finsihed configuring '{0}'".format( name ))
+			return True
+
+		return False
 
 	def apply_patch(self,url,type = "-p1", postConf = False, folderToPatchIn = None): #p1 for github, p0 for idk
-
 		originalFolder = os.getcwd()
 
 		if folderToPatchIn != None:
@@ -1637,7 +1666,9 @@ class CrossCompileScript:
 			ignoreErr = True
 			exitOn = False
 
+		didPatch = False
 		if not os.path.isfile(patch_touch_name):
+			didPatch = True
 			self.logger.info("Patching source using: '{0}'".format( fileName ))
 			self.run_process('patch {2}-{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
 			self.touch(patch_touch_name)
@@ -1648,6 +1679,8 @@ class CrossCompileScript:
 
 		if folderToPatchIn != None:
 			self.cchdir(originalFolder)
+
+		return didPatch
 	#:
 
 	def cmake_source(self,name,data):
@@ -1666,12 +1699,14 @@ class CrossCompileScript:
 			self.run_process("make clean",True)
 
 			self.touch(touch_name)
+			return True
+
+		return False
 
 
 	def make_source(self,name,data):
 		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
 		if not os.path.isfile(touch_name):
-
 			isWaf = False
 			if 'is_waf' in data:
 				if data['is_waf'] == True:
@@ -1730,12 +1765,14 @@ class CrossCompileScript:
 						self.run_process(cmd)
 
 			self.touch(touch_name)
+			return True
+
+		return False
 	#:
 
 	def make_install_source(self,name,data):
 		touch_name = "already_ran_make_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
-
 
 			cpcnt = '-j {0}'.format(_CPU_COUNT)
 
@@ -1751,7 +1788,6 @@ class CrossCompileScript:
 			if 'install_target' in data:
 				if data['install_target'] != None:
 					installTarget = data['install_target']
-
 
 			self.logger.info("Make installing '{0}' with: {1}".format( name, makeInstallOpts ))
 
@@ -1781,6 +1817,9 @@ class CrossCompileScript:
 						self.run_process(cmd)
 
 			self.touch(touch_name)
+			return True
+
+		return False
 	#:
 
 	def defaultCFLAGS(self):
@@ -1895,6 +1934,31 @@ class CrossCompileScript:
 		if self.debugMode:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
+
+	def updateBuildDb(self, dep):
+		if dep not in self.buildDb:
+			self.buildDb[dep] = {}
+
+		self.buildDb[dep]["buildDate"] = dt.datetime.utcnow().timestamp()
+		with open(self.buildDbPath, "w") as fp:
+			json.dump(self.buildDb, fp)
+
+	def depNeedsBuilding(self, dep, data, forceCheck=False):
+		if not forceCheck and not self.rebuildMode:
+			return (False, '')
+		
+		if dep not in self.buildDb: # never built
+			return (True, "'{0}' not found in build-db.".format(dep)) # first time this logic runs, all will be rebuilt
+		
+		if 'depends_on' not in data or len(data['depends_on']) <= 0: # nothing to depend on
+			return (False, '')
+		
+		depBuildDate = self.buildDb[dep]['buildDate']
+		for lib in data['depends_on']: # check for dependency build dates newer than this one
+			if lib in self.buildDb and self.buildDb[lib]['buildDate'] > depBuildDate:
+				return (True, "'{0}' was updated.".format(lib))
+		
+		return (False, '')
 
 # ###################################################
 # ################  PACKAGE CONFIGS  ################
