@@ -4129,9 +4129,9 @@ DEPENDS = {
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
 		'repo_type' : 'archive',
-		'url' : 'http://pkgs.fedoraproject.org/repo/pkgs/fribidi/fribidi-0.19.7.tar.bz2/6c7e7cfdd39c908f7ac619351c1c5c23/fribidi-0.19.7.tar.bz2',
+		'url' : 'https://github.com/fribidi/fribidi/releases/download/v1.0.1/fribidi-1.0.1.tar.bz2',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.19.7', 'fancy_name' : 'libfribidi' },
+		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
 	},
 	'libfribidi_git' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
