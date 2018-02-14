@@ -41,7 +41,8 @@ SOURCES['mingw-w64'] = {
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
 	],
-	'checkout' : '66fab9591c250ade399e9fe91ceda239a735649c',
+	'checkout' : '36d7b92bbcec1e72d3ce24013b01f7acc34be3b0',
+	'git_shallow' : True,
 	'builds' : [
 		'mingw-w64-crt',
 		'mingw-w64-headers',
@@ -57,12 +58,12 @@ SOURCES['gmp'] = {
 }
 SOURCES['mpfr'] = {
 	'type' : 'archive',
-	'version'   : '3.1.6',
+	'version'   : '4.0.1',
 	'url' : 'https://ftp.gnu.org/gnu/mpfr/mpfr-{version}.tar.xz'
 }
 SOURCES['mpc'] = {
 	'type' : 'archive',
-	'version'   : '1.0.3',
+	'version'   : '1.1.0',
 	'url' : 'https://ftp.gnu.org/gnu/mpc/mpc-{version}.tar.gz'
 }
 SOURCES['isl'] = {
@@ -72,7 +73,7 @@ SOURCES['isl'] = {
 }
 SOURCES['binutils'] = {
 	'type' : 'archive',
-	'version'   : '2.29',
+	'version'   : '2.30',
 	'url' : 'https://ftp.gnu.org/gnu/binutils/binutils-{version}.tar.bz2',
 	'softlink_to_package' : [
 		( 'isl'  , 'isl' ),
@@ -80,7 +81,7 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '7.2.0',
+	'version'   : '7.3.0',
 	'url' : 'https://ftp.gnu.org/gnu/gcc/gcc-{version}/gcc-{version}.tar.xz',
 	'patches' : [
 		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
@@ -487,7 +488,7 @@ class MinGW64ToolChainBuilder:
 			if exitOnError:
 				exit(1)
 	#:
-	def gitClone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None,recursive=False):
+	def gitClone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None,recursive=False,shallow=False):
 		if virtFolderName == None:
 			virtFolderName = self.sanitize_filename(os.path.basename(url))
 			if not virtFolderName.endswith(".git"): virtFolderName += ".git"
@@ -540,10 +541,13 @@ class MinGW64ToolChainBuilder:
 				self.run_process('git submodule update --init --recursive')
 			self.cchdir("..")
 		else:
-			recur = ""
-			if recursive:
-				recur = " --recursive"
-			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
+			self.run_process('git clone{0}{1} --progress "{2}" "{3}"'.format
+				(
+					" --recursive" if recursive == True else "",
+					" --depth 1" if shallow == True else "",
+					url,
+					realFolderName + ".tmp" )
+				)
 			if desiredBranch != None:
 				self.cchdir(realFolderName + ".tmp")
 				self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
@@ -595,14 +599,18 @@ class MinGW64ToolChainBuilder:
 			pUrl = ""
 			fileName = ""
 			productPath = ""
+			shallowClone = False
 			if "type" in p:
 				if p["type"] == "git":
 					pUrl = p["url"]
 					branch = None
 					if "checkout" in p:
 						branch = p["checkout"]
+					if "git_shallow" in p:
+						if p["git_shallow"] == True:
+							shallowClone = True
 					self.log("Cloning sources for: %s" % pn)
-					productPath = self.gitClone(pUrl,desiredBranch=branch)
+					productPath = self.gitClone(pUrl,desiredBranch=branch,shallow=shallowClone)
 
 				elif p["type"] == "archive":
 					pUrl = p["url"].format(version=p["version"])
@@ -659,8 +667,7 @@ class MinGW64ToolChainBuilder:
 						except Exception as e:
 							self.log(str(e) + " ["+SOURCES[sl[0]]["sourceFolder"] + " -> " + sl[1] + " in: " + productPath + "]")
 							exit()
-				self.cchdir(baseDir)
-
+				self.cchdir(baseDir)			
 			SOURCES[pn]["sourceFolder"] = os.path.join( self.sourceDir, productPath )
 			SOURCES[pn]["buildFolder"]  = os.path.join( self.buildDir,  productPath )
 			if "builds" in p:
@@ -805,6 +812,11 @@ class MinGW64ToolChainBuilder:
 			self.cchdir(baseFolder)
 		#:
 		self.cchdir(origDir)
+	#:
+	def setMinGWcheckout(self,hash):
+		if hash != "":
+			SOURCES['mingw-w64']['checkout'] = hash
+			self.log("Set MinGW checkout to: " + hash)
 	#:
 	def build(self):
 		self.nativeHost = self.getConfigGuess()

@@ -61,6 +61,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
+_MINGW_COMMIT      = '3f31320b2b37a4bf4d0c973a60d43fcb309514a1'
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-march=sandybridge -O3' # I've had issues recently with the binaries not working on older systems despite using a old march, so stick to sandybridge for now, for others see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 
@@ -124,7 +125,7 @@ class MyFormatter(logging.Formatter):
 _MINGW_SCRIPT_URL  = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py'
 _DEBUG             = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 _OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS       = ['3.5.3', '3.6.3']
+_TESTED_VERS       = ['3.5.3', '3.6.3','3.6.4']
 
 class CrossCompileScript:
 
@@ -526,6 +527,8 @@ class CrossCompileScript:
 			toolchainBuilder = MinGW64ToolChainBuilder()
 
 			toolchainBuilder.workDir = _MINGW_DIR
+			if _MINGW_COMMIT != None:
+				toolchainBuilder.setMinGWcheckout(_MINGW_COMMIT)
 			toolchainBuilder.onStatusUpdate += toolchainBuildStatus
 			toolchainBuilder.build()
 
@@ -1570,7 +1573,7 @@ class CrossCompileScript:
 
 		if not os.path.isfile(patch_touch_name):
 			self.logger.info("Patching source using: '{0}'".format( fileName ))
-			self.run_process('patch {2}-{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
+			self.run_process('git apply {2}-{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
 			self.touch(patch_touch_name)
 			if not postConf:
 				self.removeAlreadyFiles()
@@ -1836,7 +1839,7 @@ VARIABLES = {
 		'--enable-pic '
 		'--disable-schannel '
 		'--enable-libsoxr '
-		'--enable-fontconfig '
+		# '--enable-fontconfig '
 		'--enable-libass '
 		'--enable-iconv '
 		'--enable-libtwolame '
@@ -2028,14 +2031,6 @@ PRODUCTS = {
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static (OpenCL))' },
 	},
-	'ffmpeg_static_non_free' : { # with decklink, fdk-aac and opencl
-		'repo_type' : 'git',
-		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
-		'rename_folder' : 'ffmpeg_static_non_free',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free.installed --disable-shared --enable-static --enable-nonfree --enable-libfdk-aac --enable-decklink',
-		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac' ],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static)' },
-	},
 	'ffmpeg_shared' : {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
@@ -2226,22 +2221,15 @@ PRODUCTS = {
 	'mpv' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
-		# 'desired_pr_id' : '4933', # haasn's Vulkan Rev2 # Uncomment if you want to compile mpv with haasns PR, note, PR's do not auto-update, you need to delete the folder every time since they have a chance to not merge properly
 		'is_waf' : True,
 		'env_exports' : {
 			'DEST_OS' : 'win32',
 			'TARGET'  : '{target_host}',
-			'LDFLAGS' : '-ld3d11',
-			# 'LDFLAGS' : '-lpng -lshlwapi -lcfgmgr32 -lintl -liconv', #TODO: gnutls..
+			'LDFLAGS' : '-ld3d11 -llzma',
 		},
 		'run_post_patch' : (
 			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
 		),
-		'patches' : {
-			# ( 'https://patch-diff.githubusercontent.com/raw/mpv-player/mpv/pull/4933.patch' , 'p1' ),
-			# ( 'https://-/patches/0001-mpv-add-vulkan-ver.diff' , 'p1' ),
-			# ( 'https://-/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
-		},
 		'configure_options':
 			'--enable-libmpv-shared '
 			'--disable-debug-build '
@@ -2462,7 +2450,10 @@ DEPENDS = {
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} static',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} install-static',
-		'run_post_patch' : [ 'git submodule update --remote --recursive' ],
+		'run_post_patch' : [ 
+			'git submodule update --remote --recursive',
+			'rm -vf {target_prefix}/lib/pkgconfig/crossc.pc',
+		],
 		'run_post_install' : [
 			"rm -vf {target_prefix}/lib/libcrossc.dll.a", # we only want static, somehow this still gets installed tho.
 		],
@@ -2504,12 +2495,12 @@ DEPENDS = {
 		'is_cmake' : True,
 		'needs_make_install' : False,
 		'patches' : [
-			['https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vulkan-0001-cross-compile-static-linking-hacks.patch',        'p1'], #thanks shin :)
-			['https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/vulkan-0002-ignore-generating-spirv_tools_commit_id.h.patch', 'p1'], 
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','p1'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vulkan/0002-vulkan-loader-ignore-generating-spirv_tools_commit_id.h.patch','p1'], 
 		],
-		# 'run_post_patch' : [
-			# './update_external_sources.sh --no-build',
-		# ],
+		'run_post_patch' : [
+			'sed -i.bak \'s/Windows.h/windows.h/\' layers/vk_layer_config.cpp',
+		],
 		'run_post_make' : (
 			'cp -rv "include/vulkan/" "{target_prefix}/include/"',
 			'cp -rv "loader/libvulkan.a" "{target_prefix}/lib/libvulkan.a"',
@@ -2585,7 +2576,7 @@ DEPENDS = {
 		'depends_on' : [
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype2', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'fontconfig', 'libfribidi', 'libass',
+			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
 			'libopenjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers',
 		],
 	},
@@ -2606,6 +2597,7 @@ DEPENDS = {
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'depends_on' : [ 'opencl_headers' ],
 		'run_post_patch' : [
+			'mv icd_windows_hkr.patched.h icd_windows_hkr.h',
 			'sed -i.bak \'s/Devpkey.h/devpkey.h/\' icd_windows_hkr.c',
 		],
 		'run_post_make' : [
@@ -2687,9 +2679,9 @@ DEPENDS = {
 			'TARGET={target_host} '
 			'DEST_OS=win32 '
 		,
-		'depends_on' : (
-			 'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
-		),
+		# 'depends_on' : (
+			# 'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+		# ),
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
 		},
@@ -2799,7 +2791,7 @@ DEPENDS = {
 	'angle' : {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
-		# 'branch' : 'ded7923b2553d825633c18cf092770a10be47a1f',
+		#'branch' : 'ffa4cbb6f756713238e0aae84074455a7a363e2f', #5b6b9c638d4642fd76895883b24102e123c53b6d
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                      ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
 			# ('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch', 'p1' ),
@@ -2849,7 +2841,7 @@ DEPENDS = {
 		'cpu_count' : '1',
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
-		'url' : 'https://download.qt.io/official_releases/qt/5.9/5.9.3/single/qt-everywhere-opensource-src-5.9.3.tar.xz',
+		'url' : 'https://download.qt.io/official_releases/qt/5.10/5.10.0/single/qt-everywhere-src-5.10.0.tar.xz',
 		'configure_options' :
 			'-static'
 			' -no-dbus'
@@ -2928,8 +2920,8 @@ DEPENDS = {
 			'autoreconf -fiv',
 		),
 		'patches': [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-header-compat.mingw.patch',  'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo-1.3.1-libmng-compatibility.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0001-libjpeg-turbo-git-mingw-compat.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0002-libjpeg-turbo-git-libmng-compat.patch', 'p1'),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
 	},
@@ -3241,7 +3233,7 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/vapoursynth_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R40',
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R43',
 		'packages': {
 			'arch' : [ '7za' ],
 		},
@@ -3785,7 +3777,7 @@ DEPENDS = {
 	'libxvid' : {
 		'repo_type' : 'archive',
 		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz',
-		'folder_name' : 'xvidcore',
+		# 'folder_name' : 'xvidcore',
 		'rename_folder' : 'xvidcore-1.3.4',
 		'source_subfolder': 'build/generic',
 		'configure_options': '--host={target_host} --prefix={target_prefix}',
@@ -4115,12 +4107,12 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libilbc' },
 	},
 	'fontconfig' : {
-		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.6.tar.bz2',
+		'repo_type' : 'git',
+		'url' : 'git://anongit.freedesktop.org/fontconfig',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
-		'run_post_install': (
-			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
-		),
+		# 'run_post_install': (
+			# 'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
+		# ),
 		'packages': {
 			'arch' : [ 'gperf' ],
 		},
@@ -4150,7 +4142,7 @@ DEPENDS = {
 		#'branch' : '68f25e2c26de2c5c3624bf0fe6d12a0e9c35e861',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-silent-rules',
 		'run_post_install': (
-			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfontconfig -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"',
+			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"', #-lfontconfig
 		),
 		'depends_on' : [ 'harfbuzz', 'libfribidi','freetype2', 'iconv', ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libass' },

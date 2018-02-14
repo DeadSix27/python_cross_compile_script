@@ -1,0 +1,45 @@
+From 364b7d0e94301e544ac7291c2cf8fb9d0c205874 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Wed, 14 Feb 2018 14:17:59 +0100
+Subject: [PATCH 1/1] libjpeg-turbo git mingw compat
+
+---
+ jmorecfg.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/jmorecfg.h b/jmorecfg.h
+index 1d96786..5dca755 100644
+--- a/jmorecfg.h
++++ b/jmorecfg.h
+@@ -14,6 +14,12 @@
+  * optimizations.  Most users will not need to touch this file.
+  */
+ 
++/* prevents conflicts */
++#if defined(__MINGW32__)
++#include <shlwapi.h> /* typedefs INT16 and INT32 */
++
++#define HAVE_BOOLEAN
++#endif
+ 
+ /*
+  * Maximum number of components (color channels) allowed in JPEG image.
+@@ -113,6 +119,7 @@ typedef char JOCTET;
+ 
+ #endif /* HAVE_UNSIGNED_CHAR */
+ 
++#ifndef _BASETSD_H_		/* basestd.h from mingw-w64 defines UINT8, UINT16, INT16, INT32 */
+ 
+ /* These typedefs are used for various table entries and so forth.
+  * They must be at least as wide as specified; but making them too big
+@@ -181,6 +188,7 @@ typedef long INT32;
+ #endif
+ #endif
+ #endif
++#endif
+ 
+ /* Datatype used for image dimensions.  The JPEG standard only supports
+  * images up to 64K*64K due to 16-bit fields in SOF markers.  Therefore
+-- 
+2.16.1
+

@@ -1,0 +1,24 @@
+From 330fed5f810afaf0230d1bada09603b2bef7e8d4 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Wed, 14 Feb 2018 14:25:45 +0100
+Subject: [PATCH 1/1] libjpeg-turbo-git libmng compat
+
+---
+ jpeglib.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/jpeglib.h b/jpeglib.h
+index 6c63f58..df71dc7 100644
+--- a/jpeglib.h
++++ b/jpeglib.h
+@@ -30,6 +30,7 @@
+ #endif
+ #include "jmorecfg.h"           /* seldom changed options */
+ 
++#include <stdio.h>
+ 
+ #ifdef __cplusplus
+ #ifndef DONT_USE_EXTERN_C
+-- 
+2.16.1
+

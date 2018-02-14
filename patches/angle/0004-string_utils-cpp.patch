@@ -1,3 +1,14 @@
+From ca024e4f8efee2cd02e6e91fb44cbc9037b3518c Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Wed, 14 Feb 2018 14:54:03 +0100
+Subject: [PATCH 1/1] angle-fix-mbstowcs_s-mingw-issue
+
+---
+ src/common/string_utils.cpp | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/src/common/string_utils.cpp b/src/common/string_utils.cpp
+index 76b646e..98b11e9 100644
 --- a/src/common/string_utils.cpp
 +++ b/src/common/string_utils.cpp
 @@ -11,6 +11,7 @@
@@ -8,13 +19,13 @@
  #include <string.h>
  #include <fstream>
  #include <sstream>
-@@ -141,20 +142,13 @@
+@@ -141,21 +142,12 @@ bool ReadFileToString(const std::string &path, std::string *stringOut)
  Optional<std::vector<wchar_t>> WidenString(size_t length, const char *cString)
  {
      std::vector<wchar_t> wcstring(length + 1);
 -#if !defined(ANGLE_PLATFORM_WINDOWS)
-+
-     size_t written = mbstowcs(wcstring.data(), cString, length + 1);
+     mbstate_t mbstate = {};
+     size_t written = mbsrtowcs(wcstring.data(), &cString, length + 1, &mbstate);
      if (written == 0)
      {
          return Optional<std::vector<wchar_t>>::Invalid();
@@ -27,7 +38,9 @@
 -        return Optional<std::vector<wchar_t>>::Invalid();
 -    }
 -#endif
-+
      return Optional<std::vector<wchar_t>>(wcstring);
  }
  
+-- 
+2.16.1
+
