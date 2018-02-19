@@ -332,8 +332,8 @@ class CrossCompileScript:
 
 
 		group2 = parser.add_mutually_exclusive_group( required = True )
-		group2.add_argument( '-p',  '--build_product_list',    dest='PRODUCT',         help='Build this product list'                                      )
-		group2.add_argument( '-pl', '--build_product',         dest='PRODUCT_LIST',    help='Build this product (and dependencies)'                        )
+		group2.add_argument( '-p',  '--build_product',         dest='PRODUCT',         help='Build this product (and dependencies)'                        )
+		group2.add_argument( '-pl', '--build_product_list',    dest='PRODUCT_LIST',    help='Build this product list'                                      )
 		group2.add_argument( '-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
 		group2.add_argument( '-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency list'                                   )
 		group2.add_argument( '-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true' )
@@ -1906,9 +1906,9 @@ VARIABLES = {
 PRODUCTS = {
 	'gdb8' : {
 		'repo_type' : 'archive',
-		'url' : 'http://ftp.gnu.org/gnu/gdb/gdb-8.0.1.tar.xz',
-		'configure_options': '--host={target_host} --enable-static --prefix={product_prefix}/gdb.installed',
-		'_info' : { 'version' : '8.0.1', 'fancy_name' : 'GDB' },
+		'url' : 'http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz',
+		'configure_options': '--host={target_host} --enable-static --prefix={product_prefix}/gdb-8.1.installed',
+		'_info' : { 'version' : '8.1', 'fancy_name' : 'GDB' },
 	},
 	'x264_10bit' : {
 		'repo_type' : 'git',
@@ -2797,19 +2797,15 @@ DEPENDS = {
 		],
 		'_info' : { 'version' : '10.30', 'fancy_name' : 'pcre2' },
 	},
-
 	'angle' : {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
-		#'branch' : 'ffa4cbb6f756713238e0aae84074455a7a363e2f', #5b6b9c638d4642fd76895883b24102e123c53b6d
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                      ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
-			# ('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0001-custom-gyp.patch', 'p1' ),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                         ,'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                         ,'p1'),
-			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch'                                          ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
-			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch'        ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
-			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0007-angle-fix-aligned_memory.patch','p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                             ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                                ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                                ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0002-install-fixed.patch'                             ,'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0003-add-option-for-targeting-cpu-architecture.patch' ,'p1'),
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2822,8 +2818,8 @@ DEPENDS = {
 			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=build -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
 			'if [ ! -f "already_done" ] ; then make -C build/ commit_id ; fi',
 			'if [ ! -f "already_done" ] ; then cmake -E copy build/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
-			'if [ ! -f "already_done" ] ; then make -C build {make_prefix_options} BUILDTYPE=Release {make_cpu_count} ; fi',
-			'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 ; fi',
+			'if [ ! -f "already_done" ] ; then make -C build {make_prefix_options} BUILDTYPE=Debug {make_cpu_count} ; fi',
+			'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 Debug ; fi',
 			'if [ ! -f "already_done" ] ; then make install PREFIX={target_prefix} ; fi',
 			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
 		),
