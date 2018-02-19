@@ -41,7 +41,6 @@ SOURCES['mingw-w64'] = {
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
 	],
-	'git_shallow' : True,
 	'builds' : [
 		'mingw-w64-crt',
 		'mingw-w64-headers',
