@@ -36,12 +36,11 @@ SOURCES = OrderedDict() # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type' : 'git',
-	'url' : 'git://git.code.sf.net/p/mingw-w64/mingw-w64',
+	'url' : 'https://github.com/mirror/mingw-w64.git',
 	'run_after_patches' : [
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
 	],
-	'checkout' : '36d7b92bbcec1e72d3ce24013b01f7acc34be3b0',
 	'git_shallow' : True,
 	'builds' : [
 		'mingw-w64-crt',
@@ -256,6 +255,7 @@ class Event:
 class MinGW64ToolChainBuilder:
 
 	def __init__(self):
+		sys.dont_write_bytecode = True # Avoid __pycache__ folder, never liked that solution.
 		self.pathOrig = os.environ["PATH"]
 		self.workDir = _WORKDIR
 		self.nativeHost = ""

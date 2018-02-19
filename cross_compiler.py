@@ -61,7 +61,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '3f31320b2b37a4bf4d0c973a60d43fcb309514a1'
+_MINGW_COMMIT      = '409500c17cc7a5e10ad3e305dfeda4a3c941853b'
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-march=sandybridge -O3' # I've had issues recently with the binaries not working on older systems despite using a old march, so stick to sandybridge for now, for others see: https://gcc.gnu.org/onlinedocs/gcc-6.3.0/gcc/x86-Options.html#x86-Options
 
@@ -130,6 +130,7 @@ _TESTED_VERS       = ['3.5.3', '3.6.3','3.6.4']
 class CrossCompileScript:
 
 	def __init__(self,product_order,products,depends,variables):
+		sys.dont_write_bytecode     = True # Avoid __pycache__ folder, never liked that solution.
 		self.PRODUCT_ORDER          = product_order
 		self.PRODUCTS               = products
 		self.DEPENDS                = depends
@@ -2500,6 +2501,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'recursive_git' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_ICD=OFF -DCMAKE_C_FLAGS="${{CMAKE_C_FLAGS}} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_DEMOS=OFF -DBUILD_TESTS=OFF -DBUILD_LAYERS=OFF -DBUILD_VKJSON=OFF',
+		'make_options': '-C loader',
 		'is_cmake' : True,
 		'needs_make_install' : False,
 		'patches' : [
@@ -2559,7 +2561,7 @@ DEPENDS = {
 
 	'wxwidgets' : {
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.0.3.1/wxWidgets-3.0.3.1.tar.bz2',
+		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.1-rc/wxWidgets-3.1.1-rc.tar.bz2',
 		'configure_options':
 			' --host={target_host} --build=x86_64-unknown-linux-gnu --prefix={target_sub_prefix} --disable-shared --enable-static --build='
 			' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
@@ -2576,7 +2578,7 @@ DEPENDS = {
 		# 	'CXXFLAGS' : '-std=gnu++11',
 		# 	'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
 		# },
-		'_info' : { 'version' : '3.0.3.1', 'fancy_name' : 'wxWidgets (libary)' },
+		'_info' : { 'version' : '3.1.1-rc', 'fancy_name' : 'wxWidgets (libary)' },
 		'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
 	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
@@ -2739,12 +2741,12 @@ DEPENDS = {
 	'libsqlite3' : {
 		'repo_type' : 'archive',
 		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
-		'url' : 'https://www.sqlite.org/2017/sqlite-autoconf-3210000.tar.gz',
+		'url' : 'https://www.sqlite.org/2018/sqlite-autoconf-3220000.tar.gz',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
 		'depends_on': (
 			'zlib',
 		),
-		'_info' : { 'version' : '3.20.1', 'fancy_name' : 'libsqlite3' },
+		'_info' : { 'version' : '3.22.0', 'fancy_name' : 'libsqlite3' },
 	},
 	'libcurl' : {
 		'repo_type' : 'git',
@@ -2758,7 +2760,7 @@ DEPENDS = {
 	},
 	'boost' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.65.1/boost_1_65_1.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.bz2',
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2770,7 +2772,7 @@ DEPENDS = {
 			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={target_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
-		'_info' : { 'version' : '1.65.1', 'fancy_name' : 'Boost' },
+		'_info' : { 'version' : '1.66.0', 'fancy_name' : 'Boost' },
 	},
 	'mujs' : {
 		'repo_type' : 'git',
@@ -2783,7 +2785,7 @@ DEPENDS = {
 	'pcre2' :
 	{
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.30.tar.bz2',
+		'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.31.tar.gz',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'patches' : (
@@ -2807,7 +2809,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                         ,'p1'),
 			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0002-install.patch'                                          ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
 			('https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/angle-0003-add-option-for-targeting-cpu-architecture.patch'        ,'p1'), #thanks to https://github.com/shinchiro/mpv-winbuild-cmake
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0007-angle-fix-aligned_memory.patch','p1'),
+			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0007-angle-fix-aligned_memory.patch','p1'),
 		),
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2849,7 +2851,7 @@ DEPENDS = {
 		'cpu_count' : '1',
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
-		'url' : 'https://download.qt.io/official_releases/qt/5.10/5.10.0/single/qt-everywhere-src-5.10.0.tar.xz',
+		'url' : 'https://download.qt.io/official_releases/qt/5.10/5.10.1/single/qt-everywhere-src-5.10.1.tar.xz',
 		'configure_options' :
 			'-static'
 			' -no-dbus'
@@ -2918,7 +2920,7 @@ DEPENDS = {
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0013-Fix-linking-against-static-pcre.patch','p1'],
 			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0016-Rename-qtmain-to-qt5main.patch','p1','qtactiveqt'],
 		],
-		'_info' : { 'version' : '5.9.2', 'fancy_name' : 'QT5' },
+		'_info' : { 'version' : '5.10.1', 'fancy_name' : 'QT5' },
 	},
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
@@ -2948,24 +2950,24 @@ DEPENDS = {
 		# 'patches' : [
 			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-icu/0012-libprefix.mingw.patch','p1')
 		# ],
-		'url' : 'http://download.icu-project.org/files/icu4c/60.1/icu4c-60_1-src.tgz',
+		'url' : 'http://download.icu-project.org/files/icu4c/60.2/icu4c-60_2-src.tgz',
 		'rename_folder': 'icu_60_1',
 		'folder_name' : 'icu',
 		'source_subfolder' : 'source',
 		'configure_options': ' --host={target_host} --target={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-cross-build=/xc/gcct/icu_native/source --with-data-packaging=library',
 		'depends_on' : [ 'zlib', ],
-		'_info' : { 'version' : '60_1', 'fancy_name' : 'icu' },
+		'_info' : { 'version' : '60_2', 'fancy_name' : 'icu' },
 	},
 	'harfbuzz' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.1.tar.bz2',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
 		#TODO
 		# 'env_exports' : {
 		# 	'CFLAGS'   : '-DGRAPHITE2_STATIC',
 		# 	'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		# },
-		'_info' : { 'version' : '1.7.1', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
@@ -2979,13 +2981,13 @@ DEPENDS = {
 
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.12.2.tar.gz',
+		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.13.0.tar.gz',
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.12.2', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.13.0', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://developer.gnome.org/glib/glib-html-2.54.2.tar.gz',
+		'url' : 'https://developer.gnome.org/glib/glib-html-2.54.3.tar.gz',
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre2' ],
 		'patches' : [
@@ -3001,11 +3003,11 @@ DEPENDS = {
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
-		'_info' : { 'version' : '2.54.2', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '2.54.3', 'fancy_name' : 'glib2' },
 	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.openssl.org/source/openssl-1.1.0f.tar.gz',
+		'url' : 'https://www.openssl.org/source/openssl-1.1.1-pre1.tar.gz',
 		'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
 		'install_target' : 'install_sw', # we don't need the docs..
@@ -3017,18 +3019,18 @@ DEPENDS = {
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lcrypto/Libs: -L${{libdir}} -lcrypto -lcrypt32/\' "{pkg_config_path}/libcrypto.pc"', # libssh2 doesn't use --static pkgconfig, so we have to do this.
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lssl/Libs: -L${{libdir}} -lssl -lcrypt32/\' "{pkg_config_path}/libssl.pc"', # nor does curl
 		],
-		'_info' : { 'version' : '1.1.0f', 'fancy_name' : 'openssl' },
+		'_info' : { 'version' : '1.1.1-pre1', 'fancy_name' : 'openssl' },
 	},
 	'openssl_1_0' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.openssl.org/source/openssl-1.0.2l.tar.gz',
+		'url' : 'https://www.openssl.org/source/openssl-1.0.2n.tar.gz',
 		'configure_options' : '{bit_name3} --prefix={target_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
 		'install_target' : 'install_sw', # we don't need the docs..
 		'env_exports' : {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 		},
-		'_info' : { 'version' : '1.0.2l', 'fancy_name' : 'openssl_1.0' },
+		'_info' : { 'version' : '1.0.2n', 'fancy_name' : 'openssl_1.0' },
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -3059,7 +3061,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # local non cross-compiled, to bootstrap libfile-cross-compiled, it needs the actual linux build first uh..
 		'repo_type' : 'git',
-		'branch' : '0cb71af34ef356ff7aea8f98aa6198702b969b1f',
+		'branch' : '18183507a2492a378c468ab5b90a8446227c14dd',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -3072,7 +3074,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : '0cb71af34ef356ff7aea8f98aa6198702b969b1f',
+		'branch' : '18183507a2492a378c468ab5b90a8446227c14dd',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
@@ -3114,11 +3116,14 @@ DEPENDS = {
 	},
 	'uchardet': {
 		'repo_type' : 'git',
-		'url' : 'git://anongit.freedesktop.org/uchardet/uchardet',
-		'branch' : '056a5a6e51e616223504932f5de6bd2eb807cfc3', #master fails
+		'url' : 'https://anongit.freedesktop.org/git/uchardet/uchardet.git',
+		# 'branch' : 'f136d434f0809e064ac195b5bc4e0b50484a474c', #master fails
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
+		'run_post_patch' : (
+			'sed -i.bak \'s/string(TOLOWER ${{CMAKE_SYSTEM_PROCESSOR}} TARGET_ARCHITECTURE)/string(TOLOWER "${{CMAKE_SYSTEM_PROCESSOR}}" TARGET_ARCHITECTURE)/g\' "CMakeLists.txt"', # fix quotation
+		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
@@ -3366,7 +3371,6 @@ DEPENDS = {
 		# '_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
 	# },
 	'xz' : { #lzma
-		# 'debug_downloadonly' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xz-mirror/xz.git',
 		#'url' : 'http://git.tukaani.org/xz.git',
@@ -3402,12 +3406,12 @@ DEPENDS = {
 	},
 	'libnettle' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz',
+		'url' : 'https://ftp.gnu.org/gnu/nettle/nettle-3.4.tar.gz',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-openssl --with-included-libtasn1',
 		'depends_on' : [
 			'gmp',
 		],
-		'_info' : { 'version' : '3.3', 'fancy_name' : 'nettle' },
+		'_info' : { 'version' : '3.4', 'fancy_name' : 'nettle' },
 	},
 	'iconv' : {
 		'repo_type' : 'archive',
@@ -3419,22 +3423,22 @@ DEPENDS = {
 	'p11-kit' : {
 		'repo_type' : 'archive',
 		'needs_make_install' : False,
-		'url' : 'https://p11-glue.freedesktop.org/releases/p11-kit-0.23.2.tar.gz',
+		'url' : 'hhttps://github.com/p11-glue/p11-kit/releases/download/0.23.9/p11-kit-0.23.9.tar.gz',
 		'configure_options': '--host={target_host} --prefix={target_prefix}',
 		'depends_on' : [ 'libtasn1', 'libffi' ],
 		'env_exports' : {
 			'LIBS' : '-liconv' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
 		},
-		'_info' : { 'version' : '0.23.2', 'fancy_name' : 'p11-kit' },
+		'_info' : { 'version' : '0.23.9', 'fancy_name' : 'p11-kit' },
 	},
 	'libtasn1' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.12.tar.gz',
+		'url' : 'https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.13.tar.gz',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
 		'run_post_patch' : [
 			'autoreconf -fiv',
 		],
-		'_info' : { 'version' : '4.12', 'fancy_name' : 'libtasn1' },
+		'_info' : { 'version' : '4.13', 'fancy_name' : 'libtasn1' },
 	},
 	'libffi' : {
 		'repo_type' : 'archive',
@@ -3444,7 +3448,7 @@ DEPENDS = {
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.1.tar.xz',
+		'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.2.tar.xz',
 		'configure_options':
 			'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
 			'--disable-srp-authentication '
@@ -3487,7 +3491,7 @@ DEPENDS = {
 			# 'LIBS' : '-lws2_32',
 			# 'ac_qcv_prog_AR' : '{cross_prefix_full}ar',
 		# },
-		'_info' : { 'version' : '3.6.1', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.6.2', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -3618,7 +3622,7 @@ DEPENDS = {
 	},
 	'sdl2_archive' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.libsdl.org/release/SDL2-2.0.7.tar.gz',
+		'url' : 'https://www.libsdl.org/release/SDL2-2.0.7.zip',
 		# 'patches' : (
 		# 	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2-2.0.5.xinput.diff', "p0"),
 		# ),
@@ -3714,9 +3718,9 @@ DEPENDS = {
 	},
 	'orc' : {
 		'repo_type' : 'archive',
-		'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.27.tar.xz',
+		'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.28.tar.xz',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.4.27', 'fancy_name' : 'orc' },
+		'_info' : { 'version' : '0.4.28', 'fancy_name' : 'orc' },
 	},
 	'libschroedinger' : {
 		'repo_type' : 'archive',
@@ -3734,7 +3738,7 @@ DEPENDS = {
 	},
 	'freetype2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/freetype/files/freetype2/2.8.1/freetype-2.8.1.tar.bz2',
+		'url' : 'https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2',
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
 		'patches' : [
@@ -3748,7 +3752,7 @@ DEPENDS = {
 		'run_post_install': (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		),
-		'_info' : { 'version' : '2.8.1', 'fancy_name' : 'freetype2' },
+		'_info' : { 'version' : '2.9', 'fancy_name' : 'freetype2' },
 	},
 	'expat' : {
 		'env_exports' : {
@@ -3766,7 +3770,9 @@ DEPENDS = {
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
-		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.7.tar.gz',
+		'url' : 'http://xmlsoft.org/sources/libxml2-2.9.8-rc1.tar.gz',
+		'folder_name' : 'libxml2-2.9.8',
+		'rename_folder' : 'libxml2-2.9.8-rc1',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --without-python --enable-tests=no --enable-programs=no',
 		# 'patches' : [ #todo remake this patch
 			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', 'p1'),
@@ -3780,16 +3786,16 @@ DEPENDS = {
 		'depends_on': [
 			'xz', 'iconv'
 		],
-		'_info' : { 'version' : '2.9.7', 'fancy_name' : 'libxml2' },
+		'_info' : { 'version' : '2.9.8-rc1', 'fancy_name' : 'libxml2' },
 	},
 	'libxvid' : {
 		'repo_type' : 'archive',
-		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz',
-		# 'folder_name' : 'xvidcore',
-		'rename_folder' : 'xvidcore-1.3.4',
+		'url' : 'http://downloads.xvid.org/downloads/xvidcore-1.3.5.tar.gz',
+		'folder_name' : 'xvidcore',
+		'rename_folder' : 'xvidcore-1.3.5',
 		'source_subfolder': 'build/generic',
 		'configure_options': '--host={target_host} --prefix={target_prefix}',
-		'cpu_count' : '1',
+		# 'cpu_count' : '1',
 		'run_post_configure': (
 			'sed -i.bak "s/-mno-cygwin//" platform.inc',
 		),
@@ -3797,7 +3803,7 @@ DEPENDS = {
 			'rm -v {target_prefix}/lib/xvidcore.dll.a',
 			'mv -v {target_prefix}/lib/xvidcore.a {target_prefix}/lib/libxvidcore.a',
 		),
-		'_info' : { 'version' : '1.3.4', 'fancy_name' : 'xvidcore' },
+		'_info' : { 'version' : '1.3.5', 'fancy_name' : 'xvidcore' },
 	},
 	'xavs' : {
 		#LDFLAGS='-lm'
@@ -3956,8 +3962,8 @@ DEPENDS = {
 		],
 	},
 	'librubberband' : {
-		'repo_type' : 'archive',
-		'url' : 'http://code.breakfastquay.com/attachments/download/34/rubberband-1.8.1.tar.bz2',
+		'repo_type' : 'git',
+		'url' : 'https://github.com/breakfastquay/rubberband.git',
 		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
 			'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/ladspa.h',
 		),
@@ -4010,9 +4016,9 @@ DEPENDS = {
 	},
 	'netcdf' : {
 		'repo_type' : 'archive',
-		'url' : 'ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.5.0.tar.gz',
+		'url' : 'ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
-		'_info' : { 'version' : '4.5.0', 'fancy_name' : 'netcdf' },
+		'_info' : { 'version' : '4.6.0', 'fancy_name' : 'netcdf' },
 	},
 	'libmysofa' : {
 		# 'debug_downloadonly' : True,	
@@ -4082,8 +4088,8 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
 		'make_subdir' : 'src',
 		'patches': (
-		    ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi-0.2.35_win32.patch', 'p0'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi-0.2.35_ioctl.patch', 'p0'),
+		    ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi/0001-zvbi-0.2.35_win32.patch', 'p1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi/0002-zvbi-0.2.35_ioctl.patch', 'p1'),
 		),
 		#sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
 		'run_post_make' : (
@@ -4129,20 +4135,20 @@ DEPENDS = {
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
 		'repo_type' : 'archive',
-		'url' : 'http://pkgs.fedoraproject.org/repo/pkgs/fribidi/fribidi-0.19.7.tar.bz2/6c7e7cfdd39c908f7ac619351c1c5c23/fribidi-0.19.7.tar.bz2',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.19.7', 'fancy_name' : 'libfribidi' },
+		'url' : 'https://github.com/fribidi/fribidi/releases/download/v1.0.1/fribidi-1.0.1.tar.bz2',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
+		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
 	},
-	'libfribidi_git' : {
-		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
-		'repo_type' : 'git',
-		'url' : 'https://github.com/fribidi/fribidi.git',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'run_post_patch' : [
-			"sed -i.bak 's/^CC =.*/CC=gcc/' gen.tab/Makefile",
-		],
-		'_info' : { 'version' : 'git', 'fancy_name' : 'libfribidi' },
-	},
+	#'libfribidi_git' : {
+	#	#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/fribidi/fribidi.git',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	'run_post_patch' : [
+	#		"sed -i.bak 's/^CC =.*/CC=gcc/' gen.tab/Makefile",
+	#	],
+	#	'_info' : { 'version' : 'git', 'fancy_name' : 'libfribidi' },
+	#},
 	'libass' : {
 		'debug_exit_after_config' : True,
 		'repo_type' : 'git',

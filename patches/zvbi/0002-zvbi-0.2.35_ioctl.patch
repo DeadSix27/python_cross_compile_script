@@ -1,0 +1,32 @@
+From 2829b5ba1b610352060c9ffdf72b7c909a9fbfc3 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Mon, 19 Feb 2018 14:45:27 +0100
+Subject: [PATCH 1/1] zvbi-0.2.35_ioctl
+
+---
+ contrib/ntsc-cc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/contrib/ntsc-cc.c b/contrib/ntsc-cc.c
+index 066ef07..1a4fdf2 100644
+--- a/contrib/ntsc-cc.c
++++ b/contrib/ntsc-cc.c
+@@ -32,7 +32,6 @@
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <locale.h>
+-#include <sys/ioctl.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+@@ -45,6 +44,7 @@
+ #include "src/libzvbi.h"
+ 
+ #ifdef ENABLE_V4L2
++#  include <sys/ioctl.h>
+ #  include <asm/types.h>
+ #  include "src/videodev2k.h"
+ #endif
+-- 
+2.16.1
+
