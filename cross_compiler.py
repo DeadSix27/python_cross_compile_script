@@ -1119,9 +1119,13 @@ class CrossCompileScript:
 	def download_unpack_file(self,url,folderName = None,workDir = None):
 
 		fileName = os.path.basename(urlparse(url).path)
+		
+		customFolder = False
 
 		if folderName == None:
 			folderName = os.path.basename(os.path.splitext(urlparse(url).path)[0]).rstrip(".tar")
+		else:
+			customFolder = True
 
 		folderToCheck = folderName
 		if workDir != None:
@@ -1135,9 +1139,15 @@ class CrossCompileScript:
 			self.logger.info("Unpacking {0}".format( fileName ))
 
 			tars = (".gz",".bz2",".xz",".bz",".tgz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
-
+			
+			customFolderTarArg = ""
+			
+			if customFolder:
+				customFolderTarArg = ' -C "' + folderName + '" --strip-components 1'
+				os.makedirs(folderName)
+			
 			if fileName.endswith(tars):
-				self.run_process('tar -xf "{0}"'.format( fileName ))
+				self.run_process('tar -xf "{0}"{1}'.format( fileName, customFolderTarArg ))
 			else:
 				self.run_process('unzip "{0}"'.format( fileName ))
 
@@ -2941,17 +2951,6 @@ DEPENDS = {
 		'depends_on' : [ 'zlib', ],
 		'_info' : { 'version' : '60_2', 'fancy_name' : 'icu' },
 	},
-	'harfbuzz' : {
-		'repo_type' : 'archive',
-		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		#TODO
-		# 'env_exports' : {
-		# 	'CFLAGS'   : '-DGRAPHITE2_STATIC',
-		# 	'CXXFLAGS' : '-DGRAPHITE2_STATIC',
-		# },
-		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
-	},
 	'pcre' : {
 		'repo_type' : 'archive',
 		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.41.tar.gz',
@@ -3719,19 +3718,29 @@ DEPENDS = {
 		'_info' : { 'version' : '1.0.11', 'fancy_name' : 'schroedinger' },
 
 	},
-	'freetype2' : {
+	
+	'freetype' : {
+		'is_dep_inheriter' : True,
+		'depends_on' : [ 'harfbuzz','freetype_lib','harfbuzz-with-freetype' ],
+	},
+	'harfbuzz' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
+		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
+	},
+	'harfbuzz-with-freetype' : {
+		'repo_type' : 'archive',
+		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2',
+		'folder_name' : 'harfbuzz-1.7.5-with-freetype',
+		'rename_folder' : 'harfbuzz-1.7.5-with-freetype',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
+		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz (with freetype2)' },
+	},
+	'freetype_lib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2',
-		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
-		'cpu_count' : '1', # ye idk why it needs that
-		'patches' : [
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0002-Enable-subpixel-rendering.patch?h=mingw-w64-freetype2',          'Np1'),
-			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0003-Enable-infinality-subpixel-hinting.patch?h=mingw-w64-freetype2', 'Np1'),
-		],
-		# 'run_post_install': (
-			# 'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lexpat -lz -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
-		# ),
+		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
 		'run_post_install': (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		),
