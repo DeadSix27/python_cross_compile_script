@@ -3723,7 +3723,7 @@ DEPENDS = {
 	'freetype2' : {
 		'repo_type' : 'archive',
 		'url' : 'https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2',
-		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
+		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --without-harfbuzz', # cygwin = "--build=i686-pc-cygwin"  # hard to believe but needed...
 		'cpu_count' : '1', # ye idk why it needs that
 		'patches' : [
 			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/freetype2/0001-Enable-table-validation-modules.patch?h=mingw-w64-freetype2',    'Np1'),
