@@ -3721,15 +3721,19 @@ DEPENDS = {
 	
 	'freetype' : {
 		'is_dep_inheriter' : True,
-		'depends_on' : [ 'harfbuzz','freetype_lib','harfbuzz-with-freetype' ],
+		'depends_on' : [ 'harfbuzz_lib','freetype_lib','harfbuzz_lib-with-freetype' ],
 	},
 	'harfbuzz' : {
+		'is_dep_inheriter' : True,
+		'depends_on' : [ 'freetype' ],
+	},
+	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
 		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
 	},
-	'harfbuzz-with-freetype' : {
+	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'url' : 'https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2',
 		'folder_name' : 'harfbuzz-1.7.5-with-freetype',
