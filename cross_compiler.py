@@ -1574,7 +1574,7 @@ class CrossCompileScript:
 
 		if not os.path.isfile(patch_touch_name):
 			self.logger.info("Patching source using: '{0}'".format( fileName ))
-			self.run_process('git apply {2}-{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
+			self.run_process('patch {2}-{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
 			self.touch(patch_touch_name)
 			if not postConf:
 				self.removeAlreadyFiles()
@@ -2244,7 +2244,6 @@ PRODUCTS = {
 			'--disable-debug-build '
 			'--prefix={product_prefix}/mpv_git.installed '
 			'--enable-sdl2 '
-			'--enable-egl-angle-lib '
 			'--enable-rubberband '
 			'--enable-lcms2 '
 			'--enable-dvdread '
@@ -2265,7 +2264,7 @@ PRODUCTS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+			'libffmpeg', 'angle_headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
 		],
 		
 		'packages': {
@@ -2669,7 +2668,6 @@ DEPENDS = {
 			'--disable-debug-build '
 			'--prefix={target_prefix} '
 			'--enable-sdl2 '
-			'--enable-egl-angle-lib '
 			'--enable-rubberband '
 			'--enable-lcms2 '
 			'--enable-dvdread '
@@ -2689,9 +2687,9 @@ DEPENDS = {
 			'TARGET={target_host} '
 			'DEST_OS=win32 '
 		,
-		# 'depends_on' : (
-			# 'libffmpeg', 'angle', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
-		# ),
+		'depends_on' : (
+			'libffmpeg', 'angle-headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+		),
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
 		},
@@ -2797,6 +2795,20 @@ DEPENDS = {
 		],
 		'_info' : { 'version' : '10.30', 'fancy_name' : 'pcre2' },
 	},
+	'angle_headers' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/google/angle.git',
+		'folder_name' : 'angle_headers_git',
+		'needs_make':False,
+		'needs_make_install':False,
+		'needs_configure':False,
+		'run_post_patch': [
+			'if [ ! -f "already_done" ] ; then cp -rv "include/EGL" "{target_prefix}/include/" ; fi',
+			'if [ ! -f "already_done" ] ; then cp -rv "include/KHR" "{target_prefix}/include/" ; fi',
+			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE headers' },
+	},
 	'angle' : {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/angle/angle',
@@ -2826,7 +2838,7 @@ DEPENDS = {
 		'packages': {
 			'arch' : [ 'gyp' ],
 		},
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Angle' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE' },
 	},
 	'qt5' : { # needs like 33GB
 		'warnings' : [
