@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-#- * -coding: utf - 8 - * -
+# -*- coding: utf-8 -*-
 
 # ####################################################
-# Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
+# Copyright (C) 2018 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -19,29 +19,7 @@
 # ################ REQUIRED PACKAGES ################
 # ###################################################
 # Package dependencies (some may be missing):
-#
-# ArchLinux
-# Ubuntu 17.04 (Zesty Zapus)
-# Ubuntu 16.10 (Yakkety)
-# Fedora 25    (Twenty Five)
-#
 # sudo apt install build-essential autoget texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc rst2pdf
-
-# ###################################################
-# #################     TODO      ###################
-# ###################################################
-
-# ## Feel free to help out with whatever is in this list (or any other thing) ##
-
-# List:
-# - Fix libbluray in shared.
-# - Basic optional config file.
-# - Remote hosting of product/dependency hosting as json files.
-# - Implement hash support for archives, mostly for the self hosted ones.
-
-# ###################################################
-# ################# CONFIGURATION ###################
-# ###################################################
 
 import progressbar # Run pip3 install progressbar2
 import requests # Run pip3 install requests
@@ -54,6 +32,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 from collections import OrderedDict
 
+# ###################################################
+# ################# CONFIGURATION ###################
+# ###################################################
 
 _CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
 _QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false
@@ -302,7 +283,7 @@ class CrossCompileScript:
 			def _split_lines(self, text, width):
 				return text.splitlines()
 
-		_epilog = 'Copyright (C) 2017 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
+		_epilog = 'Copyright (C) 2018 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
 		if _OUR_VER not in _TESTED_VERS:
 			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version, it may or may not work properly.: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 		
@@ -2266,7 +2247,6 @@ PRODUCTS = {
 		'depends_on' : [
 			'libffmpeg', 'angle_headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
 		],
-		
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
 		},
@@ -2658,11 +2638,6 @@ DEPENDS = {
 		'run_post_patch' : (
 			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
 		),
-		'patches' : {
-			( 'https://patch-diff.githubusercontent.com/raw/mpv-player/mpv/pull/4933.patch' , 'p1' ),
-			# ( 'https://-/patches/0001-mpv-add-vulkan-ver.diff' , 'p1' ),
-			# ( 'https://-/patches/0001-mpv-non-exclusive-fullscreen-hack.patch' , 'p1' ),
-		},
 		'configure_options':
 			'--enable-libmpv-shared '
 			'--disable-debug-build '
@@ -2687,9 +2662,9 @@ DEPENDS = {
 			'TARGET={target_host} '
 			'DEST_OS=win32 '
 		,
-		'depends_on' : (
-			'libffmpeg', 'angle-headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
-		),
+		'depends_on' : [
+			'libffmpeg', 'angle_headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
 		},
