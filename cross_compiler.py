@@ -1605,7 +1605,7 @@ class CrossCompileScript:
 				mkCmd = 'rake'
 
 			if os.path.isfile("configure"):
-				self.run_process('{0} clean -j {0}'.format( mkCmd, _CPU_COUNT ),True)
+				self.run_process('{0} clean -j {1}'.format( mkCmd, _CPU_COUNT ),True)
 
 			makeOpts = ''
 			if 'make_options' in data:
