@@ -2950,6 +2950,7 @@ DEPENDS = {
 		# 	'CFLAGS'   : '-DGRAPHITE2_STATIC',
 		# 	'CXXFLAGS' : '-DGRAPHITE2_STATIC',
 		# },
+		'depends_on' : [ 'freetype2', ],
 		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
 	},
 	'pcre' : {
