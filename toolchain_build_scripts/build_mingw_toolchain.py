@@ -15,21 +15,21 @@
 # limitations under the License.
 # ###################################################
 
-#pip modules
+# pip modules
 import progressbar # Please run: pip3 install progressbar2
 import requests # Please run: pip3 install requests
 
 
-#standard modules
+# standard modules
 import os,os.path,tarfile,io,shutil,re,subprocess,sys,hashlib,time
 from multiprocessing import cpu_count
 from collections import OrderedDict
 
-_WORKDIR		 = "toolchain"
-_CPU_COUNT	   = cpu_count()
+_WORKDIR	     = "toolchain"
+_CPU_COUNT	     = cpu_count()
 _NO_CONFIG_GUESS = True # Instead of downloading config.guess we use gcc -dumpmachine, this obviously only works when gcc is installed, but we need it to be installed anyway.
-_DEBUG = True
-_VERSION = "3.0"
+_DEBUG           = True
+_VERSION         = "3.0"
 
 
 SOURCES = OrderedDict() # Order matters.
@@ -46,7 +46,7 @@ SOURCES['mingw-w64'] = {
 		'mingw-w64-headers',
 		'mingw-w64-gendef',
 		'mingw-w64-winpthreads',
-		#'mingw-w64-widl', # Won't compile
+		#'mingw-w64-widl', # Still won't compile, 'mingw-w64-tools/widl/src/widl.c:172:28: error: array type has incomplete element type ‘struct option’'
 	]
 }
 SOURCES['gmp'] = {
@@ -196,12 +196,12 @@ BUILDS['mingw-w64-gendef'] = {
 		( '{prefix}', 'cp -f "./bin/gendef" "./bin/{target}-gendef"' ),
 	],
 }
-# BUILDS['mingw-w64-widl'] = { # fails to compile
+# BUILDS['mingw-w64-widl'] = { # See line 49
 # 	'lineConfig' :
 # 		'mingw-w64-tools/widl/configure'
-# 		' --build='{host}''
-# 		' --prefix='{prefix}''
-# 		' --target='{target}''
+# 		' --build="{host}"'
+# 		' --prefix="{prefix}"'
+# 		' --target="{target}"'
 # 	,
 # }
 
@@ -737,6 +737,9 @@ class MinGW64ToolChainBuilder:
 			cpuCount = _CPU_COUNT
 			if "cpu_count" in p:
 				cpuCount = p["cpu_count"]
+				
+			os.environ["CFLAGS"] = "-ggdb"
+				
 			if not os.path.isfile(confOptsHash):
 				self.log("Building: %s" % pn)
 				noConfig = False
