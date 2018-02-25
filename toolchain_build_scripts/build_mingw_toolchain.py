@@ -36,7 +36,7 @@ SOURCES = OrderedDict() # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type' : 'git',
-	'url' : 'https://github.com/mirror/mingw-w64.git',
+	'url' : 'git://git.code.sf.net/p/mingw-w64/mingw-w64', # mirror: https://github.com/mirror/mingw-w64.git, but that seems suprisingly out of date sometimes.
 	'run_after_patches' : [
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
@@ -608,7 +608,7 @@ class MinGW64ToolChainBuilder:
 					if "git_shallow" in p:
 						if p["git_shallow"] == True:
 							shallowClone = True
-					self.log("Cloning sources for: %s" % pn)
+					self.log("Cloning git repo '%s' from '%s'" % (pn,pUrl))
 					productPath = self.gitClone(pUrl,desiredBranch=branch,shallow=shallowClone)
 
 				elif p["type"] == "archive":

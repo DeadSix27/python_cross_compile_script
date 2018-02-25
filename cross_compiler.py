@@ -42,9 +42,9 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '409500c17cc7a5e10ad3e305dfeda4a3c941853b'
+_MINGW_COMMIT      = '6c676fa4cf13e86127cb350349ced94ce4288497' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
-_ORIG_CFLAGS       = '-O3' # Set options like -march=skylake or -ggdb for debugging here.
+_ORIG_CFLAGS       = '-O3 -ggdb' # Set options like -march=skylake or -ggdb for debugging here.
 _USER_AGENT        = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36 " # change this as you like, default is most popular according to http://www.browser-info.net/useragents
 
 
@@ -1791,6 +1791,7 @@ class CrossCompileScript:
 	def defaultCFLAGS(self):
 		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
 		os.environ["CFLAGS"] = _ORIG_CFLAGS
+		os.environ["LDFLAGS"] = _ORIG_CFLAGS
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
@@ -2038,13 +2039,13 @@ PRODUCTS = {
 	'wget' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.savannah.gnu.org/git/wget.git',
-		# 'branch' : 'tags/v1.19.1', #switch to stable branch until the gnutls issue is resolved.
+		# 'branch' : 'tags/v1.19.1',
 		'rename_folder' : 'wget_git',
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-ssl=openssl --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : ' -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL', #-DGNUTLS_INTERNAL_BUILD
-		'patches_post_configure' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-wget-default-ca-bundle.patch', 'p1'],
-			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget_1.19.1.18_strip_version.patch', 'p1'), #this patch idea is on hold for now.. too fiddly.
+		'patches' : [
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-remove-RAND_screen-which-doesn-t-exist-on-mingw.patch', 'p1' ],
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-wget-look-for-ca-bundle.trust.crt-in-exe-path-by-def.patch', 'p1' ],
 		],
 		'depends_on': (
 			'zlib', 'libressl'
@@ -3098,6 +3099,7 @@ DEPENDS = {
 		'patches' : [
 			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', 'p1' ),
 			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0002-tls-revert-Add-tls-tls_keypair.c-commit.patch', 'p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', 'p1' ),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
 	},
@@ -4443,3 +4445,4 @@ DEPENDS = {
 if __name__ == "__main__": # use this as an example on how to implement this in custom building scripts.
 	main = CrossCompileScript(PRODUCT_ORDER,PRODUCTS,DEPENDS,VARIABLES)
 	main.commandLineEntrace()
+
