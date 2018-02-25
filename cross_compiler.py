@@ -1209,7 +1209,7 @@ class CrossCompileScript:
 				if req.status_code == 200:
 					return loc
 				else:
-					self.logger.debug(url + " unable to reach: HTTP" + str(req.status_code))
+					self.logger.debug(loc["url"] + " unable to reach: HTTP" + str(req.status_code))
 		
 		return dl_locations[0] # return the first if none could be found.
 		
