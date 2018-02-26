@@ -1982,7 +1982,6 @@ PRODUCTS = {
 	'x264' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/x264.git',
-		'rename_folder' : 'x264',
 		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264.installed --enable-strip --bit-depth=all',
 		'depends_on' : (
 			'libffmpeg',
