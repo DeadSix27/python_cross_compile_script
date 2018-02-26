@@ -1979,31 +1979,11 @@ PRODUCTS = {
 		'configure_options': '--host={target_host} --enable-static --enable-lto --prefix={product_prefix}/gdb_git.installed',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'GDB' },
 	},
-	'x264_10bit' : {
+	'x264' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/x264.git',
-		'rename_folder' : 'x264_10bit',
-		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_10bit.installed --enable-strip --enable-lavf --bit-depth=10 {cflag_string}',
-		'env_exports': {
-			'LAVF_LIBS' : '!CMD(pkg-config --libs libavformat libavcodec libavutil libswscale)CMD! -lcrypt32',
-			'LAVF_CFLAGS' : '!CMD(pkg-config --cflags libavformat libavcodec libavutil libswscale)CMD!',
-			'SWSCALE_LIBS' : '!CMD(pkg-config --libs libswscale)CMD!',
-		},
-		'depends_on' : (
-			'libffmpeg',
-		),
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
-	},
-	'x264_8bit' : {
-		'repo_type' : 'git',
-		'url' : 'https://git.videolan.org/git/x264.git',
-		'rename_folder' : 'x264_8bit',
-		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_8bit.installed --enable-strip --enable-lavf --bit-depth=8 {cflag_string}',
-		'env_exports': {
-			'LAVF_LIBS' : '!CMD(pkg-config --libs libavformat libavcodec libavutil libswscale)CMD! -lcrypt32',
-			'LAVF_CFLAGS' : '!CMD(pkg-config --cflags libavformat libavcodec libavutil libswscale)CMD!',
-			'SWSCALE_LIBS' : '!CMD(pkg-config --libs libswscale)CMD!',
-		},
+		'rename_folder' : 'x264',
+		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264.installed --enable-strip --bit-depth=all',
 		'depends_on' : (
 			'libffmpeg',
 		),
