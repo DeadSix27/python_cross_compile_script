@@ -1,0 +1,25 @@
+From d853165be233ef96180dfbf9b29c0301ee351dcf Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Sun, 25 Feb 2018 08:23:01 +0100
+Subject: [PATCH 1/1] remove RAND_screen which doesn't exist on mingw
+
+---
+ src/openssl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/openssl.c b/src/openssl.c
+index 6af38dbf..96711ab2 100644
+--- a/src/openssl.c
++++ b/src/openssl.c
+@@ -100,7 +100,7 @@ init_prng (void)
+   if (RAND_status ())
+     return;
+ 
+-#ifdef WINDOWS
++#if defined(WINDOWS) && !defined(__MINGW32__)
+   /* Under Windows, we can try to seed the PRNG using screen content.
+      This may or may not work, depending on whether we'll calling Wget
+      interactively.  */
+-- 
+2.16.2
+
