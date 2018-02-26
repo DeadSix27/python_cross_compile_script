@@ -29,14 +29,15 @@ _WORKDIR	     = "toolchain"
 _CPU_COUNT	     = cpu_count()
 _NO_CONFIG_GUESS = True # Instead of downloading config.guess we use gcc -dumpmachine, this obviously only works when gcc is installed, but we need it to be installed anyway.
 _DEBUG           = True
-_VERSION         = "4.0"
+_VERSION         = "4.1"
+_DEBUG_BUILD     = True
 
 
 SOURCES = OrderedDict() # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type' : 'git',
-	'url' : 'git://git.code.sf.net/p/mingw-w64/mingw-w64', # mirror: https://github.com/mirror/mingw-w64.git, but that seems suprisingly out of date sometimes.
+	'url' : 'git://git.code.sf.net/p/mingw-w64/mingw-w64', # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
 	'run_after_patches' : [
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
@@ -738,8 +739,11 @@ class MinGW64ToolChainBuilder:
 			cpuCount = _CPU_COUNT
 			if "cpu_count" in p:
 				cpuCount = p["cpu_count"]
-				
-			os.environ["CFLAGS"] = "-ggdb"
+			
+			if _DEBUG_BUILD:
+				os.environ["CFLAGS"] = "-ggdb -O0"
+			else:
+				os.environ["CFLAGS"] = "-ggdb -O3"
 				
 			if not os.path.isfile(confOptsHash):
 				self.log("Building: %s" % pn)
@@ -820,6 +824,11 @@ class MinGW64ToolChainBuilder:
 		if hash != "":
 			SOURCES['mingw-w64']['checkout'] = hash
 			self.log("Set MinGW checkout to: " + hash)
+			
+	def setDebugBuild(self,onoff):
+		_DEBUG_BUILD = onoff
+		self.log("Set MinGW debug build to: " + ("Yes" if _DEBUG_BUILD == True else "No"))
+	
 	#:
 	def build(self):
 		self.nativeHost = self.getConfigGuess()

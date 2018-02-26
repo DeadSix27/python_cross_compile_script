@@ -43,8 +43,9 @@ _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(as
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
 _MINGW_COMMIT      = '6c676fa4cf13e86127cb350349ced94ce4288497' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
+_MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
-_ORIG_CFLAGS       = '-O3 -ggdb' # Set options like -march=skylake or -ggdb for debugging here.
+_ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
 _USER_AGENT        = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36 " # change this as you like, default is most popular according to http://www.browser-info.net/useragents
 
 
@@ -512,6 +513,7 @@ class CrossCompileScript:
 			toolchainBuilder.workDir = _MINGW_DIR
 			if _MINGW_COMMIT != None:
 				toolchainBuilder.setMinGWcheckout(_MINGW_COMMIT)
+			toolchainBuilder.setDebugBuild(_MINGW_DEBUG_BUILD)
 			toolchainBuilder.onStatusUpdate += toolchainBuildStatus
 			toolchainBuilder.build()
 
@@ -1312,6 +1314,7 @@ class CrossCompileScript:
 				return
 
 		self.logger.info("Building {0} '{1}'".format(type,name))
+		self.defaultCFLAGS()
 
 		if 'warnings' in data:
 			if len(data['warnings']) > 0:
@@ -1380,7 +1383,6 @@ class CrossCompileScript:
 			self.cchdir("..")
 			exit()
 
-		self.defaultCFLAGS()
 		oldPath = self.getKeyOrBlankString(os.environ,"PATH")
 		currentFullDir = os.getcwd()
 
@@ -1515,14 +1517,6 @@ class CrossCompileScript:
 			if data['make_subdir'] != None:
 				self.cchdir(currentFullDir)
 
-		if 'cflag_addition' in data:
-			if data['cflag_addition'] != None:
-				self.defaultCFLAGS()
-
-		if 'custom_cflag' in data:
-			if data['custom_cflag'] != None:
-				self.defaultCFLAGS()
-
 		self.cchdir("..") #asecond into x86_64
 		if type == "PRODUCT":
 			self.PRODUCTS[name]["_already_built"] = True
@@ -1538,6 +1532,7 @@ class CrossCompileScript:
 				self.logger.debug("Re-setting PATH to '{0}'".format( oldPath ))
 				os.environ["PATH"] = oldPath
 
+		self.defaultCFLAGS()
 		self.cchdir("..") #asecond into workdir
 	#:
 	def bootstrap_configure(self):
@@ -1900,6 +1895,11 @@ class CrossCompileScript:
 		if self.debugMode:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
+		
+# ###################################################
+# ################  PACKAGE CONFIGS  ################
+# ###################################################
+
 VARIABLES = {
 	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} '
@@ -1909,9 +1909,7 @@ VARIABLES = {
 		'--disable-w32threads '
 		'--enable-cross-compile '
 		'--enable-pic '
-		'--disable-schannel '
 		'--enable-libsoxr '
-		# '--enable-fontconfig '
 		'--enable-libass '
 		'--enable-iconv '
 		'--enable-libtwolame '
@@ -1926,9 +1924,7 @@ VARIABLES = {
 		'--enable-libvorbis '
 		'--enable-libtheora '
 		'--enable-libspeex '
-		'--enable-libopenjpeg '
 		'--enable-libgsm '
-		'--enable-libfreetype '
 		'--enable-libopus '
 		'--enable-bzlib '
 		'--enable-libopencore-amrnb '
@@ -1941,13 +1937,11 @@ VARIABLES = {
 		'--enable-dxva2 '
 		'--enable-avisynth '
 		'--enable-gray '
-		'--enable-libopenh264 '
 		'--enable-libmysofa '
 		'--enable-libflite '
 		'--enable-lzma '
 		'--enable-libsnappy '
 		'--enable-libzimg '
-		'--enable-gpl '
 		'--enable-libx264 '
 		'--enable-libx265 '
 		'--enable-frei0r '
@@ -1956,20 +1950,24 @@ VARIABLES = {
 		'--enable-libvidstab '
 		'--enable-libxavs '
 		'--enable-libxvid '
-		'--enable-avresample '
 		'--enable-libgme '
 		'--enable-runtime-cpudetect '
 		'--enable-libfribidi '
-		'--enable-gnutls '
-		'--disable-openssl '
+		'--enable-gnutls ' # nongpl: openssl,libtls(libressl)
+		'--enable-gmp '
+		'--enable-fontconfig '
+		'--enable-libfontconfig '
+		'--enable-libfreetype '
 		'--enable-opengl '
-		'--disable-schannel '
 		'--enable-d3d11va '
-		'--disable-librsvg '
-		'--disable-gcrypt ' #TODO
 		'--enable-libmfx '
+		'--disable-schannel '
+		'--disable-gcrypt '
+		'--enable-gpl '
+		'--extra-version=DeadSix27/python_cross_compile_script '
+		#'--enable-avresample ' # deprecated.
 		'--pkg-config-flags="--static" '
-		'--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
+		#'--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
 		'--extra-cflags="-DLIBTWOLAME_STATIC" '
 		'--extra-cflags="-DMODPLUG_STATIC" '
 	,
@@ -2341,6 +2339,7 @@ PRODUCTS = {
 			'--enable-dvdnav '
 			'--enable-libbluray '
 			'--enable-cdda '
+			#'--enable-egl-angle-lib '
 			'--enable-libass '
 			'--enable-lua '
 			'--enable-vapoursynth '
@@ -2354,7 +2353,7 @@ PRODUCTS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'angle_headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
 		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -2422,17 +2421,18 @@ PRODUCTS = {
 	'youtube-dl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/rg3/youtube-dl.git',
-		'install_options' : 'PREFIX="{product_prefix}/youtube-dl_git.installed"',
+		'install_options' : 'youtube-dl PREFIX="{product_prefix}/youtube-dl_git.installed"',
+		'run_post_patch' : [
+			'sed -i.bak \'s/pandoc.*/touch youtube-dl.1/g\' Makefile', # "disables" doc, the pandoc requirement is so annoyingly big..
+		],
 		'run_post_install' : [
 			'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
 		],
+		'make_options': 'youtube-dl',
 		'patches' : [
 			( 'https://github.com/DeadSix27/youtube-dl/commit/4a386648cf85511d9eb283ba488858b6a5dc2444.patch', 'p1' ),
 		],
 		'needs_configure' : False,
-		'packages': {
-			'ubuntu' : [ 'pandoc' ],
-		},
 	},
 	'mpv_gui_qt5' : {
 		'repo_type' : 'git',
@@ -2543,6 +2543,7 @@ DEPENDS = {
 	'crossc' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/rossy/crossc.git',
+		'cpu_count' : '1',
 		'recursive_git' : True,
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} static',
@@ -2674,8 +2675,8 @@ DEPENDS = {
 		'depends_on' : [
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libopenh264', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
-			'libopenjpeg', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers',
+			'libx265_multibit', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
+			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers',
 		],
 	},
 	'taglib' : {
@@ -2721,7 +2722,6 @@ DEPENDS = {
 	'libzip' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/nih-at/libzip.git',
-		# 'branch' : 'b89ee3286ea11ad79a934f143f18e007d9f21385',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'patches' : [
 			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-libzip-git-20170415-fix-static-build.patch','p1'),
@@ -2731,7 +2731,7 @@ DEPENDS = {
 		'run_post_patch' : (
 			'autoreconf -fiv',
 		),
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libzip' },
 	},
 	'libmpv' : {
 		'repo_type' : 'git',
@@ -2744,7 +2744,7 @@ DEPENDS = {
 			'LDFLAGS' : '-ld3d11',
 		},
 		'run_post_patch' : (
-			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
+			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
 		),
 		'configure_options':
 			'--enable-libmpv-shared '
@@ -2757,6 +2757,7 @@ DEPENDS = {
 			'--enable-openal '
 			'--enable-dvdnav '
 			'--enable-libbluray '
+			#'--enable-egl-angle-lib '
 			'--enable-cdda '
 			'--enable-libass '
 			'--enable-lua '
@@ -2771,7 +2772,7 @@ DEPENDS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'angle_headers', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
 		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -3160,14 +3161,13 @@ DEPENDS = {
 		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
 		'depends_on' : [ 'iconv' ],
 	},
-	'libfile_local' : { # local non cross-compiled, to bootstrap libfile-cross-compiled, it needs the actual linux build first uh..
+	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : '18183507a2492a378c468ab5b90a8446227c14dd',
+		'branch' : '6876ebadcdf27224b3ffa9dfa4343127aa97c9b2',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
 		'needs_make' : False,
-		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
 		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 		'run_post_patch' : [ 'autoreconf -fiv' ],
 
@@ -3175,14 +3175,13 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : '18183507a2492a378c468ab5b90a8446227c14dd',
+		'branch' : '6876ebadcdf27224b3ffa9dfa4343127aa97c9b2',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-fsect-man5',
 		'depends_on' : [ 'mingw-libgnurx', 'libfile_local' ],
-		'custom_cflag' : '', # doesn't like march in cflag, but target_cflags.
 		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 		'run_post_patch' : [ 'autoreconf -fiv' ],
 		'flipped_path' : True,
@@ -3488,7 +3487,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : '8e87f5a4b88e16ccafb2e7ade8ef454aeac19094', # Last working c1689d4b9abbf4becadcbd4f436e2f3b2bf1c2f1 'ae9a2789247d075441191fec469a3a076d314c15'
+		'branch' : '65cea43d82b22952eb3bdda9db36404a95bd3948', # Last working: '8e87f5a4b88e16ccafb2e7ade8ef454aeac19094', c1689d4b9abbf4becadcbd4f436e2f3b2bf1c2f1 'ae9a2789247d075441191fec469a3a076d314c15'
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3655,8 +3654,8 @@ DEPENDS = {
 	'libbs2b' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/bs2b/files/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6aaafd81aae3898ee40148dd1349aab348db9bfae9767d0e66e0b07ddd4b2528" }, ], },
 			{ "url" : "http://sourceforge.mirrorservice.org/b/bs/bs2b/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6aaafd81aae3898ee40148dd1349aab348db9bfae9767d0e66e0b07ddd4b2528" }, ], },
+			{ "url" : "https://sourceforge.net/projects/bs2b/files/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6aaafd81aae3898ee40148dd1349aab348db9bfae9767d0e66e0b07ddd4b2528" }, ], },
 		],
 		'env_exports' : {
 			"ac_cv_func_malloc_0_nonnull" : "yes", # fixes undefined reference to `rpl_malloc'
@@ -3792,6 +3791,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
 	},
 	'libopus' : {
+		'custom_cflag': '-ggdb -O3 -march=skylake -mtune=intel',
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/opus.git',
 		'patches': (
@@ -3800,7 +3800,7 @@ DEPENDS = {
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lopus.*/Libs: -L${{libdir}} -lopus -lssp/\' "{pkg_config_path}/opus.pc"', # ???, keep checking whether this is needed, apparently it is for now.
 		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-silent-rules',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'opus' },
 	},
 	'opencore-amr' : {
@@ -3815,10 +3815,10 @@ DEPENDS = {
 	'vo-amrwbenc' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e" }, ], },
 			{ "url" : "https://pkgs.rpmfusion.org/repo/pkgs/free/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz/f63bb92bde0b1583cb3cb344c12922e0/vo-amrwbenc-0.1.3.tar.gz", 
 				"hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e"}, ], 
 			},
+			{ "url" : "https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e" }, ], },
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'vo-amrwbenc' },
@@ -3883,62 +3883,59 @@ DEPENDS = {
 	},
 	'freetype' : {
 		'is_dep_inheriter' : True,
-		'depends_on' : [ 'freetype_lib', 'harfbuzz_lib-with-freetype', 'freetype_lib-with-harfbuzz' ],
+		'depends_on' : [ 'bzip2', 'freetype_lib', 'harfbuzz_lib-with-freetype', ], # 'freetype_lib-with-harfbuzz' ],
 	},
 	'harfbuzz' : {
 		'is_dep_inheriter' : True,
-		'depends_on' : [ 'freetype_lib', 'harfbuzz_lib-with-freetype', ],
+		'depends_on' : [ 'bzip2', 'freetype_lib', 'harfbuzz_lib-with-freetype', ],
 	},
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
+		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
 		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
 		'folder_name' : 'harfbuzz-1.7.5-with-freetype',
 		'rename_folder' : 'harfbuzz-1.7.5-with-freetype',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
+		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
 		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
+			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
 		],
 		'folder_name' : 'freetype-2.9-with-harfbuzz',
 		'rename_folder' : 'freetype-2.9-with-harfbuzz',
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
 		'run_post_install': (
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
+			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2 -lharfbuzz/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		),
 		'_info' : { 'version' : '2.9', 'fancy_name' : 'freetype2' },
 	},
 	'freetype_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
+			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
 		],
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=no',
-		'run_post_install': (
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
-		),
 		'_info' : { 'version' : '2.9', 'fancy_name' : 'freetype2' },
 	},
 	'expat' : {
@@ -4004,7 +4001,7 @@ DEPENDS = {
 	'xavs' : {
 		#LDFLAGS='-lm'
 		'repo_type' : 'svn',
-		'url' : 'https://svn.code.sf.net/p/xavs/code/trunk',
+		'url' : 'svn://svn.code.sf.net/p/xavs/code/trunk',
 		'folder_name' : 'xavs_svn',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --cross-prefix={cross_prefix_bare}',
 		'run_post_install' : (
@@ -4046,7 +4043,7 @@ DEPENDS = {
 		'is_cmake' : True,
 		'source_subfolder': 'source',
 		'run_post_install' : [
-			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',#This causes: multiple definition of `DllMain', similiar to: https://github.com/jb-alvarado/media-autobuild_suite/issues/418
+			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
 		],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library)' },
 	},
@@ -4065,10 +4062,10 @@ DEPENDS = {
 			'"{cross_prefix_full}ar" -M <<EOF\nCREATE libx265.a\nADDLIB libx265_main.a\nADDLIB libx265_main10.a\nADDLIB libx265_main12.a\nSAVE\nEND\nEOF',
 		],
 		'run_post_install' : [
-			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',#This causes: multiple definition of `DllMain', similiar to: https://github.com/jb-alvarado/media-autobuild_suite/issues/418
+			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
 		],
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
-		# 'patches': [
+		# 'patches': [ # for future reference
 		# 	[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', 'p1', '..' ],
 		# ],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit library 12/10/8)' },
@@ -4084,9 +4081,6 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		# 'patches': [
-		# 	[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', 'p1', '..' ],
-		# ],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
 	},
 	'libx265_multibit_12' : {
@@ -4100,9 +4094,6 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		# 'patches': [
-		# 	[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', 'p1', '..' ],
-		# ],
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
 	},
 	'libopenh264' : {
@@ -4157,7 +4148,7 @@ DEPENDS = {
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
-		'branch' : '292789aff835d134cd3764194a7f2e2603a3766c', # revert to 83a9482e8049c7eb96a305516fe5efca570b0a3a if failing
+		'branch' : '1601e2cdec84182a1a2e659b6a6db0c2766ba5cd', #Last working: '292789aff835d134cd3764194a7f2e2603a3766c', 83a9482e8049c7eb96a305516fe5efca570b0a3a if failing
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (c99874)', 'fancy_name' : 'fftw3' },
@@ -4280,8 +4271,8 @@ DEPENDS = {
 	'libmodplug' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.9.0/libmodplug-0.8.9.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "457ca5a6c179656d66c01505c0d95fafaead4329b9dbaa0f997d00a3508ad9de" }, ], },
 			{ "url" : "https://ftp.openbsd.org/pub/OpenBSD/distfiles/libmodplug-0.8.9.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "457ca5a6c179656d66c01505c0d95fafaead4329b9dbaa0f997d00a3508ad9de" }, ], },
+			{ "url" : "https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.9.0/libmodplug-0.8.9.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "457ca5a6c179656d66c01505c0d95fafaead4329b9dbaa0f997d00a3508ad9de" }, ], },
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-static --disable-shared',
 		'run_post_install': (
@@ -4330,23 +4321,30 @@ DEPENDS = {
 	'libilbc' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/dekkers/libilbc.git',
-		'run_post_patch': (
+		'run_post_patch': [
 			'autoreconf -fiv',
-		),
+		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libilbc' },
 	},
 	'fontconfig' : {
 		'repo_type' : 'git',
+		'do_not_bootstrap' : True,
 		'url' : 'git://anongit.freedesktop.org/fontconfig',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
-		# 'run_post_install': (
-			# 'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lexpat/\' "{pkg_config_path}/fontconfig.pc"',
-		# ),
+		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
+		'run_post_patch': [
+			'autoreconf -fiv',
+		],
+		'run_post_install': (
+			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv/\' "{pkg_config_path}/fontconfig.pc"',
+		),
+		'depends_on' : [
+			'iconv','libxml2','freetype',
+		],
 		'packages': {
 			'arch' : [ 'gperf' ],
 		},
-		'_info' : { 'version' : '2.12.6', 'fancy_name' : 'fontconfig' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'fontconfig' },
 	},
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
@@ -4358,60 +4356,38 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
 		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
 	},
-	#'libfribidi_git' : {
-	#	#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
-	#	'repo_type' : 'git',
-	#	'url' : 'https://github.com/fribidi/fribidi.git',
-	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-	#	'run_post_patch' : [
-	#		"sed -i.bak 's/^CC =.*/CC=gcc/' gen.tab/Makefile",
-	#	],
-	#	'_info' : { 'version' : 'git', 'fancy_name' : 'libfribidi' },
-	#},
 	'libass' : {
-		'debug_exit_after_config' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
-		#'branch' : '68f25e2c26de2c5c3624bf0fe6d12a0e9c35e861',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-silent-rules',
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"', #-lfontconfig
 		),
-		'depends_on' : [ 'harfbuzz', 'libfribidi', 'freetype', 'iconv', ],
+		'depends_on' : [ 'fontconfig', 'harfbuzz', 'libfribidi', 'freetype', 'iconv', ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libass' },
 	},
-	'libopenjpeg' : { #libopenjp2
-		# 'env_exports' : {
-			# 'AR' : '{cross_prefix_bare}ar',
-			# 'CC' : '{cross_prefix_bare}gcc',
-			# 'PREFIX' : '{target_prefix}',
-			# 'RANLIB' : '{cross_prefix_bare}ranlib',
-			# 'LD'     : '{cross_prefix_bare}ld',
-			# 'STRIP'  : '{cross_prefix_bare}strip',
-			# 'CXX'    : '{cross_prefix_bare}g++',
-		# },
+	'libopenjpeg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/uclouvain/openjpeg.git',
-		# 'folder_name': 'openjpeg-2.3.0',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off', #cmake .. "-DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix -DBUILD_SHARED_LIBS:bool=on -DCMAKE_SYSTEM_NAME=Windows"
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openjpeg' },
 	},
 	'intel_quicksync_mfx' : {
 		'repo_type' : 'git',
-		'run_post_patch': (
+		'run_post_patch': [
 			'autoreconf -fiv',
-		),
+		],
 		'url' : 'https://github.com/lu-zero/mfx_dispatch.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'intel_quicksync_mfx' },
 	},
 	'fdk_aac' : {
 		'repo_type' : 'git',
-		'run_post_patch': (
+		'run_post_patch': [
 			'autoreconf -fiv',
-		),
+		],
 		'url' : 'https://github.com/mstorsjo/fdk-aac.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'fdk-aac' },
