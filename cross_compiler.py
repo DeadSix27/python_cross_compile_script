@@ -3415,7 +3415,7 @@ DEPENDS = {
 			'if [ ! -f "already_done" ] ; then cp -av "amf/public/include/." "{target_prefix}/include/AMF" ; fi',
 			'if [ ! -f "already_done" ] ; then touch  "already_done" ; fi',
 		),
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'nVidia (headers)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'AMF (headers)' },
 	},
 	'nv-codec-headers' : {
 		'repo_type' : 'git',
@@ -3423,7 +3423,7 @@ DEPENDS = {
 		"needs_configure": False,
 		'make_options': 'PREFIX={target_prefix}',
 		'install_options' : 'PREFIX={target_prefix}',
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'AMF (headers)' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'nVidia (headers)' },
 	},
 	'libffmpeg' : {
 		'repo_type' : 'git',
