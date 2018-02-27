@@ -36,7 +36,7 @@ from collections import OrderedDict
 # ################# CONFIGURATION ###################
 # ###################################################
 
-_CPU_COUNT         = cpu_count() # the default automaticlaly sets it to your core-count but you can set it manually too # default: cpu_count()
+_CPU_COUNT         = cpu_count() # the default automatically sets it to your core-count but you can set it manually too # default: cpu_count()
 _QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false
 _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
@@ -1166,7 +1166,7 @@ class CrossCompileScript:
 						self.logger.info("Comparing hashes..")
 						hashReturn = self.verify_hash(fileName,hash)
 						if hashReturn[0] == True:
-							self.logger.info("Hashes matched: {0}...{1} (local) != {2}...{3} (remote)".format(hashReturn[1][0:5],hashReturn[1][-5:],hashReturn[2][0:5],hashReturn[2][-5:]))
+							self.logger.info("Hashes matched: {0}...{1} (local) == {2}...{3} (remote)".format(hashReturn[1][0:5],hashReturn[1][-5:],hashReturn[2][0:5],hashReturn[2][-5:]))
 						else:
 							self.logger.error("File hashes didn't match: %s(local) != %s(remote)" % (hashReturn[1],hashReturn[2]))
 							raise Exception("File download error: Hash mismatch")
@@ -1852,7 +1852,7 @@ class CrossCompileScript:
 			current_path               = os.getcwd(),
 			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH")
 		)
-		# needed actual commands sometimes, so I made this custom command support, compareable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
+		# needed actual commands sometimes, so I made this custom command support, comparable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
 
 		m = re.search(r'\!CMD\((.*)\)CMD!',cmd)
 		if m != None:
@@ -2163,15 +2163,16 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'recursive_git' : True,
 		'is_rake' : True,
-		'url' : 'https://github.com/mbunkus/mkvtoolnix.git',
+		'url' : 'https://gitlab.com/mbunkus/mkvtoolnix.git', #why gitlab? At least its not sourceforge...
 		'configure_options':
 			'--host={target_host} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
 			' --with-boost={target_prefix} --with-boost-system=boost_system --with-boost-filesystem=boost_filesystem --with-boost-date-time=boost_date_time --with-boost-regex=boost_regex --enable-optimization --enable-qt --enable-static-qt'
 			' --with-moc={mingw_binpath}/moc --with-uic={mingw_binpath}/uic --with-rcc={mingw_binpath}/rcc --with-qmake={mingw_binpath}/qmake'
 			' QT_LIBS="-lws2_32 -lprcre"'
 		,
+		'make_options': '-v',
 		'depends_on' : [
-			'libfile','libflac','boost','qt5', 'gettext'
+			'cmark','libfile','libflac','boost','qt5','gettext'
 		],
 		'packages': {
 			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'docbook-xsl' ],
@@ -2655,7 +2656,7 @@ DEPENDS = {
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
-			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers',
+			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers', 
 		],
 	},
 	'taglib' : {
@@ -2697,6 +2698,15 @@ DEPENDS = {
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
+	},
+	'cmark' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/commonmark/cmark.git',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'source_subfolder': '_build',
+		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMARK_STATIC=ON -DCMARK_SHARED=OFF -DCMARK_TESTS=OFF', #CMARK_STATIC_DEFINE
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cmark' },
 	},
 	'libzip' : {
 		'repo_type' : 'git',
@@ -2824,7 +2834,10 @@ DEPENDS = {
 	},
 	'boost' : {
 		'repo_type' : 'archive',
-		'url' : 'https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.bz2',
+		'download_locations' : [
+			{ "url" : "https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "5721818253e6a0989583192f96782c4a98eb6204965316df9f5ad75819225ca9" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/boost_1_66_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "5721818253e6a0989583192f96782c4a98eb6204965316df9f5ad75819225ca9" }, ], },
+		],
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2833,7 +2846,7 @@ DEPENDS = {
 			'if [ ! -f "already_configured_0" ] ; then sed -i.bak \'s/case \*       : option = -pthread ; libs = rt ;/case *      : option = -pthread ;/\' tools/build/src/tools/gcc.jam ; fi',
 			'if [ ! -f "already_configured_0" ] ; then touch already_configured_0 ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then echo "using gcc : mingw : {cross_prefix_bare}g++ : <rc>{cross_prefix_bare}windres <archiver>{cross_prefix_bare}ar <ranlib>{cross_prefix_bare}ranlib ;" > user-config.jam ; fi',
-			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows --prefix={target_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
+			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows address-model=64 architecture=x86 --prefix={target_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
 		'_info' : { 'version' : '1.66.0', 'fancy_name' : 'Boost' },
@@ -2846,10 +2859,12 @@ DEPENDS = {
 		'install_options' : '{make_prefix_options} prefix={target_prefix}',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
-	'pcre2' :
-	{
+	'pcre2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.31.tar.gz',
+		'download_locations' : [
+			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.31.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/pcre2-10.31.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
+		],
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'patches' : (
@@ -2859,7 +2874,7 @@ DEPENDS = {
 		'depends_on' : [
 			'bzip2',
 		],
-		'_info' : { 'version' : '10.30', 'fancy_name' : 'pcre2' },
+		'_info' : { 'version' : '10.31', 'fancy_name' : 'pcre2' },
 	},
 	'angle_headers' : {
 		'repo_type' : 'git',
@@ -2906,11 +2921,23 @@ DEPENDS = {
 		},
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE' },
 	},
-	'qt5' : { # needs like 33GB
+	# Still not building correctly.
+	#
+	# Build needs around 40G, install around 10-15Gb;
+	# Make sure you have at least 60GB free when building,
+	# you can delete the entire source folder of qt after install to free space up again,
+	# then just uncomment the "\'_already_built\' : True," line below in the qt5 block, so building will be skipped each time.
+	'qt5' : {
+		 # '_already_built' : True,
 		'warnings' : [
-			'Qt5 buidling CAN fail sometimes with multiple threads.. so if this failed try re-running it',
+			'Qt5 building CAN fail sometimes with multiple threads.. so if this failed try re-running it',
 			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393',
-			'(You could add \'cpu_count\' : \'1\', to the config of QT5 if the slower speed is acceptable for you)'
+			'(You could add \'cpu_count\' : \'1\', to the config of QT5 if the slower speed is acceptable for you)',
+			'---------------',
+			'Build needs around 40G, install around 10-15Gb.',
+			'Make sure you have at least 60GB free when building,',
+			'you can delete the entire source folder of qt after install to free space up again,',
+			'then just uncomment the "\'_already_built\' : True," line in the qt5 block, so building will be skipped each time.'
 		],
 		'env_exports' : {
 			'CFLAGS'   : '-DDBUS_STATIC_BUILD -DJAS_DLL=0',
@@ -2925,7 +2952,9 @@ DEPENDS = {
 		'cpu_count' : '1',
 		'clean_post_configure' : False,
 		'repo_type' : 'archive',
-		'url' : 'https://download.qt.io/official_releases/qt/5.10/5.10.1/single/qt-everywhere-src-5.10.1.tar.xz',
+		'download_locations' : [
+			{ "url" : "https://download.qt.io/official_releases/qt/5.10/5.10.1/single/qt-everywhere-src-5.10.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "05ffba7b811b854ed558abf2be2ddbd3bb6ddd0b60ea4b5da75d277ac15e740a" }, ], },
+		],
 		'configure_options' :
 			'-static'
 			' -no-dbus'
@@ -2985,14 +3014,6 @@ DEPENDS = {
 		'depends_on' : [ 'libwebp', 'freetype', 'libpng', 'libjpeg-turbo', 'pcre2', 'd-bus', ],
 
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0001-Add-profile-for-cross-compilation-with-mingw-w64-modified-2.patch','p1'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0001-Don-t-require-windows.h-when-using-native-Linux-gcc.patch','p1','qtactiveqt'],
-			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0002-Handle-win64-in-dumpcpp-and-MetaObjectGenerator-read.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0005-Make-sure-.pc-files-are-installed-correctly.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0006-Don-t-add-resource-files-to-LIBS-parameter.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0007-Prevent-debug-library-names-in-pkg-config-files.patch','p1','qtbase'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0013-Fix-linking-against-static-pcre.patch','p1'],
-			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/qt5/0016-Rename-qtmain-to-qt5main.patch','p1','qtactiveqt'],
 		],
 		'_info' : { 'version' : '5.10.1', 'fancy_name' : 'QT5' },
 	},
@@ -3047,7 +3068,10 @@ DEPENDS = {
 
 	'd-bus' : {
 		'repo_type' : 'archive',
-		'url' : 'https://dbus.freedesktop.org/releases/dbus/dbus-1.13.0.tar.gz',
+		'download_locations' : [
+			{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "837abf414c0cdac4c8586ea6f93a999446470b10abcfeefe19ed8a7921854d2e" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/dbus-1.13.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "837abf414c0cdac4c8586ea6f93a999446470b10abcfeefe19ed8a7921854d2e" }, ], },
+		],
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
 		'_info' : { 'version' : '1.13.0', 'fancy_name' : 'D-bus (Library)' },
 	},
@@ -3391,6 +3415,14 @@ DEPENDS = {
 			'if [ ! -f "already_done" ] ; then cp -av "amf/public/include/." "{target_prefix}/include/AMF" ; fi',
 			'if [ ! -f "already_done" ] ; then touch  "already_done" ; fi',
 		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'nVidia (headers)' },
+	},
+	'nv-codec-headers' : {
+		'repo_type' : 'git',
+		'url' : 'https://git.videolan.org/git/ffmpeg/nv-codec-headers.git',
+		"needs_configure": False,
+		'make_options': 'PREFIX={target_prefix}',
+		'install_options' : 'PREFIX={target_prefix}',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'AMF (headers)' },
 	},
 	'libffmpeg' : {
