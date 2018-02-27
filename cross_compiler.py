@@ -3770,7 +3770,6 @@ DEPENDS = {
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
 	},
 	'libopus' : {
-		'custom_cflag': '-ggdb -O3 -march=skylake -mtune=intel',
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/opus.git',
 		'patches': (
