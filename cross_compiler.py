@@ -2957,10 +2957,13 @@ DEPENDS = {
 		],
 		'configure_options' :
 			'-static'
-			' -no-dbus'
 			' -no-iconv'
 			' -no-sqlite'
-
+			' -skip qtconnectivity'
+			' -skip qtserialbus'
+			' -skip qtactiveqt'
+			' -skip qtdeclarative'
+			' -skip qttools'
 			' -release'
 			' -accessibility'
 			' -opengl desktop'
@@ -4345,8 +4348,11 @@ DEPENDS = {
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
+		'env_exports' : {
+			'LIBS' : '-lintl',
+		},
 		'run_post_install': (
-			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv/\' "{pkg_config_path}/fontconfig.pc"',
+			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv -lintl/\' "{pkg_config_path}/fontconfig.pc"',
 		),
 		'depends_on' : [
 			'iconv','libxml2','freetype',
@@ -4369,6 +4375,9 @@ DEPENDS = {
 	'libass' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libass/libass.git',
+		'patches' : [
+			[ 'https://github.com/libass/libass/pull/298.patch' , 'p1' ], # Use FriBiDi 1.x API when available # for testing.
+		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-silent-rules',
 		'run_post_install': (
 			'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"', #-lfontconfig
