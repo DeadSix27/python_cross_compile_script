@@ -72,7 +72,7 @@ SOURCES['isl'] = {
 }
 SOURCES['binutils'] = {
 	'type' : 'archive',
-	'version'   : '2.30',
+	'version'   : '2.29.1', # 2.30 causes issues with x265, see https://bitbucket.org/multicoreware/x265/issues/392
 	'url' : 'https://ftp.gnu.org/gnu/binutils/binutils-{version}.tar.bz2',
 	'softlink_to_package' : [
 		( 'isl'  , 'isl' ),
