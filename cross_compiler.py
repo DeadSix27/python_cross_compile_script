@@ -4348,11 +4348,8 @@ DEPENDS = {
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
-		'env_exports' : {
-			'LIBS' : '-lintl',
-		},
 		'run_post_install': (
-			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv -lintl/\' "{pkg_config_path}/fontconfig.pc"',
+			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv/\' "{pkg_config_path}/fontconfig.pc"',
 		),
 		'depends_on' : [
 			'iconv','libxml2','freetype',
