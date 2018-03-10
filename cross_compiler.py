@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '6c676fa4cf13e86127cb350349ced94ce4288497' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
+_MINGW_COMMIT      = 'b633824ecafdf52a76e6a205e6776b182978720d' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -2474,7 +2474,7 @@ DEPENDS = {
 	},
 	'librsvg' : {
 		'repo_type' : 'archive',
-		'url' : 'https://download.gnome.org/sources/librsvg/2.41/librsvg-2.41.1.tar.xz',
+		'url' : 'https://download.gnome.org/sources/librsvg/2.41/librsvg-2.42.3.tar.xz',
 		'configure_options':
 			'--host={target_host} '
 			'--prefix={target_prefix} '
@@ -2499,8 +2499,8 @@ DEPENDS = {
 	},
 	'opencv' : { # not working yet
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/opencv/opencv/archive/3.3.1.tar.gz',
-		'folder_name' : 'opencv-3.3.0',
+		'url' : 'https://github.com/opencv/opencv/archive/3.4.1.tar.gz',
+		'folder_name' : 'opencv-3.4.1',
 		'source_subfolder' : 'build',
 		'cmake_options': '.. -G"Unix Makefiles" -DCMAKE_SKIP_RPATH=ON -DBUILD_TESTS=OFF -DBUILD_opencv_world=ON -DBUILD_PERF_TESTS=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DWITH_FFMPEG=OFF -DINSTALL_C_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_JASPER=OFF -DBUILD_OPENEXR=OFF -DWITH_VTK=OFF -DWITH_IPP=OFF -DWITH_DSHOW=OFF -DENABLE_PRECOMPILED_HEADERS=OFF -DENABLE_STATIC_RUNTIME=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}',
 		'is_cmake' : True,
@@ -2518,7 +2518,7 @@ DEPENDS = {
 		# ],
 		'make_options' : 'VERBOSE=1',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} install',
-		'_info' : { 'version' : '3.3.1', 'fancy_name' : 'opencv' },
+		'_info' : { 'version' : '3.4.1', 'fancy_name' : 'opencv' },
 	},
 	'crossc' : {
 		'repo_type' : 'git',
@@ -2630,7 +2630,7 @@ DEPENDS = {
 
 	'wxwidgets' : {
 		'repo_type' : 'archive',
-		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.1-rc/wxWidgets-3.1.1-rc.tar.bz2',
+		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.1/wxWidgets-3.1.1.tar.bz2',
 		'configure_options':
 			' --host={target_host} --build=x86_64-unknown-linux-gnu --prefix={target_sub_prefix} --disable-shared --enable-static --build='
 			' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
@@ -2647,7 +2647,7 @@ DEPENDS = {
 		# 	'CXXFLAGS' : '-std=gnu++11',
 		# 	'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
 		# },
-		'_info' : { 'version' : '3.1.1-rc', 'fancy_name' : 'wxWidgets (libary)' },
+		'_info' : { 'version' : '3.1.1', 'fancy_name' : 'wxWidgets (libary)' },
 		'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
 	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
@@ -3072,11 +3072,11 @@ DEPENDS = {
 	'd-bus' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "837abf414c0cdac4c8586ea6f93a999446470b10abcfeefe19ed8a7921854d2e" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/dbus-1.13.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "837abf414c0cdac4c8586ea6f93a999446470b10abcfeefe19ed8a7921854d2e" }, ], },
+			{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "945deb349a7e2999184827c17351c1bf93c6395b9c3ade0c91cad42cb93435b1" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/dbus-1.13.2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "945deb349a7e2999184827c17351c1bf93c6395b9c3ade0c91cad42cb93435b1" }, ], },
 		],
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.13.0', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.13.2', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
@@ -3113,8 +3113,8 @@ DEPENDS = {
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "dd291d0a81d77219d40b21b9caf4713daaf43416fe8d6eae0b96df39b8b17e6d" }, ], },
-			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "dd291d0a81d77219d40b21b9caf4713daaf43416fe8d6eae0b96df39b8b17e6d" }, ], },
+			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "33dbda4a90345d256942fb5316967efd90df4f2373578c7b56c90062fe21fc9c" }, ], },
+			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "33dbda4a90345d256942fb5316967efd90df4f2373578c7b56c90062fe21fc9c" }, ], },
 		],
 		'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
@@ -3169,7 +3169,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : '6876ebadcdf27224b3ffa9dfa4343127aa97c9b2',
+		'branch' : 'ffaf85ec73ab939f4f6eadfe59bf2f639261d48c', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -3181,7 +3181,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : '6876ebadcdf27224b3ffa9dfa4343127aa97c9b2',
+		'branch' : 'ffaf85ec73ab939f4f6eadfe59bf2f639261d48c', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', 'p1' ),
@@ -3438,7 +3438,6 @@ DEPENDS = {
 	},
 	'bzip2' : {
 		'repo_type' : 'archive',
-		'url' : 'http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz',
 		'download_locations' : [
 			{ "url" : "http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], },
@@ -3643,7 +3642,7 @@ DEPENDS = {
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : '1.0.28',
+		'branch' : '6f3266277bed16525f0ac2f0f03ff4626f1923e5',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3905,28 +3904,28 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.7.6', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "84574e1b1f65ca694cb8fb6905309665c0368af18a312357f8ff886ee2f29563" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
-		'folder_name' : 'harfbuzz-1.7.5-with-freetype',
-		'rename_folder' : 'harfbuzz-1.7.5-with-freetype',
+		'folder_name' : 'harfbuzz-1.7.6-with-freetype',
+		'rename_folder' : 'harfbuzz-1.7.6-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.7.5', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'_info' : { 'version' : '1.7.6', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
@@ -3971,8 +3970,8 @@ DEPENDS = {
 	'libxml2' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "http://xmlsoft.org/sources/libxml2-2.9.8-rc1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "5ccba87c8b7fe461ea5f5cac1b2358ac467c965556e66e4312cb7a938052ddd9" }, ], },
-			{ "url" : "https://fossies.org/linux/www/libxml2-2.9.8-rc1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "5ccba87c8b7fe461ea5f5cac1b2358ac467c965556e66e4312cb7a938052ddd9" }, ], },
+			{ "url" : "http://xmlsoft.org/sources/libxml2-2.9.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0b74e51595654f958148759cfef0993114ddccccbb6f31aee018f3558e8e2732" }, ], },
+			{ "url" : "https://fossies.org/linux/www/libxml2-2.9.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0b74e51595654f958148759cfef0993114ddccccbb6f31aee018f3558e8e2732" }, ], },
 		],
 		'folder_name' : 'libxml2-2.9.8',
 		'rename_folder' : 'libxml2-2.9.8-rc1',
@@ -4028,13 +4027,13 @@ DEPENDS = {
 	'libsoxr' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.2-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "54e6f434f1c491388cd92f0e3c47f1ade082cc24327bdc43762f7d1eefe0c275" }, ], },
-			{ "url" : "https://download.videolan.org/contrib/soxr/soxr-0.1.2-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "54e6f434f1c491388cd92f0e3c47f1ade082cc24327bdc43762f7d1eefe0c275" }, ], },
+			{ "url" : "https://download.videolan.org/contrib/soxr/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
+			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
-		'_info' : { 'version' : '0.1.2', 'fancy_name' : 'soxr' },
+		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'soxr' },
 	},
 	'libebur128' : { # uneeded
 		'repo_type' : 'git',
@@ -4361,11 +4360,9 @@ DEPENDS = {
 	},
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://github.com/fribidi/fribidi/releases/download/v1.0.1/fribidi-1.0.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "c1b182d70590b6cdb5545bab8149de33b966800f27f2d9365c68917ed5a174e4" }, ], },
-			{ "url" : "https://ftp.osuosl.org/pub/blfs/conglomeration/fribidi/fribidi-1.0.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "c1b182d70590b6cdb5545bab8149de33b966800f27f2d9365c68917ed5a174e4" }, ], },
-		],
+		'repo_type' : 'git',
+		'branch' : '565f83a13099dfdcec083f4d3e5293df4ed36e63',
+		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
 		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
 	},
