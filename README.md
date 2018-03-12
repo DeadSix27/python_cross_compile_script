@@ -35,6 +35,7 @@ For more see: `./cross_compiler.py --help`
 ## **System requirements:**
 
 * Python 3+ (Tested only on 3.6.4)
+  * Required python packages: requests, progressbar2
 * Linux (Tested only on ArchLinux)
 * 20+GB is recommended, but sizes vary depending on the packages.
 * Windows Vista 64-Bit or newer for the resulting binaries. (32-bit and Windows XP are not supported)
