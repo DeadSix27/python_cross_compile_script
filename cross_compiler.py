@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = 'b633824ecafdf52a76e6a205e6776b182978720d' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
+_MINGW_COMMIT      = '6045a1edf7ac224675831d088ab4cb8086b15ea8' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
