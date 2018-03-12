@@ -2,7 +2,7 @@
 
 # A Linux to Windows-x64 cross-compile helper script
 
-_python_cross_compile_script_ is written in Python primarly for Linux.
+_python_cross_compile_script_ is written in Python primarily for Linux.
 
 It's main purpose is to simplify the cross compiling of various multi-OS programs (e.g mpv).
 
@@ -10,7 +10,7 @@ It comes with a relatively large preset of packages but can be easily expanded u
 
 Currently it's mainly focusing on Media programs, e.g mpv and ffmpeg.
 
-The packages are split into depends and products, products being things like mpv and depends their needed libraries, e.g libx264.
+The packages are split into depends and products, products being things like 'mpv' and dependencies (their needed libraries, e.g 'libx264').
 
 See `./cross_compiler.py list -p` and `./cross_compiler.py list -d` for a full list of packages.
 
@@ -18,7 +18,7 @@ See `./cross_compiler.py list -p` and `./cross_compiler.py list -d` for a full l
 
 ## **Install**
 
-Download the main python file:
+Download the python file:
 
 `wget 'https://github.com/DeadSix27/python_cross_compile_script/blob/master/cross_compiler.py' && chmod u+x cross_compiler.py`
 
@@ -36,7 +36,7 @@ For more see: `./cross_compiler.py --help`
 
 * Python 3+ (Tested only on 3.6.4)
 * Linux (Tested only on ArchLinux)
-* 20+GB is recommended, but sizes vary depnding on the packages.
+* 20+GB is recommended, but sizes vary depending on the packages.
 * Windows Vista 64-Bit or newer for the resulting binaries. (32-bit and Windows XP are not supported)
 
 ## **Package requirements (no auto-check yet)**
