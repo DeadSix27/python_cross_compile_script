@@ -4361,6 +4361,10 @@ DEPENDS = {
 	'libfribidi' : {
 		#https://raw.githubusercontent.com/rdp/ffmpeg-windows-build-helpers/master/patches/fribidi.diff
 		'repo_type' : 'git',
+		'do_not_bootstrap' : True,
+		'run_post_patch': [
+			'autoreconf -fiv',
+		],
 		'branch' : '565f83a13099dfdcec083f4d3e5293df4ed36e63',
 		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
