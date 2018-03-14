@@ -2295,6 +2295,24 @@ PRODUCTS = {
 		'cmake_options': '.. {cmake_prefix_options} -DFORCE_AMD=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/w2x.installed',
 		# 'custom_cflag' : '-DTAGLIB_STATIC',
 	},
+	'mp4box' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/gpac/gpac.git',
+		'rename_folder' : 'mp4box_git',
+		'do_not_bootstrap' : True,
+		'run_post_patch' : [
+			'sed -i.bak \'s/has_dvb4linux="yes"/has_dvb4linux="no"/g\' configure',
+			'sed -i.bak \'s/targetos=`uname -s`/targetos=MINGW64/g\' configure',
+			'sed -i.bak \'s/extralibs="-lm"/extralibs=""/g\' configure',
+			'sed -i.bak \'s/SHFLAGS=-shared/SHFLAGS=/g\' configure',
+			'sed -i.bak \'s/extralibs="$extralibs -lws2_32 -lwinmm -limagehlp"/extralibs="$extralibs -lws2_32 -lwinmm -lz"/g\' configure',
+		],
+		'configure_options': '--host={target_host} --prefix={product_prefix}/mp4box_git.installed --static-modules --cross-prefix={cross_prefix_bare} --static-mp4box --enable-static-bin --disable-oss-audio --disable-x11 --disable-docs --sdl-cfg={cross_prefix_full}sdl2-config --disable-shared --enable-static',
+		'depends_on': [
+			 'sdl2', 'libffmpeg',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mp4box' },
+	},
 	'mpv' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
@@ -2302,7 +2320,7 @@ PRODUCTS = {
 		'env_exports' : {
 			'DEST_OS' : 'win32',
 			'TARGET'  : '{target_host}',
-			'LDFLAGS' : '-ld3d11 -llzma',
+			# 'LDFLAGS' : '-ld3d11 -llzma',
 		},
 		'run_post_patch' : (
 			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
@@ -2319,7 +2337,7 @@ PRODUCTS = {
 			'--enable-dvdnav '
 			'--enable-libbluray '
 			'--enable-cdda '
-			#'--enable-egl-angle-lib '
+			#'--enable-egl-angle-lib ' # not maintained anymore apparently, crashes for me anyway.
 			'--enable-libass '
 			'--enable-lua '
 			'--enable-vapoursynth '
