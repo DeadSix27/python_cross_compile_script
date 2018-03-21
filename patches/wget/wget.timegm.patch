@@ -1,0 +1,63 @@
+diff -Nur wget/gnulib/lib/timegm.c wget.patched/gnulib/lib/timegm.c
+--- wget/gnulib/lib/timegm.c	2018-03-21 11:44:31.189352933 +0100
++++ wget.patched/gnulib/lib/timegm.c	2018-03-21 11:48:51.277697217 +0100
+@@ -32,7 +32,7 @@
+ #endif
+ 
+ time_t
+-timegm (struct tm *tmp)
++timegm_wget (struct tm *tmp)
+ {
+   static mktime_offset_t gmtime_offset;
+   tmp->tm_isdst = 0;
+diff -Nur wget/gnulib/lib/time.in.h wget.patched/gnulib/lib/time.in.h
+--- wget/gnulib/lib/time.in.h	2018-03-21 11:44:31.189352933 +0100
++++ wget.patched/gnulib/lib/time.in.h	2018-03-21 11:49:43.683962446 +0100
+@@ -310,17 +310,17 @@
+ #  if @REPLACE_TIMEGM@
+ #   if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+ #    undef timegm
+-#    define timegm rpl_timegm
++#    define timegm_wget rpl_timegm
+ #   endif
+-_GL_FUNCDECL_RPL (timegm, time_t, (struct tm *__tm) _GL_ARG_NONNULL ((1)));
+-_GL_CXXALIAS_RPL (timegm, time_t, (struct tm *__tm));
++_GL_FUNCDECL_RPL (timegm_wget, time_t, (struct tm *__tm) _GL_ARG_NONNULL ((1)));
++_GL_CXXALIAS_RPL (timegm_wget, time_t, (struct tm *__tm));
+ #  else
+ #   if ! @HAVE_TIMEGM@
+-_GL_FUNCDECL_SYS (timegm, time_t, (struct tm *__tm) _GL_ARG_NONNULL ((1)));
++_GL_FUNCDECL_SYS (timegm_wget, time_t, (struct tm *__tm) _GL_ARG_NONNULL ((1)));
+ #   endif
+-_GL_CXXALIAS_SYS (timegm, time_t, (struct tm *__tm));
++_GL_CXXALIAS_SYS (timegm_wget, time_t, (struct tm *__tm));
+ #  endif
+-_GL_CXXALIASWARN (timegm);
++_GL_CXXALIASWARN (timegm_wget);
+ # endif
+ 
+ /* Encourage applications to avoid unsafe functions that can overrun
+diff -Nur wget/gnulib/lib/time_rz.c wget.patched/gnulib/lib/time_rz.c
+--- wget/gnulib/lib/time_rz.c	2018-03-21 11:44:31.189352933 +0100
++++ wget.patched/gnulib/lib/time_rz.c	2018-03-21 11:49:52.948703620 +0100
+@@ -306,7 +306,7 @@
+ mktime_z (timezone_t tz, struct tm *tm)
+ {
+   if (!tz)
+-    return timegm (tm);
++    return timegm_wget (tm);
+   else
+     {
+       timezone_t old_tz = set_tz (tz);
+diff -Nur wget/src/http.c wget.patched/src/http.c
+--- wget/src/http.c	2018-03-21 11:43:29.433759307 +0100
++++ wget.patched/src/http.c	2018-03-21 11:49:57.430036290 +0100
+@@ -4896,7 +4896,7 @@
+ 
+       if (check_end (strptime (time_string, time_formats[i], &t)))
+         {
+-          ret = timegm (&t);
++          ret = timegm_wget (&t);
+           break;
+         }
+     }

@@ -2026,7 +2026,7 @@ PRODUCTS = {
 		'patches' : [
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-remove-RAND_screen-which-doesn-t-exist-on-mingw.patch', 'p1' ],
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-wget-look-for-ca-bundle.trust.crt-in-exe-path-by-def.patch', 'p1' ],
-			[ 'https://dsix.site/patches/wget.timegm.patch', 'p1' ],
+			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/wget.timegm.patch', 'p1' ],
 		],
 		'depends_on': (
 			'zlib', 'libressl'
