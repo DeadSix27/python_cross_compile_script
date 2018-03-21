@@ -288,7 +288,7 @@ class CrossCompileScript:
 		_epilog = 'Copyright (C) 2018 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
 		if _OUR_VER not in _TESTED_VERS:
 			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version, it may or may not work properly.: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
-		
+
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
 		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper (MPL2.0)' + Colors.RESET + '\n\nExample usages:' \
 			'\n "{0} list -p"             - lists all the products' \
@@ -419,7 +419,7 @@ class CrossCompileScript:
 	def prepareBuilding(self,b):
 		self.logger.info('Starting build script')
 		if _OUR_VER not in _TESTED_VERS:
-			self.logger.warning(Colors.LIGHTRED_EX + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET)		
+			self.logger.warning(Colors.LIGHTRED_EX + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET)
 		if not os.path.isdir(_WORKDIR):
 			self.logger.info("Creating workdir: %s" % (_WORKDIR))
 			os.makedirs(_WORKDIR, exist_ok=True)
@@ -501,7 +501,7 @@ class CrossCompileScript:
 			# self.cchdir(_MINGW_DIR)
 
 			mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
-			
+
 
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
@@ -563,7 +563,7 @@ class CrossCompileScript:
 			fullOutputPath = os.path.join(outputPath,fileName)
 			urllib.request.urlretrieve(url, fullOutputPath)
 			return fullOutputPath
-			
+
 		if url.lower().startswith("file://"):
 			url = url.replace("file://","")
 			self.logger.info("Copying : {0}".format(url))
@@ -945,7 +945,7 @@ class CrossCompileScript:
 		m = hashlib.md5()
 		m.update(msg)
 		return m.hexdigest()
-		
+
 	def hash_file(self,fname,type = "sha256"):
 		hash = None
 		if type == "sha256":
@@ -1140,8 +1140,8 @@ class CrossCompileScript:
 		if hash["sum"] == newHash:
 			return (True,hash["sum"],newHash)
 		return (False,hash["sum"],newHash)
-		
-	def download_unpack_file(self,data,folderName = None,workDir = None):		
+
+	def download_unpack_file(self,data,folderName = None,workDir = None):
 		customFolder = False
 		if folderName == None:
 			folderName = os.path.basename(os.path.splitext(urlparse(self.get_primary_package_url(data)).path)[0]).rstrip(".tar")
@@ -1158,8 +1158,8 @@ class CrossCompileScript:
 			self.logger.info("Downloading {0} ({1})".format( fileName, url ))
 
 			self.download_file(url,fileName)
-			
-			
+
+
 			if "hashes" in dl_loc:
 				if len(dl_loc["hashes"]) >= 1:
 					for hash in dl_loc["hashes"]:
@@ -1175,13 +1175,13 @@ class CrossCompileScript:
 			self.logger.info("Unpacking {0}".format( fileName ))
 
 			tars = (".gz",".bz2",".xz",".bz",".tgz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
-			
+
 			customFolderTarArg = ""
-			
+
 			if customFolder:
 				customFolderTarArg = ' -C "' + folderName + '" --strip-components 1'
 				os.makedirs(folderName)
-			
+
 			if fileName.endswith(tars):
 				self.run_process('tar -xf "{0}"{1}'.format( fileName, customFolderTarArg ))
 			else:
@@ -1197,7 +1197,7 @@ class CrossCompileScript:
 			self.logger.debug("{0} already downloaded".format( folderName ))
 			return folderName
 	#:
-	
+
 	def check_mirrors(self,dl_locations):
 		for loc in dl_locations:
 			userAgent = _USER_AGENT
@@ -1212,9 +1212,9 @@ class CrossCompileScript:
 					return loc
 				else:
 					self.logger.debug(loc["url"] + " unable to reach: HTTP" + str(req.status_code))
-		
+
 		return dl_locations[0] # return the first if none could be found.
-		
+
 	def get_best_mirror(self,data): #returns the best online mirror of a file, and its hash.
 		if "url" in data:
 			self.logger.warning("Package has the old URL format, please update it.")
@@ -1226,9 +1226,9 @@ class CrossCompileScript:
 				raise Exception("download_locations is empty for package: " + name)
 			if "url" not in data["download_locations"][0]:
 				raise Exception("download_location #1 of package '%s' has no url specified" % (name))
-				
+
 			return self.check_mirrors(data["download_locations"])
-	
+
 	def get_primary_package_url(self,data): # returns the URL of the first download_locations entry from a package, unlike get_best_mirror this one ignores the old url format
 		if "url" in data:
 			self.logger.debug("Package has the old URL format, please update it.")
@@ -1242,7 +1242,7 @@ class CrossCompileScript:
 				raise Exception("download_location #1 of package has no url specified")
 			return data["download_locations"][0]["url"] #TODO: do not assume correct format
 	#:
-	
+
 	def get_thing_path(self,name,data,type): # type = PRODUCT or DEPENDENCY
 		outPath = os.getcwd()
 		workDir = None
@@ -1881,7 +1881,7 @@ class CrossCompileScript:
 		with open(infile, 'rw') as f:
 			for line in f:
 				line = re.sub(oldString, newString, line)
-		
+
 	def getKeyOrBlankString(self,db,k):
 		if k in db:
 			if db[k] == None:
@@ -1895,7 +1895,7 @@ class CrossCompileScript:
 		if self.debugMode:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
-		
+
 # ###################################################
 # ################  PACKAGE CONFIGS  ################
 # ###################################################
@@ -2003,6 +2003,9 @@ PRODUCTS = {
 			'LIBS' : '-lcrypt32',
 			'libsuff' : '/',
 		},
+		'patches' : [
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', 'p1' ],
+		],
 		'run_post_patch' : [
 			'sed -i.bak \'s/SSL_LDFLAGS="-L$LIB_OPENSSL"/SSL_LDFLAGS=""/\' configure.ac',
 			'autoreconf -fiv',
@@ -2023,6 +2026,7 @@ PRODUCTS = {
 		'patches' : [
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-remove-RAND_screen-which-doesn-t-exist-on-mingw.patch', 'p1' ],
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-wget-look-for-ca-bundle.trust.crt-in-exe-path-by-def.patch', 'p1' ],
+			[ 'https://dsix.site/patches/wget.timegm.patch', 'p1' ],
 		],
 		'depends_on': (
 			'zlib', 'libressl'
@@ -2458,11 +2462,11 @@ PRODUCTS = {
 	'mediainfo_dll' : {
 		# 'debug_downloadonly': True,
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
+		# 'branch' : 'v0.7.94',
 		'source_subfolder' : 'Project/GNU/Library',
 		'rename_folder' : 'mediainfo_dll',
 		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
-		'configure_options' : '--host={target_host} --target={bit_name2}-{bit_name_win}-gcc --prefix={product_prefix}/mediainfo_dll.installed --disable-static --enable-shared', # --enable-static --disable-shared --enable-shared=no
+		'configure_options' : '--host={target_host} --target={bit_name2}-{bit_name_win}-gcc --prefix={product_prefix}/mediainfo_dll.installed --enable-static --disable-shared', # --enable-static --disable-shared --enable-shared=no
 		'run_post_patch' : [
 			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
 			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
@@ -2474,9 +2478,9 @@ PRODUCTS = {
 		'depends_on': [
 			'zenlib', 'libcurl',
 		],
-		'patches' : [
-			('libmediainfo-1-fixes.patch','p1', '../../..'),
-		],
+		# 'patches' : [
+			# ('libmediainfo-1-fixes.patch','p1', '../../..'),
+		# ],
 		'env_exports' : { 'PKG_CONFIG' : 'pkg-config' },
 		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
 	},
@@ -2546,7 +2550,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} static',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} install-static',
-		'run_post_patch' : [ 
+		'run_post_patch' : [
 			'git submodule update --remote --recursive',
 			'rm -vf {target_prefix}/lib/pkgconfig/crossc.pc',
 		],
@@ -2587,13 +2591,12 @@ DEPENDS = {
 		'url' : 'https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git',
 		'needs_configure' : False,
 		'recursive_git' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_ICD=OFF -DCMAKE_C_FLAGS="${{CMAKE_C_FLAGS}} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_DEMOS=OFF -DBUILD_TESTS=OFF -DBUILD_LAYERS=OFF -DBUILD_VKJSON=OFF',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_ICD=OFF -DBUILD_LAYERS=OFF -DCMAKE_C_FLAGS="${{CMAKE_C_FLAGS}} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_DEMOS=OFF -DBUILD_TESTS=OFF -DBUILD_LAYERS=OFF -DBUILD_VKJSON=OFF',
 		'make_options': '-C loader',
 		'is_cmake' : True,
 		'needs_make_install' : False,
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','p1'],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vulkan/0002-vulkan-loader-ignore-generating-spirv_tools_commit_id.h.patch','p1'], 
 		],
 		'run_post_patch' : [
 			'sed -i.bak \'s/Windows.h/windows.h/\' layers/vk_layer_config.cpp',
@@ -2608,16 +2611,16 @@ DEPENDS = {
 	},
 	'zenlib' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.4.35',
+		# 'branch' : 'v0.4.35',
 		'source_subfolder' : 'Project/GNU/Library',
 		'url' : 'https://github.com/MediaArea/ZenLib.git',
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --disable-shared --enable-shared=no',
 		'run_post_configure' : [
 			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
 		],
-		'patches' : (
-			('libzen-1-fixes.patch', 'p1','../../..'),
-		),
+		# 'patches' : (
+			# ('fcurl_gitibzen-1-fixes.patch', 'p1','../../..'),
+		# ),
 		# 'run_post_patch' : [
 			# 'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
 		# ],
@@ -2674,7 +2677,7 @@ DEPENDS = {
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
-			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers', 
+			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
 		],
 	},
 	'taglib' : {
@@ -2733,7 +2736,7 @@ DEPENDS = {
 		'patches' : [
 			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-libzip-git-20170415-fix-static-build.patch','p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-Fix-building-statically-on-mingw64.patch','p1'),
-			
+
 		],
 		'run_post_patch' : (
 			'autoreconf -fiv',
@@ -2789,7 +2792,7 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
 	},
-	
+
 	'libmediainfo' : {
 		'repo_type' : 'git',
 		'branch' : 'v0.7.94',
@@ -2845,8 +2848,11 @@ DEPENDS = {
 		'url' : 'https://github.com/curl/curl',
 		'rename_folder' : 'curl_git',
 		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={target_prefix} --exec-prefix={target_prefix}',
+		'patches' : [
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', 'p1' ],
+		],
 		'depends_on': (
-			'zlib',
+			'zlib','libssh2',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
 	},
@@ -2885,9 +2891,9 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', 'p1'),
-		),
+		'patches' : [
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', 'p1'],
+		],
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
 		'depends_on' : [
 			'bzip2',
@@ -3123,8 +3129,8 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', 'p1' ),
-			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0002-tls-revert-Add-tls-tls_keypair.c-commit.patch', 'p1' ),
-			( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', 'p1' ),
+			# ( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0002-tls-revert-Add-tls-tls_keypair.c-commit.patch', 'p1' ),
+			# ( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', 'p1' ),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
 	},
@@ -3753,7 +3759,7 @@ DEPENDS = {
 		'download_locations' : [
 			{ "url" : "http://www.quut.com/gsm/gsm-1.0.17.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ], },
 			{ "url" : "https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.17.tar.gz/sha512/983b442a1ee3f8bce0523f671071823598c4edb222f8d3de1ad7997c85cbeb7bc49ee87130e12f0f815266a29ad2ef58e59672e81bf41cdadc292baf66942026/gsm-1.0.17.tar.gz",
-				"hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ], 
+				"hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ],
 			},
 		],
 		'folder_name' : 'gsm-1.0-pl17',
@@ -3845,8 +3851,8 @@ DEPENDS = {
 	'vo-amrwbenc' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://pkgs.rpmfusion.org/repo/pkgs/free/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz/f63bb92bde0b1583cb3cb344c12922e0/vo-amrwbenc-0.1.3.tar.gz", 
-				"hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e"}, ], 
+			{ "url" : "https://pkgs.rpmfusion.org/repo/pkgs/free/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz/f63bb92bde0b1583cb3cb344c12922e0/vo-amrwbenc-0.1.3.tar.gz",
+				"hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e"}, ],
 			},
 			{ "url" : "https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e" }, ], },
 		],
@@ -3982,7 +3988,7 @@ DEPENDS = {
 			'aclocal',
 			'automake',
 		),
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static', 
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '2.2.5', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
@@ -4252,7 +4258,7 @@ DEPENDS = {
 		'_info' : { 'version' : '4.6.0', 'fancy_name' : 'netcdf' },
 	},
 	'libmysofa' : {
-		# 'debug_downloadonly' : True,	
+		# 'debug_downloadonly' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/hoene/libmysofa',
 		#'branch' : '16d77ad6b4249c3ba3b812d26c4cbb356300f908',
@@ -4456,4 +4462,3 @@ DEPENDS = {
 if __name__ == "__main__": # use this as an example on how to implement this in custom building scripts.
 	main = CrossCompileScript(PRODUCT_ORDER,PRODUCTS,DEPENDS,VARIABLES)
 	main.commandLineEntrace()
-
