@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '6045a1edf7ac224675831d088ab4cb8086b15ea8' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/
+_MINGW_COMMIT      = '17826c7e28e645375cbdce7818b5e5d2d7be20a2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -2021,6 +2021,7 @@ PRODUCTS = {
 		'url' : 'https://git.savannah.gnu.org/git/wget.git',
 		# 'branch' : 'tags/v1.19.1',
 		'rename_folder' : 'wget_git',
+		'recursive_git' : True,
 		'configure_options': '--target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-ssl=openssl --enable-nls --enable-dependency-tracking --with-metalink --prefix={product_prefix}/wget_git.installed --exec-prefix={product_prefix}/wget_git.installed',
 		'cflag_addition' : ' -DIN6_ARE_ADDR_EQUAL=IN6_ADDR_EQUAL', #-DGNUTLS_INTERNAL_BUILD
 		'patches' : [
@@ -3047,13 +3048,13 @@ DEPENDS = {
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-jpeg8',
-		'run_post_patch' : (
-			'autoreconf -fiv',
-		),
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_STATIC=ON -DENABLE_SHARED=OFF',
 		'patches': [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0001-libjpeg-turbo-git-mingw-compat.patch', 'p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0002-libjpeg-turbo-git-libmng-compat.patch', 'p1'),
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0001-libjpeg-turbo-git-mingw-compat.patch', 'p1'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0002-libjpeg-turbo-git-libmng-compat.patch', 'p1'],
+			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libjpeg-turbo/libjpeg-turbo-fix-cmake-string-typo.patch', 'p0']
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
 	},
@@ -3137,8 +3138,8 @@ DEPENDS = {
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "33dbda4a90345d256942fb5316967efd90df4f2373578c7b56c90062fe21fc9c" }, ], },
-			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "33dbda4a90345d256942fb5316967efd90df4f2373578c7b56c90062fe21fc9c" }, ], },
+			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "b541d574d8d099b0bc74ebc8174cec1dc9f426d8901d04be7874046ad72116b0" }, ], },
+			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "b541d574d8d099b0bc74ebc8174cec1dc9f426d8901d04be7874046ad72116b0" }, ], },
 		],
 		'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
@@ -3735,8 +3736,8 @@ DEPENDS = {
 	'flite' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "http://www.speech.cs.cmu.edu/flite/packed/flite-1.4/flite-1.4-release.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "45c662160aeca6560589f78daf42ab62c6111dd4d244afc28118c4e6f553cd0c" }, ], },
 			{ "url" : "http://ftp2.za.freebsd.org/pub/FreeBSD/ports/distfiles/flite-1.4-release.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "45c662160aeca6560589f78daf42ab62c6111dd4d244afc28118c4e6f553cd0c" }, ], },
+			{ "url" : "http://www.speech.cs.cmu.edu/flite/packed/flite-1.4/flite-1.4-release.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "45c662160aeca6560589f78daf42ab62c6111dd4d244afc28118c4e6f553cd0c" }, ], },
 		],
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/flite_64.diff', "p0"),
@@ -3757,10 +3758,10 @@ DEPENDS = {
 	'libgsm' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "http://www.quut.com/gsm/gsm-1.0.17.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ], },
 			{ "url" : "https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.17.tar.gz/sha512/983b442a1ee3f8bce0523f671071823598c4edb222f8d3de1ad7997c85cbeb7bc49ee87130e12f0f815266a29ad2ef58e59672e81bf41cdadc292baf66942026/gsm-1.0.17.tar.gz",
 				"hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ],
 			},
+			{ "url" : "http://www.quut.com/gsm/gsm-1.0.17.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ], },
 		],
 		'folder_name' : 'gsm-1.0-pl17',
 		'patches' : (
