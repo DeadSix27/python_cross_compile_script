@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '17826c7e28e645375cbdce7818b5e5d2d7be20a2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '2529d84fcb3c44aaaa05bb612fafbca3385fa1c9' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -1944,6 +1944,7 @@ VARIABLES = {
 		'--enable-libzimg '
 		'--enable-libx264 '
 		'--enable-libx265 '
+		'--enable-libaom '
 		'--enable-frei0r '
 		'--enable-filter=frei0r '
 		'--enable-librubberband '
@@ -1973,6 +1974,25 @@ VARIABLES = {
 	,
 }
 PRODUCTS = {
+	'aom' : {
+		'repo_type' : 'git',
+		'url' : 'https://aomedia.googlesource.com/aom',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'source_subfolder' : 'build',
+		'cmake_options': '.. {cmake_prefix_options} '
+			'-DCMAKE_INSTALL_PREFIX={product_prefix}/aom.installed '
+			'-DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
+			'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '
+			'-DCONFIG_INSTALL_BINS=1 -DCONFIG_INSTALL_LIBS=0 '
+			'-DCONFIG_INSTALL_SRCS=0 -DCONFIG_UNIT_TESTS=0 '
+			'-DCONFIG_AV1_DECODER=1 -DCONFIG_AV1_ENCODER=1 '
+			'-DCONFIG_MULTITHREAD=1 -DCONFIG_PIC=1 -DCONFIG_COEFFICIENT_RANGE_CHECKING=0 '
+			'-DCONFIG_RUNTIME_CPU_DETECT=1 -DCONFIG_WEBM_IO=1 '
+			'-DCONFIG_SPATIAL_RESAMPLING=1 -DENABLE_NASM=on'
+      ,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aom-av1' },
+	},
 	'gdb' : {
 		'repo_type' : 'git',
 		'url' : 'git://sourceware.org/git/binutils-gdb.git',
@@ -2677,7 +2697,7 @@ DEPENDS = {
 		'depends_on' : [
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeexdsp', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
+			'libx265_multibit', 'libaom', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
 			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
 		],
 	},
@@ -4456,6 +4476,25 @@ DEPENDS = {
 		'rename_folder' : 'libx264_git',
 		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={target_prefix} --enable-strip --disable-lavf --disable-cli',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264 (library)' },
+	},
+	'libaom' : {
+		'repo_type' : 'git',
+		'url' : 'https://aomedia.googlesource.com/aom',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'source_subfolder' : 'build',
+		'cmake_options': '.. {cmake_prefix_options} '
+			'-DCMAKE_INSTALL_PREFIX={target_prefix} '
+			'-DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
+			'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '
+			'-DCONFIG_INSTALL_BINS=0 -DCONFIG_INSTALL_LIBS=1 '
+			'-DCONFIG_INSTALL_SRCS=1 -DCONFIG_UNIT_TESTS=0 '
+			'-DCONFIG_AV1_DECODER=1 -DCONFIG_AV1_ENCODER=1 '
+			'-DCONFIG_MULTITHREAD=1 -DCONFIG_PIC=1 -DCONFIG_COEFFICIENT_RANGE_CHECKING=0 '
+			'-DCONFIG_RUNTIME_CPU_DETECT=1 -DCONFIG_WEBM_IO=1 '
+			'-DCONFIG_SPATIAL_RESAMPLING=1 -DENABLE_NASM=on'
+      ,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libaom' },
 	},
 }
 
