@@ -1403,11 +1403,12 @@ class CrossCompileScript:
 		if force_rebuild:
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
-			self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
-			self.run_process('git submodule foreach --recursive git clean -xfdf')
-			self.run_process('git reset --hard')
-			self.run_process('git submodule foreach --recursive git reset --hard')
-			self.run_process('git submodule update --init --recursive')
+			if os.path.isdir(".git"):
+				self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
+				self.run_process('git submodule foreach --recursive git clean -xfdf')
+				self.run_process('git reset --hard')
+				self.run_process('git submodule foreach --recursive git reset --hard')
+				self.run_process('git submodule update --init --recursive')
 
 		if 'debug_confighelp_and_exit' in data:
 			if data['debug_confighelp_and_exit'] == True:
@@ -3393,7 +3394,7 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.4',
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.5',
 		'_info' : { 'version' : '3.6', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
