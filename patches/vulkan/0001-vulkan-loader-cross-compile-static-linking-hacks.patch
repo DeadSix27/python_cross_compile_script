@@ -1,4 +1,4 @@
-From 6bcf84eb3e4f1b975452789677427be8450be7a9 Mon Sep 17 00:00:00 2001
+From 07db30a24c586740dc7292e85aefeb980539d462 Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
 Date: Sat, 10 Mar 2018 09:50:13 +0100
 Subject: [PATCH 1/1] cross-compile-static-linking-hacks
@@ -13,7 +13,7 @@ Subject: [PATCH 1/1] cross-compile-static-linking-hacks
  6 files changed, 17 insertions(+), 14 deletions(-)
 
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index f543f861..1f48ce08 100644
+index d83d75df..bd0da622 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
 @@ -23,7 +23,7 @@ endif()
@@ -47,15 +47,15 @@ index f543f861..1f48ce08 100644
          set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
      endif()
  
--    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
-+    add_library(${API_LOWERCASE} STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} ${FRAMEWORK_HEADERS})
+-    add_library(${API_LOWERCASE} SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
++    add_library(${API_LOWERCASE} STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
      add_dependencies(${API_LOWERCASE} generate_helper_files loader_gen_files loader_asm_gen_files)
 -    target_compile_definitions(${API_LOWERCASE} PUBLIC -DLOADER_DYNAMIC_LIB)
 -    set_target_properties(${API_LOWERCASE} PROPERTIES SOVERSION "1" VERSION "1.1.${vk_header_version}")
      target_link_libraries(${API_LOWERCASE} -ldl -lpthread -lm)
  
      if(APPLE)
-@@ -281,9 +279,7 @@ else()
+@@ -292,9 +290,7 @@ else()
          include(FindPkgConfig QUIET)
          if(PKG_CONFIG_FOUND)
              set(VK_API_VERSION "1.1.${vk_header_version}")
@@ -67,10 +67,10 @@ index f543f861..1f48ce08 100644
              if(INSTALL_LVL_FILES)
                  install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc"
 diff --git a/loader/loader.c b/loader/loader.c
-index 1e7a8049..b4744d88 100644
+index 99085957..a7558175 100644
 --- a/loader/loader.c
 +++ b/loader/loader.c
-@@ -52,9 +52,9 @@
+@@ -53,9 +53,9 @@
  #include "murmurhash.h"
  
  #if defined(_WIN32)
@@ -83,7 +83,7 @@ index 1e7a8049..b4744d88 100644
  
  // This is a CMake generated file with #defines for any functions/includes
 diff --git a/loader/loader.h b/loader/loader.h
-index 8abc034a..5d06ade5 100644
+index 9ffa3bb9..c1583cd9 100644
 --- a/loader/loader.h
 +++ b/loader/loader.h
 @@ -44,6 +44,9 @@
@@ -139,5 +139,5 @@ index 2ce5aea4..6e897033 100644
  
  Name: @CMAKE_PROJECT_NAME@
 -- 
-2.16.2
+2.16.3
 
