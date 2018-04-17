@@ -135,6 +135,7 @@ class CrossCompileScript:
 		self.targetHost             = None
 		self.targetPrefix           = None
 		self.mingwBinpath           = None
+		self.mingwBinpath2          = None
 		self.fullCrossPrefix        = None
 		self.makePrefixOptions      = None
 		self.bitnessDir             = None
@@ -434,6 +435,7 @@ class CrossCompileScript:
 		self.offtreePrefix      = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir + "_offtree") ) # workdir/x86_64_offtree
 		self.targetSubPrefix    = "{0}/{1}/{2}-w64-mingw32".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64
 		self.mingwBinpath       = "{0}/{1}/{2}-w64-mingw32/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
+		self.mingwBinpath2      = "{0}/{1}/{2}-w64-mingw32/{2}-w64-mingw32/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
 		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
 		self.makePrefixOptions  = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format( cross_prefix_bare=self.bareCrossPrefix, target_prefix=self.targetPrefix )
@@ -1834,6 +1836,7 @@ class CrossCompileScript:
 			make_prefix_options        = self.makePrefixOptions,
 			pkg_config_path            = self.pkgConfigPath,
 			mingw_binpath              = self.mingwBinpath,
+			mingw_binpath2             = self.mingwBinpath2,
 			cross_prefix_bare          = self.bareCrossPrefix,
 			cross_prefix_full          = self.fullCrossPrefix,
 			target_prefix              = self.targetPrefix,
@@ -1991,8 +1994,20 @@ PRODUCTS = {
 			'-DCONFIG_MULTITHREAD=1 -DCONFIG_PIC=1 -DCONFIG_COEFFICIENT_RANGE_CHECKING=0 '
 			'-DCONFIG_RUNTIME_CPU_DETECT=1 -DCONFIG_WEBM_IO=1 '
 			'-DCONFIG_SPATIAL_RESAMPLING=1 -DENABLE_NASM=off'
-      ,
+		,
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aom-av1' },
+	},
+	'scxvid' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/DeadSix27/SCXvid-standalone',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'source_subfolder' : 'build',
+		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/scxvid.installed',
+		'run_post_install': [
+			'{cross_prefix_bare}strip -v {product_prefix}/scxvid.installed/bin/scxvid.exe',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SCXvid-standalone' },
 	},
 	'gdb' : {
 		'repo_type' : 'git',
@@ -2196,8 +2211,8 @@ PRODUCTS = {
 		'configure_options':
 			'--host={target_host} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
 			' --with-boost={target_prefix} --with-boost-system=boost_system --with-boost-filesystem=boost_filesystem --with-boost-date-time=boost_date_time --with-boost-regex=boost_regex --enable-optimization --enable-qt --enable-static-qt'
-			' --with-moc={mingw_binpath}/moc --with-uic={mingw_binpath}/uic --with-rcc={mingw_binpath}/rcc --with-qmake={mingw_binpath}/qmake'
-			' QT_LIBS="-lws2_32 -lprcre"'
+			' --with-moc={mingw_binpath2}/moc --with-uic={mingw_binpath2}/uic --with-rcc={mingw_binpath2}/rcc --with-qmake={mingw_binpath2}/qmake'
+			#' QT_LIBS="-lws2_32 -lprcre"'
 		,
 		'make_options': '-v',
 		'depends_on' : [
@@ -2336,7 +2351,7 @@ PRODUCTS = {
 			'sed -i.bak \'s/SHFLAGS=-shared/SHFLAGS=/g\' configure',
 			'sed -i.bak \'s/extralibs="$extralibs -lws2_32 -lwinmm -limagehlp"/extralibs="$extralibs -lws2_32 -lwinmm -lz"/g\' configure',
 		],
-		'configure_options': '--host={target_host} --prefix={product_prefix}/mp4box_git.installed --static-modules --cross-prefix={cross_prefix_bare} --static-mp4box --enable-static-bin --disable-oss-audio --disable-x11 --disable-docs --sdl-cfg={cross_prefix_full}sdl2-config --disable-shared --enable-static',
+		'configure_options': '--host={target_host} --target-os={bit_name3} --prefix={product_prefix}/mp4box_git.installed --static-modules --cross-prefix={cross_prefix_bare} --static-mp4box --enable-static-bin --disable-oss-audio --disable-x11 --disable-docs --sdl-cfg={cross_prefix_full}sdl2-config --disable-shared --enable-static',
 		'depends_on': [
 			 'sdl2', 'libffmpeg',
 		],
@@ -2388,6 +2403,10 @@ PRODUCTS = {
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 		),
+		'patches':
+		[
+			['https://dsix.site/patches/0001-disable-shader-optimization-due-to-crashes.patch','-p1'],
+		],
 		'run_post_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
@@ -2595,7 +2614,6 @@ DEPENDS = {
 		'make_options': '',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/shaderc/shaderc-0001-add-script-for-cloning-dependencies.patch', '-p1', '..'],
-			['https://github.com/google/shaderc/commit/2a0f3a3e348072ad6a9e53874188146b895705ba.patch', '-p1 -R', '..'],
 		],
 		'run_post_patch' : [
 			# 'mkdir build'
