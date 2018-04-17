@@ -2405,7 +2405,7 @@ PRODUCTS = {
 		),
 		'patches':
 		[
-			['https://dsix.site/patches/0001-disable-shader-optimization-due-to-crashes.patch','-p1'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mpv/0001-disable-shader-optimization-due-to-crashes.patch','-p1'],
 		],
 		'run_post_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
