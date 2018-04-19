@@ -108,7 +108,7 @@ class MyFormatter(logging.Formatter):
 _MINGW_SCRIPT_URL  = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py'
 _DEBUG             = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 _OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS       = ['3.5.3', '3.6.3','3.6.4']
+_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5']
 
 class CrossCompileScript:
 
