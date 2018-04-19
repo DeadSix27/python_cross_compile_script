@@ -2403,10 +2403,6 @@ PRODUCTS = {
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 		),
-		'patches':
-		[
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mpv/0001-disable-shader-optimization-due-to-crashes.patch','-p1'],
-		],
 		'run_post_install': (
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
