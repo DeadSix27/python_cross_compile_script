@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '2529d84fcb3c44aaaa05bb612fafbca3385fa1c9' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '71136c5f8850da4d34853e8610703bc7e17e02bb' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -2873,8 +2873,8 @@ DEPENDS = {
 	'libsqlite3' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.sqlite.org/2018/sqlite-autoconf-3220000.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "2824ab1238b706bc66127320afbdffb096361130e23291f26928a027b885c612" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/sqlite-autoconf-3220000.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "2824ab1238b706bc66127320afbdffb096361130e23291f26928a027b885c612" }, ], },
+			{ "url" : "https://www.sqlite.org/2018/sqlite-autoconf-3230100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "92842b283e5e744eff5da29ed3c69391de7368fccc4d0ee6bf62490ce555ef25" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/sqlite-autoconf-3230100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "92842b283e5e744eff5da29ed3c69391de7368fccc4d0ee6bf62490ce555ef25" }, ], },
 		],
 		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
@@ -2899,8 +2899,8 @@ DEPENDS = {
 	'boost' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/boost/files/boost/1.66.0/boost_1_66_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "5721818253e6a0989583192f96782c4a98eb6204965316df9f5ad75819225ca9" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/boost_1_66_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "5721818253e6a0989583192f96782c4a98eb6204965316df9f5ad75819225ca9" }, ], },
+			{ "url" : "https://sourceforge.net/projects/boost/files/boost/1.67.0/boost_1_67_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "2684c972994ee57fc5632e03bf044746f6eb45d4920c343937a465fd67a5adba" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/boost_1_67_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "2684c972994ee57fc5632e03bf044746f6eb45d4920c343937a465fd67a5adba" }, ], },
 		],
 		'needs_make':False,
 		'needs_make_install':False,
@@ -3176,8 +3176,8 @@ DEPENDS = {
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "b541d574d8d099b0bc74ebc8174cec1dc9f426d8901d04be7874046ad72116b0" }, ], },
-			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre3.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "b541d574d8d099b0bc74ebc8174cec1dc9f426d8901d04be7874046ad72116b0" }, ], },
+			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0e5ff2f216cea5fa89af6dcd429c3c142acd7c786b0c4868a039689a2641cf3d" }, ], },
+			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0e5ff2f216cea5fa89af6dcd429c3c142acd7c786b0c4868a039689a2641cf3d" }, ], },
 		],
 		'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
@@ -4288,7 +4288,10 @@ DEPENDS = {
 	},
 	'netcdf' : {
 		'repo_type' : 'archive',
-		'url' : 'ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.0.tar.gz',
+		'download_locations' : [
+			{ "url" : "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "89c7957458740b763ae828c345240b8a1d29c2c1fed0f065f99b73181b0b2642" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/netcdf-4.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "89c7957458740b763ae828c345240b8a1d29c2c1fed0f065f99b73181b0b2642" }, ], },
+		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
 		'_info' : { 'version' : '4.6.0', 'fancy_name' : 'netcdf' },
 	},
