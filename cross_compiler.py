@@ -2385,7 +2385,6 @@ PRODUCTS = {
 			'--enable-libass '
 			'--enable-lua '
 			'--enable-vapoursynth '
-			'--enable-encoding '
 			'--enable-uchardet '
 			'--enable-libarchive '
 			'--enable-javascript '
