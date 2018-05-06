@@ -2411,15 +2411,18 @@ PRODUCTS = {
 	},
 	'mediainfo' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
+		#'branch' : 'v0.7.94',
 		'custom_cflag' : '',
 		'recursive_git' : True,
 		'url' : 'https://github.com/MediaArea/MediaInfo.git',
 		'source_subfolder' : 'Project/GNU/CLI',
 		'rename_folder' : 'mediainfo_git',
 		'configure_options': '--host={target_host} --prefix={product_prefix}/mediainfo_git.installed --disable-shared --disable-static-libs',
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
 		'depends_on': [
-			'libmediainfo',
+			'libmediainfo', 'zenlib', 'libcurl',
 		],
 		'run_post_configure' : [
 			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
@@ -2834,7 +2837,7 @@ DEPENDS = {
 
 	'libmediainfo' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
+		#'branch' : 'v0.7.94',
 		'source_subfolder' : 'Project/GNU/Library',
 		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll', # --enable-static --disable-shared --enable-shared=no
