@@ -504,7 +504,6 @@ class CrossCompileScript:
 
 			mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
 
-
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
 
@@ -1161,7 +1160,6 @@ class CrossCompileScript:
 
 			self.download_file(url,fileName)
 
-
 			if "hashes" in dl_loc:
 				if len(dl_loc["hashes"]) >= 1:
 					for hash in dl_loc["hashes"]:
@@ -1177,15 +1175,15 @@ class CrossCompileScript:
 			self.logger.info("Unpacking {0}".format( fileName ))
 
 			tars = (".gz",".bz2",".xz",".bz",".tgz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
-
 			customFolderTarArg = ""
-
 			if customFolder:
 				customFolderTarArg = ' -C "' + folderName + '" --strip-components 1'
-				os.makedirs(folderName)
-
+				os.makedirs(folderName, exist_ok=True)
 			if fileName.endswith(tars):
 				self.run_process('tar -xf "{0}"{1}'.format( fileName, customFolderTarArg ))
+			elif fileName.endswith(".7z"): # 2018.05.15 new dependency on package p7zip-full, to unzip .7z files
+				self.logger.info('7za x -bb3 -r -aoa -y -o{1} "{0}"'.format( fileName, folderName ))
+				self.run_process('7za x -bb3 -r -aoa -y -o{1} "{0}"'.format( fileName, folderName ))
 			else:
 				self.run_process('unzip "{0}"'.format( fileName ))
 
@@ -1214,7 +1212,6 @@ class CrossCompileScript:
 					return loc
 				else:
 					self.logger.debug(loc["url"] + " unable to reach: HTTP" + str(req.status_code))
-
 		return dl_locations[0] # return the first if none could be found.
 
 	def get_best_mirror(self,data): #returns the best online mirror of a file, and its hash.
@@ -1228,7 +1225,6 @@ class CrossCompileScript:
 				raise Exception("download_locations is empty for package: " + name)
 			if "url" not in data["download_locations"][0]:
 				raise Exception("download_location #1 of package '%s' has no url specified" % (name))
-
 			return self.check_mirrors(data["download_locations"])
 
 	def get_primary_package_url(self,data): # returns the URL of the first download_locations entry from a package, unlike get_best_mirror this one ignores the old url format
@@ -1461,6 +1457,7 @@ class CrossCompileScript:
 						if cmd.startswith("!SWITCHDIR"):
 							self.cchdir("|".join(cmd.split("|")[1:]))
 						else:
+							self.logger.debug("Running post-patch-command pre replaceVariables (raw): '{0}'".format( cmd ))
 							cmd = self.replaceVariables(cmd)
 							self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
@@ -1899,7 +1896,6 @@ class CrossCompileScript:
 		if self.debugMode:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
-
 # ###################################################
 # ################  PACKAGE CONFIGS  ################
 # ###################################################
@@ -1940,7 +1936,7 @@ VARIABLES = {
 		'--enable-libwebp '
 		'--enable-dxva2 '
 		'--enable-avisynth '
-		'--enable-vapoursynth ' #maybe works?
+		#'--enable-vapoursynth ' #maybe works?
 		'--enable-gray '
 		'--enable-libmysofa '
 		'--enable-libflite '
@@ -2413,7 +2409,6 @@ PRODUCTS = {
 	},
 	'mediainfo' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
 		'custom_cflag' : '',
 		'recursive_git' : True,
 		'url' : 'https://github.com/MediaArea/MediaInfo.git',
@@ -2503,7 +2498,6 @@ PRODUCTS = {
 	'mediainfo_dll' : {
 		# 'debug_downloadonly': True,
 		'repo_type' : 'git',
-		# 'branch' : 'v0.7.94',
 		'source_subfolder' : 'Project/GNU/Library',
 		'rename_folder' : 'mediainfo_dll',
 		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
@@ -2752,11 +2746,19 @@ DEPENDS = {
 	'opencl_headers' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
+		'branch' : 'e986688daf750633898dfd3994e14a9e618f2aa5', # revert to pre-unified-headers otherwise the ICD Loader won't build
 		'run_post_patch' : (
-			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir "{target_prefix}/include/CL" ; fi ; fi',
+			# PRE unified-headers
+         'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then cp -v opencl22/CL/*.h "{target_prefix}/include/CL/" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
-		),
+			# POST unified-headers
+         #'sed -i.bak "s;define CL_TARGET_OPENCL_VERSION 220;define CL_TARGET_OPENCL_VERSION 120;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
+         #'sed -i.bak "s;Defaulting to 220 (OpenCL 2.2);Defaulting to 120 (OpenCL 1.2) for NVIDIA compatibility;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
+			#'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
+			#'if [ ! -f "already_ran_make_install" ] ; then cp -vf CL/*.h "{target_prefix}/include/CL/" ; fi',
+			#'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
+         ),
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
@@ -2836,7 +2838,6 @@ DEPENDS = {
 
 	'libmediainfo' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
 		'source_subfolder' : 'Project/GNU/Library',
 		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll', # --enable-static --disable-shared --enable-shared=no
@@ -3471,7 +3472,6 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0002-api.patch', '-p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', '-p1'),
 		),
-
 	},
 	'amf_headers' : {
 		'repo_type' : 'git',
@@ -4400,7 +4400,7 @@ DEPENDS = {
 			'--enable-vp9-highbitdepth --enable-vp9-postproc --enable-coefficient-range-checking '
 			'--enable-error-concealment --enable-better-hw-compatibility '
 			'--enable-multi-res-encoding --enable-vp9-temporal-denoising '
-			'--disable-tools --disable-docs --disable-examples --disable-install-docs --disable-unit-tests --disable-decode-perf-tests --disable-encode-perf-tests --as=yasm'
+			'--enable-tools --disable-docs --enable-examples --disable-install-docs --disable-unit-tests --disable-decode-perf-tests --disable-encode-perf-tests --as=yasm'
 		,
 		'env_exports' : {
 			'CROSS' : '{cross_prefix_bare}',
