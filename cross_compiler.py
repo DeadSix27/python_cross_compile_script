@@ -2747,10 +2747,11 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
 		'run_post_patch' : (
-			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir "{target_prefix}/include/CL" ; fi ; fi',
-			'if [ ! -f "already_ran_make_install" ] ; then cp -v opencl22/CL/*.h "{target_prefix}/include/CL/" ; fi',
+         'sed "s;define CL_TARGET_OPENCL_VERSION 220;define CL_TARGET_OPENCL_VERSION 120;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
+			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then cp -vf CL/*.h "{target_prefix}/include/CL/" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
-		),
+         ),
 		'needs_make':False,
 		'needs_make_install':False,
 		'needs_configure':False,
