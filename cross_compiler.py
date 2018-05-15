@@ -2748,6 +2748,7 @@ DEPENDS = {
 		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
 		'run_post_patch' : (
          'sed "s;define CL_TARGET_OPENCL_VERSION 220;define CL_TARGET_OPENCL_VERSION 120;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
+         'sed "s;Defaulting to 220 (OpenCL 2.2);Defaulting to 120 (OpenCL 1.2) for NVIDIA compatibility;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
 			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then cp -vf CL/*.h "{target_prefix}/include/CL/" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
