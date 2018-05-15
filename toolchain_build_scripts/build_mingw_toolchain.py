@@ -21,7 +21,7 @@ import requests # Please run: pip3 install requests
 
 
 # standard modules
-import os,os.path,tarfile,io,shutil,re,subprocess,sys,hashlib,time
+import os,os.path,tarfile,io,shutil,re,subprocess,sys,hashlib,time,urllib
 from multiprocessing import cpu_count
 from collections import OrderedDict
 
@@ -84,10 +84,10 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '7.3.0',
-	'url' : 'https://ftp.gnu.org/gnu/gcc/gcc-{version}/gcc-{version}.tar.xz',
+	'version'   : '8-20180511',
+	'url' : 'ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches' : [
-		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
+		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0140-gcc-7-Enable-std-experimental-filesystem.patch', 'p1' ), #Unable to get this to work.
 	],
 	'softlink_to_package' : [

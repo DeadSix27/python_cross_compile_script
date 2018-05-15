@@ -1,0 +1,30 @@
+--- Makefile	2018-05-07 10:24:29.958257208 +0200
++++ Makefile.patched	2018-05-07 10:29:35.776079539 +0200
+@@ -75,14 +75,10 @@
+ 	if ( test ! -d $(PREFIX)/man ) ; then mkdir -p $(PREFIX)/man ; fi
+ 	if ( test ! -d $(PREFIX)/man/man1 ) ; then mkdir -p $(PREFIX)/man/man1 ; fi
+ 	if ( test ! -d $(PREFIX)/include ) ; then mkdir -p $(PREFIX)/include ; fi
+-	cp -f bzip2 $(PREFIX)/bin/bzip2
+-	cp -f bzip2 $(PREFIX)/bin/bunzip2
+-	cp -f bzip2 $(PREFIX)/bin/bzcat
+-	cp -f bzip2recover $(PREFIX)/bin/bzip2recover
+-	chmod a+x $(PREFIX)/bin/bzip2
+-	chmod a+x $(PREFIX)/bin/bunzip2
+-	chmod a+x $(PREFIX)/bin/bzcat
+-	chmod a+x $(PREFIX)/bin/bzip2recover
++	cp -f bzip2.exe $(PREFIX)/bin/bzip2.exe
++	cp -f bzip2.exe $(PREFIX)/bin/bunzip2.exe
++	cp -f bzip2.exe $(PREFIX)/bin/bzcat.exe
++	cp -f bzip2recover.exe $(PREFIX)/bin/bzip2recover.exe
+ 	cp -f bzip2.1 $(PREFIX)/man/man1
+ 	chmod a+r $(PREFIX)/man/man1/bzip2.1
+ 	cp -f bzlib.h $(PREFIX)/include
+@@ -109,7 +105,7 @@
+ 	echo ".so man1/bzdiff.1" > $(PREFIX)/man/man1/bzcmp.1
+ 
+ clean: 
+-	rm -f *.o libbz2.a bzip2 bzip2recover \
++	rm -f *.o libbz2.a bzip2.exe bzip2recover.exe \
+ 	sample1.rb2 sample2.rb2 sample3.rb2 \
+ 	sample1.tst sample2.tst sample3.tst
+ 

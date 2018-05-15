@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '71136c5f8850da4d34853e8610703bc7e17e02bb' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = 'bcf1f29d6dc80b6025b416bef104d2314fa9be57' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -1940,6 +1940,7 @@ VARIABLES = {
 		'--enable-libwebp '
 		'--enable-dxva2 '
 		'--enable-avisynth '
+		'--enable-vapoursynth ' #maybe works?
 		'--enable-gray '
 		'--enable-libmysofa '
 		'--enable-libflite '
@@ -1982,6 +1983,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
+		'branch' : '4835dc08db8ff211e2841b15431605c5616b17b0', #broken as of late may 14, back to master once working again
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2394,7 +2396,7 @@ PRODUCTS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
 		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -2625,7 +2627,7 @@ DEPENDS = {
 		'depends_on' : ['crossc'],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'shaderc' },
 	},
-	'vulkan' : {
+	'vulkan_loader' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git',
 		'needs_configure' : False,
@@ -2646,7 +2648,7 @@ DEPENDS = {
 			'cp -rv "loader/vulkan.pc" "{target_prefix}/lib/pkgconfig/vulkan.pc"',
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lvulkan/Libs: -L${{libdir}} -lvulkan -lshlwapi -lcfgmgr32/\' "{target_prefix}/lib/pkgconfig/vulkan.pc"',
 		),
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan Loader' },
 	},
 	'zenlib' : {
 		'repo_type' : 'git',
@@ -2821,7 +2823,7 @@ DEPENDS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan',
+			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
 		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -2920,6 +2922,9 @@ DEPENDS = {
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} prefix={target_prefix}',
 		'install_options' : '{make_prefix_options} prefix={target_prefix}',
+		'patches' : [
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-install-with-mingw.patch', '-p1'],
+		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
 	'pcre2' : {
@@ -3101,6 +3106,11 @@ DEPENDS = {
 			{ "url" : "https://sourceforge.net/projects/libpng/files/libpng16/1.6.34/libpng-1.6.34.tar.xz",	"hashes" : [ { "type" : "sha256", "sum" : "2f1e960d92ce3b3abd03d06dfec9637dfbd22febf107a536b44f7a47c60659f6" },	], },
 			{ "url" : "https://fossies.org/linux/misc/libpng-1.6.34.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "2f1e960d92ce3b3abd03d06dfec9637dfbd22febf107a536b44f7a47c60659f6" }, ],	},
 		],
+		'custom_cflag' : '-fno-asynchronous-unwind-tables',
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPNG_TESTS=OFF -DPNG_SHARED=OFF -DPNG_STATIC=ON',
+		
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'patches' : [
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.34-apng.patch', '-p1'),
@@ -3451,11 +3461,11 @@ DEPENDS = {
 		'install_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 		'_info' : { 'version' : '0.7.4', 'fancy_name' : 'a52dec' },
 	},
-	'vapoursynth': { # not cross compiling ( yet )
+	'vapoursynth': { 
 		'repo_type' : 'git',
 		'url' : 'https://github.com/vapoursynth/vapoursynth.git',
-		'custom_cflag' : '-O3',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --disable-python-module --enable-core',
+		# 'custom_cflag' : '-O3',
+		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --enable-core --enable-shared --disable-silent-rules',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', '-p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0002-api.patch', '-p1'),
@@ -3501,7 +3511,8 @@ DEPENDS = {
 			{ "url" : "https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], },
 		],
 		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2_cross_compile.diff', '-p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2/bzip2_cross_compile.diff', '-p0'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2/bzip2-1.0.6-gcc8.patch', '-p0'),
 		),
 		"needs_configure": False,
 		"needs_make": True,
@@ -3756,7 +3767,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git',
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=NO',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=OFF',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : {
@@ -4385,15 +4396,16 @@ DEPENDS = {
 			'--target={bit_name2}-{bit_name_win}-gcc '
 			'--prefix={target_prefix} --disable-shared '
 			'--enable-static --enable-webm-io --enable-vp9 '
-			'--enable-vp8 --enable-runtime-cpu-detect --disable-tools --disable-examples '
+			'--enable-vp8 --enable-runtime-cpu-detect '
 			'--enable-vp9-highbitdepth --enable-vp9-postproc --enable-coefficient-range-checking '
 			'--enable-error-concealment --enable-better-hw-compatibility '
 			'--enable-multi-res-encoding --enable-vp9-temporal-denoising '
-			'--disable-install-docs --disable-unit-tests --as=yasm'
+			'--disable-tools --disable-docs --disable-examples --disable-install-docs --disable-unit-tests --disable-decode-perf-tests --disable-encode-perf-tests --as=yasm'
 		,
 		'env_exports' : {
 			'CROSS' : '{cross_prefix_bare}',
 		},
+		'custom_cflag' : '-fno-asynchronous-unwind-tables',
 		'patches': (
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
 		),
@@ -4505,6 +4517,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
+		'branch' : '4835dc08db8ff211e2841b15431605c5616b17b0', #broken as of late may 14, back to master once working again
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',

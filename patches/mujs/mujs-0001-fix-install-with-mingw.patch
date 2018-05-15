@@ -1,0 +1,28 @@
+From 7254c8d8fd04cdf2286cc7198b174c26474f7b4f Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Mon, 14 May 2018 21:57:12 +0200
+Subject: [PATCH] fix install with mingw
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ mode change 100644 => 100755 Makefile
+
+diff --git a/Makefile b/Makefile
+old mode 100644
+new mode 100755
+index a117d71..52eb4ba
+--- a/Makefile
++++ b/Makefile
+@@ -103,7 +103,7 @@ install-common: release
+ 	install -d $(DESTDIR)$(bindir)
+ 	install -m 644 mujs.h $(DESTDIR)$(incdir)
+ 	install -m 644 build/release/mujs.pc $(DESTDIR)$(libdir)/pkgconfig
+-	install -m 755 build/release/mujs $(DESTDIR)$(bindir)
++	install -m 755 build/release/mujs.exe $(DESTDIR)$(bindir)
+ 
+ install-static: install-common
+ 	install -m 644 build/release/libmujs.a $(DESTDIR)$(libdir)
+-- 
+2.17.0
+
