@@ -2746,12 +2746,18 @@ DEPENDS = {
 	'opencl_headers' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
+		'branch' : 'e986688daf750633898dfd3994e14a9e618f2aa5', # revert to pre-unified-headers otherwise the ICD Loader won't build
 		'run_post_patch' : (
-         'sed -i.bak "s;define CL_TARGET_OPENCL_VERSION 220;define CL_TARGET_OPENCL_VERSION 120;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
-         'sed -i.bak "s;Defaulting to 220 (OpenCL 2.2);Defaulting to 120 (OpenCL 1.2) for NVIDIA compatibility;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
-			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
-			'if [ ! -f "already_ran_make_install" ] ; then cp -vf CL/*.h "{target_prefix}/include/CL/" ; fi',
+			# PRE unified-headers
+         'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then cp -v opencl22/CL/*.h "{target_prefix}/include/CL/" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
+			# POST unified-headers
+         #'sed -i.bak "s;define CL_TARGET_OPENCL_VERSION 220;define CL_TARGET_OPENCL_VERSION 120;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
+         #'sed -i.bak "s;Defaulting to 220 (OpenCL 2.2);Defaulting to 120 (OpenCL 1.2) for NVIDIA compatibility;" CL/cl_version.h', # 2018.05.15 for nvidia use OpenCL version 1.2 
+			#'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
+			#'if [ ! -f "already_ran_make_install" ] ; then cp -vf CL/*.h "{target_prefix}/include/CL/" ; fi',
+			#'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
          ),
 		'needs_make':False,
 		'needs_make_install':False,
