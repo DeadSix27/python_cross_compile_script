@@ -2923,7 +2923,8 @@ DEPENDS = {
 		'make_options': '{make_prefix_options} prefix={target_prefix}',
 		'install_options' : '{make_prefix_options} prefix={target_prefix}',
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-install-with-mingw.patch', '-p1'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-building-with-mingw.patch', '-p1'],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0002-fix-install-with-mingw.patch', '-p1'],
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},

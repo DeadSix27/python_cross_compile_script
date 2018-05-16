@@ -1,0 +1,29 @@
+From b35f55678138b140fed02c0c8833e5afa02afebf Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Thu, 17 May 2018 01:27:03 +0200
+Subject: [PATCH] fix building with mingw
+
+---
+ Makefile | 2 --
+ 1 file changed, 2 deletions(-)
+ mode change 100644 => 100755 Makefile
+
+diff --git a/Makefile b/Makefile
+old mode 100644
+new mode 100755
+index 31b13fa..2706803
+--- a/Makefile
++++ b/Makefile
+@@ -23,9 +23,7 @@ endif
+ 
+ ifeq "$(shell uname)" "Linux"
+   CFLAGS += -ffunction-sections -fdata-sections
+-  CFLAGS += -DHAVE_READLINE
+   LDFLAGS += -Wl,--gc-sections
+-  LIBREADLINE += -lreadline
+ endif
+ 
+ ifeq "$(build)" "debug"
+-- 
+2.17.0
+
