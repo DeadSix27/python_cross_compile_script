@@ -2627,27 +2627,31 @@ DEPENDS = {
 		'depends_on' : ['crossc'],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'shaderc' },
 	},
-	'vulkan_loader' : {
+	
+	'vulkan_headers' : {
 		'repo_type' : 'git',
-		'url' : 'https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git',
+		'url' : 'https://github.com/KhronosGroup/Vulkan-Headers.git',
 		'needs_configure' : False,
 		'recursive_git' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_ICD=OFF -DBUILD_LAYERS=OFF -DCMAKE_C_FLAGS="${{CMAKE_C_FLAGS}} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_DEMOS=OFF -DBUILD_TESTS=OFF -DBUILD_LAYERS=OFF -DBUILD_VKJSON=OFF',
-		'make_options': '-C loader',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix}',
 		'is_cmake' : True,
-		'needs_make_install' : False,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan headers' },
+	},
+	
+	'vulkan_loader' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
+		'needs_configure' : False,
+		'recursive_git' : True,
+		'cmake_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON',
+		'is_cmake' : True,
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','-p1'],
 		],
-		'run_post_patch' : [
-			'sed -i.bak \'s/Windows.h/windows.h/\' layers/vk_layer_config.cpp',
-		],
-		'run_post_make' : (
-			'cp -rv "include/vulkan/" "{target_prefix}/include/"',
-			'cp -rv "loader/libvulkan.a" "{target_prefix}/lib/libvulkan.a"',
-			'cp -rv "loader/vulkan.pc" "{target_prefix}/lib/pkgconfig/vulkan.pc"',
+		'run_post_install' : [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lvulkan/Libs: -L${{libdir}} -lvulkan -lshlwapi -lcfgmgr32/\' "{target_prefix}/lib/pkgconfig/vulkan.pc"',
-		),
+		],
+		'depends_on' : [ 'vulkan_headers' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan Loader' },
 	},
 	'zenlib' : {
