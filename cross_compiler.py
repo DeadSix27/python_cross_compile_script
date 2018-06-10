@@ -504,7 +504,6 @@ class CrossCompileScript:
 
 			mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
 
-
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
 
@@ -1161,7 +1160,6 @@ class CrossCompileScript:
 
 			self.download_file(url,fileName)
 
-
 			if "hashes" in dl_loc:
 				if len(dl_loc["hashes"]) >= 1:
 					for hash in dl_loc["hashes"]:
@@ -1177,22 +1175,28 @@ class CrossCompileScript:
 			self.logger.info("Unpacking {0}".format( fileName ))
 
 			tars = (".gz",".bz2",".xz",".bz",".tgz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
-
 			customFolderTarArg = ""
-
-			if customFolder:
-				customFolderTarArg = ' -C "' + folderName + '" --strip-components 1'
-				os.makedirs(folderName)
-
 			if fileName.endswith(tars):
+				if customFolder:
+					os.makedirs(folderName, exist_ok=True)
+					customFolderTarArg = ' -C "' + folderName + '" --strip-components 1'
+				self.logger.info('tar -xf "{0}"{1}'.format( fileName, customFolderTarArg ))
 				self.run_process('tar -xf "{0}"{1}'.format( fileName, customFolderTarArg ))
-			else:
-				self.run_process('unzip "{0}"'.format( fileName ))
-
+			elif fileName.endswith(".7z"): # 2018.05.16 new dependency on package "p7zip-full", to unzip .7z files
+				if customFolder:
+						os.makedirs(folderName, exist_ok=True)
+						customFolderTarArg = '-o{0} '.format(folderName)
+				self.logger.info('7za x -bb3 -r -aoa -y {0} "{1}"'.format( customFolderTarArg, fileName ))
+				self.run_process('7za x -bb3 -r -aoa -y {0} "{1}"'.format( customFolderTarArg, fileName ))
+			else: # 2018.05.16 to get here it must be a .zip file
+				if customFolder:
+						os.makedirs(folderName, exist_ok=True)
+						customFolderTarArg = '-d "{0}" '.format(folderName)
+				self.logger.info('unzip {0} "{1}"'.format( customFolderTarArg, fileName ))
+				self.run_process('unzip {0} "{1}"'.format( customFolderTarArg, fileName ))
 			self.touch(os.path.join(folderName,"unpacked.successfully"))
-
-			os.remove(fileName)
-
+			if not self.debugMode:
+				os.remove(fileName) # 2018.05.19 leave source in place if debug
 			return folderName
 
 		else:
@@ -1214,7 +1218,6 @@ class CrossCompileScript:
 					return loc
 				else:
 					self.logger.debug(loc["url"] + " unable to reach: HTTP" + str(req.status_code))
-
 		return dl_locations[0] # return the first if none could be found.
 
 	def get_best_mirror(self,data): #returns the best online mirror of a file, and its hash.
@@ -1228,7 +1231,6 @@ class CrossCompileScript:
 				raise Exception("download_locations is empty for package: " + name)
 			if "url" not in data["download_locations"][0]:
 				raise Exception("download_location #1 of package '%s' has no url specified" % (name))
-
 			return self.check_mirrors(data["download_locations"])
 
 	def get_primary_package_url(self,data): # returns the URL of the first download_locations entry from a package, unlike get_best_mirror this one ignores the old url format
@@ -1392,6 +1394,7 @@ class CrossCompileScript:
 			if 'run_pre_patch' in data:
 				if data['run_pre_patch'] != None:
 					for cmd in data['run_pre_patch']:
+						self.logger.debug("Running pre-patch-command pre replaceVariables (raw): '{0}'".format( cmd ))
 						cmd = self.replaceVariables(cmd)
 						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1461,6 +1464,7 @@ class CrossCompileScript:
 						if cmd.startswith("!SWITCHDIR"):
 							self.cchdir("|".join(cmd.split("|")[1:]))
 						else:
+							self.logger.debug("Running post-patch-command pre replaceVariables (raw): '{0}'".format( cmd ))
 							cmd = self.replaceVariables(cmd)
 							self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
@@ -1596,6 +1600,7 @@ class CrossCompileScript:
 			if 'run_post_configure' in data:
 				if data['run_post_configure'] != None:
 					for cmd in data['run_post_configure']:
+						self.logger.debug("Running post-configure-command pre replaceVariables (raw): '{0}'".format( cmd ))
 						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1717,6 +1722,7 @@ class CrossCompileScript:
 						#exit()
 						self.logger.info("Ignoring failed make process...")
 						for cmd in data['ignore_make_fail_and_run']:
+							self.logger.debug("Running post-failed-make-command pre replaceVariables (raw): '{0}'".format( cmd ))
 							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-failed-make-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
@@ -1728,6 +1734,7 @@ class CrossCompileScript:
 			if 'run_post_make' in data:
 				if data['run_post_make'] != None:
 					for cmd in data['run_post_make']:
+						self.logger.debug("Running post-make-command pre replaceVariables (raw): '{0}'".format( cmd ))
 						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1779,6 +1786,7 @@ class CrossCompileScript:
 			if 'run_post_install' in data:
 				if data['run_post_install'] != None:
 					for cmd in data['run_post_install']:
+						self.logger.debug("Running post-install-command pre replaceVariables (raw): '{0}'".format( cmd ))
 						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
@@ -1983,11 +1991,12 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : '4835dc08db8ff211e2841b15431605c5616b17b0', #broken as of late may 14, back to master once working again
+		#'branch' : '4835dc08db8ff211e2841b15431605c5616b17b0', #broken as of late may 14, back to master once working again ... 2018.06.10 it is working
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
+		# note: we make this a 64 bit build only with -DAOM_TARGET_CPU=x86_64 ... some may not prefer this.
 		'cmake_options': '.. {cmake_prefix_options} ' 
-			'-DCMAKE_INSTALL_PREFIX={product_prefix}/aom.installed '
+			'-DAOM_TARGET_CPU=x86_64 -DCMAKE_INSTALL_PREFIX={product_prefix}/aom.installed '
 			'-DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
 			'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '
 			'-DCONFIG_INSTALL_BINS=1 -DCONFIG_INSTALL_LIBS=0 '
@@ -1995,9 +2004,31 @@ PRODUCTS = {
 			'-DCONFIG_AV1_DECODER=1 -DCONFIG_AV1_ENCODER=1 '
 			'-DCONFIG_MULTITHREAD=1 -DCONFIG_PIC=1 -DCONFIG_COEFFICIENT_RANGE_CHECKING=0 '
 			'-DCONFIG_RUNTIME_CPU_DETECT=1 -DCONFIG_WEBM_IO=1 '
-			'-DCONFIG_SPATIAL_RESAMPLING=1 -DENABLE_NASM=off'
-		,
+			'-DCONFIG_SPATIAL_RESAMPLING=1 -DENABLE_NASM=off',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aom-av1' },
+	},
+	'vpx' : {
+		'repo_type' : 'git',
+		'url' : 'https://chromium.googlesource.com/webm/libvpx',
+      'rename_folder' : 'vpx_git',
+		'configure_options':
+			'--target={bit_name2}-{bit_name_win}-gcc '
+			'--prefix={product_prefix}/vpx_git.installed '
+			'--disable-shared --enable-static --enable-webm-io --enable-vp9 '
+			'--enable-vp8 --enable-runtime-cpu-detect '
+			'--enable-vp9-highbitdepth --enable-vp9-postproc --enable-coefficient-range-checking '
+			'--enable-error-concealment --enable-better-hw-compatibility '
+			'--enable-multi-res-encoding --enable-vp9-temporal-denoising '
+			'--enable-tools --disable-docs --enable-examples --disable-install-docs --disable-unit-tests --disable-decode-perf-tests --disable-encode-perf-tests --as=nasm' #--as=yasm'
+		,
+		'env_exports' : {
+			'CROSS' : '{cross_prefix_bare}',
+		},
+		'custom_cflag' : '-fno-asynchronous-unwind-tables',
+		'patches': (
+			( 'https://raw.githubusercontent.com/hydra3333/h3333_python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vpx' },
 	},
 	'scxvid' : {
 		'repo_type' : 'git',
@@ -2025,7 +2056,7 @@ PRODUCTS = {
 			'PKGCONFIG' : 'pkg-config',
 		},
 		'depends_on' : [
-			'libffmpeg',
+			'libffmpeg', # 'liblsw', # ... lsw for x264 requires --enable-avresample which is deprecated # ... gave up on 'libgpac'
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
 	},
@@ -2413,7 +2444,7 @@ PRODUCTS = {
 	},
 	'mediainfo' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
+		#'branch' : 'v0.7.94', # 2018.06.10 use latest git to avoid runtime error message
 		'custom_cflag' : '',
 		'recursive_git' : True,
 		'url' : 'https://github.com/MediaArea/MediaInfo.git',
@@ -2503,7 +2534,7 @@ PRODUCTS = {
 	'mediainfo_dll' : {
 		# 'debug_downloadonly': True,
 		'repo_type' : 'git',
-		# 'branch' : 'v0.7.94',
+		# 'branch' : 'v0.7.94', # 2018.06.10 use latest git to avoid runtime error message
 		'source_subfolder' : 'Project/GNU/Library',
 		'rename_folder' : 'mediainfo_dll',
 		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
@@ -2527,6 +2558,38 @@ PRODUCTS = {
 	},
 }
 DEPENDS = {
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
+	# 2018.06.10 Add these 2 dependencies in case deadsix27 maybe changes a mind about including lsw in x264  :)
+	'libl-smash' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/l-smash/l-smash.git',
+		'env_exports' : {
+			'PKGCONFIG' : 'pkg-config',
+		},	
+		'configure_options':
+			'--prefix={target_prefix} '
+			'--cross-prefix={cross_prefix_bare} '
+		,
+		'make_options': 'install-lib',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libl-smash' },
+	},
+	'liblsw' : {
+		'repo_type' : 'git',
+		#'url' : 'https://github.com/hydra3333/L-SMASH-Works.git',  # vfr_maniac's finally updated 2018.03.31 at 'https://github.com/VFR-maniac/L-SMASH-Works.git',
+		'url' : 'https://github.com/VFR-maniac/L-SMASH-Works.git',  # h3333 2018.03.31 at 'https://github.com/hydra3333/L-SMASH-Works.git' 'https://github.com/VFR-maniac/L-SMASH-Works.git',
+		'source_subfolder' : 'VapourSynth',
+		'env_exports' : {
+			'PKGCONFIG' : 'pkg-config',
+		},	
+		'configure_options': 
+			'--prefix={target_prefix} '
+			'--cross-prefix={cross_prefix_bare} '
+			'--target-os=mingw '
+		,
+		'depends_on' : ['libl-smash'],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'liblsw' },
+	},
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
 	'ca-bundles' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/mingw_ca_bundle_script.git',
@@ -2537,7 +2600,8 @@ DEPENDS = {
 	},
 	'librsvg' : {
 		'repo_type' : 'archive',
-		'url' : 'https://download.gnome.org/sources/librsvg/2.41/librsvg-2.42.3.tar.xz',
+		#'url' : 'https://download.gnome.org/sources/librsvg/2.41/librsvg-2.42.3.tar.xz',
+		'url' : 'https://download.gnome.org/sources/librsvg/2.42/librsvg-2.42.5.tar.xz', # 2018.06.09
 		'configure_options':
 			'--host={target_host} '
 			'--prefix={target_prefix} '
@@ -2627,7 +2691,6 @@ DEPENDS = {
 		'depends_on' : ['crossc'],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'shaderc' },
 	},
-	
 	'vulkan_headers' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Headers.git',
@@ -2637,7 +2700,6 @@ DEPENDS = {
 		'is_cmake' : True,
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan headers' },
 	},
-	
 	'vulkan_loader' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
@@ -2693,7 +2755,6 @@ DEPENDS = {
 		'is_cmake' : True,
 		'_info' : { 'version' : '3.0', 'fancy_name' : 'FreeGLUT (libary?)' },
 	},
-
 	'wxwidgets' : {
 		'repo_type' : 'archive',
 		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.1/wxWidgets-3.1.1.tar.bz2',
@@ -2781,7 +2842,6 @@ DEPENDS = {
 		'patches' : [
 			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-libzip-git-20170415-fix-static-build.patch','-p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libzip/0001-Fix-building-statically-on-mingw64.patch','-p1'),
-
 		],
 		'run_post_patch' : (
 			'autoreconf -fiv',
@@ -2837,10 +2897,9 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
 	},
-
 	'libmediainfo' : {
 		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
+		#'branch' : 'v0.7.94', # 2018.06.10 use latest git to avoid runtime error message
 		'source_subfolder' : 'Project/GNU/Library',
 		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll', # --enable-static --disable-shared --enable-shared=no
@@ -3138,26 +3197,25 @@ DEPENDS = {
 	},
 	'pcre' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.41.tar.gz',
+		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz', # 2018.06.10 bump version from 8.41
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-unicode-properties --enable-jit --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2',
 		'depends_on' : [
 			'bzip2',
 		],
-		'_info' : { 'version' : '8.41', 'fancy_name' : 'pcre' },
+		'_info' : { 'version' : '8.42', 'fancy_name' : 'pcre' },
 	},
-
 	'd-bus' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "945deb349a7e2999184827c17351c1bf93c6395b9c3ade0c91cad42cb93435b1" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/dbus-1.13.2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "945deb349a7e2999184827c17351c1bf93c6395b9c3ade0c91cad42cb93435b1" }, ], },
+			{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "8a8f0b986ac6214da9707da521bea9f49f09610083c71fdc8eddf8b4c54f384b" }, ], },  # 2018.06.10 bump version from 1.13.2
+			{ "url" : "https://fossies.org/linux/misc/dbus-1.13.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "8a8f0b986ac6214da9707da521bea9f49f09610083c71fdc8eddf8b4c54f384b" }, ], },
 		],
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.13.2', 'fancy_name' : 'D-bus (Library)' },
+		'_info' : { 'version' : '1.13.4', 'fancy_name' : 'D-bus (Library)' },
 	},
 	'glib2' : {
 		'repo_type' : 'archive',
-		'url' : 'https://developer.gnome.org/glib/glib-html-2.54.3.tar.gz',
+		'url' : 'https://developer.gnome.org/glib/glib-html-2.56.1.tar.gz', # 2018.06.10 bump version from 2.54.3
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre2' ],
 		'patches' : [
@@ -3168,12 +3226,11 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0028-inode_directory.patch'                                     ,'-Np1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/revert-warn-glib-compile-schemas.patch'                         ,'-Rp1'),
 			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/use-pkgconfig-file-for-intl.patch'                              ,'-p0' ),
-
 		],
 		'run_post_patch' : [
 			'./autogen.sh NOCONFIGURE=1',
 		],
-		'_info' : { 'version' : '2.54.3', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '2.56.1', 'fancy_name' : 'glib2' },
 	},
 	'libressl' : {
 		'repo_type' : 'git',
@@ -3190,8 +3247,8 @@ DEPENDS = {
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0e5ff2f216cea5fa89af6dcd429c3c142acd7c786b0c4868a039689a2641cf3d" }, ], },
-			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0e5ff2f216cea5fa89af6dcd429c3c142acd7c786b0c4868a039689a2641cf3d" }, ], },
+			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre7.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e4a54e1eba2900004a2e39cde62aeaf1f1fa0442169f849faf14e735136ad6cc" }, ], }, # 2018.06.10 bump version from 1.1.1-pre5
+			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre7.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e4a54e1eba2900004a2e39cde62aeaf1f1fa0442169f849faf14e735136ad6cc" }, ], },
 		],
 		'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
@@ -3204,18 +3261,18 @@ DEPENDS = {
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lcrypto/Libs: -L${{libdir}} -lcrypto -lcrypt32/\' "{pkg_config_path}/libcrypto.pc"', # libssh2 doesn't use --static pkgconfig, so we have to do this.
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lssl/Libs: -L${{libdir}} -lssl -lcrypt32/\' "{pkg_config_path}/libssl.pc"', # nor does curl
 		],
-		'_info' : { 'version' : '1.1.1-pre1', 'fancy_name' : 'openssl' },
+		'_info' : { 'version' : '1.1.1-pre7', 'fancy_name' : 'openssl' },
 	},
 	'openssl_1_0' : {
 		'repo_type' : 'archive',
-		'url' : 'https://www.openssl.org/source/openssl-1.0.2n.tar.gz',
+		'url' : 'https://www.openssl.org/source/openssl-1.0.2o.tar.gz', # 2018.06.10 bump version from 1.0.2n
 		'configure_options' : '{bit_name3} --prefix={target_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 		'configure_path' : './Configure',
 		'install_target' : 'install_sw', # we don't need the docs..
 		'env_exports' : {
 			'CROSS_COMPILE' : '{cross_prefix_bare}',
 		},
-		'_info' : { 'version' : '1.0.2n', 'fancy_name' : 'openssl_1.0' },
+		'_info' : { 'version' : '1.0.2o', 'fancy_name' : 'openssl_1.0' },
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -3246,7 +3303,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : 'ffaf85ec73ab939f4f6eadfe59bf2f639261d48c', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
+		'branch' : '219846094c7593e27453e62855e61181089c48cf', # 2018.06.10 bump version from 'ffaf85ec73ab939f4f6eadfe59bf2f639261d48c', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -3258,7 +3315,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : 'ffaf85ec73ab939f4f6eadfe59bf2f639261d48c', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
+		'branch' : '219846094c7593e27453e62855e61181089c48cf', # 2018.06.10 bump version from 'ffaf85ec73ab939f4f6eadfe59bf2f639261d48c', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -3432,7 +3489,7 @@ DEPENDS = {
 		'packages': {
 			'arch' : [ '7za' ],
 		},
-		'_info' : { 'version' : '38', 'fancy_name' : 'VapourSynth (library-only)' },
+		'_info' : { 'version' : '43', 'fancy_name' : 'VapourSynth (library-only)' },
 	},
 	'luajit': {
 		'repo_type' : 'git',
@@ -3574,7 +3631,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : '65cea43d82b22952eb3bdda9db36404a95bd3948', # Last working: '8e87f5a4b88e16ccafb2e7ade8ef454aeac19094', c1689d4b9abbf4becadcbd4f436e2f3b2bf1c2f1 'ae9a2789247d075441191fec469a3a076d314c15'
+		# 2018.06.10 bump version to latest git # 'branch' : '65cea43d82b22952eb3bdda9db36404a95bd3948', # Last working: '65cea43d82b22952eb3bdda9db36404a95bd3948' '8e87f5a4b88e16ccafb2e7ade8ef454aeac19094', c1689d4b9abbf4becadcbd4f436e2f3b2bf1c2f1 'ae9a2789247d075441191fec469a3a076d314c15'
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3626,13 +3683,13 @@ DEPENDS = {
 	'p11-kit' : {
 		'repo_type' : 'archive',
 		'needs_make_install' : False,
-		'url' : 'hhttps://github.com/p11-glue/p11-kit/releases/download/0.23.9/p11-kit-0.23.9.tar.gz',
+		'url' : 'https://github.com/p11-glue/p11-kit/archive/0.23.12.tar.gz', # 2018.06.10 bump version from 0.23.9
 		'configure_options': '--host={target_host} --prefix={target_prefix}',
 		'depends_on' : [ 'libtasn1', 'libffi' ],
 		'env_exports' : {
 			'LIBS' : '-liconv' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
 		},
-		'_info' : { 'version' : '0.23.9', 'fancy_name' : 'p11-kit' },
+		'_info' : { 'version' : '0.23.12', 'fancy_name' : 'p11-kit' },
 	},
 	'libtasn1' : {
 		'repo_type' : 'archive',
@@ -3712,11 +3769,11 @@ DEPENDS = {
 		),
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '1.6.0', 'fancy_name' : 'frei0r-plugins' },
+		'_info' : { 'version' : '1.6.1', 'fancy_name' : 'frei0r-plugins' },
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : '6f3266277bed16525f0ac2f0f03ff4626f1923e5',
+		#'branch' : '6f3266277bed16525f0ac2f0f03ff4626f1923e5', # 2018.06.10 bump version to use latest git 
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3807,12 +3864,11 @@ DEPENDS = {
 	'libgsm' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.17.tar.gz/sha512/983b442a1ee3f8bce0523f671071823598c4edb222f8d3de1ad7997c85cbeb7bc49ee87130e12f0f815266a29ad2ef58e59672e81bf41cdadc292baf66942026/gsm-1.0.17.tar.gz",
-				"hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ],
-			},
-			{ "url" : "http://www.quut.com/gsm/gsm-1.0.17.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "855a57d1694941ddf3c73cb79b8d0b3891e9c9e7870b4981613b734e1ad07601" }, ], },
+			{ "url" : "https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.18.tar.gz/sha512/c5b597f68d4a270e1d588f480dcde66fda8302564c687d753f2bd4fc41d246109243e567568da61eddce170f5232d869984743ddf1eea7696d673014a1a453b7/gsm-1.0.18.tar.gz",  # 2018.06.10 bump version from 1.0.17
+				"hashes" : [ { "type" : "sha256", "sum" : "04f68087c3348bf156b78d59f4d8aff545da7f6e14f33be8f47d33f4efae2a10" }, ],			},
+			{ "url" : "http://www.quut.com/gsm/gsm-1.0.18.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "04f68087c3348bf156b78d59f4d8aff545da7f6e14f33be8f47d33f4efae2a10" }, ], },
 		],
-		'folder_name' : 'gsm-1.0-pl17',
+		'folder_name' : 'gsm-1.0-pl18',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16.patch', '-p0'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', '-p0'), # toast fails. so lets just patch it out of the makefile..
@@ -3978,51 +4034,51 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a18518a31436f4b8124a9887ec2c0cf2e3a01f1adedd50dd45b0cc14125e96a3" }, ], },  # 2018.06.10 bump version from 1.7.6
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a18518a31436f4b8124a9887ec2c0cf2e3a01f1adedd50dd45b0cc14125e96a3" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.7.6', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.8.0', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.7.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "da7bed39134826cd51e57c29f1dfbe342ccedb4f4773b1c951ff05ff383e2e9b" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a18518a31436f4b8124a9887ec2c0cf2e3a01f1adedd50dd45b0cc14125e96a3" }, ], }, # 2018.06.10 bump version from 1.7.6
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a18518a31436f4b8124a9887ec2c0cf2e3a01f1adedd50dd45b0cc14125e96a3" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
-		'folder_name' : 'harfbuzz-1.7.6-with-freetype',
-		'rename_folder' : 'harfbuzz-1.7.6-with-freetype',
+		'folder_name' : 'harfbuzz-1.8.0-with-freetype',
+		'rename_folder' : 'harfbuzz-1.8.0-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.7.6', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'_info' : { 'version' : '1.8.0', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
-			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], }, # 2018.06.10 bump version from 2.9
+			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9.1/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], }, # 2018.06.09
 		],
-		'folder_name' : 'freetype-2.9-with-harfbuzz',
-		'rename_folder' : 'freetype-2.9-with-harfbuzz',
+		'folder_name' : 'freetype-2.9.1-with-harfbuzz',
+		'rename_folder' : 'freetype-2.9.1-with-harfbuzz',
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
 		'run_post_install': (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2 -lharfbuzz/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		),
-		'_info' : { 'version' : '2.9', 'fancy_name' : 'freetype2' },
+		'_info' : { 'version' : '2.9.1', 'fancy_name' : 'freetype2' },
 	},
 	'freetype_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
-			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e6ffba3c8cef93f557d1f767d7bc3dee860ac7a3aaff588a521e081bc36f4c8a" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], }, # 2018.06.10 bump version from 2.9
+			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9.1/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], }, # 2018.06.09
 		],
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=no',
-		'_info' : { 'version' : '2.9', 'fancy_name' : 'freetype2' },
+		'_info' : { 'version' : '2.9.1', 'fancy_name' : 'freetype2' },
 	},
 	'expat' : {
 		'repo_type' : 'archive',
@@ -4226,15 +4282,15 @@ DEPENDS = {
 	'fftw3' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "http://fftw.org/fftw-3.3.7.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "3b609b7feba5230e8f6dd8d245ddbefac324c5a6ae4186947670d9ac2cd25573" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.7.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "3b609b7feba5230e8f6dd8d245ddbefac324c5a6ae4186947670d9ac2cd25573" }, ], },
+			{ "url" : "http://fftw.org/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], }, # 2018.06.10 bump version from 3.3.7
+			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '3.3.7', 'fancy_name' : 'fftw3' },
+		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3' },
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
-		'branch' : '1601e2cdec84182a1a2e659b6a6db0c2766ba5cd', #Last working: '292789aff835d134cd3764194a7f2e2603a3766c', 83a9482e8049c7eb96a305516fe5efca570b0a3a if failing
+		#'branch' : '1601e2cdec84182a1a2e659b6a6db0c2766ba5cd', #Last working: 2018.06.10 '1601e2cdec84182a1a2e659b6a6db0c2766ba5cd' '292789aff835d134cd3764194a7f2e2603a3766c', 83a9482e8049c7eb96a305516fe5efca570b0a3a if failing
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (c99874)', 'fancy_name' : 'fftw3' },
@@ -4449,12 +4505,16 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
 		'run_post_patch': [
+			'sed -i.bak "s;doc/Makefile;??????????;" "configure.ac"',  # 2018.06.10 from latest git fails to build docs since no c2man
+			'sed -i.bak "/??????????/d" "configure.ac"', # 2018.06.09
+			'sed -i.bak "s;option(\'docs\', type : \'boolean\', value : true,;option(\'docs\', type : \'boolean\', value : false,;" "meson_options.txt"', # 2018.06.09
+			'sed -i.bak "s;SUBDIRS = gen.tab lib bin doc test;SUBDIRS = gen.tab lib bin test;g" "Makefile.am"',  # 2018.06.09
 			'autoreconf -fiv',
 		],
-		'branch' : '565f83a13099dfdcec083f4d3e5293df4ed36e63',
-		'url' : 'https://github.com/fribidi/fribidi.git',
+		'url' : 'https://github.com/fribidi/fribidi.git', # 2018.06.10 build from latest git
+		#'branch' : '56e07baaea0dd92667753ebb6a29f5354c9256b9', #'902618192f1cdb4430e4f2dfc032d9fb36fccc5b', # '565f83a13099dfdcec083f4d3e5293df4ed36e63', # 2018.06.09 - anything after 56e07baaea0dd92667753ebb6a29f5354c9256b9 requires c2man
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
-		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
+		'_info' : { 'version' : '(git)', 'fancy_name' : 'libfribidi' },
 	},
 	'libass' : {
 		'repo_type' : 'git',
@@ -4522,12 +4582,13 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : '4835dc08db8ff211e2841b15431605c5616b17b0', #broken as of late may 14, back to master once working again
+		#'branch' : '4835dc08db8ff211e2841b15431605c5616b17b0', #broken as of late may 14, back to master once working again # 2018.06.10 it is working
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
+		# note: we make this a 64 bit build only with -DAOM_TARGET_CPU=x86_64 ... some may not prefer this.
 		'cmake_options': '.. {cmake_prefix_options} '
-			'-DCMAKE_INSTALL_PREFIX={target_prefix} '
+			'-DAOM_TARGET_CPU=x86_64 -DCMAKE_INSTALL_PREFIX={target_prefix} '
 			'-DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
 			'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '
 			'-DCONFIG_INSTALL_BINS=0 -DCONFIG_INSTALL_LIBS=1 '
