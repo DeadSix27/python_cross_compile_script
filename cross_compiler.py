@@ -3221,7 +3221,7 @@ DEPENDS = {
 		'configure_options' : '--host={target_host} --prefix={target_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
 		'depends_on' : [ 'pcre2' ],
 		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','-Np1'),
+			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','-Np1'), # this patch is currently broken. glib2 build aborts
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0004-glib-prefer-constructors-over-DllMain.patch'               ,'-Np1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0017-GSocket-Fix-race-conditions-on-Win32-if-multiple-thr.patch','-p1' ),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0027-no_sys_if_nametoindex.patch'                               ,'-Np1'),
@@ -3683,11 +3683,11 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-nls --enable-extra-encodings',
 		'_info' : { 'version' : '1.15', 'fancy_name' : 'libiconv' },
 	},
-	'p11-kit' : {
+	'p11-kit' : { # this currently fails to build ...
 		'repo_type' : 'archive',
 		'needs_make_install' : False,
 		'download_locations' : [
-			{ "url" : "https://github.com/p11-glue/p11-kit/archive/0.23.12.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "82d8153e4217815d4ed7e5969ec82bb20774be00675feeb2998646fbf7a70b37" }, ], },
+			{ "url" : "https://github.com/p11-glue/p11-kit/releases/download/0.23.12/p11-kit-0.23.12.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "58bae22f19db1de1a1103e7ca4149eed6e303e727878c2cd5ea9e6fe445fd403" }, ], },
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix}',
 		'depends_on' : [ 'libtasn1', 'libffi' ],
