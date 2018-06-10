@@ -1948,7 +1948,7 @@ VARIABLES = {
 		'--enable-libwebp '
 		'--enable-dxva2 '
 		'--enable-avisynth '
-		'--enable-vapoursynth ' #maybe works?
+		#'--enable-vapoursynth ' #maybe works? #2018.06.10 I don't think it does
 		'--enable-gray '
 		'--enable-libmysofa '
 		'--enable-libflite '
