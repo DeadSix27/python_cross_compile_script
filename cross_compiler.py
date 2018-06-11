@@ -1948,7 +1948,7 @@ VARIABLES = {
 		'--enable-libwebp '
 		'--enable-dxva2 '
 		'--enable-avisynth '
-		#'--enable-vapoursynth ' #maybe works? # I don't think it does as at 2018.06.10
+		#'--enable-vapoursynth ' #maybe works? Not yet.
 		'--enable-gray '
 		'--enable-libmysofa '
 		'--enable-libflite '
@@ -2555,8 +2555,7 @@ PRODUCTS = {
 	},
 }
 DEPENDS = {
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
-	# Add these 2 dependencies in case deadsix27 maybe changes a mind about including lsw in x264  :)
+	# Add libl-smash dependency in case include lsw into x264 later
 	'libl-smash' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/l-smash/l-smash.git',
@@ -2570,10 +2569,10 @@ DEPENDS = {
 		'make_options': 'install-lib',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libl-smash' },
 	},
+	# Add liblsw dependency in case include lsw into x264 later
 	'liblsw' : {
 		'repo_type' : 'git',
-		#'url' : 'https://github.com/hydra3333/L-SMASH-Works.git',  # vfr_maniac's finally updated 2018.03.31 at 'https://github.com/VFR-maniac/L-SMASH-Works.git',
-		'url' : 'https://github.com/VFR-maniac/L-SMASH-Works.git',  # h3333 2018.03.31 at 'https://github.com/hydra3333/L-SMASH-Works.git' 'https://github.com/VFR-maniac/L-SMASH-Works.git',
+		'url' : 'https://github.com/VFR-maniac/L-SMASH-Works.git',
 		'source_subfolder' : 'VapourSynth',
 		'env_exports' : {
 			'PKGCONFIG' : 'pkg-config',
@@ -2586,7 +2585,6 @@ DEPENDS = {
 		'depends_on' : ['libl-smash'],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'liblsw' },
 	},
-#----------------------------------------------------------------------------------------------------------------------------------------------------------
 	'ca-bundles' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/mingw_ca_bundle_script.git',
@@ -2596,7 +2594,7 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ca-bundles' },
 	},
 	'librsvg' : {
-	   # currently does not work :- configure: error: cargo is required.  Please install the Rust toolchain from https://www.rust-lang.org/
+	   # currently does not work :- "configure: error: cargo is required.  Please install the Rust toolchain from https://www.rust-lang.org/"
 		'repo_type' : 'archive',
       'download_locations' : [ 
 			{ "url" : "https://download.gnome.org/sources/librsvg/2.42/librsvg-2.42.5.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "d4dd51a492a2022c07dec385e22947190fe70410928c471934ff3399f20935ec" }, ], },
@@ -3769,9 +3767,9 @@ DEPENDS = {
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'run_post_patch': ( # runs commands post the patch process
+		'run_post_patch': [
 			'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
-		),
+		],
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.6.1', 'fancy_name' : 'frei0r-plugins' },
@@ -4169,7 +4167,7 @@ DEPENDS = {
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'soxr' },
 	},
-	'libebur128' : { # uneeded
+	'libebur128' : { # unneeded
 		'repo_type' : 'git',
 		'url' : 'https://github.com/jiixyj/libebur128.git',
 		'cmake_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
@@ -4370,10 +4368,8 @@ DEPENDS = {
 		'_info' : { 'version' : '4.6.0', 'fancy_name' : 'netcdf' },
 	},
 	'libmysofa' : {
-		# 'debug_downloadonly' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/hoene/libmysofa',
-		#'branch' : '16d77ad6b4249c3ba3b812d26c4cbb356300f908',
 		'source_subfolder' : '_build',
 		'needs_configure' : False,
 		'is_cmake' : True,
@@ -4508,7 +4504,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
 		'run_post_patch': [
-			'sed -i.bak "s;doc/Makefile;??????????;" "configure.ac"',  # as at 2018.06.10 from latest git fails to build docs since no c2man
+			'sed -i.bak "s;doc/Makefile;??????????;" "configure.ac"',  # latest git fails to build docs since no (obsolete) c2man installed
 			'sed -i.bak "/??????????/d" "configure.ac"',
 			'sed -i.bak "s;option(\'docs\', type : \'boolean\', value : true,;option(\'docs\', type : \'boolean\', value : false,;" "meson_options.txt"',
 			'sed -i.bak "s;SUBDIRS = gen.tab lib bin doc test;SUBDIRS = gen.tab lib bin test;g" "Makefile.am"',
