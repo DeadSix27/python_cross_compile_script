@@ -4483,7 +4483,8 @@ DEPENDS = {
 	'fontconfig' : {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
-		'url' : 'git://anongit.freedesktop.org/fontconfig',
+		'url' : 'git://anongit.freedesktop.org/fontconfig', # https://cgit.freedesktop.org/fontconfig/
+		'branch' : '096e8019be595c2224aaabf98da630ee917ee51c', # 2018.06.13 git build broken, use last working commit. # test-hash.c:90:5: error: unknown type name 'uuid_t'; did you mean 'pid_t'?
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'run_post_patch': [
 			'autoreconf -fiv',
