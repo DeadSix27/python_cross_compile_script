@@ -84,7 +84,7 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '8-20180511',
+	'version'   : '8-20180706',
 	'url' : 'ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches' : [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),

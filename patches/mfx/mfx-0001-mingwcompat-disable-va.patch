@@ -1,0 +1,39 @@
+From 936606b6aa3871296e07f3d9698eeaa7f2ee97da Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Mon, 9 Jul 2018 12:08:09 +0200
+Subject: [PATCH] mingwcompat-remove-va
+
+---
+ configure.ac | 3 ---
+ libmfx.pc.in | 2 +-
+ 2 files changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index e2ef50a..9909b27 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -26,9 +26,6 @@ AS_CASE([${host_os}],
+     [AC_MSG_ERROR([${host_os} not supported.])]
+ )
+ 
+-PKG_HAVE_DEFINE_WITH_MODULES(LIBVA_DRM, [libva-drm])
+-PKG_HAVE_DEFINE_WITH_MODULES(LIBVA_X11, [libva-x11])
+-
+ MFX_LT_CURRENT=1
+ MFX_LT_AGE=0
+ MFX_LT_REVISION=0
+diff --git a/libmfx.pc.in b/libmfx.pc.in
+index d3683cc..f779e08 100644
+--- a/libmfx.pc.in
++++ b/libmfx.pc.in
+@@ -6,6 +6,6 @@ includedir=@includedir@
+ Name: libmfx
+ Description: Intel Media SDK Dispatched static library
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -lmfx -lstdc++ @DLLIB@ @LIBVA_DRM_LIBS@ @LIBVA_X11_LIBS@
++Libs: -L${libdir} -lmfx -lstdc++ @DLLIB@
+ Libs.private:
+ Cflags: -I${includedir}
+-- 
+2.18.0
+

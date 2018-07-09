@@ -1,0 +1,25 @@
+From 6ab9a389155aa8cba1003d7fa76628129bf65061 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Mon, 9 Jul 2018 12:02:23 +0200
+Subject: [PATCH] mingwcompat-remove-tests
+
+---
+ Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index cc3024e..5076bd5 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -24,7 +24,7 @@
+ SUBDIRS=fontconfig fc-case fc-lang src \
+ 	fc-cache fc-cat fc-conflist fc-list fc-match \
+ 	fc-pattern fc-query fc-scan fc-validate conf.d \
+-	its po po-conf test
++	its po po-conf 
+ if ENABLE_DOCS
+ SUBDIRS += doc
+ endif
+-- 
+2.18.0
+

@@ -1,0 +1,32 @@
+From a3821830ede76ae34ace695d81aaa8bcb6559363 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Mon, 9 Jul 2018 12:11:25 +0200
+Subject: [PATCH] mingwcompat-remove-doc-tests
+
+---
+ Makefile.am | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 9dd4801..b0ab44d 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -4,12 +4,11 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ ## The order of subdirs is important, don't change without a reason.
+-SUBDIRS = gen.tab lib bin doc test
++SUBDIRS = gen.tab lib bin
+ 
+ EXTRA_DIST = autogen.sh ChangeLog.old \
+-	meson.build meson_options.txt bin/meson.build doc/meson.build \
+-	gen.tab/meson.build lib/meson.build test/meson.build \
+-	test/test-runner.py test/unicode-conformance/meson.build
++	meson.build meson_options.txt bin/meson.build \
++	gen.tab/meson.build lib/meson.build
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = @PACKAGE@.pc
+-- 
+2.18.0
+

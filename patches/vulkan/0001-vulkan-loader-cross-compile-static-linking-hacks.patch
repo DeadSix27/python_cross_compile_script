@@ -1,40 +1,39 @@
-From a76fd92fc67e6b4ed11f101b0939a30f75cd8574 Mon Sep 17 00:00:00 2001
+From 52bf002053e6ac4cefbf526305815c30d9cf6867 Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Thu, 7 Jun 2018 22:15:21 +0200
+Date: Mon, 9 Jul 2018 08:46:40 +0200
 Subject: [PATCH] cross-compile-static-linking-hacks
 
 ---
  loader/CMakeLists.txt       | 12 +++++-------
- loader/asm_offset.c         |  2 +-
  loader/loader.c             |  8 ++++++--
  loader/loader.rc            |  5 ++++-
  loader/vk_loader_platform.h |  2 +-
  loader/vulkan.pc.in         |  4 ++--
- 6 files changed, 19 insertions(+), 14 deletions(-)
+ 5 files changed, 18 insertions(+), 13 deletions(-)
 
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index 405713067..5ce425f9e 100644
+index a5bbc1d0b..d1f7e4f7b 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
-@@ -28,7 +28,7 @@ endif()
+@@ -40,7 +40,7 @@ endif()
  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
      add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
      set(DisplayServer Win32)
--    if (NOT MSVC_VERSION LESS 1900)
+-    if(NOT MSVC_VERSION LESS 1900)
 +    if (MSVC AND NOT MSVC_VERSION LESS 1900)
          # Enable control flow guard
          message(STATUS "Building loader with control flow guard")
          add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/guard:cf>")
-@@ -92,7 +92,7 @@ set(ASM_FAILURE_MSG "The build will fall back on building with C code\n")
+@@ -100,7 +100,7 @@ set(ASM_FAILURE_MSG "The build will fall back on building with C code\n")
  set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG}Note that this may be unsafe, as the C code requires tail-call optimizations to remove")
  set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} the stack frame for certain calls. If the compiler does not do this, then unknown device")
  set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted stack.")
--if (WIN32)
+-if(WIN32)
 +if (MSVC AND WIN32)
      enable_language(ASM_MASM)
-     if (CMAKE_ASM_MASM_COMPILER_WORKS)
-         if (NOT CMAKE_CL_64)
-@@ -184,7 +184,7 @@ if (WIN32)
+     if(CMAKE_ASM_MASM_COMPILER_WORKS)
+         if(NOT CMAKE_CL_64)
+@@ -206,7 +206,7 @@ if(WIN32)
          set_target_properties(vulkan PROPERTIES LINK_FLAGS_DEBUG "/ignore:4098" OUTPUT_NAME vulkan-1)
      else()
          add_library(vulkan STATIC $<TARGET_OBJECTS:loader-opt> $<TARGET_OBJECTS:loader-norm>)
@@ -42,10 +41,10 @@ index 405713067..5ce425f9e 100644
 +        set_target_properties(vulkan PROPERTIES OUTPUT_NAME vulkan)
      endif()
  
-     if (ENABLE_WIN10_ONECORE)
-@@ -273,21 +273,19 @@ else()
-             FRAMEWORK DESTINATION loader
+     if(ENABLE_WIN10_ONECORE)
+@@ -283,20 +283,18 @@ else()
          )
+ # cmake-format: on
      endif(APPLE)
 +endif()
  
@@ -59,29 +58,15 @@ index 405713067..5ce425f9e 100644
 -            endforeach()
 +            set(PRIVATE_LIBS "${PRIVATE_LIBS} -lshlwapi -lcfgmgr32")
              configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
-             install(FILES       "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc"
-                     DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+             install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
          endif()
      endif()
 -endif()
  
  install(TARGETS vulkan
          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-diff --git a/loader/asm_offset.c b/loader/asm_offset.c
-index 97832afa0..6e76e6430 100644
---- a/loader/asm_offset.c
-+++ b/loader/asm_offset.c
-@@ -23,7 +23,7 @@
- #include <stdio.h>
- #include "loader.h"
- 
--#if !defined(_MSC_VER) || (_MSC_VER >= 1900)
-+#if (_MSC_VER >= 1900)
- #define SIZE_T_FMT "%-8zu"
- #else
- #define SIZE_T_FMT "%-8lu"
 diff --git a/loader/loader.c b/loader/loader.c
-index 71c4631b7..be542824c 100644
+index fc56b9044..0580297f1 100644
 --- a/loader/loader.c
 +++ b/loader/loader.c
 @@ -53,9 +53,9 @@
@@ -151,5 +136,5 @@ index 2ce5aea43..6e897033f 100644
  
  Name: @CMAKE_PROJECT_NAME@
 -- 
-2.17.1
+2.18.0
 
