@@ -2388,6 +2388,14 @@ PRODUCTS = {
 			'--enable-lua '
 			'--enable-vapoursynth '
 			'--enable-uchardet '
+			'--disable-xv '
+			'--disable-pulse '
+			'--disable-alsa '
+			'--disable-jack '
+			'--disable-x11 '
+			'--disable-wayland '
+			'--disable-wayland-protocols '
+			'--disable-wayland-scanner '
 			'--enable-libarchive '
 			'--enable-javascript '
 			'--disable-manpage-build '
@@ -2816,6 +2824,14 @@ DEPENDS = {
 			'--enable-dvdnav '
 			'--enable-libbluray '
 			#'--enable-egl-angle-lib '
+			'--disable-xv '
+			'--disable-alsa '
+			'--disable-pulse '
+			'--disable-jack '
+			'--disable-x11 '
+			'--disable-wayland '
+			'--disable-wayland-protocols '
+			'--disable-wayland-scanner '
 			'--enable-cdda '
 			'--enable-libass '
 			'--enable-lua '
@@ -2927,10 +2943,10 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ghostscript.com/mujs.git',
 		'needs_configure' : False,
-		'make_options': '{make_prefix_options} prefix={target_prefix}',
-		'install_options' : '{make_prefix_options} prefix={target_prefix}',
+		'make_options': '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
+		'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-building-with-mingw.patch', '-p1'],
+			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-building-with-mingw.patch', '-p1'],
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0002-fix-install-with-mingw.patch', '-p1'],
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
@@ -3423,8 +3439,8 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.5',
-		'_info' : { 'version' : '3.6', 'fancy_name' : 'Python (library-only)' },
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.6',
+		'_info' : { 'version' : '3.6.6', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
 		'repo_type' : 'git',
