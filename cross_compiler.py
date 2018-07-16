@@ -3206,6 +3206,12 @@ DEPENDS = {
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
 	},
+	'libpsl' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/rockdaboot/libpsl.git',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --disable-runtime --disable-builtin',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libpsl' },
+	},
 	'openssl_1_1' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
@@ -4447,6 +4453,7 @@ DEPENDS = {
 	'fontconfig' : {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
+		'branch' : '5a46d572c06f1904ea45b4a24a75fb508c8c9f07',
 		'url' : 'git://anongit.freedesktop.org/fontconfig',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'patches' : [
@@ -4456,7 +4463,7 @@ DEPENDS = {
 			'autoreconf -fiv',
 		],
 		'run_post_install': (
-			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv/\' "{pkg_config_path}/fontconfig.pc"',
+			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv -lintl/\' "{pkg_config_path}/fontconfig.pc"',
 		),
 		'depends_on' : [
 			'iconv','libxml2','freetype',
