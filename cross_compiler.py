@@ -1303,6 +1303,7 @@ class CrossCompileScript:
 		if 'skip_deps' in data:
 			if data['skip_deps'] == True:
 				skipDepends = True
+
 		if "depends_on" in data and skipDepends == False: #dependception
 			if len(data["depends_on"])>0:
 				self.logger.info("Building dependencies of '%s'" % (name))
@@ -3453,11 +3454,11 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/vapoursynth_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R43',
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R44',
 		'packages': {
 			'arch' : [ '7za' ],
 		},
-		'_info' : { 'version' : '38', 'fancy_name' : 'VapourSynth (library-only)' },
+		'_info' : { 'version' : 'R44', 'fancy_name' : 'VapourSynth (library-only)' },
 	},
 	'luajit': {
 		'repo_type' : 'git',
@@ -3567,6 +3568,7 @@ DEPENDS = {
 		'needs_configure' : False,
 	},
 	'zlib' : {
+		'_already_built' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/madler/zlib.git',
 		'env_exports' : {
