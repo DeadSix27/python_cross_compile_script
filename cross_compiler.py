@@ -3130,12 +3130,11 @@ DEPENDS = {
 			{ "url" : "https://sourceforge.net/projects/libpng/files/libpng16/1.6.35/libpng-1.6.35.tar.xz",	"hashes" : [ { "type" : "sha256", "sum" : "23912ec8c9584917ed9b09c5023465d71709dce089be503c7867fec68a93bcd7" },	], },
 			{ "url" : "https://fossies.org/linux/misc/libpng-1.6.35.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "23912ec8c9584917ed9b09c5023465d71709dce089be503c7867fec68a93bcd7" }, ],	},
 		],
-		'custom_cflag' : '-fno-asynchronous-unwind-tables',
+		# 'custom_cflag' : '-fno-asynchronous-unwind-tables',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPNG_TESTS=OFF -DPNG_SHARED=OFF -DPNG_STATIC=ON',
-		
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+		# 'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --oldincludedir={target_prefix}/include',
 		'patches' : [
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.35-apng.patch', '-p1'),
 		],
@@ -3567,7 +3566,6 @@ DEPENDS = {
 		'needs_configure' : False,
 	},
 	'zlib' : {
-		'_already_built' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/madler/zlib.git',
 		'env_exports' : {
@@ -3591,7 +3589,6 @@ DEPENDS = {
 		# '_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
 	# },
 	'xz' : { #lzma
-		'_already_built' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xz-mirror/xz.git',
 		#'url' : 'http://git.tukaani.org/xz.git',
@@ -3949,7 +3946,6 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'speexdsp' },
 	},
 	'libspeex' : {
-		'_already_built' : True,
 		'repo_type' : 'git', #"LDFLAGS=-lwinmm"
 		'url' : 'https://github.com/xiph/speex.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
@@ -3967,7 +3963,6 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vorbis' },
 	},
 	'libtheora' : {
-		'_already_built' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/theora.git',
 		'patches' : (
@@ -4439,7 +4434,7 @@ DEPENDS = {
 		'env_exports' : {
 			'CROSS' : '{cross_prefix_bare}',
 		},
-		'custom_cflag' : '-fno-asynchronous-unwind-tables',
+		# 'custom_cflag' : '-fno-asynchronous-unwind-tables',
 		'patches': (
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
 		),
