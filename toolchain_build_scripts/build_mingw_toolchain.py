@@ -72,10 +72,10 @@ SOURCES['isl'] = {
 }
 SOURCES['binutils'] = {
 	'type' : 'archive',
-	'version'   : '2.30',
-	'patches' : [
-		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-binutils-remove_provide_qualifiers_from_ctor_and_dtor_list.patch' , 'p1' ),
-	],
+	'version'   : '2.31.1',
+	# 'patches' : [
+		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-binutils-remove_provide_qualifiers_from_ctor_and_dtor_list.patch' , 'p1' ),
+	# ],
 	'url' : 'https://ftp.gnu.org/gnu/binutils/binutils-{version}.tar.bz2',
 	'softlink_to_package' : [
 		( 'isl'  , 'isl' ),
@@ -84,7 +84,7 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '8-20180706',
+	'version'   : '8-20180727',
 	'url' : 'ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches' : [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
