@@ -2732,7 +2732,7 @@ DEPENDS = {
 		'depends_on' : [
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libaom', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'libass',
+			'libx265_multibit', 'libaom', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass',
 			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
 		],
 	},
@@ -3262,7 +3262,10 @@ DEPENDS = {
 	},
 	'gettext' : {
 		'repo_type' : 'archive',
-		'url' : 'https://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz',
+		'download_locations' : [
+			{ "url" : "https://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/gettext-0.19.8.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" }, ], },
+		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
 		'version' : '0.19.8.1',
 		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
@@ -4434,7 +4437,7 @@ DEPENDS = {
 		'env_exports' : {
 			'CROSS' : '{cross_prefix_bare}',
 		},
-		# 'custom_cflag' : '-fno-asynchronous-unwind-tables',
+		'custom_cflag' : '-fno-asynchronous-unwind-tables',
 		'patches': (
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
 		),
@@ -4452,7 +4455,7 @@ DEPENDS = {
 	'fontconfig' : {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
-		'branch' : '1451f829e750926cec27855eded71c24ac7ac7c6', #'5a46d572c06f1904ea45b4a24a75fb508c8c9f07',
+		'branch' : '5a46d572c06f1904ea45b4a24a75fb508c8c9f07',
 		'url' : 'git://anongit.freedesktop.org/fontconfig',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'patches' : [
