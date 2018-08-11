@@ -1,0 +1,25 @@
+From a631175c6c5bf3cf2deeb38a42f0ae17add20b22 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Wed, 1 Aug 2018 16:30:36 +0200
+Subject: [PATCH] fix-missing-bracket
+
+---
+ src/fcstr.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/fcstr.c b/src/fcstr.c
+index bfddd68..4247c85 100644
+--- a/src/fcstr.c
++++ b/src/fcstr.c
+@@ -872,7 +872,7 @@ FcStrIsAbsoluteFilename (const FcChar8 *s)
+ {
+ #ifdef _WIN32
+     if (*s == '\\' ||
+-	(isalpha (*s) && s[1] == ':' && (s[2] == '/' || s[2] == '\\'))
++	(isalpha (*s) && s[1] == ':' && (s[2] == '/' || s[2] == '\\')))
+ 	return FcTrue;
+ #endif
+     return *s == '/';
+-- 
+2.18.0
+
