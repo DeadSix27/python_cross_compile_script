@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/ # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '0204e4691098d882e561d5749ccf7cf74d1b72c1' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -108,7 +108,7 @@ class MyFormatter(logging.Formatter):
 _MINGW_SCRIPT_URL  = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py'
 _DEBUG             = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 _OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6']
+_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.7.0']
 
 class CrossCompileScript:
 
@@ -1983,7 +1983,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : 'da299e345117cc3c4f32025776784f587335b39b', #'f77d9317558eff603999fa9a53bad7246e780981', #broken as of late may 14, back to master once working again
+		'branch' : 'da17065690c185ae678d5db9466cf0a402ca6b6d' , #'da299e345117cc3c4f32025776784f587335b39b',
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2075,49 +2075,6 @@ PRODUCTS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wget' },
 	},
-	'patch' : { # doesn't work, requires patches, ironically.
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/patch-2.7.6.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd" }, ], },
-		],
-		'configure_options': '--host={target_host} --prefix={product_prefix}/patch.installed --disable-shared --enable-static',
-		'_info' : { 'version' : '2.7.6', 'fancy_name' : 'patch' },
-	},
-	'aria2' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/aria2/aria2.git',
-		'env_exports' : {
-			#'LDFLAGS' : '-static',
-			#'LIBS' : '-static-libgcc -static-libstdc++ -lz -lole32',
-		},
-		'configure_options':
-			' --host={target_host} --prefix={product_prefix}/aria2_git.installed'
-			' --disable-shared --enable-static'
-			' --without-included-gettext --disable-nls --without-gnutls --disable-silent-rules --with-openssl=yes --without-wintls --without-libxml2'
-			' ARIA2_STATIC=yes'
-		,
-		'configure_optionsb':
-			' --host={target_host} --prefix={product_prefix}/aria2_git.installed'
-			' --without-included-gettext --disable-nls --disable-shared --enable-static --with-ca-bundle=ca-bundle.trust.crt'
-			' --with-openssl --with-libexpat --with-libz --with-libgmp --without-wintls'
-			' --with-sqlite3 --with-libxml2 --without-gnutls --disable-silent-rules'
-			' --with-cppunit-prefix={target_prefix} ARIA2_STATIC=yes'
-		,
-		'run_post_patch' : [
-			'autoreconf -fiv'
-		],
-		'run_post_install': [
-			'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
-		],
-		'depends_on': [
-			'zlib', 'libressl',
-		],
-		# 'depends_on': [
-			# 'zlib', 'libxml2', 'expat', 'gmp', 'libsqlite3', 'libssh2', 'cppunit', 'libressl', #'gnutls', # 'c-ares', 'libsqlite3', 'openssl_1_1'
-		# ],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aria2' },
-	},
 	'ffmpeg_static' : {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
@@ -2157,32 +2114,6 @@ PRODUCTS = {
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libbluray --disable-libgme',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
-	},
-	'vlc' : { # not working
-		'repo_type' : 'git',
-		'url' : 'https://github.com/videolan/vlc.git', # https://git.videolan.org/git/vlc.git is slow..
-		'configure_options':
-			'--host={target_host} --prefix={product_prefix}/vlc_git.installed --disable-lua --enable-qt --disable-ncurses --disable-dbus --disable-sdl --disable-telx --enable-nls LIBS="-lbcrypt -lbz2"'
-		,
-		'depends_on' : [
-			'lua', 'a52dec',
-		],
-		# 'patches' : [
-			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0002-MinGW-w64-lfind-s-_NumOfElements-is-an-unsigned-int.patch','-p1'),
-			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0003-MinGW-w64-don-t-pass-static-to-pkg-config-if-SYS-min.patch','-p1'),
-			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0004-Revert-Win32-prefer-the-static-libraries-when-creati.patch','-p1'),
-		# ],
-		'env_exports' : {
-			'LIBS' : '-lbcrypt -lbz2', # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
-		},
-		# 'download_header' : [
-		# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_3.h',
-		# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_4.h',
-		# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_5.h',
-		# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_6.h',
-		# ],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'VLC (git)' },
-		'_disabled' : True,
 	},
 	'x265_10bit' : {
 		'repo_type' : 'mercurial',
@@ -2291,45 +2222,6 @@ PRODUCTS = {
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SoX' },
 	},
-	'mpd' : { # doesn't compile, feel free to contribute patches
-		'repo_type' : 'git',
-		'url' : 'https://github.com/MaxKellermann/MPD.git',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-wavpack --disable-gme --disable-bzip2 --disable-cdio-paranoia --disable-sqlite --enable-silent-rules --disable-icu LDFLAGS="-static" LIBS="-static-libgcc -static-libstdc++ -lz -lole32"',
-		'env_exports' : {
-			'LDFLAGS' : '-static',
-			'LIBS' : '-static-libgcc -static-libstdc++ -lz -lole32',
-			'CXXFLAGS' : '-O2 -g',
-		},
-		'_disabled' : True,
-	},
-	'clementine' : { # requires qt4....... so no. we'll keep it for future reference.
-		'repo_type' : 'git',
-		'url' : 'https://github.com/clementine-player/Clementine.git',
-		'needs_configure' : False,
-		'needs_make_install':False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
-		'depends_on': [
-			'qt4',
-		],
-		'_disabled': True,
-	},
-	'amarok' : { # requires qt4....... so no. we'll keep it for future reference.
-		'repo_type' : 'git',
-		'url' : 'git://anongit.kde.org/amarok.git',
-		'needs_configure' : False,
-		'needs_make_install':False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
-		# 'custom_cflag' : '-DTAGLIB_STATIC',
-		'env_exports' : {
-			'CPPDEFINES' : '-DTAGLIB_STATIC',
-			# build.env.Append(CPPDEFINES = 'TAGLIB_STATIC')
-		},
-		'depends_on': [
-			'taglib',
-		],
-	},
 	'w2x' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/waifu2x-converter-cpp',
@@ -2410,7 +2302,8 @@ PRODUCTS = {
 			'arch' : [ 'rst2pdf' ],
 		},
 		'patches' : [
-			[ 'https://patch-diff.githubusercontent.com/raw/mpv-player/mpv/pull/5866.patch', '-p1' ], #vulkan shader optimization level
+			#[ 'https://github.com/mpv-player/mpv/pull/5866.patch', '-p1' ], # Change vulkan shader optimization level
+			#[ 'https://github.com/mpv-player/mpv/pull/6055.patch', '-p1' ], # Add controller support
 		],
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
@@ -2421,56 +2314,6 @@ PRODUCTS = {
 			'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv-1.dll',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv' },
-	},
-	'mediainfo' : {
-		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
-		'custom_cflag' : '',
-		'recursive_git' : True,
-		'url' : 'https://github.com/MediaArea/MediaInfo.git',
-		'source_subfolder' : 'Project/GNU/CLI',
-		'rename_folder' : 'mediainfo_git',
-		'configure_options': '--host={target_host} --prefix={product_prefix}/mediainfo_git.installed --disable-shared --disable-static-libs',
-		'depends_on': [
-			'libmediainfo',
-		],
-		'run_post_configure' : [
-			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
-		],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfo' },
-		'_disabled' : True,
-	},
-	'filezilla' : { # note, this builds fine on my build-box running ubuntu 17.04 64-bit .. I did not yet test this on any other system.
-		'repo_type' : 'svn',
-		'folder_name' : 'filezilla_svn',
-		'url' : 'https://svn.filezilla-project.org/svn/FileZilla3/trunk',
-		'configure_options': '--host={target_host} --prefix={product_prefix}/filezilla_svn.installed --disable-shared --enable-static --disable-manualupdatecheck --disable-autoupdatecheck --with-pugixml=builtin host_os=mingw',
-		'run_post_patch' : [
-			'autoreconf -fiv',
-			'sed -i.bak \'s/extern _SYM_EXPORT gnutls_free/extern gnutls_free/\' "{target_prefix}/include/gnutls/gnutls.h"', #edit gnutls.h and remove the _SYM_EXPORT part apparently...? : https://forum.filezilla-project.org/viewtopic.php?t=1227&start=180
-		],
-		'depends_on' : [
-			'libfilezilla',
-			'gnutls',
-			'wxwidgets',
-			'libsqlite3'
-		 ],
-		'env_exports' : {
-			'LIBGNUTLS_LIBS' : '"-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -lz"',
-			'LIBS' : '-lgnutls',
-			'CXXFLAGS' : '-Wall -O2',
-		},
-		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/filezilla/0001-remove-32bit-fzshellext.patch','-p1'),
-		],
-		'run_post_install' : [
-			'mv "{target_prefix}/include/gnutls/gnutls.h.bak" "{target_prefix}/include/gnutls/gnutls.h"'
-		],
-		'packages': {
-			'ubuntu' : [ 'wxrc' ],
-		},
-		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (64Bit only)' },
-
 	},
 	'youtube-dl' : {
 		'repo_type' : 'git',
@@ -2488,112 +2331,219 @@ PRODUCTS = {
 		],
 		'needs_configure' : False,
 	},
-	'mpv_gui_qt5' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/DeadSix27/Baka-MPlayer',
-		'rename_folder' : 'mpv_gui_qt5_git',
-		'configure_options' :
-			'CONFIG+=embed_translations lupdate="{target_sub_prefix}/bin/lupdate" lrelease="{target_sub_prefix}/bin/lrelease" PKG_CONFIG={cross_prefix_full}pkg-config INSTALL_ROOT={product_prefix}/mpv_gui_qt5_git.installed'
-			' LIBS+=-L{target_sub_prefix}/lib INCLUDEPATH+=-I{target_sub_prefix}/include'
-		,
-		'run_post_patch' : [
-			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"'
-		],
-		'install_options' : 'INSTALL_ROOT={product_prefix}/mpv_gui_qt5_git.installed',
-		'env_exports' : {
-			'QTROOT' : '{target_sub_prefix}/bin',
-			'QMAKE' : '{target_sub_prefix}/bin/qmake',
-			'PKG_CONFIG' : '{cross_prefix_full}pkg-config'
-		},
-		'depends_on' : [
-			'qt5',
-			'libmpv',
-			'libzip'
-		],
-	},
-	'mediainfo_dll' : {
-		# 'debug_downloadonly': True,
-		'repo_type' : 'git',
-		# 'branch' : 'v0.7.94',
-		'source_subfolder' : 'Project/GNU/Library',
-		'rename_folder' : 'mediainfo_dll',
-		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
-		'configure_options' : '--host={target_host} --target={bit_name2}-{bit_name_win}-gcc --prefix={product_prefix}/mediainfo_dll.installed --enable-static --disable-shared', # --enable-static --disable-shared --enable-shared=no
-		'run_post_patch' : [
-			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
-			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
-		],
-		'run_post_configure' : [
-			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
-		],
-		'make_options': '{make_prefix_options}',
-		'depends_on': [
-			'zenlib', 'libcurl',
-		],
-		# 'patches' : [
-			# ('libmediainfo-1-fixes.patch','-p1', '../../..'),
-		# ],
-		'env_exports' : { 'PKG_CONFIG' : 'pkg-config' },
-		#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
-	},
+	# ###############################################################################################################
+	# ###############################################################################################################
+	# ## Most of these packages I haven't used/updated in a long while, most if not all probably stopped building. ##
+	# ###############################################################################################################
+	# ###############################################################################################################
+	# 'mediainfo' : { #unused
+	# 	'repo_type' : 'git',
+	# 	'branch' : 'v0.7.94',
+	# 	'custom_cflag' : '',
+	# 	'recursive_git' : True,
+	# 	'url' : 'https://github.com/MediaArea/MediaInfo.git',
+	# 	'source_subfolder' : 'Project/GNU/CLI',
+	# 	'rename_folder' : 'mediainfo_git',
+	# 	'configure_options': '--host={target_host} --prefix={product_prefix}/mediainfo_git.installed --disable-shared --disable-static-libs',
+	# 	'depends_on': [
+	# 		'libmediainfo',
+	# 	],
+	# 	'run_post_configure' : [
+	# 		'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+	# 	],
+	# 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfo' },
+	# 	'_disabled' : True,
+	# },
+	# 'patch' : { # unused
+	# 	'repo_type' : 'archive',
+	# 	'download_locations' : [
+	# 		{ "url" : "https://ftp.gnu.org/gnu/patch/patch-2.7.6.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd" }, ], },
+	# 		{ "url" : "https://fossies.org/linux/misc/patch-2.7.6.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ac610bda97abe0d9f6b7c963255a11dcb196c25e337c61f94e4778d632f1d8fd" }, ], },
+	# 	],
+	# 	'configure_options': '--host={target_host} --prefix={product_prefix}/patch.installed --disable-shared --enable-static',
+	# 	'_info' : { 'version' : '2.7.6', 'fancy_name' : 'patch' },
+	# },
+	# 'aria2' : { # broken
+	# 	'repo_type' : 'git',
+	# 	'url' : 'https://github.com/aria2/aria2.git',
+	# 	'env_exports' : {
+	# 		#'LDFLAGS' : '-static',
+	# 		#'LIBS' : '-static-libgcc -static-libstdc++ -lz -lole32',
+	# 	},
+	# 	'configure_options':
+	# 		' --host={target_host} --prefix={product_prefix}/aria2_git.installed'
+	# 		' --disable-shared --enable-static'
+	# 		' --without-included-gettext --disable-nls --without-gnutls --disable-silent-rules --with-openssl=yes --without-wintls --without-libxml2'
+	# 		' ARIA2_STATIC=yes'
+	# 	,
+	# 	'configure_optionsb':
+	# 		' --host={target_host} --prefix={product_prefix}/aria2_git.installed'
+	# 		' --without-included-gettext --disable-nls --disable-shared --enable-static --with-ca-bundle=ca-bundle.trust.crt'
+	# 		' --with-openssl --with-libexpat --with-libz --with-libgmp --without-wintls'
+	# 		' --with-sqlite3 --with-libxml2 --without-gnutls --disable-silent-rules'
+	# 		' --with-cppunit-prefix={target_prefix} ARIA2_STATIC=yes'
+	# 	,
+	# 	'run_post_patch' : [
+	# 		'autoreconf -fiv'
+	# 	],
+	# 	'run_post_install': [
+	# 		'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
+	# 	],
+	# 	'depends_on': [
+	# 		'zlib', 'libressl',
+	# 	],
+	# 	# 'depends_on': [
+	# 		# 'zlib', 'libxml2', 'expat', 'gmp', 'libsqlite3', 'libssh2', 'cppunit', 'libressl', #'gnutls', # 'c-ares', 'libsqlite3', 'openssl_1_1'
+	# 	# ],
+	# 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aria2' },
+	# },
+	# 'vlc' : { # not working
+	# 	'repo_type' : 'git',
+	# 	'url' : 'https://github.com/videolan/vlc.git', # https://git.videolan.org/git/vlc.git is slow..
+	# 	'configure_options':
+	# 		'--host={target_host} --prefix={product_prefix}/vlc_git.installed --disable-lua --enable-qt --disable-ncurses --disable-dbus --disable-sdl --disable-telx --enable-nls LIBS="-lbcrypt -lbz2"'
+	# 	,
+	# 	'depends_on' : [
+	# 		'lua', 'a52dec',
+	# 	],
+	# 	# 'patches' : [
+	# 		# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0002-MinGW-w64-lfind-s-_NumOfElements-is-an-unsigned-int.patch','-p1'),
+	# 		# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0003-MinGW-w64-don-t-pass-static-to-pkg-config-if-SYS-min.patch','-p1'),
+	# 		# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-vlc-git/0004-Revert-Win32-prefer-the-static-libraries-when-creati.patch','-p1'),
+	# 	# ],
+	# 	'env_exports' : {
+	# 		'LIBS' : '-lbcrypt -lbz2', # add the missing bcrypt Link, is windows SSL api, could use gcrypt or w/e idk what that lib is, i'd probably rather use openssl_1_1
+	# 	},
+	# 	# 'download_header' : [
+	# 	# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_3.h',
+	# 	# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_4.h',
+	# 	# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_5.h',
+	# 	# 	'https://raw.githubusercontent.com/gongminmin/UniversalDXSDK/master/Include/dxgi1_6.h',
+	# 	# ],
+	# 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'VLC (git)' },
+	# 	'_disabled' : True,
+	# },
+	# 'mpd' : { # broken
+	# 	'repo_type' : 'git',
+	# 	'url' : 'https://github.com/MaxKellermann/MPD.git',
+	# 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-wavpack --disable-gme --disable-bzip2 --disable-cdio-paranoia --disable-sqlite --enable-silent-rules --disable-icu LDFLAGS="-static" LIBS="-static-libgcc -static-libstdc++ -lz -lole32"',
+	# 	'env_exports' : {
+	# 		'LDFLAGS' : '-static',
+	# 		'LIBS' : '-static-libgcc -static-libstdc++ -lz -lole32',
+	# 		'CXXFLAGS' : '-O2 -g',
+	# 	},
+	# 	'_disabled' : True,
+	# },
+	#'clementine' : { # requires qt4....... so no. we'll keep it for future reference.
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/clementine-player/Clementine.git',
+	#	'needs_configure' : False,
+	#	'needs_make_install':False,
+	#	'is_cmake' : True,
+	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
+	#	'depends_on': [
+	#		'qt4',
+	#	],
+	#	'_disabled': True,
+	#},
+	#'amarok' : { # requires qt4....... so no. we'll keep it for future reference.
+	#	'repo_type' : 'git',
+	#	'url' : 'git://anongit.kde.org/amarok.git',
+	#	'needs_configure' : False,
+	#	'needs_make_install':False,
+	#	'is_cmake' : True,
+	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
+	#	# 'custom_cflag' : '-DTAGLIB_STATIC',
+	#	'env_exports' : {
+	#		'CPPDEFINES' : '-DTAGLIB_STATIC',
+	#		# build.env.Append(CPPDEFINES = 'TAGLIB_STATIC')
+	#	},
+	#	'depends_on': [
+	#		'taglib',
+	#	],
+	#},
+	# 'filezilla' : { # I haven't touched this in a while, probably stopped building.
+	# 	'repo_type' : 'svn',
+	# 	'folder_name' : 'filezilla_svn',
+	# 	'url' : 'https://svn.filezilla-project.org/svn/FileZilla3/trunk',
+	# 	'configure_options': '--host={target_host} --prefix={product_prefix}/filezilla_svn.installed --disable-shared --enable-static --disable-manualupdatecheck --disable-autoupdatecheck --with-pugixml=builtin host_os=mingw',
+	# 	'run_post_patch' : [
+	# 		'autoreconf -fiv',
+	# 		'sed -i.bak \'s/extern _SYM_EXPORT gnutls_free/extern gnutls_free/\' "{target_prefix}/include/gnutls/gnutls.h"', #edit gnutls.h and remove the _SYM_EXPORT part apparently...? : https://forum.filezilla-project.org/viewtopic.php?t=1227&start=180
+	# 	],
+	# 	'depends_on' : [
+	# 		'libfilezilla',
+	# 		'gnutls',
+	# 		'wxwidgets',
+	# 		'libsqlite3'
+	# 	 ],
+	# 	'env_exports' : {
+	# 		'LIBGNUTLS_LIBS' : '"-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -lz"',
+	# 		'LIBS' : '-lgnutls',
+	# 		'CXXFLAGS' : '-Wall -O2',
+	# 	},
+	# 	'patches' : [
+	# 		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/filezilla/0001-remove-32bit-fzshellext.patch','-p1'),
+	# 	],
+	# 	'run_post_install' : [
+	# 		'mv "{target_prefix}/include/gnutls/gnutls.h.bak" "{target_prefix}/include/gnutls/gnutls.h"'
+	# 	],
+	# 	'packages': {
+	# 		'ubuntu' : [ 'wxrc' ],
+	# 	},
+	# 	'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (64Bit only)' },
+    # 
+	# },
+	# 'mpv_gui_qt5' : {
+	# 	'repo_type' : 'git',
+	# 	'url' : 'https://github.com/DeadSix27/Baka-MPlayer',
+	# 	'rename_folder' : 'mpv_gui_qt5_git',
+	# 	'configure_options' :
+	# 		'CONFIG+=embed_translations lupdate="{target_sub_prefix}/bin/lupdate" lrelease="{target_sub_prefix}/bin/lrelease" PKG_CONFIG={cross_prefix_full}pkg-config INSTALL_ROOT={product_prefix}/mpv_gui_qt5_git.installed'
+	# 		' LIBS+=-L{target_sub_prefix}/lib INCLUDEPATH+=-I{target_sub_prefix}/include'
+	# 	,
+	# 	'run_post_patch' : [
+	# 		'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"'
+	# 	],
+	# 	'install_options' : 'INSTALL_ROOT={product_prefix}/mpv_gui_qt5_git.installed',
+	# 	'env_exports' : {
+	# 		'QTROOT' : '{target_sub_prefix}/bin',
+	# 		'QMAKE' : '{target_sub_prefix}/bin/qmake',
+	# 		'PKG_CONFIG' : '{cross_prefix_full}pkg-config'
+	# 	},
+	# 	'depends_on' : [
+	# 		'qt5',
+	# 		'libmpv',
+	# 		'libzip'
+	# 	],
+	# },
+	# 'mediainfo_dll' : { # wont produce dll
+	# 	# 'debug_downloadonly': True,
+	# 	'repo_type' : 'git',
+	# 	# 'branch' : 'v0.7.94',
+	# 	'source_subfolder' : 'Project/GNU/Library',
+	# 	'rename_folder' : 'mediainfo_dll',
+	# 	'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
+	# 	'configure_options' : '--host={target_host} --target={bit_name2}-{bit_name_win}-gcc --prefix={product_prefix}/mediainfo_dll.installed --enable-static --disable-shared', # --enable-static --disable-shared --enable-shared=no
+	# 	'run_post_patch' : [
+	# 		'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
+	# 		'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
+	# 	],
+	# 	'run_post_configure' : [
+	# 		'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+	# 	],
+	# 	'make_options': '{make_prefix_options}',
+	# 	'depends_on': [
+	# 		'zenlib', 'libcurl',
+	# 	],
+	# 	# 'patches' : [
+	# 		# ('libmediainfo-1-fixes.patch','-p1', '../../..'),
+	# 	# ],
+	# 	'env_exports' : { 'PKG_CONFIG' : 'pkg-config' },
+	# 	#'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfoDLL' },
+	# },
 }
 DEPENDS = {
-	'ca-bundles' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/DeadSix27/mingw_ca_bundle_script.git',
-		'needs_configure' : False,
-		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix}',
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ca-bundles' },
-	},
-	'librsvg' : {
-		'repo_type' : 'archive',
-		'url' : 'https://download.gnome.org/sources/librsvg/2.41/librsvg-2.42.3.tar.xz',
-		'configure_options':
-			'--host={target_host} '
-			'--prefix={target_prefix} '
-			'--disable-shared '
-			'--enable-static '
-		,
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'librsvg' },
-	},
-	'cppunit' : {
-		'repo_type' : 'git',
-		'url' : 'git://anongit.freedesktop.org/git/libreoffice/cppunit',
-		'configure_options':
-			'--host={target_host} '
-			'--prefix={target_prefix} '
-			'--disable-shared '
-			'--enable-static '
-		,
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/cppunit/Add-define-guard-for-NOMINMAX.patch','-p1']
-		],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cppunit' },
-	},
-	'opencv' : { # not working yet
-		'repo_type' : 'archive',
-		'url' : 'https://github.com/opencv/opencv/archive/3.4.1.tar.gz',
-		'folder_name' : 'opencv-3.4.1',
-		'source_subfolder' : 'build',
-		'cmake_options': '.. -G"Unix Makefiles" -DCMAKE_SKIP_RPATH=ON -DBUILD_TESTS=OFF -DBUILD_opencv_world=ON -DBUILD_PERF_TESTS=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DWITH_FFMPEG=OFF -DINSTALL_C_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_JASPER=OFF -DBUILD_OPENEXR=OFF -DWITH_VTK=OFF -DWITH_IPP=OFF -DWITH_DSHOW=OFF -DENABLE_PRECOMPILED_HEADERS=OFF -DENABLE_STATIC_RUNTIME=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}',
-		'is_cmake' : True,
-		'needs_configure' : False,
-		# 'patches' : [
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0001-mingw-w64-cmake.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0002-solve_deg3-underflow.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0003-issue-4107.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0004-generate-proper-pkg-config-file.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0005-opencv-support-python-3.6.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0008-mingw-w64-cmake-lib-path.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0009-openblas-find.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0010-find-libpng-header.patch', '-p1', '..'],
-			# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0011-dshow-build-fix.patch', '-p1', '..'],
-		# ],
-		'make_options' : 'VERBOSE=1',
-		'install_options' : '{make_prefix_options} prefix={target_prefix} install',
-		'_info' : { 'version' : '3.4.1', 'fancy_name' : 'opencv' },
-	},
 	'crossc' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/rossy/crossc.git',
@@ -2638,7 +2588,6 @@ DEPENDS = {
 		'depends_on' : ['crossc'],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'shaderc' },
 	},
-	
 	'vulkan_headers' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Headers.git',
@@ -2648,7 +2597,6 @@ DEPENDS = {
 		'is_cmake' : True,
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan headers' },
 	},
-	
 	'vulkan_loader' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
@@ -2665,68 +2613,6 @@ DEPENDS = {
 		'depends_on' : [ 'vulkan_headers' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan Loader' },
 	},
-	'zenlib' : {
-		'repo_type' : 'git',
-		# 'branch' : 'v0.4.35',
-		'source_subfolder' : 'Project/GNU/Library',
-		'url' : 'https://github.com/MediaArea/ZenLib.git',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --disable-shared --enable-shared=no',
-		'run_post_configure' : [
-			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
-		],
-		# 'patches' : (
-			# ('fcurl_gitibzen-1-fixes.patch', '-p1','../../..'),
-		# ),
-		# 'run_post_patch' : [
-			# 'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
-		# ],
-		'_info' : { 'version' : 'git (v4.35)', 'fancy_name' : 'zenlib' },
-	},
-	'libfilezilla' : {
-		'repo_type' : 'svn',
-		'folder_name' : 'libfilezilla_svn',
-		'url' : 'https://svn.filezilla-project.org/svn/libfilezilla/trunk',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'run_post_patch' : [
-			'autoreconf -fiv',
-		],
-		'env_exports' : {
-			'CXXFLAGS' : '-O0',
-		},
-		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (libary)' },
-	},
-	'freeglut' : {
-		'repo_type' : 'archive',
-		'url' : 'https://downloads.sourceforge.net/project/freeglut/freeglut/3.0.0/freeglut-3.0.0.tar.gz',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'needs_configure' : False,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DFREEGLUT_GLES=OFF -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_REPLACE_GLUT=ON -DFREEGLUT_BUILD_STATIC_LIBS=ON -DFREEGLUT_BUILD_SHARED_LIBS=OFF',
-		'is_cmake' : True,
-		'_info' : { 'version' : '3.0', 'fancy_name' : 'FreeGLUT (libary?)' },
-	},
-
-	'wxwidgets' : {
-		'repo_type' : 'archive',
-		'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.1/wxWidgets-3.1.1.tar.bz2',
-		'configure_options':
-			' --host={target_host} --build=x86_64-unknown-linux-gnu --prefix={target_sub_prefix} --disable-shared --enable-static --build='
-			' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
-			' --enable-graphics_ctx --enable-webview --enable-mediactrl --with-libpng=sys --with-libxpm=builtin --with-libjpeg=sys'
-			' --with-libtiff=builtin --without-mac --without-dmalloc --without-wine --with-sdl --with-themes=all --disable-stl --enable-threads --enable-gui'
-		,
-		# 'run_post_install' : [
-		# 	'cp -fv "{target_sub_prefix}/bin/wxrc-3.0" "{target_sub_prefix}/bin/wxrc"',
-		# ],
-		# 'patches' : [
-		# 	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wxwidgets/0001-wxWidgets-c++11-PR2222.patch','-p1'),
-		# ],
-		# 'env_exports': {
-		# 	'CXXFLAGS' : '-std=gnu++11',
-		# 	'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
-		# },
-		'_info' : { 'version' : '3.1.1', 'fancy_name' : 'wxWidgets (libary)' },
-		'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
-	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
 		'depends_on' : [
@@ -2736,14 +2622,6 @@ DEPENDS = {
 			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
 		],
 	},
-	'taglib' : {
-		'repo_type' : 'archive',
-		'url' : 'http://taglib.org/releases/taglib-1.11.1.tar.gz',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DWITH_MP4=ON -DWITH_ASF=ON',
-	},
-
 	'opencl_icd' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
@@ -2856,70 +2734,6 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
 	},
-
-	'libmediainfo' : {
-		'repo_type' : 'git',
-		'branch' : 'v0.7.94',
-		'source_subfolder' : 'Project/GNU/Library',
-		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll', # --enable-static --disable-shared --enable-shared=no
-		'run_post_patch' : [
-			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
-			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
-		],
-		'run_post_configure' : [
-			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
-		],
-		'depends_on': [
-			'zenlib', 'libcurl',
-		],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmediainfo' },
-	},
-	'libssh2' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/libssh2/libssh2.git',
-		'configure_options':
-			'--host={target_host} '
-			'--prefix={target_prefix} '
-			'--disable-shared '
-			'--enable-static '
-			'--disable-examples-build '
-			'--with-crypto=openssl'
-		,
-		'depends_on': (
-			'zlib', 'libressl'
-		),
-		'env_exports' : {
-			'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
-		},
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libssh2' },
-	},
-	'libsqlite3' : {
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "d9d14e88c6fb6d68de9ca0d1f9797477d82fc3aed613558f87ffbdbbc5ceb74a" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/sqlite-autoconf-3240000.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "d9d14e88c6fb6d68de9ca0d1f9797477d82fc3aed613558f87ffbdbbc5ceb74a" }, ], },
-		],
-		'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
-		'depends_on': (
-			'zlib',
-		),
-		'_info' : { 'version' : '3.24.0', 'fancy_name' : 'libsqlite3' },
-	},
-	'libcurl' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/curl/curl',
-		'rename_folder' : 'curl_git',
-		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={target_prefix} --exec-prefix={target_prefix}',
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', '-p1' ],
-		],
-		'depends_on': (
-			'zlib','libssh2',
-		),
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
-	},
 	'boost' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
@@ -2951,167 +2765,6 @@ DEPENDS = {
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
-	'pcre2' : {
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.31.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/pcre2-10.31.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
-		],
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
-		],
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
-		'depends_on' : [
-			'bzip2',
-		],
-		'_info' : { 'version' : '10.31', 'fancy_name' : 'pcre2' },
-	},
-	'angle_headers' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/google/angle.git',
-		'folder_name' : 'angle_headers_git',
-		'needs_make':False,
-		'needs_make_install':False,
-		'needs_configure':False,
-		'run_post_patch': [
-			'if [ ! -f "already_done" ] ; then cp -rv "include/EGL" "{target_prefix}/include/" ; fi',
-			'if [ ! -f "already_done" ] ; then cp -rv "include/KHR" "{target_prefix}/include/" ; fi',
-			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
-		],
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE headers' },
-	},
-	'angle' : {
-		'repo_type' : 'git',
-		'url' : 'https://chromium.googlesource.com/angle/angle',
-		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                             ,'-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                                ,'-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                                ,'-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0002-install-fixed.patch'                             ,'-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0003-add-option-for-targeting-cpu-architecture.patch' ,'-p1'),
-		),
-		'needs_make':False,
-		'needs_make_install':False,
-		'needs_configure':False,
-		'run_post_patch': (
-			'if [ ! -f "already_done" ] ; then sed -i \'s/\'python\'/\'python2\'/\' gyp/warnings.gyp ; fi',
-			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={target_prefix} ; fi',
-			'if [ ! -f "already_done" ] ; then make uninstall PREFIX={target_prefix} ; fi',
-			'if [ ! -f "already_done" ] ; then cmake -E remove_directory build ; fi',
-			'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=build -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
-			'if [ ! -f "already_done" ] ; then make -C build/ commit_id ; fi',
-			'if [ ! -f "already_done" ] ; then cmake -E copy build/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
-			'if [ ! -f "already_done" ] ; then make -C build {make_prefix_options} BUILDTYPE=Debug {make_cpu_count} ; fi',
-			'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 Debug ; fi',
-			'if [ ! -f "already_done" ] ; then make install PREFIX={target_prefix} ; fi',
-			'if [ ! -f "already_done" ] ; then touch already_done ; fi',
-		),
-		'packages': {
-			'arch' : [ 'gyp' ],
-		},
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE' },
-	},
-	# Still not building correctly.
-	#
-	# Build needs around 40G, install around 10-15Gb;
-	# Make sure you have at least 60GB free when building,
-	# you can delete the entire source folder of qt after install to free space up again,
-	# then just uncomment the "\'_already_built\' : True," line below in the qt5 block, so building will be skipped each time.
-	'qt5' : {
-		 # '_already_built' : True,
-		'warnings' : [
-			'Qt5 building CAN fail sometimes with multiple threads.. so if this failed try re-running it',
-			'For more information see: https://bugreports.qt.io/browse/QTBUG-53393',
-			'(You could add \'cpu_count\' : \'1\', to the config of QT5 if the slower speed is acceptable for you)',
-			'---------------',
-			'Build needs around 40G, install around 10-15Gb.',
-			'Make sure you have at least 60GB free when building,',
-			'you can delete the entire source folder of qt after install to free space up again,',
-			'then just uncomment the "\'_already_built\' : True," line in the qt5 block, so building will be skipped each time.'
-		],
-		'env_exports' : {
-			'CFLAGS'   : '-DDBUS_STATIC_BUILD -DJAS_DLL=0',
-			#'CXXFLAGS' : '-DGRAPHITE2_STATIC',
-			'PKG_CONFIG' : '{cross_prefix_full}pkg-config',
-			'PKG_CONFIG_SYSROOT_DIR' : '/',
-			'PKG_CONFIG_LIBDIR' : '{target_prefix}/lib/pkgconfig',
-			'CROSS_COMPILE' : '{cross_prefix_bare}',
-			'CROSS_target_prefix' : '{target_sub_prefix}',
-			#'OPENSSL_LIBS' : '!CMD({cross_prefix_full}pkg-config --libs-only-l openssl)CMD!',
-		},
-		'cpu_count' : '1',
-		'clean_post_configure' : False,
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://download.qt.io/official_releases/qt/5.10/5.10.1/single/qt-everywhere-src-5.10.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "05ffba7b811b854ed558abf2be2ddbd3bb6ddd0b60ea4b5da75d277ac15e740a" }, ], },
-		],
-		'configure_options' :
-			'-static'
-			' -no-iconv'
-			' -no-sqlite'
-			' -skip qtconnectivity'
-			' -skip qtserialbus'
-			' -skip qtactiveqt'
-			' -skip qtdeclarative'
-			' -skip qttools'
-			' -release'
-			' -accessibility'
-			' -opengl desktop'
-			' -no-openssl'
-			#' -xplatform win32-g++'
-			' -xplatform mingw-w64-g++'
-			' -optimized-qmake'
-			' -verbose'
-			' -opensource'
-			' -confirm-license'
-			' -force-pkg-config'
-			' -force-debug-info'
-			' -system-zlib'
-			' -system-libpng'
-			' -system-libjpeg'
-			#' -system-sqlite'
-			#' -system-freetype'
-			' -system-harfbuzz'
-			' -no-direct2d'
-			' -system-pcre'
-			' -no-fontconfig'
-			#' -sql-mysql'
-			#' -sql-psql'
-			#' -sql-sqlite'
-			#' -dbus-linked'
-			' -no-glib'
-			' -no-icu'
-			#' -iconv'
-			' -nomake examples'
-			' -make tools'
-			' -hostprefix {target_sub_prefix}'
-			' -hostdatadir {target_sub_prefix}/lib/qt'
-			' -hostbindir {target_sub_prefix}/bin'
-			' -prefix {target_sub_prefix}'
-			' -bindir {target_sub_prefix}/bin'
-			' -archdatadir {target_sub_prefix}/lib/qt'
-			' -datadir {target_sub_prefix}/share/qt'
-			' -docdir {target_sub_prefix}/share/doc/qt'
-			' -examplesdir {target_sub_prefix}/share/qt/examples'
-			' -headerdir {target_sub_prefix}/include/qt'
-			' -libdir {target_sub_prefix}/lib'
-			' -plugindir {target_sub_prefix}/lib/qt/plugins'
-			' -sysconfdir {target_sub_prefix}/etc'
-			' -translationdir {target_sub_prefix}/share/qt/translations'
-			' -device-option CROSS_COMPILE={cross_prefix_bare}'
-			' -device-option CROSS_target_prefix={target_sub_prefix}'
-			' -device-option CROSS_COMPILE_CFLAGS=-fpch-preprocess'
-			' -device-option CUSTOM_LIB_DIR={target_sub_prefix}/lib'
-			' -device-option CUSTOM_INC_DIR={target_sub_prefix}/include'
-		,
-		'depends_on' : [ 'libwebp', 'freetype', 'libpng', 'libjpeg-turbo', 'pcre2', 'd-bus', ],
-
-		'patches' : [
-		],
-		'_info' : { 'version' : '5.10.1', 'fancy_name' : 'QT5' },
-	},
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
@@ -3141,57 +2794,22 @@ DEPENDS = {
 		'depends_on' : [ 'zlib', ],
 		'_info' : { 'version' : '1.6.35', 'fancy_name' : 'libpng' },
 	},
-	'icu4c' : {
+	'pcre2' : {
 		'repo_type' : 'archive',
-		# 'patches' : [
-			# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-icu/0012-libprefix.mingw.patch','-p1')
-		# ],
-		'url' : 'http://download.icu-project.org/files/icu4c/60.2/icu4c-60_2-src.tgz',
-		'rename_folder': 'icu_60_1',
-		'folder_name' : 'icu',
-		'source_subfolder' : 'source',
-		'configure_options': ' --host={target_host} --target={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-cross-build=/xc/gcct/icu_native/source --with-data-packaging=library',
-		'depends_on' : [ 'zlib', ],
-		'_info' : { 'version' : '60_2', 'fancy_name' : 'icu' },
-	},
-	'pcre' : {
-		'repo_type' : 'archive',
-		'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.41.tar.gz',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-unicode-properties --enable-jit --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2',
+		'download_locations' : [
+			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.31.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/pcre2-10.31.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
+		],
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'patches' : [
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
+		],
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
 		'depends_on' : [
 			'bzip2',
 		],
-		'_info' : { 'version' : '8.41', 'fancy_name' : 'pcre' },
-	},
-
-	'd-bus' : {
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "8a8f0b986ac6214da9707da521bea9f49f09610083c71fdc8eddf8b4c54f384b" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/dbus-1.13.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "8a8f0b986ac6214da9707da521bea9f49f09610083c71fdc8eddf8b4c54f384b" }, ], },
-		],
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
-		'_info' : { 'version' : '1.13.4', 'fancy_name' : 'D-bus (Library)' },
-	},
-	'glib2' : {
-		'repo_type' : 'archive',
-		'url' : 'https://developer.gnome.org/glib/glib-html-2.54.3.tar.gz',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
-		'depends_on' : [ 'pcre2' ],
-		'patches' : [
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','-Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0004-glib-prefer-constructors-over-DllMain.patch'               ,'-Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0017-GSocket-Fix-race-conditions-on-Win32-if-multiple-thr.patch','-p1' ),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0027-no_sys_if_nametoindex.patch'                               ,'-Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0028-inode_directory.patch'                                     ,'-Np1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/revert-warn-glib-compile-schemas.patch'                         ,'-Rp1'),
-			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/use-pkgconfig-file-for-intl.patch'                              ,'-p0' ),
-
-		],
-		'run_post_patch' : [
-			'./autogen.sh NOCONFIGURE=1',
-		],
-		'_info' : { 'version' : '2.54.3', 'fancy_name' : 'glib2' },
+		'_info' : { 'version' : '10.31', 'fancy_name' : 'pcre2' },
 	},
 	'libressl' : {
 		'repo_type' : 'git',
@@ -3204,42 +2822,6 @@ DEPENDS = {
 			# ( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', '-p1' ),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
-	},
-	'libpsl' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/rockdaboot/libpsl.git',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --disable-runtime --disable-builtin',
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libpsl' },
-	},
-	'openssl_1_1' : {
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "1205cd763dd92c910cc590658a5b0774599e8587d89d6debd948f242b949321e" }, ], },
-			{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "1205cd763dd92c910cc590658a5b0774599e8587d89d6debd948f242b949321e" }, ], },
-		],
-		'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
-		'configure_path' : './Configure',
-		'install_target' : 'install_sw', # we don't need the docs..
-		'make_options' : 'all',
-		'env_exports' : {
-			'CROSS_COMPILE' : '{cross_prefix_bare}',
-		},
-		'run_post_install' : [
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lcrypto/Libs: -L${{libdir}} -lcrypto -lcrypt32/\' "{pkg_config_path}/libcrypto.pc"', # libssh2 doesn't use --static pkgconfig, so we have to do this.
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lssl/Libs: -L${{libdir}} -lssl -lcrypt32/\' "{pkg_config_path}/libssl.pc"', # nor does curl
-		],
-		'_info' : { 'version' : '1.1.1-pre1', 'fancy_name' : 'openssl' },
-	},
-	'openssl_1_0' : {
-		'repo_type' : 'archive',
-		'url' : 'https://www.openssl.org/source/openssl-1.0.2n.tar.gz',
-		'configure_options' : '{bit_name3} --prefix={target_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
-		'configure_path' : './Configure',
-		'install_target' : 'install_sw', # we don't need the docs..
-		'env_exports' : {
-			'CROSS_COMPILE' : '{cross_prefix_bare}',
-		},
-		'_info' : { 'version' : '1.0.2n', 'fancy_name' : 'openssl_1.0' },
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -3273,7 +2855,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : '9f82c009450386f5edf20f21d59629e17b02d8e9', #'76c55eae2f9b0b378332762f6dce544d05eb24d7', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
+		'branch' : 'b9e60f088847f885b5c9fde61ff8fc9645843506', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -3285,7 +2867,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : '9f82c009450386f5edf20f21d59629e17b02d8e9', #'76c55eae2f9b0b378332762f6dce544d05eb24d7', #6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
+		'branch' : 'b9e60f088847f885b5c9fde61ff8fc9645843506', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -3470,18 +3052,6 @@ DEPENDS = {
 		'make_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'LuaJIT2' },
 	},
-	'lua' : {
-		'repo_type' : 'archive',
-		'url' : 'https://www.lua.org/ftp/lua-5.3.4.tar.gz',
-		'needs_configure' : False,
-		'make_options': 'CC={cross_prefix_bare}gcc PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++ AR="{cross_prefix_bare}ar rcu" mingw', # LUA_A=lua53.dll LUA_T=lua.exe LUAC_T=luac.exe
-		'install_options' : 'TO_BIN="lua.exe luac.exe lua53.dll" TO_LIB="liblua.a" INSTALL_TOP="{target_prefix}"', #TO_LIB="liblua.a liblua.dll.a"
-		'install_target' : 'install',
-		'packages': {
-			'ubuntu' : [ 'lua5.2' ],
-		},
-		'_info' : { 'version' : '5.3.4', 'fancy_name' : 'lua' },
-	},
 	'a52dec' : {
 		'repo_type' : 'archive',
 		'url' : 'http://liba52.sourceforge.net/files/a52dec-0.7.4.tar.gz', # last release was 2002, do I even need to keep checking this for updates?
@@ -3492,18 +3062,6 @@ DEPENDS = {
 		'make_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 		'install_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 		'_info' : { 'version' : '0.7.4', 'fancy_name' : 'a52dec' },
-	},
-	'vapoursynth': { 
-		'repo_type' : 'git',
-		'url' : 'https://github.com/vapoursynth/vapoursynth.git',
-		# 'custom_cflag' : '-O3',
-		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --enable-core --enable-shared --disable-silent-rules',
-		'patches' : (
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', '-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0002-api.patch', '-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', '-p1'),
-		),
-
 	},
 	'amf_headers' : {
 		'repo_type' : 'git',
@@ -3539,7 +3097,7 @@ DEPENDS = {
 	'bzip2' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], },
+			#{ "url" : "http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], }, # Website is dead.
 			{ "url" : "https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], },
 		],
 		'patches' : (
@@ -3584,13 +3142,6 @@ DEPENDS = {
 		'make_options': '{make_prefix_options} ARFLAGS=rcs',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zlib' },
 	},
-	#'liblzma' : {
-		# 'repo_type' : 'archive',
-		# 'custom_cflag': '',
-		# 'url' : 'https://tukaani.org/xz/xz-5.2.3.tar.bz2',
-		# 'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		# '_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
-	# },
 	'xz' : { #lzma
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xz-mirror/xz.git',
@@ -3601,7 +3152,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : '654c15b2d9b01efa254c9879245583592e9117ef', #'83de960d76aa5f4be40f0168c0b27495675e0848', # '65cea43d82b22952eb3bdda9db36404a95bd3948'
+		'branch' : '7acdb78d4969fbfd7c5bf4103976a39cab75238b', #'654c15b2d9b01efa254c9879245583592e9117ef',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3650,37 +3201,11 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-nls --enable-extra-encodings',
 		'_info' : { 'version' : '1.15', 'fancy_name' : 'libiconv' },
 	},
-	'p11-kit' : {
-		'repo_type' : 'archive',
-		'needs_make_install' : False,
-		'url' : 'hhttps://github.com/p11-glue/p11-kit/releases/download/0.23.9/p11-kit-0.23.9.tar.gz',
-		'configure_options': '--host={target_host} --prefix={target_prefix}',
-		'depends_on' : [ 'libtasn1', 'libffi' ],
-		'env_exports' : {
-			'LIBS' : '-liconv' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
-		},
-		'_info' : { 'version' : '0.23.9', 'fancy_name' : 'p11-kit' },
-	},
-	'libtasn1' : {
-		'repo_type' : 'archive',
-		'url' : 'https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.13.tar.gz',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
-		'run_post_patch' : [
-			'autoreconf -fiv',
-		],
-		'_info' : { 'version' : '4.13', 'fancy_name' : 'libtasn1' },
-	},
-	'libffi' : {
-		'repo_type' : 'archive',
-		'url' : 'https://sourceware.org/pub/libffi/libffi-3.2.1.tar.gz',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
-		'_info' : { 'version' : '3.2.1', 'fancy_name' : 'libffi' },
-	},
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.2.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "bcd5db7b234e02267f36b5d13cf5214baac232b7056a506252b7574ea7738d1f" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.2.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "bcd5db7b234e02267f36b5d13cf5214baac232b7056a506252b7574ea7738d1f" }, ], },
+			{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.3.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ed642b66a4ecf4851ab2d809cd1475c297b6201d8e8bd14b4d1c08b53ffca993" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.3.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ed642b66a4ecf4851ab2d809cd1475c297b6201d8e8bd14b4d1c08b53ffca993" }, ], },
 		],
 		'configure_options':
 			'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
@@ -3690,6 +3215,7 @@ DEPENDS = {
 			'--enable-nls '
 			'--disable-rpath '
 			'--disable-gtk-doc '
+			'--disable-guile '
 			'--disable-doc '
 			'--enable-local-libopts '
 			# '--disable-guile '
@@ -3724,7 +3250,7 @@ DEPENDS = {
 			# 'LIBS' : '-lws2_32',
 			# 'ac_qcv_prog_AR' : '{cross_prefix_full}ar',
 		# },
-		'_info' : { 'version' : '3.6.2', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.6.3', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -3742,7 +3268,7 @@ DEPENDS = {
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : '7ea3f9d8746000cc82c016d0b5d48452bb80e9fe', # '6f3266277bed16525f0ac2f0f03ff4626f1923e5',
+		'branch' : 'b0453860dbe673c1f6314e7a3f33a5f9a33a76c8', #'7ea3f9d8746000cc82c016d0b5d48452bb80e9fe',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3782,17 +3308,6 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wavpack' },
 	},
-	#'libgme_game_music_emu' : {
-	#	'repo_type' : 'archive',
-	#	'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
-	#	'needs_configure' : False,
-	#	'is_cmake' : True,
-	#	#'run_post_patch': ( # runs commands post the patch process
-	#	#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
-	#	#),
-	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
-	#	'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
-	#},
 	'libgme_game_music_emu' : {
 		'repo_type' : 'git',
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git',
@@ -3853,33 +3368,6 @@ DEPENDS = {
 		#'cpu_count' : '1',
 		'make_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
 		'_info' : { 'version' : '1.0.17', 'fancy_name' : 'gsm' },
-	},
-	'sdl1' : {
-		'repo_type' : 'archive',
-		'url' : 'https://www.libsdl.org/release/SDL-1.2.15.tar.gz',
-		'custom_cflag' : '-DDECLSPEC=',# avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
-		"run_post_install": (
-			'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl.pc"', # allow ffmpeg to output anything to console :|
-			'sed -i.bak "s/-mwindows//" "{target_prefix}/bin/sdl-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
-			'cp -v "{target_prefix}/bin/sdl-config" "{cross_prefix_full}sdl-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
-		),
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '1.2.15', 'fancy_name' : 'SDL1' },
-	},
-	'sdl2_archive' : {
-		'repo_type' : 'archive',
-		'url' : 'https://www.libsdl.org/release/SDL2-2.0.7.zip',
-		# 'patches' : (
-		# 	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2-2.0.5.xinput.diff', '-p0'),
-		# ),
-		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
-		"run_post_install": (
-			# 'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
-			# 'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{target_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
-			'cp -v "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"',
-		),
-		'configure_options': '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
-		'_info' : { 'version' : '2.0.7', 'fancy_name' : 'SDL2' },
 	},
 	'sdl2' : {
 		'folder_name' : 'sdl2_merc',
@@ -3974,26 +3462,6 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'theora' },
 	},
-	'orc' : {
-		'repo_type' : 'archive',
-		'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.28.tar.xz',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '0.4.28', 'fancy_name' : 'orc' },
-	},
-	'libschroedinger' : {
-		'repo_type' : 'archive',
-		'url' : 'https://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'run_post_configure': (
-			'sed -i.bak \'s/testsuite//\' Makefile',
-		),
-		'run_post_install': (
-			'sed -i.bak \'s/-lschroedinger-1.0$/-lschroedinger-1.0 -lorc-0.4/\' "{pkg_config_path}/schroedinger-1.0.pc"',
-		),
-		'depends_on' : [ 'orc' ],
-		'_info' : { 'version' : '1.0.11', 'fancy_name' : 'schroedinger' },
-
-	},
 	'freetype' : {
 		'is_dep_inheriter' : True,
 		'depends_on' : [ 'bzip2', 'freetype_lib', 'harfbuzz_lib-with-freetype', ], # 'freetype_lib-with-harfbuzz' ],
@@ -4005,28 +3473,28 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.4.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "3c592f86fa0da69e2e0e98cae9f5d5b61def3bb7948aa00ca45748f27fa545fd" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.4.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "3c592f86fa0da69e2e0e98cae9f5d5b61def3bb7948aa00ca45748f27fa545fd" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.8.4', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.8.7', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.4.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "3c592f86fa0da69e2e0e98cae9f5d5b61def3bb7948aa00ca45748f27fa545fd" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.4.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "3c592f86fa0da69e2e0e98cae9f5d5b61def3bb7948aa00ca45748f27fa545fd" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
-		'folder_name' : 'harfbuzz-1.8.4-with-freetype',
-		'rename_folder' : 'harfbuzz-1.8.4-with-freetype',
+		'folder_name' : 'harfbuzz-1.8.7-with-freetype',
+		'rename_folder' : 'harfbuzz-1.8.7-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.8.4', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'_info' : { 'version' : '1.8.7', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
@@ -4328,15 +3796,6 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vid.stab' },
 	},
-	'netcdf' : {
-		'repo_type' : 'archive',
-		'download_locations' : [
-			{ "url" : "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "89c7957458740b763ae828c345240b8a1d29c2c1fed0f065f99b73181b0b2642" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/netcdf-4.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "89c7957458740b763ae828c345240b8a1d29c2c1fed0f065f99b73181b0b2642" }, ], },
-		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
-		'_info' : { 'version' : '4.6.1', 'fancy_name' : 'netcdf' },
-	},
 	'libmysofa' : {
 		# 'debug_downloadonly' : True,
 		'repo_type' : 'git',
@@ -4347,24 +3806,6 @@ DEPENDS = {
 		'is_cmake' : True,
 		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS=no',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmysofa' },
-	},
-	'libcaca_old' : {
-		'repo_type' : 'archive',
-		'run_post_configure': (
-			'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/string.c"',
-			'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/figfont.c"',
-			'sed -i.bak "s/__declspec(dllexport)//g" cxx/caca++.h',
-			'sed -i.bak "s/__declspec(dllexport)//g" caca/caca.h',
-			'sed -i.bak "s/__declspec(dllexport)//g" caca/caca0.h',
-			'sed -i.bak "s/__declspec(dllimport)//g" caca/caca.h',
-			'sed -i.bak "s/__declspec(dllimport)//g" caca/caca0.h',
-		),
-		'run_post_install': [
-			"sed -i.bak 's/-lcaca *$/-lcaca -lz/' \"{pkg_config_path}/caca.pc\"",
-		],
-		'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/libcaca-0.99.beta19.tar.gz',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --libdir={target_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
-		'_info' : { 'version' : '0.99.beta19', 'fancy_name' : 'libcaca' },
 	},
 	'libcaca' : {
 		'repo_type' : 'git',
@@ -4421,6 +3862,15 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : '0.2.35', 'fancy_name' : 'zvbi' },
 	},
+	'libilbc' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/dekkers/libilbc.git',
+		'run_post_patch': [
+			'autoreconf -fiv',
+		],
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libilbc' },
+	},
 	'libvpx' : {
 		'repo_type' : 'git',
 		'url' : 'https://chromium.googlesource.com/webm/libvpx',
@@ -4443,23 +3893,17 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libvpx' },
 	},
-	'libilbc' : {
-		'repo_type' : 'git',
-		'url' : 'https://github.com/dekkers/libilbc.git',
-		'run_post_patch': [
-			'autoreconf -fiv',
-		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libilbc' },
-	},
 	'fontconfig' : {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
-		'branch' : '5a46d572c06f1904ea45b4a24a75fb508c8c9f07',
-		'url' : 'git://anongit.freedesktop.org/fontconfig',
+		'cpu_count' : '1', # I had strange build issues with multiple threads..
+		'branch' : 'a1efb5ea8c76622c7587cb5362e821bff8dcd7c4', # is the latest commmit, requires small patch
+		'url' : 'https://anongit.freedesktop.org/git/fontconfig/',
+		'folder_name' : 'fontconfig_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/0001-mingwcompat-remove-tests.patch', '-p1' ],
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
 		],
 		'run_post_patch': [
 			'autoreconf -fiv',
@@ -4485,7 +3929,7 @@ DEPENDS = {
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
-		'branch' : '46f52d588ab5382a10b68605359e14cc775c86fd', #'d989590e124ad995de3598800c8835d819fadf80', #'565f83a13099dfdcec083f4d3e5293df4ed36e63',
+		'branch' : '46f52d588ab5382a10b68605359e14cc775c86fd', #'d989590e124ad995de3598800c8835d819fadf80',
 		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
 		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
@@ -4560,7 +4004,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : 'da299e345117cc3c4f32025776784f587335b39b', #'f77d9317558eff603999fa9a53bad7246e780981', #broken as of late may 14, back to master once working again
+		'branch' : 'da17065690c185ae678d5db9466cf0a402ca6b6d', #'da299e345117cc3c4f32025776784f587335b39b',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
@@ -4577,6 +4021,572 @@ DEPENDS = {
       ,
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libaom' },
 	},
+	# ############################################################################################################
+	# ############################################################################################################
+	# ## Most of these deps I haven't used/updated in a  long while, most if not all probably stopped building. ##
+	# ############################################################################################################
+	# ############################################################################################################
+	#'netcdf' : {
+	#	'repo_type' : 'archive',
+	#	'download_locations' : [
+	#		{ "url" : "ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "89c7957458740b763ae828c345240b8a1d29c2c1fed0f065f99b73181b0b2642" }, ], },
+	#		{ "url" : "https://fossies.org/linux/misc/netcdf-4.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "89c7957458740b763ae828c345240b8a1d29c2c1fed0f065f99b73181b0b2642" }, ], },
+	#	],
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-netcdf-4 --disable-dap',
+	#	'_info' : { 'version' : '4.6.1', 'fancy_name' : 'netcdf' },
+	#},
+	#'orc' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://gstreamer.freedesktop.org/src/orc/orc-0.4.28.tar.xz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	'_info' : { 'version' : '0.4.28', 'fancy_name' : 'orc' },
+	#},
+	#'libschroedinger' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://download.videolan.org/contrib/schroedinger/schroedinger-1.0.11.tar.gz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	'run_post_configure': (
+	#		'sed -i.bak \'s/testsuite//\' Makefile',
+	#	),
+	#	'run_post_install': (
+	#		'sed -i.bak \'s/-lschroedinger-1.0$/-lschroedinger-1.0 -lorc-0.4/\' "{pkg_config_path}/schroedinger-1.0.pc"',
+	#	),
+	#	'depends_on' : [ 'orc' ],
+	#	'_info' : { 'version' : '1.0.11', 'fancy_name' : 'schroedinger' },
+    #
+	#},
+	#'liblzma' : {
+	#	 'repo_type' : 'archive',
+	#	 'custom_cflag': '',
+	#	 'url' : 'https://tukaani.org/xz/xz-5.2.3.tar.bz2',
+	#	 'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	 '_info' : { 'version' : '5.2.3', 'fancy_name' : 'lzma' },
+	# },
+	#'lua' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://www.lua.org/ftp/lua-5.3.4.tar.gz',
+	#	'needs_configure' : False,
+	#	'make_options': 'CC={cross_prefix_bare}gcc PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++ AR="{cross_prefix_bare}ar rcu" mingw', # LUA_A=lua53.dll LUA_T=lua.exe LUAC_T=luac.exe
+	#	'install_options' : 'TO_BIN="lua.exe luac.exe lua53.dll" TO_LIB="liblua.a" INSTALL_TOP="{target_prefix}"', #TO_LIB="liblua.a liblua.dll.a"
+	#	'install_target' : 'install',
+	#	'packages': {
+	#		'ubuntu' : [ 'lua5.2' ],
+	#	},
+	#	'_info' : { 'version' : '5.3.4', 'fancy_name' : 'lua' },
+	#},
+	#'sdl1' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://www.libsdl.org/release/SDL-1.2.15.tar.gz',
+	#	'custom_cflag' : '-DDECLSPEC=',# avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
+	#	"run_post_install": (
+	#		'sed -i.bak "s/-mwindows//" "{pkg_config_path}/sdl.pc"', # allow ffmpeg to output anything to console :|
+	#		'sed -i.bak "s/-mwindows//" "{target_prefix}/bin/sdl-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+	#		'cp -v "{target_prefix}/bin/sdl-config" "{cross_prefix_full}sdl-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+	#	),
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	'_info' : { 'version' : '1.2.15', 'fancy_name' : 'SDL1' },
+	#},
+	#'sdl2_archive' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://www.libsdl.org/release/SDL2-2.0.7.zip',
+	#	# 'patches' : (
+	#	# 	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2-2.0.5.xinput.diff', '-p0'),
+	#	# ),
+	#	'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
+	#	"run_post_install": (
+	#		# 'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+	#		# 'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{target_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+	#		'cp -v "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"',
+	#	),
+	#	'configure_options': '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
+	#	'_info' : { 'version' : '2.0.7', 'fancy_name' : 'SDL2' },
+	#},
+	#'libcaca_old' : {
+	#	'repo_type' : 'archive',
+	#	'run_post_configure': (
+	#		'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/string.c"',
+	#		'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/figfont.c"',
+	#		'sed -i.bak "s/__declspec(dllexport)//g" cxx/caca++.h',
+	#		'sed -i.bak "s/__declspec(dllexport)//g" caca/caca.h',
+	#		'sed -i.bak "s/__declspec(dllexport)//g" caca/caca0.h',
+	#		'sed -i.bak "s/__declspec(dllimport)//g" caca/caca.h',
+	#		'sed -i.bak "s/__declspec(dllimport)//g" caca/caca0.h',
+	#	),
+	#	'run_post_install': [
+	#		"sed -i.bak 's/-lcaca *$/-lcaca -lz/' \"{pkg_config_path}/caca.pc\"",
+	#	],
+	#	'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/libcaca-0.99.beta19.tar.gz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --libdir={target_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
+	#	'_info' : { 'version' : '0.99.beta19', 'fancy_name' : 'libcaca' },
+	#},
+	#'p11-kit' : {
+	#	'repo_type' : 'archive',
+	#	'needs_make_install' : False,
+	#	'url' : 'hhttps://github.com/p11-glue/p11-kit/releases/download/0.23.9/p11-kit-0.23.9.tar.gz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix}',
+	#	'depends_on' : [ 'libtasn1', 'libffi' ],
+	#	'env_exports' : {
+	#		'LIBS' : '-liconv' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
+	#	},
+	#	'_info' : { 'version' : '0.23.9', 'fancy_name' : 'p11-kit' },
+	#},
+	#'libtasn1' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.13.tar.gz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
+	#	'run_post_patch' : [
+	#		'autoreconf -fiv',
+	#	],
+	#	'_info' : { 'version' : '4.13', 'fancy_name' : 'libtasn1' },
+	#},
+	#'libffi' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://sourceware.org/pub/libffi/libffi-3.2.1.tar.gz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
+	#	'_info' : { 'version' : '3.2.1', 'fancy_name' : 'libffi' },
+	#},
+	#'openssl_1_1' : {
+	#	'repo_type' : 'archive',
+	#	'download_locations' : [
+	#		{ "url" : "https://www.openssl.org/source/openssl-1.1.1-pre8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "1205cd763dd92c910cc590658a5b0774599e8587d89d6debd948f242b949321e" }, ], },
+	#		{ "url" : "http://ftp.vim.org/pub/ftp/security/openssl/openssl-1.1.1-pre8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "1205cd763dd92c910cc590658a5b0774599e8587d89d6debd948f242b949321e" }, ], },
+	#	],
+	#	'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
+	#	'configure_path' : './Configure',
+	#	'install_target' : 'install_sw', # we don't need the docs..
+	#	'make_options' : 'all',
+	#	'env_exports' : {
+	#		'CROSS_COMPILE' : '{cross_prefix_bare}',
+	#	},
+	#	'run_post_install' : [
+	#		'sed -i.bak \'s/Libs: -L${{libdir}} -lcrypto/Libs: -L${{libdir}} -lcrypto -lcrypt32/\' "{pkg_config_path}/libcrypto.pc"', # libssh2 doesn't use --static pkgconfig, so we have to do this.
+	#		'sed -i.bak \'s/Libs: -L${{libdir}} -lssl/Libs: -L${{libdir}} -lssl -lcrypt32/\' "{pkg_config_path}/libssl.pc"', # nor does curl
+	#	],
+	#	'_info' : { 'version' : '1.1.1-pre1', 'fancy_name' : 'openssl' },
+	#},
+	#'zenlib' : {
+	#	'repo_type' : 'git',
+	#	# 'branch' : 'v0.4.35',
+	#	'source_subfolder' : 'Project/GNU/Library',
+	#	'url' : 'https://github.com/MediaArea/ZenLib.git',
+	#	'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --disable-shared --enable-shared=no',
+	#	'run_post_configure' : [
+	#		'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+	#	],
+	#	# 'patches' : (
+	#		# ('fcurl_gitibzen-1-fixes.patch', '-p1','../../..'),
+	#	# ),
+	#	# 'run_post_patch' : [
+	#		# 'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
+	#	# ],
+	#	'_info' : { 'version' : 'git (v4.35)', 'fancy_name' : 'zenlib' },
+	#},
+	#'libfilezilla' : {
+	#	'repo_type' : 'svn',
+	#	'folder_name' : 'libfilezilla_svn',
+	#	'url' : 'https://svn.filezilla-project.org/svn/libfilezilla/trunk',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	'run_post_patch' : [
+	#		'autoreconf -fiv',
+	#	],
+	#	'env_exports' : {
+	#		'CXXFLAGS' : '-O0',
+	#	},
+	#	'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'FileZilla (libary)' },
+	#},
+	#'freeglut' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://downloads.sourceforge.net/project/freeglut/freeglut/3.0.0/freeglut-3.0.0.tar.gz',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	#	'needs_configure' : False,
+	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DFREEGLUT_GLES=OFF -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_REPLACE_GLUT=ON -DFREEGLUT_BUILD_STATIC_LIBS=ON -DFREEGLUT_BUILD_SHARED_LIBS=OFF',
+	#	'is_cmake' : True,
+	#	'_info' : { 'version' : '3.0', 'fancy_name' : 'FreeGLUT (libary?)' },
+	#},
+    #
+	#'wxwidgets' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://github.com/wxWidgets/wxWidgets/releases/download/v3.1.1/wxWidgets-3.1.1.tar.bz2',
+	#	'configure_options':
+	#		' --host={target_host} --build=x86_64-unknown-linux-gnu --prefix={target_sub_prefix} --disable-shared --enable-static --build='
+	#		' --with-msw --with-opengl --disable-mslu --enable-unicode --with-regex=builtin --disable-precomp-headers'
+	#		' --enable-graphics_ctx --enable-webview --enable-mediactrl --with-libpng=sys --with-libxpm=builtin --with-libjpeg=sys'
+	#		' --with-libtiff=builtin --without-mac --without-dmalloc --without-wine --with-sdl --with-themes=all --disable-stl --enable-threads --enable-gui'
+	#	,
+	#	# 'run_post_install' : [
+	#	# 	'cp -fv "{target_sub_prefix}/bin/wxrc-3.0" "{target_sub_prefix}/bin/wxrc"',
+	#	# ],
+	#	# 'patches' : [
+	#	# 	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wxwidgets/0001-wxWidgets-c++11-PR2222.patch','-p1'),
+	#	# ],
+	#	# 'env_exports': {
+	#	# 	'CXXFLAGS' : '-std=gnu++11',
+	#	# 	'CXXCPP' : '{cross_prefix_bare}g++ -E -std=gnu++11',
+	#	# },
+	#	'_info' : { 'version' : '3.1.1', 'fancy_name' : 'wxWidgets (libary)' },
+	#	'depends_on' : [ 'libjpeg-turbo', 'libpng', 'zlib' ],
+	#},
+	#'ca-bundles' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/DeadSix27/mingw_ca_bundle_script.git',
+	#	'needs_configure' : False,
+	#	'needs_make_install' : False,
+	#	'make_options': 'PREFIX={target_prefix}',
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ca-bundles' },
+	#},
+	#'librsvg' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://download.gnome.org/sources/librsvg/2.41/librsvg-2.42.3.tar.xz',
+	#	'configure_options':
+	#		'--host={target_host} '
+	#		'--prefix={target_prefix} '
+	#		'--disable-shared '
+	#		'--enable-static '
+	#	,
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'librsvg' },
+	#},
+	#'cppunit' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'git://anongit.freedesktop.org/git/libreoffice/cppunit',
+	#	'configure_options':
+	#		'--host={target_host} '
+	#		'--prefix={target_prefix} '
+	#		'--disable-shared '
+	#		'--enable-static '
+	#	,
+	#	'patches' : [
+	#		['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/cppunit/Add-define-guard-for-NOMINMAX.patch','-p1']
+	#	],
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cppunit' },
+	#},
+	#'opencv' : { # not working yet
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://github.com/opencv/opencv/archive/3.4.1.tar.gz',
+	#	'folder_name' : 'opencv-3.4.1',
+	#	'source_subfolder' : 'build',
+	#	'cmake_options': '.. -G"Unix Makefiles" -DCMAKE_SKIP_RPATH=ON -DBUILD_TESTS=OFF -DBUILD_opencv_world=ON -DBUILD_PERF_TESTS=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DWITH_FFMPEG=OFF -DINSTALL_C_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_JASPER=OFF -DBUILD_OPENEXR=OFF -DWITH_VTK=OFF -DWITH_IPP=OFF -DWITH_DSHOW=OFF -DENABLE_PRECOMPILED_HEADERS=OFF -DENABLE_STATIC_RUNTIME=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}',
+	#	'is_cmake' : True,
+	#	'needs_configure' : False,
+	#	# 'patches' : [
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0001-mingw-w64-cmake.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0002-solve_deg3-underflow.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0003-issue-4107.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0004-generate-proper-pkg-config-file.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0005-opencv-support-python-3.6.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0008-mingw-w64-cmake-lib-path.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0009-openblas-find.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0010-find-libpng-header.patch', '-p1', '..'],
+	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0011-dshow-build-fix.patch', '-p1', '..'],
+	#	# ],
+	#	'make_options' : 'VERBOSE=1',
+	#	'install_options' : '{make_prefix_options} prefix={target_prefix} install',
+	#	'_info' : { 'version' : '3.4.1', 'fancy_name' : 'opencv' },
+	#},
+	# 'taglib' : { # unused
+	# 	'repo_type' : 'archive',
+	# 	'url' : 'http://taglib.org/releases/taglib-1.11.1.tar.gz',
+	# 	'needs_configure' : False,
+	# 	'is_cmake' : True,
+	# 	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DWITH_MP4=ON -DWITH_ASF=ON',
+	# },
+	#'libmediainfo' : {
+	#	'repo_type' : 'git',
+	#	'branch' : 'v0.7.94',
+	#	'source_subfolder' : 'Project/GNU/Library',
+	#	'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
+	#	'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll', # --enable-static --disable-shared --enable-shared=no
+	#	'run_post_patch' : [
+	#		'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
+	#		'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
+	#	],
+	#	'run_post_configure' : [
+	#		'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+	#	],
+	#	'depends_on': [
+	#		'zenlib', 'libcurl',
+	#	],
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmediainfo' },
+	#},
+	#'libssh2' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/libssh2/libssh2.git',
+	#	'configure_options':
+	#		'--host={target_host} '
+	#		'--prefix={target_prefix} '
+	#		'--disable-shared '
+	#		'--enable-static '
+	#		'--disable-examples-build '
+	#		'--with-crypto=openssl'
+	#	,
+	#	'depends_on': (
+	#		'zlib', 'libressl'
+	#	),
+	#	'env_exports' : {
+	#		'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
+	#	},
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libssh2' },
+	#},
+	#'libsqlite3' : {
+	#	'repo_type' : 'archive',
+	#	'download_locations' : [
+	#		{ "url" : "https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "d9d14e88c6fb6d68de9ca0d1f9797477d82fc3aed613558f87ffbdbbc5ceb74a" }, ], },
+	#		{ "url" : "https://fossies.org/linux/misc/sqlite-autoconf-3240000.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "d9d14e88c6fb6d68de9ca0d1f9797477d82fc3aed613558f87ffbdbbc5ceb74a" }, ], },
+	#	],
+	#	'cflag_addition' : '-fexceptions -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_USE_MALLOC_H=1 -DSQLITE_USE_MSIZE=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_RTREE=1 -fno-strict-aliasing',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threadsafe --disable-editline --enable-readline --enable-json1 --enable-fts5 --enable-session',
+	#	'depends_on': (
+	#		'zlib',
+	#	),
+	#	'_info' : { 'version' : '3.24.0', 'fancy_name' : 'libsqlite3' },
+	#},
+	#'libcurl' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/curl/curl',
+	#	'rename_folder' : 'curl_git',
+	#	'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={target_prefix} --exec-prefix={target_prefix}',
+	#	'patches' : [
+	#		['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', '-p1' ],
+	#	],
+	#	'depends_on': (
+	#		'zlib','libssh2',
+	#	),
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
+	#},
+	#'angle_headers' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/google/angle.git',
+	#	'folder_name' : 'angle_headers_git',
+	#	'needs_make':False,
+	#	'needs_make_install':False,
+	#	'needs_configure':False,
+	#	'run_post_patch': [
+	#		'if [ ! -f "already_done" ] ; then cp -rv "include/EGL" "{target_prefix}/include/" ; fi',
+	#		'if [ ! -f "already_done" ] ; then cp -rv "include/KHR" "{target_prefix}/include/" ; fi',
+	#		'if [ ! -f "already_done" ] ; then touch already_done ; fi',
+	#	],
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE headers' },
+	#},
+	#'angle' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'https://chromium.googlesource.com/angle/angle',
+	#	'patches' : (
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                             ,'-p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                                ,'-p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                                ,'-p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0002-install-fixed.patch'                             ,'-p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0003-add-option-for-targeting-cpu-architecture.patch' ,'-p1'),
+	#	),
+	#	'needs_make':False,
+	#	'needs_make_install':False,
+	#	'needs_configure':False,
+	#	'run_post_patch': (
+	#		'if [ ! -f "already_done" ] ; then sed -i \'s/\'python\'/\'python2\'/\' gyp/warnings.gyp ; fi',
+	#		'if [ ! -f "already_done" ] ; then make uninstall PREFIX={target_prefix} ; fi',
+	#		'if [ ! -f "already_done" ] ; then make uninstall PREFIX={target_prefix} ; fi',
+	#		'if [ ! -f "already_done" ] ; then cmake -E remove_directory build ; fi',
+	#		'if [ ! -f "already_done" ] ; then gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=build -Dangle_enable_vulkan=0 -Dtarget_cpu=x64 ; fi',
+	#		'if [ ! -f "already_done" ] ; then make -C build/ commit_id ; fi',
+	#		'if [ ! -f "already_done" ] ; then cmake -E copy build/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h ; fi',
+	#		'if [ ! -f "already_done" ] ; then make -C build {make_prefix_options} BUILDTYPE=Debug {make_cpu_count} ; fi',
+	#		'if [ ! -f "already_done" ] ; then chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 Debug ; fi',
+	#		'if [ ! -f "already_done" ] ; then make install PREFIX={target_prefix} ; fi',
+	#		'if [ ! -f "already_done" ] ; then touch already_done ; fi',
+	#	),
+	#	'packages': {
+	#		'arch' : [ 'gyp' ],
+	#	},
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE' },
+	#},
+	## Still not building correctly.
+	##
+	## Build needs around 40G, install around 10-15Gb;
+	## Make sure you have at least 60GB free when building,
+	## you can delete the entire source folder of qt after install to free space up again,
+	## then just uncomment the "\'_already_built\' : True," line below in the qt5 block, so building will be skipped each time.
+	#'qt5' : {
+	#	 # '_already_built' : True,
+	#	'warnings' : [
+	#		'Qt5 building CAN fail sometimes with multiple threads.. so if this failed try re-running it',
+	#		'For more information see: https://bugreports.qt.io/browse/QTBUG-53393',
+	#		'(You could add \'cpu_count\' : \'1\', to the config of QT5 if the slower speed is acceptable for you)',
+	#		'---------------',
+	#		'Build needs around 40G, install around 10-15Gb.',
+	#		'Make sure you have at least 60GB free when building,',
+	#		'you can delete the entire source folder of qt after install to free space up again,',
+	#		'then just uncomment the "\'_already_built\' : True," line in the qt5 block, so building will be skipped each time.'
+	#	],
+	#	'env_exports' : {
+	#		'CFLAGS'   : '-DDBUS_STATIC_BUILD -DJAS_DLL=0',
+	#		#'CXXFLAGS' : '-DGRAPHITE2_STATIC',
+	#		'PKG_CONFIG' : '{cross_prefix_full}pkg-config',
+	#		'PKG_CONFIG_SYSROOT_DIR' : '/',
+	#		'PKG_CONFIG_LIBDIR' : '{target_prefix}/lib/pkgconfig',
+	#		'CROSS_COMPILE' : '{cross_prefix_bare}',
+	#		'CROSS_target_prefix' : '{target_sub_prefix}',
+	#		#'OPENSSL_LIBS' : '!CMD({cross_prefix_full}pkg-config --libs-only-l openssl)CMD!',
+	#	},
+	#	'cpu_count' : '1',
+	#	'clean_post_configure' : False,
+	#	'repo_type' : 'archive',
+	#	'download_locations' : [
+	#		{ "url" : "https://download.qt.io/official_releases/qt/5.10/5.10.1/single/qt-everywhere-src-5.10.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "05ffba7b811b854ed558abf2be2ddbd3bb6ddd0b60ea4b5da75d277ac15e740a" }, ], },
+	#	],
+	#	'configure_options' :
+	#		'-static'
+	#		' -no-iconv'
+	#		' -no-sqlite'
+	#		' -skip qtconnectivity'
+	#		' -skip qtserialbus'
+	#		' -skip qtactiveqt'
+	#		' -skip qtdeclarative'
+	#		' -skip qttools'
+	#		' -release'
+	#		' -accessibility'
+	#		' -opengl desktop'
+	#		' -no-openssl'
+	#		#' -xplatform win32-g++'
+	#		' -xplatform mingw-w64-g++'
+	#		' -optimized-qmake'
+	#		' -verbose'
+	#		' -opensource'
+	#		' -confirm-license'
+	#		' -force-pkg-config'
+	#		' -force-debug-info'
+	#		' -system-zlib'
+	#		' -system-libpng'
+	#		' -system-libjpeg'
+	#		#' -system-sqlite'
+	#		#' -system-freetype'
+	#		' -system-harfbuzz'
+	#		' -no-direct2d'
+	#		' -system-pcre'
+	#		' -no-fontconfig'
+	#		#' -sql-mysql'
+	#		#' -sql-psql'
+	#		#' -sql-sqlite'
+	#		#' -dbus-linked'
+	#		' -no-glib'
+	#		' -no-icu'
+	#		#' -iconv'
+	#		' -nomake examples'
+	#		' -make tools'
+	#		' -hostprefix {target_sub_prefix}'
+	#		' -hostdatadir {target_sub_prefix}/lib/qt'
+	#		' -hostbindir {target_sub_prefix}/bin'
+	#		' -prefix {target_sub_prefix}'
+	#		' -bindir {target_sub_prefix}/bin'
+	#		' -archdatadir {target_sub_prefix}/lib/qt'
+	#		' -datadir {target_sub_prefix}/share/qt'
+	#		' -docdir {target_sub_prefix}/share/doc/qt'
+	#		' -examplesdir {target_sub_prefix}/share/qt/examples'
+	#		' -headerdir {target_sub_prefix}/include/qt'
+	#		' -libdir {target_sub_prefix}/lib'
+	#		' -plugindir {target_sub_prefix}/lib/qt/plugins'
+	#		' -sysconfdir {target_sub_prefix}/etc'
+	#		' -translationdir {target_sub_prefix}/share/qt/translations'
+	#		' -device-option CROSS_COMPILE={cross_prefix_bare}'
+	#		' -device-option CROSS_target_prefix={target_sub_prefix}'
+	#		' -device-option CROSS_COMPILE_CFLAGS=-fpch-preprocess'
+	#		' -device-option CUSTOM_LIB_DIR={target_sub_prefix}/lib'
+	#		' -device-option CUSTOM_INC_DIR={target_sub_prefix}/include'
+	#	,
+	#	'depends_on' : [ 'libwebp', 'freetype', 'libpng', 'libjpeg-turbo', 'pcre2', 'd-bus', ],
+    #
+	#	'patches' : [
+	#	],
+	#	'_info' : { 'version' : '5.10.1', 'fancy_name' : 'QT5' },
+	#},
+	#'icu4c' : {
+	#	'repo_type' : 'archive',
+	#	# 'patches' : [
+	#		# ('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-icu/0012-libprefix.mingw.patch','-p1')
+	#	# ],
+	#	'url' : 'http://download.icu-project.org/files/icu4c/60.2/icu4c-60_2-src.tgz',
+	#	'rename_folder': 'icu_60_1',
+	#	'folder_name' : 'icu',
+	#	'source_subfolder' : 'source',
+	#	'configure_options': ' --host={target_host} --target={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-cross-build=/xc/gcct/icu_native/source --with-data-packaging=library',
+	#	'depends_on' : [ 'zlib', ],
+	#	'_info' : { 'version' : '60_2', 'fancy_name' : 'icu' },
+	#},
+	#'libpsl' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/rockdaboot/libpsl.git',
+	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --disable-runtime --disable-builtin',
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libpsl' },
+	#},
+	#'pcre' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://ftp.pcre.org/pub/pcre/pcre-8.41.tar.gz',
+	#	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-unicode-properties --enable-jit --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2',
+	#	'depends_on' : [
+	#		'bzip2',
+	#	],
+	#	'_info' : { 'version' : '8.41', 'fancy_name' : 'pcre' },
+	#},
+	#'d-bus' : {
+	#	'repo_type' : 'archive',
+	#	'download_locations' : [
+	#		{ "url" : "https://dbus.freedesktop.org/releases/dbus/dbus-1.13.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "8a8f0b986ac6214da9707da521bea9f49f09610083c71fdc8eddf8b4c54f384b" }, ], },
+	#		{ "url" : "https://fossies.org/linux/misc/dbus-1.13.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "8a8f0b986ac6214da9707da521bea9f49f09610083c71fdc8eddf8b4c54f384b" }, ], },
+	#	],
+	#	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-xml=expat --disable-systemd --disable-tests --disable-Werror --disable-asserts --disable-verbose-mode --disable-xml-docs --disable-doxygen-docs --disable-ducktype-docs',
+	#	'_info' : { 'version' : '1.13.4', 'fancy_name' : 'D-bus (Library)' },
+	#},
+	#'openssl_1_0' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://www.openssl.org/source/openssl-1.0.2n.tar.gz',
+	#	'configure_options' : '{bit_name3} --prefix={target_prefix} --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
+	#	'configure_path' : './Configure',
+	#	'install_target' : 'install_sw', # we don't need the docs..
+	#	'env_exports' : {
+	#		'CROSS_COMPILE' : '{cross_prefix_bare}',
+	#	},
+	#	'_info' : { 'version' : '1.0.2n', 'fancy_name' : 'openssl_1.0' },
+	#},
+	#'glib2' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://developer.gnome.org/glib/glib-html-2.54.3.tar.gz',
+	#	'configure_options' : '--host={target_host} --prefix={target_prefix} --with-pcre=system --with-threads=win32 --disable-fam --disable-shared',
+	#	'depends_on' : [ 'pcre2' ],
+	#	'patches' : [
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch','-Np1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0004-glib-prefer-constructors-over-DllMain.patch'               ,'-Np1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0017-GSocket-Fix-race-conditions-on-Win32-if-multiple-thr.patch','-p1' ),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0027-no_sys_if_nametoindex.patch'                               ,'-Np1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/0028-inode_directory.patch'                                     ,'-Np1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/revert-warn-glib-compile-schemas.patch'                         ,'-Rp1'),
+	#		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/glib2/use-pkgconfig-file-for-intl.patch'                              ,'-p0' ),
+    #
+	#	],
+	#	'run_post_patch' : [
+	#		'./autogen.sh NOCONFIGURE=1',
+	#	],
+	#	'_info' : { 'version' : '2.54.3', 'fancy_name' : 'glib2' },
+	#},
+	#'vapoursynth': { 
+	#	'repo_type' : 'git',
+	#	'url' : 'https://github.com/vapoursynth/vapoursynth.git',
+	#	# 'custom_cflag' : '-O3',
+	#	'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --enable-core --enable-shared --disable-silent-rules',
+	#	'patches' : (
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0001-statically-link.patch', '-p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0002-api.patch', '-p1'),
+	#		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vapoursynth-0003-windows-header.patch', '-p1'),
+	#	),
+    #
+	#},
+	#'libgme_game_music_emu' : {
+	#	'repo_type' : 'archive',
+	#	'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
+	#	'needs_configure' : False,
+	#	'is_cmake' : True,
+	#	#'run_post_patch': ( # runs commands post the patch process
+	#	#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
+	#	#),
+	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
+	#	'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
+	#},
 }
 
 if __name__ == "__main__": # use this as an example on how to implement this in custom building scripts.

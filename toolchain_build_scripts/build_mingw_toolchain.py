@@ -116,6 +116,11 @@ BUILDS['binutils'] = {
 		' --target="{target}"'
 		' --disable-multilib'
 		' --disable-nls'
+		#' --disable-win32-registry'
+		#' --without-included-gettext'
+		' --enable-plugins'
+		' --enable-threads'
+		' --enable-lto'
 	,
 }
 BUILDS['mingw-w64-headers'] = {
@@ -127,6 +132,8 @@ BUILDS['mingw-w64-headers'] = {
 		' --enable-secure-api'
 		' --enable-idl'
 		' --enable-sdk=all'
+		' --enable-idl'
+		#' --with-default-win32-winnt=0x600'
 	,
 	'softLinks' : [
 		( '{prefix}', './{target}', './mingw' ),
@@ -149,6 +156,8 @@ BUILDS['gcc-1'] = {
 		' --enable-libstdcxx-time=yes'
 		' --enable-threads=posix'
 		' --enable-fully-dynamic-string'
+		#' --without-included-gettext'
+		' --enable-lto'
 	,
 	'lineMake'	: 'all-gcc',
 	'lineInstall' : 'install-strip-gcc',
