@@ -2005,22 +2005,16 @@ PRODUCTS = {
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
-		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/scxvid.installed',
+		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/SCXvid-standalone_git.installed',
 		'run_post_install': [
 			'{cross_prefix_bare}strip -v {product_prefix}/scxvid.installed/bin/scxvid.exe',
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SCXvid-standalone' },
 	},
-	'gdb' : {
-		'repo_type' : 'git',
-		'url' : 'git://sourceware.org/git/binutils-gdb.git',
-		'configure_options': '--host={target_host} --enable-static --enable-lto --prefix={product_prefix}/gdb_git.installed',
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'GDB' },
-	},
 	'x264' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/x264.git',
-		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264.installed --enable-strip --bit-depth=all',
+		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_git.installed --enable-strip --bit-depth=all',
 		'env_exports' : {
 			'PKGCONFIG' : 'pkg-config',
 		},
@@ -2071,7 +2065,7 @@ PRODUCTS = {
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/wget.timegm.patch', '-p1' ],
 		],
 		'depends_on': (
-			'zlib', 'libressl'
+			'zlib', 'libressl', 'libpsl',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wget' },
 	},
@@ -2128,9 +2122,9 @@ PRODUCTS = {
 	'x265_multibit' : {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
-		'rename_folder' : 'x265_multibit',
+		'rename_folder' : 'x265_multibit_hg',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit.installed',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
@@ -2336,6 +2330,12 @@ PRODUCTS = {
 	# ## Most of these packages I haven't used/updated in a long while, most if not all probably stopped building. ##
 	# ###############################################################################################################
 	# ###############################################################################################################
+	#'gdb' : {
+	#	'repo_type' : 'git',
+	#	'url' : 'git://sourceware.org/git/binutils-gdb.git',
+	#	'configure_options': '--host={target_host} --enable-static --enable-lto --prefix={product_prefix}/gdb_git.installed',
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'GDB' },
+	#},
 	# 'mediainfo' : { #unused
 	# 	'repo_type' : 'git',
 	# 	'branch' : 'v0.7.94',
@@ -2822,6 +2822,12 @@ DEPENDS = {
 			# ( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', '-p1' ),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
+	},
+	'libpsl' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/rockdaboot/libpsl.git',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --disable-runtime --disable-builtin',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libpsl' },
 	},
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
@@ -4508,12 +4514,6 @@ DEPENDS = {
 	#	'configure_options': ' --host={target_host} --target={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-cross-build=/xc/gcct/icu_native/source --with-data-packaging=library',
 	#	'depends_on' : [ 'zlib', ],
 	#	'_info' : { 'version' : '60_2', 'fancy_name' : 'icu' },
-	#},
-	#'libpsl' : {
-	#	'repo_type' : 'git',
-	#	'url' : 'https://github.com/rockdaboot/libpsl.git',
-	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --disable-runtime --disable-builtin',
-	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libpsl' },
 	#},
 	#'pcre' : {
 	#	'repo_type' : 'archive',
