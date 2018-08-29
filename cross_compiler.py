@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '0204e4691098d882e561d5749ccf7cf74d1b72c1' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '3949528971aa15f78b08e8d29ae042e6662ce0ec' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -1983,7 +1983,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : 'da17065690c185ae678d5db9466cf0a402ca6b6d' , #'da299e345117cc3c4f32025776784f587335b39b',
+		'branch' : '75b9859caeeb9004374ee0547c062a1ed4979652', #'da17065690c185ae678d5db9466cf0a402ca6b6d' , #'da299e345117cc3c4f32025776784f587335b39b',
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2737,8 +2737,8 @@ DEPENDS = {
 	'boost' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://sourceforge.net/projects/boost/files/boost/1.67.0/boost_1_67_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "2684c972994ee57fc5632e03bf044746f6eb45d4920c343937a465fd67a5adba" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/boost_1_67_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "2684c972994ee57fc5632e03bf044746f6eb45d4920c343937a465fd67a5adba" }, ], },
+			{ "url" : "https://sourceforge.net/projects/boost/files/boost/1.68.0/boost_1_68_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/boost_1_68_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7" }, ], },
 		],
 		'needs_make':False,
 		'needs_make_install':False,
@@ -2861,7 +2861,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : 'b9e60f088847f885b5c9fde61ff8fc9645843506', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
+		'branch' : 'a23a5ced925aa3bab729769ded8bfd1af4e24824', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -2873,7 +2873,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : 'b9e60f088847f885b5c9fde61ff8fc9645843506', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
+		'branch' : 'a23a5ced925aa3bab729769ded8bfd1af4e24824', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -3274,7 +3274,7 @@ DEPENDS = {
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : 'b0453860dbe673c1f6314e7a3f33a5f9a33a76c8', #'7ea3f9d8746000cc82c016d0b5d48452bb80e9fe',
+		'branch' : 'aaea680337267bfb6d2544da878890ee7f1c5077', #'b0453860dbe673c1f6314e7a3f33a5f9a33a76c8',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3479,28 +3479,28 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.8.7', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '1.8.8', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.7.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "96e0c8ac6fd25da783052f0b65f2f0314e6a63af94e87ca127ae2d8e39306453" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
-		'folder_name' : 'harfbuzz-1.8.7-with-freetype',
-		'rename_folder' : 'harfbuzz-1.8.7-with-freetype',
+		'folder_name' : 'harfbuzz-1.8.8-with-freetype',
+		'rename_folder' : 'harfbuzz-1.8.8-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.8.7', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'_info' : { 'version' : '1.8.8', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
@@ -3903,13 +3903,13 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
 		'cpu_count' : '1', # I had strange build issues with multiple threads..
-		'branch' : 'a1efb5ea8c76622c7587cb5362e821bff8dcd7c4', # is the latest commmit, requires small patch
-		'url' : 'https://anongit.freedesktop.org/git/fontconfig/',
+		# 'branch' : 'a1efb5ea8c76622c7587cb5362e821bff8dcd7c4', # is the latest commmit, requires small patch
+		'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 		'folder_name' : 'fontconfig_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/0001-mingwcompat-remove-tests.patch', '-p1' ],
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
+			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
 		],
 		'run_post_patch': [
 			'autoreconf -fiv',
@@ -3935,7 +3935,7 @@ DEPENDS = {
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
-		'branch' : '46f52d588ab5382a10b68605359e14cc775c86fd', #'d989590e124ad995de3598800c8835d819fadf80',
+		'branch' : 'b534ab2642f694c3106d5bc8d0a8beae60bf60d3', # '46f52d588ab5382a10b68605359e14cc775c86fd',
 		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
 		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
@@ -4010,7 +4010,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : 'da17065690c185ae678d5db9466cf0a402ca6b6d', #'da299e345117cc3c4f32025776784f587335b39b',
+		'branch' : '75b9859caeeb9004374ee0547c062a1ed4979652', # 'da17065690c185ae678d5db9466cf0a402ca6b6d', #'da299e345117cc3c4f32025776784f587335b39b',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
