@@ -19,7 +19,7 @@
 # ################ REQUIRED PACKAGES ################
 # ###################################################
 # Package dependencies (some may be missing):
-# sudo apt install build-essential autoget texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc rst2pdf
+# sudo apt install build-essential autogen libtool libtool-bin pkg-config texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc rst2pdf
 
 import progressbar # Run pip3 install progressbar2
 import requests # Run pip3 install requests
