@@ -19,7 +19,7 @@
 # ################ REQUIRED PACKAGES ################
 # ###################################################
 # Package dependencies (some may be missing):
-# sudo apt install build-essential autoget texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc rst2pdf
+# sudo apt install build-essential autogen libtool libtool-bin pkg-config texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc rst2pdf
 
 import progressbar # Run pip3 install progressbar2
 import requests # Run pip3 install requests
@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '3949528971aa15f78b08e8d29ae042e6662ce0ec' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '75bdd34471a67e9f83252fd1a4a6665e380bec88' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -432,6 +432,7 @@ class CrossCompileScript:
 		self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
 		self.targetHost         = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
 		self.targetPrefix       = "{0}/{1}/{2}-w64-mingw32/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.targetHost ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+		self.inTreePrefix       = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir) ) # workdir/x86_64
 		self.offtreePrefix      = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir + "_offtree") ) # workdir/x86_64_offtree
 		self.targetSubPrefix    = "{0}/{1}/{2}-w64-mingw32".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64
 		self.mingwBinpath       = "{0}/{1}/{2}-w64-mingw32/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
@@ -1840,6 +1841,7 @@ class CrossCompileScript:
 			cross_prefix_bare          = self.bareCrossPrefix,
 			cross_prefix_full          = self.fullCrossPrefix,
 			target_prefix              = self.targetPrefix,
+			inTreePrefix               = self.inTreePrefix,
 			offtree_prefix             = self.offtreePrefix,
 			target_host                = self.targetHost,
 			target_sub_prefix          = self.targetSubPrefix,
@@ -1983,7 +1985,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : '75b9859caeeb9004374ee0547c062a1ed4979652', #'da17065690c185ae678d5db9466cf0a402ca6b6d' , #'da299e345117cc3c4f32025776784f587335b39b',
+		'branch' : '2754f83f65eb57fb9aff7029f355ad57421b57f3', # 'da17065690c185ae678d5db9466cf0a402ca6b6d'
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2565,28 +2567,69 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/google/shaderc.git',
 		'needs_configure' : False,
-		'source_subfolder' : 'build',
-		'cmake_options': 'cmake -B. -H.. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_TESTS=ON -DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti" -DMINGW_COMPILER_PREFIX={cross_prefix_bare}',
+		'cmake_options': 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
+		'source_subfolder' : '_build', #-B. -H..
 		'is_cmake' : True,
+		'cpu_count' : '1', #...
 		'needs_make_install' : False,
 		'make_options': '',
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/shaderc/shaderc-0001-add-script-for-cloning-dependencies.patch', '-p1', '..'],
-		],
+		# 'patches' : [
+			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/shaderc/shaderc-0001-add-script-for-cloning-dependencies.patch', '-p1', '..'],
+		# ],
 		'run_post_patch' : [
-			# 'mkdir build'
+			# 'mkdir _build',
+			# 'chmod u+x pull.sh',
+			# './pull.sh',
 			'!SWITCHDIR|../third_party',
-			'chmod u+x pull.sh',
-			'./pull.sh',
-			'!SWITCHDIR|../build',
+			'ln -sf {inTreePrefix}/glslang/ glslang',
+			'ln -sf {inTreePrefix}/spirv-headers/ spirv-headers',
+			'ln -sf {inTreePrefix}/spirv-tools/ spirv-tools',
+			'!SWITCHDIR|../_build',
+			"sed -i 's/add_subdirectory(examples)/#add_subdirectory(examples)/g' ../CMakeLists.txt",
+			'mkdir -p third_party',
+			'!SWITCHDIR|third_party',
+			'ln -sf {inTreePrefix}/glslang glslang',
+			'ln -sf {inTreePrefix}/spirv-headers spirv-headers',
+			'ln -sf {inTreePrefix}/spirv-tools spirv-tools',
+			'!SWITCHDIR|..',
 		],
 		'run_post_make' : (
 			'cp -rv "../libshaderc/include/shaderc" "{target_prefix}/include/"',
 			'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_combined.a"',
 			# 'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_shared.a"',
 		),
-		'depends_on' : ['crossc'],
+		'depends_on' : ['glslang', 'spirv_headers', 'spirv_tools', 'crossc'],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'shaderc' },
+	},
+	'glslang' : {
+		'repo_type' : 'git',
+		'rename_folder' : 'glslang',
+		'url' : 'https://github.com/KhronosGroup/glslang.git',
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'needs_configure' : False,
+		'recursive_git' : True,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'glslang' },
+	},
+	'spirv_headers' : {
+		'repo_type' : 'git',
+		'rename_folder' : 'spirv-headers',
+		'url' : 'https://github.com/KhronosGroup/SPIRV-Headers.git',
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'needs_configure' : False,
+		'recursive_git' : True,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SPIRV Headers' },
+	},
+	'spirv_tools' : {
+		'repo_type' : 'git',
+		'rename_folder' : 'spirv-tools',
+		'url' : 'https://github.com/KhronosGroup/SPIRV-Tools.git',
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'needs_configure' : False,
+		'recursive_git' : True,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SPIRV Tools' },
 	},
 	'vulkan_headers' : {
 		'repo_type' : 'git',
@@ -2601,8 +2644,8 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 		'needs_configure' : False,
-		'recursive_git' : True,
-		'cmake_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600" -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON',
+		'recursive_git' : True, 
+		'cmake_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON -DCMAKE_C_FLAGS=\'-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS\' -DCMAKE_CXX_FLAGS=\'-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600\'', #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
 		'is_cmake' : True,
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','-p1'],
@@ -2751,11 +2794,12 @@ DEPENDS = {
 			'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows address-model=64 architecture=x86 --prefix={target_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 			'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 		),
-		'_info' : { 'version' : '1.67.0', 'fancy_name' : 'Boost' },
+		'_info' : { 'version' : '1.68.0', 'fancy_name' : 'Boost' },
 	},
 	'mujs' : {
 		'repo_type' : 'git',
 		'url' : 'git://git.ghostscript.com/mujs.git',
+		'branch' : '3430d9a06d6f8a3696e2bbdca7681937e60ca7a9',
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
@@ -2861,7 +2905,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : 'a23a5ced925aa3bab729769ded8bfd1af4e24824', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
+		'branch' : 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5', # 'b9e60f088847f885b5c9fde61ff8fc9645843506',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -2873,7 +2917,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : 'a23a5ced925aa3bab729769ded8bfd1af4e24824', #'9f82c009450386f5edf20f21d59629e17b02d8e9',
+		'branch' : 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5', # 'b9e60f088847f885b5c9fde61ff8fc9645843506',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -3060,7 +3104,10 @@ DEPENDS = {
 	},
 	'a52dec' : {
 		'repo_type' : 'archive',
-		'url' : 'http://liba52.sourceforge.net/files/a52dec-0.7.4.tar.gz', # last release was 2002, do I even need to keep checking this for updates?
+		'download_locations' : [
+			{ "url" : "http://liba52.sourceforge.net/files/a52dec-0.7.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a21d724ab3b3933330194353687df82c475b5dfb997513eef4c25de6c865ec33" }, ], },
+			{ "url" : "https://gstreamer.freedesktop.org/src/mirror/a52dec-0.7.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a21d724ab3b3933330194353687df82c475b5dfb997513eef4c25de6c865ec33" }, ], },
+		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static CFLAGS=-std=gnu89',
 		'run_post_patch' : [
 			'rm configure',
@@ -3158,7 +3205,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : '7acdb78d4969fbfd7c5bf4103976a39cab75238b', #'654c15b2d9b01efa254c9879245583592e9117ef',
+		'branch' : '3aae2066e5b8df328866ba7e8636d8901f42e8e7', # '7acdb78d4969fbfd7c5bf4103976a39cab75238b',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3252,10 +3299,6 @@ DEPENDS = {
 			'libnettle',
 		],
 		# 'env_exports' : {
-			# 'CPPFLAGS' : '-DWINVER=0x0501 -DAI_ADDRCONFIG=0x0400 -DIPV6_V6ONLY=27',
-			# 'LIBS' : '-lws2_32',
-			# 'ac_qcv_prog_AR' : '{cross_prefix_full}ar',
-		# },
 		'_info' : { 'version' : '3.6.3', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
@@ -3274,7 +3317,7 @@ DEPENDS = {
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : 'aaea680337267bfb6d2544da878890ee7f1c5077', #'b0453860dbe673c1f6314e7a3f33a5f9a33a76c8',
+		'branch' : 'd2ca7f4afc776d7c0c14c9a9a5ba94d9ae3affb8', # 'b0453860dbe673c1f6314e7a3f33a5f9a33a76c8',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3439,6 +3482,7 @@ DEPENDS = {
 	'libspeexdsp' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/speexdsp.git',
+		'run_post_patch' : [ 'autoreconf -fiv', ],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'speexdsp' },
 	},
@@ -3479,8 +3523,8 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
 			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
@@ -3491,8 +3535,8 @@ DEPENDS = {
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
 			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
@@ -3528,8 +3572,8 @@ DEPENDS = {
 	'expat' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://github.com/libexpat/libexpat/releases/download/R_2_2_5/expat-2.2.5.tar.bz2",	"hashes" : [ { "type" : "sha256", "sum" : "d9dc32efba7e74f788fcc4f212a43216fc37cf5f23f4c2339664d473353aedf6" },	], },
-			{ "url" : "https://fossies.org/linux/www/expat-2.2.5.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "d9dc32efba7e74f788fcc4f212a43216fc37cf5f23f4c2339664d473353aedf6" }, ],	},
+			{ "url" : "https://github.com/libexpat/libexpat/releases/download/R_2_2_6/expat-2.2.6.tar.bz2",	"hashes" : [ { "type" : "sha256", "sum" : "17b43c2716d521369f82fc2dc70f359860e90fa440bea65b3b85f0b246ea81f2" },	], },
+			{ "url" : "https://fossies.org/linux/www/expat-2.2.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "17b43c2716d521369f82fc2dc70f359860e90fa440bea65b3b85f0b246ea81f2" }, ],	},
 		],
 		'env_exports' : {
 			'CPPFLAGS' : '-DXML_LARGE_SIZE',
@@ -3539,8 +3583,8 @@ DEPENDS = {
 			'aclocal',
 			'automake',
 		),
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'_info' : { 'version' : '2.2.5', 'fancy_name' : 'expat' },
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --without-docbook',
+		'_info' : { 'version' : '2.2.6', 'fancy_name' : 'expat' },
 	},
 	'libxml2' : {
 		'repo_type' : 'archive',
@@ -4010,7 +4054,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : '75b9859caeeb9004374ee0547c062a1ed4979652', # 'da17065690c185ae678d5db9466cf0a402ca6b6d', #'da299e345117cc3c4f32025776784f587335b39b',
+		'branch' : '2754f83f65eb57fb9aff7029f355ad57421b57f3', # 'da17065690c185ae678d5db9466cf0a402ca6b6d',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
