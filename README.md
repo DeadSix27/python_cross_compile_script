@@ -1,5 +1,7 @@
 [![Discord](https://img.shields.io/badge/Discord-Join-blue.svg)](https://discord.gg/gAvufS2)
 
+# NOTE: Development is currently on halt or very slow, as I have lost my main working system. I will return around February 2019 most likely.
+
 # A Linux to Windows-x64 cross-compile helper script
 
 _python_cross_compile_script_ is written in Python primarily for Linux.
