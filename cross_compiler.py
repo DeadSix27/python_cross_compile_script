@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '75bdd34471a67e9f83252fd1a4a6665e380bec88' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = 'c69c7a706d767c5ca3c7d1c70887fcd8e1f940b3' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -108,7 +108,7 @@ class MyFormatter(logging.Formatter):
 _MINGW_SCRIPT_URL  = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py'
 _DEBUG             = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 _OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.7.0']
+_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.6.7', '3.7.0']
 
 class CrossCompileScript:
 
@@ -1985,7 +1985,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : '2754f83f65eb57fb9aff7029f355ad57421b57f3', # 'da17065690c185ae678d5db9466cf0a402ca6b6d'
+		'branch' : '35be78dc10ed77875b760fed4ea454e41e904749', # '2754f83f65eb57fb9aff7029f355ad57421b57f3',
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2556,6 +2556,7 @@ DEPENDS = {
 		'install_options' : '{make_prefix_options} prefix={target_prefix} install-static',
 		'run_post_patch' : [
 			'git submodule update --remote --recursive',
+			'git -C "SPIRV-Cross" reset --hard cc5c0204d8bcdadbb4add03e53346df98bf27fa4',
 			'rm -vf {target_prefix}/lib/pkgconfig/crossc.pc',
 		],
 		'run_post_install' : [
@@ -2645,6 +2646,7 @@ DEPENDS = {
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 		'needs_configure' : False,
 		'recursive_git' : True, 
+		'branch' : '2aa6dcc10189f7700824bc5e21120beeff013c3a',
 		'cmake_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON -DCMAKE_C_FLAGS=\'-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS\' -DCMAKE_CXX_FLAGS=\'-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600\'', #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
 		'is_cmake' : True,
 		'patches' : [
@@ -2799,7 +2801,7 @@ DEPENDS = {
 	'mujs' : {
 		'repo_type' : 'git',
 		'url' : 'git://git.ghostscript.com/mujs.git',
-		'branch' : '3430d9a06d6f8a3696e2bbdca7681937e60ca7a9',
+		# 'branch' : '3430d9a06d6f8a3696e2bbdca7681937e60ca7a9',
 		'needs_configure' : False,
 		'make_options': '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
@@ -2841,8 +2843,8 @@ DEPENDS = {
 	'pcre2' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.31.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/pcre2-10.31.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "e11ebd99dd23a7bccc9127d95d9978101b5f3cf0a6e7d25a1b1ca165a97166c4" }, ], },
+			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/pcre2-10.32.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 		],
 		'needs_configure' : False,
 		'is_cmake' : True,
@@ -2853,7 +2855,7 @@ DEPENDS = {
 		'depends_on' : [
 			'bzip2',
 		],
-		'_info' : { 'version' : '10.31', 'fancy_name' : 'pcre2' },
+		'_info' : { 'version' : '10.32', 'fancy_name' : 'pcre2' },
 	},
 	'libressl' : {
 		'repo_type' : 'git',
@@ -2905,7 +2907,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5', # 'b9e60f088847f885b5c9fde61ff8fc9645843506',
+		'branch' : 'a4040a33ba3f58250ca0129c1b430a875375d4ff', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -2917,7 +2919,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5', # 'b9e60f088847f885b5c9fde61ff8fc9645843506',
+		'branch' : 'a4040a33ba3f58250ca0129c1b430a875375d4ff', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -3079,8 +3081,8 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.6',
-		'_info' : { 'version' : '3.6.6', 'fancy_name' : 'Python (library-only)' },
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.7',
+		'_info' : { 'version' : '3.6.7', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
 		'repo_type' : 'git',
@@ -3205,7 +3207,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : '3aae2066e5b8df328866ba7e8636d8901f42e8e7', # '7acdb78d4969fbfd7c5bf4103976a39cab75238b',
+		'branch' : 'd0f9cdebd34b0cb032f79357660bd0f6f23069ee', # '3aae2066e5b8df328866ba7e8636d8901f42e8e7',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3257,8 +3259,8 @@ DEPENDS = {
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.3.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ed642b66a4ecf4851ab2d809cd1475c297b6201d8e8bd14b4d1c08b53ffca993" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.3.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "ed642b66a4ecf4851ab2d809cd1475c297b6201d8e8bd14b4d1c08b53ffca993" }, ], },
+			{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.4.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c663a792fbc84349c27c36059181f2ca86c9442e75ee8b0ad72f5f9b35deab3a" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.4.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c663a792fbc84349c27c36059181f2ca86c9442e75ee8b0ad72f5f9b35deab3a" }, ], },
 		],
 		'configure_options':
 			'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
@@ -3299,7 +3301,7 @@ DEPENDS = {
 			'libnettle',
 		],
 		# 'env_exports' : {
-		'_info' : { 'version' : '3.6.3', 'fancy_name' : 'gnutls' },
+		'_info' : { 'version' : '3.6.4', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
 		'repo_type' : 'archive',
@@ -3317,7 +3319,7 @@ DEPENDS = {
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : 'd2ca7f4afc776d7c0c14c9a9a5ba94d9ae3affb8', # 'b0453860dbe673c1f6314e7a3f33a5f9a33a76c8',
+		'branch' : '81a71e08c09b20b0255aa66e40fce293008b9525', # 'd2ca7f4afc776d7c0c14c9a9a5ba94d9ae3affb8',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3523,20 +3525,20 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.8.8', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '2.0.0', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-1.8.8.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "a8e5c86e4d99e1cc9865ec1b8e9b05b98e413c2a885cd11f8e9bb9502dd3e3a9" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
@@ -3544,7 +3546,7 @@ DEPENDS = {
 		'folder_name' : 'harfbuzz-1.8.8-with-freetype',
 		'rename_folder' : 'harfbuzz-1.8.8-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '1.8.8', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'_info' : { 'version' : '2.0.0', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
@@ -3947,12 +3949,12 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
 		'cpu_count' : '1', # I had strange build issues with multiple threads..
-		# 'branch' : 'a1efb5ea8c76622c7587cb5362e821bff8dcd7c4', # is the latest commmit, requires small patch
+		'branch' : '8badaae15b1225bbf200c46533b1761002c760de',
 		'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 		'folder_name' : 'fontconfig_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/0001-mingwcompat-remove-tests.patch', '-p1' ],
+			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/0001-fontconfig-remove-tests.patch', '-p1' ],
 			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
 		],
 		'run_post_patch': [
@@ -3979,7 +3981,7 @@ DEPENDS = {
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
-		'branch' : 'b534ab2642f694c3106d5bc8d0a8beae60bf60d3', # '46f52d588ab5382a10b68605359e14cc775c86fd',
+		'branch' : 'c8fb314d9cab3e4803054eb9829373f014684dc0', # 'b534ab2642f694c3106d5bc8d0a8beae60bf60d3',
 		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
 		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
@@ -4054,7 +4056,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : '2754f83f65eb57fb9aff7029f355ad57421b57f3', # 'da17065690c185ae678d5db9466cf0a402ca6b6d',
+		'branch' : '35be78dc10ed77875b760fed4ea454e41e904749', # '2754f83f65eb57fb9aff7029f355ad57421b57f3',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
