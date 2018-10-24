@@ -2556,7 +2556,6 @@ DEPENDS = {
 		'install_options' : '{make_prefix_options} prefix={target_prefix} install-static',
 		'run_post_patch' : [
 			'git submodule update --remote --recursive',
-			'git -C "SPIRV-Cross" reset --hard cc5c0204d8bcdadbb4add03e53346df98bf27fa4',
 			'rm -vf {target_prefix}/lib/pkgconfig/crossc.pc',
 		],
 		'run_post_install' : [
