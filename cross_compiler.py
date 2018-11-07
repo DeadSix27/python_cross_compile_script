@@ -1985,7 +1985,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : '35be78dc10ed77875b760fed4ea454e41e904749', # '2754f83f65eb57fb9aff7029f355ad57421b57f3',
+		'branch' : 'f8b03215b8924c610d98142d8e4258ee1da1364c', #'35be78dc10ed77875b760fed4ea454e41e904749', # '2754f83f65eb57fb9aff7029f355ad57421b57f3',
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2177,6 +2177,7 @@ PRODUCTS = {
 		# 'debug_downloadonly': True,
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/lame/files/lame/
 			{ "url" : "https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 		],
@@ -2292,14 +2293,16 @@ PRODUCTS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
+			'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
 		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
 		},
 		'patches' : [
-			#[ 'https://github.com/mpv-player/mpv/pull/5866.patch', '-p1' ], # Change vulkan shader optimization level
-			#[ 'https://github.com/mpv-player/mpv/pull/6055.patch', '-p1' ], # Add controller support
+			# Enable PR's by preference
+			# [ 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ], # osc: seekranges enhancement
+			# [ 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ], # some left-shift to mmouse alias PR
+			# [ 'https://github.com/mpv-player/mpv/pull/6158.patch', '-p1' ], # wm4's controversial giant pr
 		],
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
@@ -2767,7 +2770,7 @@ DEPENDS = {
 			'DEST_OS=win32 '
 		,
 		'depends_on' : [
-			'libffmpeg', 'python36_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
+			'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
 		],
 		'packages': {
 			'arch' : [ 'rst2pdf' ],
@@ -2780,6 +2783,7 @@ DEPENDS = {
 	'boost' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/boost/files/boost/
 			{ "url" : "https://sourceforge.net/projects/boost/files/boost/1.68.0/boost_1_68_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/boost_1_68_0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7" }, ], },
 		],
@@ -2824,6 +2828,7 @@ DEPENDS = {
 	'libpng' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/libpng/files/libpng16/
 			{ "url" : "https://sourceforge.net/projects/libpng/files/libpng16/1.6.35/libpng-1.6.35.tar.xz",	"hashes" : [ { "type" : "sha256", "sum" : "23912ec8c9584917ed9b09c5023465d71709dce089be503c7867fec68a93bcd7" },	], },
 			{ "url" : "https://fossies.org/linux/misc/libpng-1.6.35.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "23912ec8c9584917ed9b09c5023465d71709dce089be503c7867fec68a93bcd7" }, ],	},
 		],
@@ -2841,6 +2846,7 @@ DEPENDS = {
 	'pcre2' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://ftp.pcre.org/pub/pcre/
 			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/pcre2-10.32.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 		],
@@ -2876,7 +2882,10 @@ DEPENDS = {
 	'mingw-libgnurx' : {
 		'repo_type' : 'archive',
 		'folder_name' : 'mingw-libgnurx-2.5.1',
-		'url' : 'https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz',
+		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/
+			{ "url" : "https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "7147b7f806ec3d007843b38e19f42a5b7c65894a57ffc297a76b0dcd5f675d76" }, ], },
+		],
 		'configure_options': '--host={target_host} --prefix={target_prefix}', # --disable-shared --enable-static --enable-fsect-man5
 		'cpu_count' : '1', #...
 		'needs_make' : False,
@@ -2895,6 +2904,7 @@ DEPENDS = {
 	'gettext' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://ftp.gnu.org/pub/gnu/gettext/?C=M;O=D
 			{ "url" : "https://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/gettext-0.19.8.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" }, ], },
 		],
@@ -2905,7 +2915,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : 'a4040a33ba3f58250ca0129c1b430a875375d4ff', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
+		'branch' : '42d9a8a34607e8b0336b4c354cd5e7e7692bfec7', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -2917,7 +2927,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : 'a4040a33ba3f58250ca0129c1b430a875375d4ff', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
+		'branch' : '42d9a8a34607e8b0336b4c354cd5e7e7692bfec7', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -2953,6 +2963,7 @@ DEPENDS = {
 	'lzo': {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://www.oberhumer.com/opensource/lzo/download/?C=M;O=D
 			{ "url" : "http://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/lzo-2.10.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072" }, ], },
 		],
@@ -3074,24 +3085,25 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Little-CMS2' },
 	},
-	'python36_libs': {
+	'python3_libs': {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.6.7',
-		'_info' : { 'version' : '3.6.7', 'fancy_name' : 'Python (library-only)' },
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.7.1',
+		'_info' : { 'version' : '3.7.1', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/vapoursynth_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R44',
+		'depends_on' : [ 'python3_libs' ],
+		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R45',
 		'packages': {
 			'arch' : [ '7za' ],
 		},
-		'_info' : { 'version' : 'R44', 'fancy_name' : 'VapourSynth (library-only)' },
+		'_info' : { 'version' : 'R45', 'fancy_name' : 'VapourSynth (library-only)' },
 	},
 	'luajit': {
 		'repo_type' : 'git',
@@ -3105,6 +3117,7 @@ DEPENDS = {
 	'a52dec' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: http://liba52.sourceforge.net/
 			{ "url" : "http://liba52.sourceforge.net/files/a52dec-0.7.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a21d724ab3b3933330194353687df82c475b5dfb997513eef4c25de6c865ec33" }, ], },
 			{ "url" : "https://gstreamer.freedesktop.org/src/mirror/a52dec-0.7.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a21d724ab3b3933330194353687df82c475b5dfb997513eef4c25de6c865ec33" }, ], },
 		],
@@ -3205,7 +3218,7 @@ DEPENDS = {
 	'libzimg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
-		'branch' : 'd0f9cdebd34b0cb032f79357660bd0f6f23069ee', # '3aae2066e5b8df328866ba7e8636d8901f42e8e7',
+		#'branch' : 'd0f9cdebd34b0cb032f79357660bd0f6f23069ee', # '3aae2066e5b8df328866ba7e8636d8901f42e8e7',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
@@ -3226,6 +3239,7 @@ DEPENDS = {
 		#generic_configure "ABI=$bits_target"
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://gmplib.org/download/gmp/
 			{ "url" : "https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "87b565e89a9a684fe4ebeeddb8399dce2599f9c9049854ca8c0dfbdea0e21912" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/gmp-6.1.2.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "87b565e89a9a684fe4ebeeddb8399dce2599f9c9049854ca8c0dfbdea0e21912" }, ], },
 		],
@@ -3235,6 +3249,7 @@ DEPENDS = {
 	'libnettle' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://ftp.gnu.org/gnu/nettle/?C=M;O=D
 			{ "url" : "https://ftp.gnu.org/gnu/nettle/nettle-3.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ae7a42df026550b85daca8389b6a60ba6313b0567f374392e54918588a411e94" }, ], },
 			{ "url" : "https://fossies.org/linux/privat/nettle-3.4.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ae7a42df026550b85daca8389b6a60ba6313b0567f374392e54918588a411e94" }, ], },
 		],
@@ -3247,6 +3262,7 @@ DEPENDS = {
 	'iconv' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://ftp.gnu.org/pub/gnu/libiconv/?C=M;O=D
 			{ "url" : "https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/libiconv-1.15.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178" }, ], },
 		],
@@ -3257,6 +3273,7 @@ DEPENDS = {
 	'gnutls' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/
 			{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.4.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c663a792fbc84349c27c36059181f2ca86c9442e75ee8b0ad72f5f9b35deab3a" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.4.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c663a792fbc84349c27c36059181f2ca86c9442e75ee8b0ad72f5f9b35deab3a" }, ], },
 		],
@@ -3304,6 +3321,7 @@ DEPENDS = {
 	'frei0r' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://files.dyne.org/frei0r/
 			{ "url" : "https://files.dyne.org/frei0r/frei0r-plugins-1.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e0c24630961195d9bd65aa8d43732469e8248e8918faa942cfb881769d11515e" }, ], },
 			{ "url" : "https://ftp.osuosl.org/pub/blfs/conglomeration/frei0r/frei0r-plugins-1.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e0c24630961195d9bd65aa8d43732469e8248e8918faa942cfb881769d11515e" }, ], },
 		],
@@ -3317,7 +3335,7 @@ DEPENDS = {
 	},
 	'libsndfile' : {
 		'repo_type' : 'git',
-		'branch' : '81a71e08c09b20b0255aa66e40fce293008b9525', # 'd2ca7f4afc776d7c0c14c9a9a5ba94d9ae3affb8',
+		#'branch' : '81a71e08c09b20b0255aa66e40fce293008b9525', # 'd2ca7f4afc776d7c0c14c9a9a5ba94d9ae3affb8',
 		'url' : 'https://github.com/erikd/libsndfile.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-sqlite --disable-test-coverage --enable-external-libs --enable-experimental',
 		#'patches' : [ #patches courtesy of https://github.com/Alexpux/MINGW-packages/tree/master/mingw-w64-libsndfile
@@ -3342,6 +3360,7 @@ DEPENDS = {
 	'libbs2b' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/bs2b/files/libbs2b/
 			{ "url" : "https://sourceforge.net/projects/bs2b/files/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6aaafd81aae3898ee40148dd1349aab348db9bfae9767d0e66e0b07ddd4b2528" }, ], },
 			{ "url" : "http://sourceforge.mirrorservice.org/b/bs/bs2b/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6aaafd81aae3898ee40148dd1349aab348db9bfae9767d0e66e0b07ddd4b2528" }, ], },
 		],
@@ -3375,6 +3394,7 @@ DEPENDS = {
 	'flite' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: http://www.speech.cs.cmu.edu/flite/packed/
 			{ "url" : "http://ftp2.za.freebsd.org/pub/FreeBSD/ports/distfiles/flite-1.4-release.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "45c662160aeca6560589f78daf42ab62c6111dd4d244afc28118c4e6f553cd0c" }, ], },
 			{ "url" : "http://www.speech.cs.cmu.edu/flite/packed/flite-1.4/flite-1.4-release.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "45c662160aeca6560589f78daf42ab62c6111dd4d244afc28118c4e6f553cd0c" }, ], },
 		],
@@ -3397,6 +3417,7 @@ DEPENDS = {
 	'libgsm' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: http://www.quut.com/gsm
 			{ "url" : "https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.18.tar.gz/sha512/c5b597f68d4a270e1d588f480dcde66fda8302564c687d753f2bd4fc41d246109243e567568da61eddce170f5232d869984743ddf1eea7696d673014a1a453b7/gsm-1.0.18.tar.gz",
 				"hashes" : [ { "type" : "sha256", "sum" : "04f68087c3348bf156b78d59f4d8aff545da7f6e14f33be8f47d33f4efae2a10" }, ],
 			},
@@ -3455,6 +3476,7 @@ DEPENDS = {
 	'opencore-amr' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/opencore-amr/files/opencore-amr/
 			{ "url" : "https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "2c006cb9d5f651bfb5e60156dbff6af3c9d35c7bbcc9015308c0aff1e14cd341" }, ], },
 			{ "url" : "https://sourceforge.mirrorservice.org/o/op/opencore-amr/opencore-amr/opencore-amr-0.1.5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "2c006cb9d5f651bfb5e60156dbff6af3c9d35c7bbcc9015308c0aff1e14cd341" }, ], },
 		],
@@ -3464,6 +3486,7 @@ DEPENDS = {
 	'vo-amrwbenc' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/
 			{ "url" : "https://pkgs.rpmfusion.org/repo/pkgs/free/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz/f63bb92bde0b1583cb3cb344c12922e0/vo-amrwbenc-0.1.3.tar.gz",
 				"hashes" : [ { "type" : "sha256", "sum" : "5652b391e0f0e296417b841b02987d3fd33e6c0af342c69542cbb016a71d9d4e"}, ],
 			},
@@ -3523,46 +3546,50 @@ DEPENDS = {
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
+			#UPDATECHECKS https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
 		],
 		'run_post_install': [
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
+			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '2.0.0', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.0.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "cc973f6839c4ce6425889d24f81fc23736cc97334bde0343c08a9c2ccc1d8965" }, ], },
+			#UPDATECHECKS https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
 		],
 		'run_post_install': [
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
+			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 		],
-		'folder_name' : 'harfbuzz-1.8.8-with-freetype',
-		'rename_folder' : 'harfbuzz-1.8.8-with-freetype',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '2.0.0', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'folder_name' : 'harfbuzz-with-freetype',
+		'rename_folder' : 'harfbuzz-with-freetype',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html',
+		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/freetype/files/freetype2/
 			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], },
 			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9.1/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], },
 		],
-		'folder_name' : 'freetype-2.9-with-harfbuzz',
-		'rename_folder' : 'freetype-2.9-with-harfbuzz',
+		'folder_name' : 'freetype-with-harfbuzz',
+		'rename_folder' : 'freetype-with-harfbuzz',
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
 		'run_post_install': (
-			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2 -lharfbuzz/\' "{pkg_config_path}/freetype2.pc"', # this should not need expat, but...I think maybe people use fontconfig's wrong and that needs expat? huh wuh? or dependencies are setup wrong in some .pc file?
+			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2 -lharfbuzz/\' "{pkg_config_path}/freetype2.pc"',
 		),
 		'_info' : { 'version' : '2.9.1', 'fancy_name' : 'freetype2' },
 	},
 	'freetype_lib' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/freetype/files/freetype2/
 			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], },
 			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9.1/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], },
 		],
@@ -3572,6 +3599,7 @@ DEPENDS = {
 	'expat' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://github.com/libexpat/libexpat/releases
 			{ "url" : "https://github.com/libexpat/libexpat/releases/download/R_2_2_6/expat-2.2.6.tar.bz2",	"hashes" : [ { "type" : "sha256", "sum" : "17b43c2716d521369f82fc2dc70f359860e90fa440bea65b3b85f0b246ea81f2" },	], },
 			{ "url" : "https://fossies.org/linux/www/expat-2.2.6.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "17b43c2716d521369f82fc2dc70f359860e90fa440bea65b3b85f0b246ea81f2" }, ],	},
 		],
@@ -3589,6 +3617,7 @@ DEPENDS = {
 	'libxml2' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: http://xmlsoft.org/sources/?C=M;O=D
 			{ "url" : "http://xmlsoft.org/sources/libxml2-2.9.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0b74e51595654f958148759cfef0993114ddccccbb6f31aee018f3558e8e2732" }, ], },
 			{ "url" : "https://fossies.org/linux/www/libxml2-2.9.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "0b74e51595654f958148759cfef0993114ddccccbb6f31aee018f3558e8e2732" }, ], },
 		],
@@ -3612,6 +3641,7 @@ DEPENDS = {
 	'libxvid' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://labs.xvid.com/
 			{ "url" : "http://downloads.xvid.org/downloads/xvidcore-1.3.5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "165ba6a2a447a8375f7b06db5a3c91810181f2898166e7c8137401d7fc894cf0" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/xvidcore-1.3.5.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "165ba6a2a447a8375f7b06db5a3c91810181f2898166e7c8137401d7fc894cf0" }, ], },
 		],
@@ -3646,6 +3676,7 @@ DEPENDS = {
 	'libsoxr' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/soxr/files/
 			{ "url" : "https://download.videolan.org/contrib/soxr/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 		],
@@ -3742,6 +3773,7 @@ DEPENDS = {
 	'vamp_plugin' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://vamp-plugins.org/develop.html
 			{ "url" : "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "c6fef3ff79d2bf9575ce4ce4f200cbf219cbe0a21cfbad5750e86ff8ae53cb0b" }, ], },
 			{ "url" : "https://code.soundsoftware.ac.uk/attachments/download/2206/vamp-plugin-sdk-2.7.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "c6fef3ff79d2bf9575ce4ce4f200cbf219cbe0a21cfbad5750e86ff8ae53cb0b" }, ], },
 		],
@@ -3771,6 +3803,7 @@ DEPENDS = {
 	'fftw3' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: http://fftw.org/download.html
 			{ "url" : "http://fftw.org/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
 		],
@@ -3779,7 +3812,7 @@ DEPENDS = {
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
-		'branch' : '7dcc9bb727dae4e2010cdc6ef7cda101b05509a4', #'1601e2cdec84182a1a2e659b6a6db0c2766ba5cd',
+		#'branch' : '7dcc9bb727dae4e2010cdc6ef7cda101b05509a4', #'1601e2cdec84182a1a2e659b6a6db0c2766ba5cd',
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-alsa',
 		'_info' : { 'version' : 'git (c99874)', 'fancy_name' : 'fftw3' },
@@ -3820,6 +3853,7 @@ DEPENDS = {
 	'liblame' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/lame/files/lame/
 			{ "url" : "https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 		],
@@ -3829,6 +3863,7 @@ DEPENDS = {
 	'twolame' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://github.com/njh/twolame/releases/
 			{ "url" : "https://github.com/njh/twolame/releases/download/0.3.13/twolame-0.3.13.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "98f332f48951f47f23f70fd0379463aff7d7fb26f07e1e24e42ddef22cc6112a" }, ], },
 			{ "url" : "https://sourceforge.net/projects/twolame/files/twolame/0.3.13/twolame-0.3.13.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "98f332f48951f47f23f70fd0379463aff7d7fb26f07e1e24e42ddef22cc6112a" }, ], },
 		],
@@ -3847,7 +3882,6 @@ DEPENDS = {
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vid.stab' },
 	},
 	'libmysofa' : {
-		# 'debug_downloadonly' : True,
 		'repo_type' : 'git',
 		'url' : 'https://github.com/hoene/libmysofa',
 		#'branch' : '16d77ad6b4249c3ba3b812d26c4cbb356300f908',
@@ -3878,6 +3912,7 @@ DEPENDS = {
 	'libmodplug' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/modplug-xmms/files/libmodplug/
 			{ "url" : "https://ftp.openbsd.org/pub/OpenBSD/distfiles/libmodplug-0.8.9.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "457ca5a6c179656d66c01505c0d95fafaead4329b9dbaa0f997d00a3508ad9de" }, ], },
 			{ "url" : "https://sourceforge.net/projects/modplug-xmms/files/libmodplug/0.8.9.0/libmodplug-0.8.9.0.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "457ca5a6c179656d66c01505c0d95fafaead4329b9dbaa0f997d00a3508ad9de" }, ], },
 		],
@@ -3893,6 +3928,7 @@ DEPENDS = {
 	'zvbi' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
+			#UPDATECHECKS: https://sourceforge.net/projects/zapping/files/zvbi/
 			{ "url" : "https://sourceforge.net/projects/zapping/files/zvbi/0.2.35/zvbi-0.2.35.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "fc883c34111a487c4a783f91b1b2bb5610d8d8e58dcba80c7ab31e67e4765318" }, ], },
 			{ "url" : "https://download.videolan.org/contrib/zvbi/zvbi-0.2.35.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "fc883c34111a487c4a783f91b1b2bb5610d8d8e58dcba80c7ab31e67e4765318" }, ], },
 		],
@@ -3947,12 +3983,13 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
 		'cpu_count' : '1', # I had strange build issues with multiple threads..
-		'branch' : '8badaae15b1225bbf200c46533b1761002c760de',
+		'branch' : '648e0cf3d5a53efeab93b24ae37490427d05229d', #'8badaae15b1225bbf200c46533b1761002c760de',
 		'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 		'folder_name' : 'fontconfig_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/0001-fontconfig-remove-tests.patch', '-p1' ],
+			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/fontconfig-git-utimes.patch', '-p1' ],
 			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
 		],
 		'run_post_patch': [
@@ -3979,7 +4016,7 @@ DEPENDS = {
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
-		'branch' : 'c8fb314d9cab3e4803054eb9829373f014684dc0', # 'b534ab2642f694c3106d5bc8d0a8beae60bf60d3',
+		#'branch' : 'c8fb314d9cab3e4803054eb9829373f014684dc0', # 'b534ab2642f694c3106d5bc8d0a8beae60bf60d3',
 		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
 		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
@@ -4054,7 +4091,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : '35be78dc10ed77875b760fed4ea454e41e904749', # '2754f83f65eb57fb9aff7029f355ad57421b57f3',
+		'branch' : 'f8b03215b8924c610d98142d8e4258ee1da1364c',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
