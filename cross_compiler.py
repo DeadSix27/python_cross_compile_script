@@ -108,7 +108,7 @@ class MyFormatter(logging.Formatter):
 _MINGW_SCRIPT_URL  = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py'
 _DEBUG             = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
 _OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.6.7', '3.7.0']
+_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.6.7', '3.7.0', '3.7.1']
 
 class CrossCompileScript:
 
@@ -1191,8 +1191,8 @@ class CrossCompileScript:
 				self.run_process('unzip "{0}"'.format( fileName ))
 
 			self.touch(os.path.join(folderName,"unpacked.successfully"))
-
-			os.remove(fileName)
+			if not self.debugMode:
+				os.remove(fileName)
 
 			return folderName
 
@@ -1481,6 +1481,11 @@ class CrossCompileScript:
 			if data['is_cmake'] == True:
 				self.cmake_source(name,data)
 
+  		if 'is_meson_ninja' in data:
+			if data['is_meson_ninja'] == True:
+				self.meson_source(name,data) # set the meson optyions and run meson
+				self.ninja_source(name,data) # set the ninja options and run ninja
+
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
 				if not os.path.isdir(data['make_subdir']):
@@ -1613,7 +1618,76 @@ class CrossCompileScript:
 				self.run_process('{0} -j {1}'.format( mCleanCmd, _CPU_COUNT ),True)
 
 			self.touch(touch_name)
-			self.logger.info("Finsihed configuring '{0}'".format( name ))
+			self.logger.info("Finished configuring '{0}'".format( name ))
+	def meson_source(self,name,data): # 2018.11.09 copied from configure_source
+		touch_name = "already_meson_%s" % (self.md5(name,self.getKeyOrBlankString(data,"meson_options")))
+
+		if not os.path.isfile(touch_name):
+			self.removeAlreadyFiles()
+
+			#--- 2018.11.09 create a meson environment file
+			if 'create_meson_environment_file' in data:
+				if data['create_meson_environment_file'] != None:
+					meson_filename = data['create_meson_environment_file']
+					self.logger.debug("Creating meson environment file pre replaceVariables (raw): '{0}'".format( meson_filename ))
+					meson_filename = self.replaceVariables(meson_filename)
+					self.logger.info("Creating meson environment file : '{0}'".format( meson_filename ))
+					self.create_meson_environment_file(meson_filename)
+			#--- 2018.11.09 create a meson environment file
+		
+			mesonOpts = ''
+			if 'meson_options' in data:
+				mesonOpts = self.replaceVariables(data["meson_options"])
+			self.logger.info("Meson '{0}' with: {1}".format( name, mesonOpts ))
+
+			mesonCmd = 'meson'
+			if 'meson_path' in data:
+				if data['meson_path'] != None:
+					mesonCmd = data['meson_path']
+
+			self.run_process('{0} {1}'.format(mesonCmd, mesonOpts))
+
+			if 'run_post_meson' in data:
+				if data['run_post_meson'] != None:
+					for cmd in data['run_post_meson']:
+						self.logger.debug("Running post-meson-command pre replaceVariables (raw): '{0}'".format( cmd ))
+						cmd = self.replaceVariables(cmd)
+						self.logger.info("Running post-meson-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
+
+			self.touch(touch_name)
+			self.logger.info("Finished meson '{0}'".format( name ))
+
+	def ninja_source(self,name,data): # 2018.11.09 copied from configure_source
+		touch_name = "already_ninja_%s" % (self.md5(name,self.getKeyOrBlankString(data,"ninja_options")))
+
+		if not os.path.isfile(touch_name):
+			#self.removeAlreadyFiles()
+
+			ninjaOpts = ' -j 1'
+			if 'ninja_options' in data:
+				ninjaOpts = self.replaceVariables(data["ninja_options"]) + " -j 1"
+			self.logger.info("ninja '{0}' with: {1}".format( name, ninjaOpts ))
+
+			ninjaCmd = 'ninja'
+			if 'ninja_path' in data:
+				if data['ninja_path'] != None:
+					ninjaCmd = data['ninja_path']
+
+			ninjaCleanOpts = '-t clean'
+			self.run_process('{0} {1}'.format(ninjaCmd, ninjaCleanOpts)) # clean built files
+			self.run_process('{0} {1}'.format(ninjaCmd, ninjaOpts))
+
+			if 'run_post_ninja' in data:
+				if data['run_post_ninja'] != None:
+					for cmd in data['run_post_ninja']:
+						self.logger.debug("Running post-ninja-command pre replaceVariables (raw): '{0}'".format( cmd ))
+						cmd = self.replaceVariables(cmd)
+						self.logger.info("Running post-ninja-command: '{0}'".format( cmd ))
+						self.run_process(cmd)
+
+			self.touch(touch_name)
+			self.logger.info("Finished ninja '{0}'".format( name ))
 
 	def apply_patch(self,url,type = "-p1", postConf = False, folderToPatchIn = None):
 
@@ -1857,6 +1931,8 @@ class CrossCompileScript:
 			cflag_string               = self.generateCflagString('--extra-cflags='),
 			current_path               = os.getcwd(),
 			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH")
+			,prefix                     = "{prefix}"
+			,exec_prefix                = "{exec_prefix}"		
 		)
 		# needed actual commands sometimes, so I made this custom command support, comparable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
 
@@ -1901,7 +1977,49 @@ class CrossCompileScript:
 		if self.debugMode:
 			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
 		os.chdir(dir)
-
+	#:
+	# ----------------------------------------------------------------------------------
+	# 2018.11.09 create the meson build environment file 
+	#			 for ubuntu mingw64 -> windows x86_64
+	#            filename = meson_environment_ubuntu_mingw64_for_windows_x86_64.txt
+	def create_meson_environment_file(self, Filename):
+		filehandle = open(Filename, 'w')
+		filehandle.write("[binaries]\n")
+		filehandle.write("c = '{0}gcc'\n".format(self.fullCrossPrefix))
+		filehandle.write("cpp = '{0}g++'\n".format(self.fullCrossPrefix))
+		filehandle.write("ld = '{0}ld'\n".format(self.fullCrossPrefix))
+		filehandle.write("ar = '{0}ar'\n".format(self.fullCrossPrefix))
+		filehandle.write("strip = '{0}strip'\n".format(self.fullCrossPrefix))
+		filehandle.write("windres = '{0}windres'\n".format(self.fullCrossPrefix))
+		filehandle.write("ranlib = '{0}ranlib'\n".format(self.fullCrossPrefix))
+		filehandle.write("pkgconfig = '{0}pkg-config'\n".format(self.fullCrossPrefix)) # ??
+		filehandle.write("dlltool = '{0}dlltool'\n".format(self.fullCrossPrefix))
+		filehandle.write("gendef = '{0}/gendef'\n".format(self.mingwBinpath))
+		filehandle.write("needs_exe_wrapper = false\n")
+		filehandle.write("#exe_wrapper = 'wine' # A command used to run generated executables.\n")
+		filehandle.write("\n")
+		filehandle.write("[host_machine]\n")
+		filehandle.write("system = 'windows'\n")
+		filehandle.write("cpu_family = '{0}'\n".format(self.bitnessDir))
+		filehandle.write("cpu = '{0}'\n".format(self.bitnessDir))
+		filehandle.write("endian = 'little'\n")
+		filehandle.write("\n")
+		filehandle.write("[target_machine]\n")
+		filehandle.write("system = 'windows'\n")
+		filehandle.write("cpu_family = '{0}'\n".format(self.bitnessDir))
+		filehandle.write("cpu = '{0}'\n".format(self.bitnessDir))
+		filehandle.write("endian = 'little'\n")
+		filehandle.write("\n")
+		filehandle.write("[properties]\n")
+		filehandle.write("c_link_args = ['-static', '-static-libgcc']\n")
+		#filehandle.write("# root = Directory that contains 'bin', 'lib', etc\n")            # intentionally not set
+		#filehandle.write("root = '{0}'\n".format(targetPrefix,targetPrefixBin,targetHost))  # intentionally not set
+		filehandle.write("# sys_root = Directory that contains 'bin', 'lib', etc for the toolchain and system libraries\n")
+		#???? filehandle.write("sys_root = '{0}/????????sys-root?????/mingw'\n".format(targetPrefix,targetPrefixBin,targetHost))
+		filehandle.write("sys_root = '{0}'\n".format(self.targetSubPrefix))
+		filehandle.close()
+		return Filename
+	# ---------------------------------------------------------------------------------
 # ###################################################
 # ################  PACKAGE CONFIGS  ################
 # ###################################################
@@ -1912,7 +2030,7 @@ VARIABLES = {
 		'--target-os=mingw32 '
 		'--cross-prefix={cross_prefix_bare} '
 		'--pkg-config=pkg-config '
-		'--disable-w32threads '
+		'--disable-w32threads --enable-pthreads '
 		'--enable-cross-compile '
 		'--enable-pic '
 		'--enable-libsoxr '
@@ -1942,7 +2060,7 @@ VARIABLES = {
 		'--enable-libwebp '
 		'--enable-dxva2 '
 		'--enable-avisynth '
-		# '--enable-vapoursynth ' #maybe works?
+		'--enable-vapoursynth ' #maybe works?
 		'--enable-gray '
 		'--enable-libmysofa '
 		'--enable-libflite '
@@ -1952,6 +2070,7 @@ VARIABLES = {
 		'--enable-libx264 '
 		'--enable-libx265 '
 		'--enable-libaom '
+		'--enable-libdav1d ' # 2018.11.09
 		'--enable-frei0r '
 		'--enable-filter=frei0r '
 		'--enable-librubberband '
@@ -1973,14 +2092,45 @@ VARIABLES = {
 		'--disable-gcrypt '
 		'--enable-gpl '
 		'--extra-version=DeadSix27/python_cross_compile_script '
-		#'--enable-avresample ' # deprecated.
+		'--enable-avresample ' # deprecated. 2018.03.31 ... but LSW depends on it ... so keep it for now
 		'--pkg-config-flags="--static" '
+		'--extra-libs="-lintl -liconv" '
 		#'--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
 		'--extra-cflags="-DLIBTWOLAME_STATIC" '
 		'--extra-cflags="-DMODPLUG_STATIC" '
 	,
 }
 PRODUCTS = {
+	'dav1d' : { # 2018.11.09
+		'repo_type' : 'git',
+		'url' : 'https://code.videolan.org/videolan/dav1d.git',
+		#'folder_name' : 'dav1d.git',
+		'needs_configure' : False,
+		'clean_post_configure' : False,
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'is_cmake' : False,
+		'is_meson_ninja' : True,
+		'source_subfolder' : 'build',
+		'create_meson_environment_file' : '{current_path}/meson_environment_ubuntu_mingw64_for_windows_x86_64.txt',
+		# do NOT use --strip since then ffmpeg configure always fails with "ERROR: dav1d >= 0.0.1 not found using pkg-config" and log "error adding symbols: archive has no index; run ranlib to add one ... collect2: error: ld returned 1 exit status"
+		'meson_options' : '--prefix={product_prefix}/dav1d.installed --default-library=static --buildtype=plain --backend=ninja --buildtype=release --cross-file={current_path}/meson_environment_ubuntu_mingw64_for_windows_x86_64.txt ./ ../',
+		'run_post_meson' :  [
+			'cat {current_path}/meson_environment_ubuntu_mingw64_for_windows_x86_64.txt',
+		],
+		'ninja_options' : 'install',
+		'run_post_ninja' : '',
+	},
+	'fftw3_dll' : { # create the FFTW DLLs which we can use with things like avisynth etc
+		'is_dep_inheriter' : True,
+		'needs_configure' : False,
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'is_cmake' : False,
+		'depends_on' : [
+			'fftw3_dll_single', 'fftw3_dll_double', 'fftw3_dll_ldouble', #'fftw3_dll_quad', 
+		],
+	},
 	'aom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
@@ -2016,12 +2166,12 @@ PRODUCTS = {
 	'x264' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/x264.git',
-		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_git.installed --enable-strip --bit-depth=all',
+		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={product_prefix}/x264_git.installed --enable-strip --bit-depth=all --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'env_exports' : {
 			'PKGCONFIG' : 'pkg-config',
 		},
 		'depends_on' : [
-			'libffmpeg',
+			'libffmpeg', 'liblsw', # note: lsw requires --enable-avresample which is deprecated # 'libgpac', gave up on gpac
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
 	},
@@ -2041,7 +2191,7 @@ PRODUCTS = {
 			'libsuff' : '/',
 		},
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', '-p1' ],
+			#['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', '-p1' ], # not needed after commmit 4ff5f9405abff825df8c1da0e432081f1877f717
 		],
 		'run_post_patch' : [
 			'sed -i.bak \'s/SSL_LDFLAGS="-L$LIB_OPENSSL"/SSL_LDFLAGS=""/\' configure.ac',
@@ -2075,7 +2225,10 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static',
+		'patches': (
+			'',
+		),
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
 	},
@@ -2083,7 +2236,10 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_opencl_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl',
+		'patches': (
+			'',
+		),
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
 	},
@@ -2091,7 +2247,10 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free.installed --disable-shared --enable-static --enable-nonfree --enable-libfdk-aac --enable-decklink',
+		'patches': (
+			'',
+		),
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free.installed --disable-shared --enable-static --enable-nonfree --enable-libfdk-aac --enable-decklink --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static)' },
 	},
@@ -2099,7 +2258,10 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free_opencl',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink',
+		'patches': (
+			'',
+		),
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static (OpenCL))' },
 	},
@@ -2107,6 +2269,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_shared_git',
+		'patches': (
+			'',
+		),
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libbluray --disable-libgme',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
@@ -2115,18 +2280,34 @@ PRODUCTS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_10bit',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DMAIN10=ON -DCMAKE_AR={cross_prefix_full}ar -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': 'source',
-		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265_10bit' },
+	},
+	'x265_12bit' : {
+		'repo_type' : 'mercurial',
+		'url' : 'https://bitbucket.org/multicoreware/x265',
+		#'branch' : 'e2759ae31c3638518d4a6358a884f569efae1298',
+		'rename_folder' : 'x265_12bit_hg',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_12bit_hg.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DMAIN12=ON -DCMAKE_AR={cross_prefix_full}ar -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON',  # 2018.08.29 added -DLIBXML_STATIC -DGLIB_STATIC_COMPILATION
+		#'env_exports' : {
+		#	'CFLAGS'   : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#	'CXXFLAGS' : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#	'CPPFLAGS' : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#},
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'source_subfolder': 'source',
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265-12bit' },
 	},
 	'x265_multibit' : {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_multibit_hg',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON ',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
@@ -2164,7 +2345,7 @@ PRODUCTS = {
 	'flac' : {
 		'repo_type' : 'git',
 		'url' : 'https://git.xiph.org/flac.git',
-		'configure_options': '--host={target_host} --prefix={product_prefix}/flac_git.installed --disable-shared --enable-static',
+		'configure_options': '--host={target_host} --prefix={product_prefix}/flac_git.installed --disable-shared --enable-static --enable-64-bit-words --disable-oggtest --disable-examples --disable-rpath', # 2018.09.05 ensure 64bit
 		'depends_on': [
 			'libogg',
 		],
@@ -2181,12 +2362,20 @@ PRODUCTS = {
 			{ "url" : "https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 		],
+		'folder_name' : 'lame',
 		'patches' : (
-			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0007-revert-posix-code.patch','-p1'), # borrowing their file since lame will fix this shortly anyway, its already fixed on svn
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0002-07-field-width-fix.all.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0005-no-gtk.all.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0006-dont-use-outdated-symbol-list.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0007-revert-posix-code.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0008-skip-termcap.patch','-Np1'),
+		),
+		'run_post_patch' : (
+			'autoreconf -fiv',
 		),
 		'depends_on' : ['iconv'],
-		'configure_options': '--host={target_host} --without-libiconv-prefix --prefix={product_prefix}/lame-3.100.installed --disable-shared --enable-static --enable-nasm',
-		'_info' : { 'version' : '3.10', 'fancy_name' : 'LAME3' },
+		'configure_options': '--build=x86_64-linux-gnu --host={target_host} --target={target_host} --without-libiconv-prefix --prefix={product_prefix}/lame-3.100.installed --disable-shared --enable-static --enable-nasm',
+		'_info' : { 'version' : '3.100', 'fancy_name' : 'LAME3' },
 	},
 	'vorbis-tools' : {
 		'repo_type' : 'git',
@@ -2207,15 +2396,15 @@ PRODUCTS = {
 		'configure_options': '--host={target_host} --prefix={product_prefix}/sox_git.installed --disable-shared --enable-static --without-gsm',
 		'run_post_patch' : (
 			'autoreconf -fiv',
-			'if [ -f "{target_prefix}/lib/libgsm.a" ] ; then mv {target_prefix}/lib/libgsm.a {target_prefix}/lib/libgsm.a.disabled ; fi',
-			'if [ -d "{target_prefix}/include/gsm" ] ; then mv {target_prefix}/include/gsm {target_prefix}/include/gsm.disabled ; fi',
+			'if [ -f "{target_prefix}/lib/libgsm.a" ] ; then mv -vf {target_prefix}/lib/libgsm.a {target_prefix}/lib/libgsm.a.disabled ; fi',
+			'if [ -d "{target_prefix}/include/gsm" ] ; then mv -vf {target_prefix}/include/gsm {target_prefix}/include/gsm.disabled ; fi',
 		),
 		'run_post_install' : (
-			'if [ -f "{target_prefix}/lib/libgsm.a.disabled" ] ; then mv {target_prefix}/lib/libgsm.a.disabled {target_prefix}/lib/libgsm.a ; fi',
-			'if [ -d "{target_prefix}/include/gsm.disabled" ] ; then mv {target_prefix}/include/gsm.disabled {target_prefix}/include/gsm ; fi',
+			'if [ -f "{target_prefix}/lib/libgsm.a.disabled" ] ; then mv -vf {target_prefix}/lib/libgsm.a.disabled {target_prefix}/lib/libgsm.a ; fi',
+			'if [ -d "{target_prefix}/include/gsm.disabled" ] ; then mv -vf {target_prefix}/include/gsm.disabled {target_prefix}/include/gsm ; fi',
 		),
 		'depends_on': [
-			'libvorbis','gettext',
+			'libvorbis', 'gettext',
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SoX' },
 	},
@@ -2242,7 +2431,7 @@ PRODUCTS = {
 			'sed -i.bak \'s/SHFLAGS=-shared/SHFLAGS=/g\' configure',
 			'sed -i.bak \'s/extralibs="$extralibs -lws2_32 -lwinmm -limagehlp"/extralibs="$extralibs -lws2_32 -lwinmm -lz"/g\' configure',
 		],
-		'configure_options': '--host={target_host} --target-os={bit_name3} --prefix={product_prefix}/mp4box_git.installed --static-modules --cross-prefix={cross_prefix_bare} --static-mp4box --enable-static-bin --disable-oss-audio --disable-x11 --disable-docs --sdl-cfg={cross_prefix_full}sdl2-config --disable-shared --enable-static',
+		'configure_options': '--host={target_host} --target-os={bit_name3} --prefix={product_prefix}/mp4box_git.installed --static-modules --cross-prefix={cross_prefix_bare} --static-mp4box --enable-static-bin --disable-oss-audio --disable-x11 --disable-docs --sdl-cfg={cross_prefix_full}sdl2-config --disable-shared --enable-static --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ', # 2018.08.29 added for test --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" 
 		'depends_on': [
 			 'sdl2', 'libffmpeg',
 		],
@@ -2314,6 +2503,29 @@ PRODUCTS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv' },
 	},
+	'mediainfo' : { # 2018.08.19 - NOTE: now have to add --legacy to the mediainfo.exe commandline to get the "old" fields !!!!! :( :( :(
+		'repo_type' : 'git',
+		'custom_cflag' : '',
+		'recursive_git' : True,
+		'url' : 'https://github.com/MediaArea/MediaInfo.git',
+		#'branch' : 'a7b032e534abb4ebd6402c54ddd474773c8b82b7', # 'tags/v18.05',
+		'source_subfolder' : 'Project/GNU/CLI',
+		'rename_folder' : 'mediainfo_git',
+		'configure_options': '--host={target_host} --prefix={product_prefix}/mediainfo_git.installed --disable-shared --disable-static-libs ', 
+		#'env_exports' : {
+		#	'CFLAGS'   : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#	'CXXFLAGS' : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#	'CPPFLAGS' : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#},
+		'depends_on': [
+			'libmediainfo',
+		],
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'MediaInfo' },
+		'_disabled' : True,
+	},
 	'youtube-dl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/rg3/youtube-dl.git',
@@ -2322,7 +2534,7 @@ PRODUCTS = {
 			'sed -i.bak \'s/pandoc.*/touch youtube-dl.1/g\' Makefile', # "disables" doc, the pandoc requirement is so annoyingly big..
 		],
 		'run_post_install' : [
-			'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
+			'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv -vf "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
 		],
 		'make_options': 'youtube-dl',
 		'patches' : [
@@ -2549,6 +2761,57 @@ PRODUCTS = {
 	# },
 }
 DEPENDS = {
+	'dav1d_lib' : { # 2018.11.09
+		'repo_type' : 'git',
+		'url' : 'https://code.videolan.org/videolan/dav1d.git',
+		'folder_name' : 'libdav1d_git',
+		'needs_configure' : False,
+		'clean_post_configure' : False,
+		'needs_make' : False,
+		'needs_make_install' : False,
+		'is_cmake' : False,
+		'is_meson_ninja' : True,
+		'source_subfolder' : 'build',
+		'create_meson_environment_file' : '{current_path}/meson_environment_ubuntu_mingw64_for_windows_x86_64.txt',
+		# do NOT use --strip since then ffmpeg configure always fails with "ERROR: dav1d >= 0.0.1 not found using pkg-config" and log "error adding symbols: archive has no index; run ranlib to add one ... collect2: error: ld returned 1 exit status"
+		'meson_options' : '--prefix={target_prefix} --libdir={target_prefix}/lib --default-library=static --buildtype=plain --backend=ninja --buildtype=release --cross-file={current_path}/meson_environment_ubuntu_mingw64_for_windows_x86_64.txt ./ ../',
+		'run_post_meson' :  [
+			'cat {current_path}/meson_environment_ubuntu_mingw64_for_windows_x86_64.txt',
+		],
+		'ninja_options' : 'install',
+		'run_post_ninja' : [
+			'chmod +777 {target_prefix}/lib/libdav1d.a',
+			'chmod +777 {target_prefix}/lib/pkgconfig/dav1d.pc',
+		],
+	},
+	'libl-smash' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/l-smash/l-smash.git',
+		'env_exports' : {
+			'PKGCONFIG' : 'pkg-config',
+		},	
+		'configure_options':
+			'--prefix={target_prefix} '
+			'--cross-prefix={cross_prefix_bare} '
+		,
+		'make_options': 'install-lib',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libl-smash' },
+	},
+	'liblsw' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/VFR-maniac/L-SMASH-Works.git',
+		'source_subfolder' : 'VapourSynth',
+		'env_exports' : {
+			'PKGCONFIG' : 'pkg-config',
+		},	
+		'configure_options': 
+			'--prefix={target_prefix} '
+			'--cross-prefix={cross_prefix_bare} '
+			'--target-os=mingw '
+		,
+		'depends_on' : ['libl-smash'],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'liblsw' },
+	},
 	'crossc' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/rossy/crossc.git',
@@ -2647,7 +2910,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 		'needs_configure' : False,
-		'recursive_git' : True, 
+		'recursive_git' : True,
 		'cmake_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON -DCMAKE_C_FLAGS=\'-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS\' -DCMAKE_CXX_FLAGS=\'-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600\'', #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
 		'is_cmake' : True,
 		'patches' : [
@@ -2659,6 +2922,23 @@ DEPENDS = {
 		'depends_on' : [ 'vulkan_headers' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan Loader' },
 	},
+	'zenlib' : {
+		'repo_type' : 'git',
+		# 'branch' : 'v0.4.35',
+		'source_subfolder' : 'Project/GNU/Library',
+		'url' : 'https://github.com/MediaArea/ZenLib.git',
+		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-static --disable-shared --enable-shared=no',
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		# 'patches' : (
+			# ('fcurl_gitibzen-1-fixes.patch', '-p1','../../..'),
+		# ),
+		# 'run_post_patch' : [
+			# 'sed -i.bak \'/#include <windows.h>/ a\#include <time.h>\' ../../../Source/ZenLib/Ztring.cpp',
+		# ],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zenlib' },
+	},
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
 		'depends_on' : [
@@ -2666,6 +2946,8 @@ DEPENDS = {
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
 			'libx265_multibit', 'libaom', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass',
 			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
+			'vapoursynth_libs',		  
+			'dav1d_lib', # 2018.11.09
 		],
 	},
 	'opencl_icd' : {
@@ -2692,8 +2974,8 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-Headers.git',
 		'run_post_patch' : (
-			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir "{target_prefix}/include/CL" ; fi ; fi',
-			'if [ ! -f "already_ran_make_install" ] ; then cp -v opencl22/CL/*.h "{target_prefix}/include/CL/" ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then if [ ! -d "{target_prefix}/include/CL" ] ; then mkdir -pv "{target_prefix}/include/CL" ; fi ; fi',
+			'if [ ! -f "already_ran_make_install" ] ; then cp -vf CL/*.h "{target_prefix}/include/CL/" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
 		),
 		'needs_make':False,
@@ -2780,6 +3062,61 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
 	},
+	'libmediainfo' : { # 2018.08.19 - now have to add --legacy to the mediainfo.exe commandline to get the "old" fields !!!!! :( :( :(
+		'repo_type' : 'git',
+		'source_subfolder' : 'Project/GNU/Library',
+		'url' : 'https://github.com/MediaArea/MediaInfoLib.git',
+		#'branch' : '6e667e42994461e22eb2c0e9da21f20efb2722b8', # 'tags/v18.05',
+		'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-shared --enable-static --with-libcurl --with-libmms --with-libmediainfo-name=MediaInfo.dll ',
+		#'env_exports' : {
+		#	'CFLAGS'   : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#	'CXXFLAGS' : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#	'CPPFLAGS' : '-DLIBXML_STATIC -DGLIB_STATIC_COMPILATION',
+		#},
+		'run_post_patch' : [
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.h',
+			'sed -i.bak \'s/Windows.h/windows.h/\' ../../../Source/MediaInfo/Reader/Reader_File.cpp',
+		],
+		'run_post_configure' : [
+			'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
+		],
+		'depends_on': [
+			'zenlib', 'libcurl',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmediainfo' },
+	},
+	'libssh2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libssh2/libssh2.git',
+		'configure_options':
+			'--host={target_host} '
+			'--prefix={target_prefix} '
+			'--disable-shared '
+			'--enable-static '
+			'--disable-examples-build '
+			'--with-crypto=openssl'
+		,
+		'depends_on': (
+			'zlib', 'libressl'
+		),
+		'env_exports' : {
+			'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
+		},
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libssh2' },
+	},
+	'libcurl' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/curl/curl',
+		'rename_folder' : 'curl_git',
+		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={target_prefix} --exec-prefix={target_prefix}',
+		'patches' : [
+			'',
+		],
+		'depends_on': (
+			'zlib','libssh2',
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcurl' },
+	},
 	'boost' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
@@ -2813,6 +3150,36 @@ DEPENDS = {
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
 	},
+	'pcre' : {
+		'repo_type' : 'archive',
+		'download_locations' : [
+			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "69acbc2fbdefb955d42a4c606dfde800c2885711d2979e356c0636efde9ec3b5" }, ], },
+		],
+		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-unicode-properties --enable-utf --enable-pcre8 --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-newline-is-anycrlf --disable-pcre2test-libedit --disable-pcretest-libreadline --enable-jit ', 
+		'depends_on' : [
+			'bzip2', 'zlib',
+		],
+		'_info' : { 'version' : '8.42', 'fancy_name' : 'pcre' },
+	},
+	'pcre2' : {
+		'repo_type' : 'archive',
+		'download_locations' : [
+			#UPDATECHECKS: https://ftp.pcre.org/pub/pcre/
+			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/pcre2-10.32.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
+		],
+		'needs_configure' : False,
+		'is_cmake' : True,
+		'patches' : [
+			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
+		],
+		#'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_TESTS=OFF -DPCRE2_BUILD_PCRE2_8=ON -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON -DPCRE2_NEWLINE=ANYCRLF -DPCRE2_SUPPORT_UNICODE=ON -DPCRE2_SUPPORT_LIBEDIT=OFF -DPCRE2_SUPPORT_LIBREADLINE=OFF -D_FILE_OFFSET_BITS=64 ', # 2018.08.18 -D_FILE_OFFSET_BITS=64 # 2018.08.14 added then removed -D_FILE_OFFSET_BITS=64
+		'depends_on' : [
+			'bzip2', 'zlib', 'pcre', # 2018.08.11 build the old pcre as a part of pcre2, to avoid confusion ...
+		],
+		'_info' : { 'version' : '10.32', 'fancy_name' : 'pcre2' },
+	},
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
@@ -2843,34 +3210,47 @@ DEPENDS = {
 		'depends_on' : [ 'zlib', ],
 		'_info' : { 'version' : '1.6.35', 'fancy_name' : 'libpng' },
 	},
-	'pcre2' : {
-		'repo_type' : 'archive',
-		'download_locations' : [
-			#UPDATECHECKS: https://ftp.pcre.org/pub/pcre/
-			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/pcre2-10.32.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
-		],
-		'needs_configure' : False,
-		'is_cmake' : True,
+	'libglib2' : { # from Alexpux
+		'repo_type' : 'git',
+		'url' : 'https://gitlab.gnome.org/GNOME/glib.git',
+		#'branch' : 'tags/2.58.0', # 'f0b57dd7', # is 'tags/2.58.0', #'branch' : '5a650925', # is 'tags/2.54.3',
+		#'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-threads=posix --disable-fam --disable-man --disable-gtk-doc --with-pcre=system --with-libiconv ',
+		'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-libelf --with-threads=posix --enable-gc-friendly --disable-fam --disable-man --disable-gtk-doc --with-pcre=system --with-libiconv --enable-libmount=no --disable-libmount --disable-selinux ',
 		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-glib2/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch', '-Np1'), 
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-glib2/0001-win32-Make-the-static-build-work-with-MinGW-when-pos.patch', '-Np1'), 
+			('https://raw.githubusercontent.com/hydra3333/python_cross_compile_script/master/patches/glib2/disable_libmount-make-UTF-yes.patch', '-Np0' ), # *** deadsix27 could(should) make his own copy of this patch
 		],
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
-		'depends_on' : [
-			'bzip2',
+		'run_post_patch' : [
+			'rm -fv ./configure',
+			'./autogen.sh NOCONFIGURE=1',
+			'autoreconf -fiv',
 		],
-		'_info' : { 'version' : '10.32', 'fancy_name' : 'pcre2' },
-	},
+		'run_post_install' : [
+			'sed -s -i.bak1 \'s/-lintl/-lintl -liconv/\' "glib-2.0.pc"',
+			'sed -s -i.bak2 \'s/ -lgiowin32//g\' "glib-2.0.pc"',
+			'sed -s -i.bak3 \'s/ -llgnulib//g\' "glib-2.0.pc"',
+			'sed -s -i.bak4 \'s/ -lcharset//g\' "glib-2.0.pc"',
+			#
+			'sed -s -i.bak1 \'s/-lintl/-lintl -liconv/\' "{pkg_config_path}/glib-2.0.pc"',
+			'sed -s -i.bak2 \'s/ -lgiowin32//g\' "{pkg_config_path}/glib-2.0.pc"',
+			'sed -s -i.bak3 \'s/ -llgnulib//g\' "{pkg_config_path}/glib-2.0.pc"',
+			'sed -s -i.bak4 \'s/ -lcharset//g\' "{pkg_config_path}/glib-2.0.pc"',
+			#
+			#'sed -i.bak \'s/$(cygpath -m \${MINGW_PREFIX})/\${MINGW_PREFIX}/g\' "{pkg_config_path}/glib-2.0.pc"', # TODO: CHANGE MINGW_PREFIX TO SOMETHING ELSE ...
+			#'sed -i.bak \'s/$(cygpath -m \${MINGW_PREFIX})/\${MINGW_PREFIX}/g\' "glib-2.0.pc"', # TODO: CHANGE MINGW_PREFIX TO SOMETHING ELSE ...
+			#'sed -i.bak \'s/$(cygpath -m ${MINGW_PREFIX})/${MINGW_PREFIX}/g" "{target_prefix}/bin/glib-gettextize" # TODO: CHANGE MINGW_PREFIX TO SOMETHING ELSE ...
+		],
+		'depends_on' : [ 'iconv', 'gettext', 'pcre', 'pcre2', 'libffi', 'zlib', 'python3_libs' ], # , 'libmount'
+		'_info' : { 'version' : '2.58.0', 'fancy_name' : 'glib2_deadsix27' },
+	},	
 	'libressl' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libressl-portable/portable.git',
 		'folder_name' : 'libressl_git',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static ',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', '-p1' ),
-			# ( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0002-tls-revert-Add-tls-tls_keypair.c-commit.patch', '-p1' ),
-			# ( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', '-p1' ),
-		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
 	},
 	'libpsl' : {
@@ -2908,21 +3288,21 @@ DEPENDS = {
 			{ "url" : "https://ftp.gnu.org/pub/gnu/gettext/gettext-0.19.8.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/gettext-0.19.8.1.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" }, ], },
 		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threads=posix --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC --disable-rpath --enable-nls ',
+		#'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-threads=win32 --without-libexpat-prefix --without-libxml2-prefix CPPFLAGS=-DLIBXML_STATIC',
 		'version' : '0.19.8.1',
 		'_info' : { 'version' : '0.19.8.1', 'fancy_name' : 'gettext' },
 		'depends_on' : [ 'iconv' ],
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : '42d9a8a34607e8b0336b4c354cd5e7e7692bfec7', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
+		#'branch' : '42d9a8a34607e8b0336b4c354cd5e7e7692bfec7', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
 		'needs_make' : False,
 		'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 		'run_post_patch' : [ 'autoreconf -fiv' ],
-
 	},
 	'libfile' : {
 		'repo_type' : 'git',
@@ -3005,7 +3385,7 @@ DEPENDS = {
 		'url' : 'https://code.videolan.org/videolan/libdvdcss.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
 		'run_post_patch' : (
-			'autoreconf -i',
+			'autoreconf -fiv',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdcss' },
 	},
@@ -3017,7 +3397,7 @@ DEPENDS = {
 			'libdvdcss',
 		),
 		'run_post_patch' : (
-			'autoreconf -i',
+			'autoreconf -fiv',
 		),
 		'run_post_install' : (
 			'sed -i.bak \'s/-ldvdread/-ldvdread -ldvdcss/\' "{pkg_config_path}/dvdread.pc"', # fix undefined reference to `dvdcss_close'
@@ -3032,9 +3412,56 @@ DEPENDS = {
 			'libdvdread',
 		),
 		'run_post_patch' : (
-			'autoreconf -i',
+			'autoreconf -fiv',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdnav' },
+	},
+	'libgpg-error' : { 
+		#'repo_type' : 'archive',
+		#'url' : 'https://www.gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.32.tar.bz2',
+		'repo_type' : 'git',
+		'recursive_git' : True,
+		'url' : 'git://git.gnupg.org/libgpg-error.git', # https://git.gnupg.org/ # https://git.gnupg.org/cgi-bin/gitweb.cgi?p=libgpg-error.git;a=summary
+		#'branch' : '61d78fdc25e5ff9289697c141457d8d322232250', # 2018.09.05 commit just after this broke compilation (commit "Update Japanese Translation") # commit 2148e19fbefa9c5d5cdc4982cd2043136c31fb64 fixes the japanese complication error
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-rpath --disable-doc --disable-tests --with-libiconv-prefix={target_prefix}', # --with-libintl=no --with-libpth=no',
+		'run_post_patch' : (
+			#'./autogen.sh --force --build-w64 --host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-rpath --disable-doc --disable-tests --with-libiconv-prefix={target_prefix};, # --with-libintl=no --with-libpth=no',
+			#'./autogen.sh --find-version',
+			'autoreconf -fiv',
+		),
+		'depends_on' : (
+			'iconv', 
+		),
+		'_info' : { 'version' : '1.32', 'fancy_name' : 'libgpg-error for libaacs' },
+	},
+	'libgcrypt' : { # This DAMN thing fails to build with "versioninfo.rc.in:21: syntax error" if not built directly from a GIT clone
+		#'repo_type' : 'archive',
+		#'url' : 'https://www.gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.8.3.tar.bz2',
+		'repo_type' : 'git',
+		'recursive_git' : True,
+		'url' : 'git://git.gnupg.org/libgcrypt.git',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --with-gpg-error-prefix={target_prefix} --disable-shared --enable-static --disable-doc ',
+		'run_post_patch' : (
+			#'./autogen.sh --find-version',
+			'autoreconf -fiv',
+		),
+		'depends_on' : (
+			'libgpg-error', 
+		),
+		'_info' : { 'version' : 'git master', 'fancy_name' : 'libgcrypt for libaacs' },
+	},
+	'libaacs' : { # https://vlc-bluray.whoknowsmy.name/
+		'repo_type' : 'git',
+		'recursive_git' : True,
+		'url' : 'https://git.videolan.org/git/libaacs.git',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --with-libgcrypt-prefix={target_prefix} --with-gpg-error-prefix={target_prefix} --disable-shared --enable-static',
+		'run_post_patch' : (
+			'autoreconf -fiv',
+		),
+		'depends_on' : (
+			'libgcrypt', 
+		),
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libbaacs for libbluray' },
 	},
 	'libbluray' : {
 		'repo_type' : 'git',
@@ -3045,10 +3472,10 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libbluray_git_remove_strtok_s.patch', '-p1'),
 		),
 		'run_post_install' : (
-			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -lgdi32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
+			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -lgdi32 -liconv -laacs/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
 		),
 		'depends_on' : (
-			'freetype',
+			'freetype', 'libaacs', 
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libbluray' },
 	},
@@ -3098,11 +3525,11 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/vapoursynth_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'depends_on' : [ 'python3_libs' ],
 		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R45',
 		'packages': {
 			'arch' : [ '7za' ],
 		},
+		'depends_on' : [ 'python3_libs' ],
 		'_info' : { 'version' : 'R45', 'fancy_name' : 'VapourSynth (library-only)' },
 	},
 	'luajit': {
@@ -3144,7 +3571,7 @@ DEPENDS = {
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'AMF (headers)' },
 	},
-	'nv-codec-headers' : {
+	'nv-codec-headers' : { # https://git.videolan.org/?p=ffmpeg/nv-codec-headers.git;a=shortlog
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/ffmpeg/nv-codec-headers.git',
 		"needs_configure": False,
@@ -3156,7 +3583,10 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
-		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs --enable-amf',
+		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs --enable-amf --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
+		'patches' : (
+			'', 
+		),
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
@@ -3177,20 +3607,14 @@ DEPENDS = {
 		'_info' : { 'version' : '1.0.6', 'fancy_name' : 'BZip2 (library)' },
 	},
 	'decklink_headers' : { # not gpl
-		'repo_type' : 'none',
+		# 2018.09.25 if the below doesn't work, read this and try do it instead https://github.com/jb-alvarado/media-autobuild_suite/wiki/Getting-Decklink-headers
+		'repo_type' : 'git',
+		'url' : 'https://notabug.org/RiCON/decklink-headers.git',
 		'folder_name' : 'decklink_headers',
-		'run_post_patch' : (
-			'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI.h ; fi',
-			'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPI_i.c ; fi',
-			'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/DeckLinkAPIVersion.h ; fi',
-			'if [ ! -f "already_done" ] ; then cp -nv "DeckLinkAPI.h" "{target_prefix}/include/DeckLinkAPI.h" ; fi',
-			'if [ ! -f "already_done" ] ; then cp -nv "DeckLinkAPI_i.c" "{target_prefix}/include/DeckLinkAPI_i.c" ; fi',
-			'if [ ! -f "already_done" ] ; then cp -nv "DeckLinkAPIVersion.h" "{target_prefix}/include/DeckLinkAPIVersion.h" ; fi',
-			'if [ ! -f "already_done" ] ; then touch  "already_done" ; fi',
-		),
-		'needs_make' : False,
-		'needs_make_install' : False,
 		'needs_configure' : False,
+		'needs_make' : False,
+		'needs_make_install' : True,
+		'install_options' : '{make_prefix_options} PREFIX={target_prefix}',
 	},
 	'zlib' : {
 		'repo_type' : 'git',
@@ -3219,7 +3643,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/sekrit-twc/zimg.git',
 		#'branch' : 'd0f9cdebd34b0cb032f79357660bd0f6f23069ee', # '3aae2066e5b8df328866ba7e8636d8901f42e8e7',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-x86simd',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zimg' },
 	},
 	'libsnappy' : {
@@ -3267,8 +3691,24 @@ DEPENDS = {
 			{ "url" : "https://fossies.org/linux/misc/libiconv-1.15.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178" }, ], },
 		],
 		# CFLAGS=-O2
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-nls --enable-extra-encodings',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-nls --enable-extra-encodings',
 		'_info' : { 'version' : '1.15', 'fancy_name' : 'libiconv' },
+	},
+	'libffi' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libffi/libffi.git',
+		'rename_folder' : 'libffi_git',
+		'run_post_patch' : [
+			#'./autogen.sh',
+			'autoreconf -fiv',
+		],
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-portable-binary --enable-purify-safety --disable-docs',
+		'patches' : [
+		],
+		'depends_on' : [
+			'gettext',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libffi' },
 	},
 	'gnutls' : {
 		'repo_type' : 'archive',
@@ -3290,32 +3730,35 @@ DEPENDS = {
 			'--enable-local-libopts '
 			# '--disable-guile '
 			# '--disable-libdane '
-			# '--disable-tests '
+			'--disable-tests '
+			'--disable-tools '
 			'--with-included-libtasn1 '
 			'--with-included-unistring '
 			'--with-default-trust-store-file '
 			'--with-default-blacklist-file '
+			'--with-zlib '
+			'--with-libiconv-prefix={target_prefix} '
 			'--without-tpm '
-			'--without-p11-kit'
+			'--without-p11-kit '
 		,
-		# 'configure_options':
-			# '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-included-unistring '
-			# '--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
-			# 'CPPFLAGS="-DWINVER=0x0501 -DAI_ADDRCONFIG=0x0400 -DIPV6_V6ONLY=27" LIBS="-lws2_32" ac_cv_prog_AR="{cross_prefix_full}ar"'
-		# ,
+		'env_exports' : {
+			'CFLAGS'   : ' -D_POSIX_C_SOURCE ',
+			'CXXFLAGS' : ' -D_POSIX_C_SOURCE ',
+		},
 		'run_post_install': [
 			"sed -i.bak 's/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/' \"{pkg_config_path}/gnutls.pc\"", #TODO -lintl
 		],
-		# 'patches' : [
-			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gnutls/0001-gnutls-3.5.11-arpainet_pkgconfig.patch', '-p1'),
-			# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-3.2.7-rpath.patch','-p1'),
-			# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-fix-external-libtasn1-detection.patch','-p1'),
-		# ],
+		'patches' : [
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-gnutls/0001-add-missing-define.patch', '-p1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-gnutls/0003-gnutls-fix-external-libtasn1-detection.patch', '-p1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-gnutls/0004-disable-broken-examples.patch', '-p1'),
+		],
 		'depends_on' : [
 			'gmp',
 			'libnettle',
+			'zlib',
+			'iconv',
 		],
-		# 'env_exports' : {
 		'_info' : { 'version' : '3.6.4', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
@@ -3343,7 +3786,7 @@ DEPENDS = {
 			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', '-p0'),
 		#],
 		'run_post_patch': [
-			'autoreconf -fi -I M4',
+			'autoreconf -fiv -I M4',
 		],
 		'run_post_install' : [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lsndfile/Libs: -L${{libdir}} -lsndfile -lFLAC -lvorbis -lvorbisenc -logg -lspeex/\' "{pkg_config_path}/sndfile.pc"', #issue with rubberband not using pkg-config option "--static" or so idk?
@@ -3404,12 +3847,13 @@ DEPENDS = {
 		'cpu_count' : '1',
 		'needs_make_install' : False,
 		'run_post_patch': (
-			'sed -i.bak "s|i386-mingw32-|{cross_prefix_bare}|" configure',
+			'sed -i.bak1 "s|i386-mingw32-|{cross_prefix_bare}|" configure',
+			'sed -i.bak2 "s|-DWIN32 -shared|-DWIN64 -static|" configure', # 2018.09.05 ensure 64bit
 		),
 		"run_post_make": (
 			'mkdir -pv "{target_prefix}/include/flite"',
-			'cp -v include/* "{target_prefix}/include/flite"',
-			'cp -v ./build/{bit_name}-mingw32/lib/*.a "{target_prefix}/lib"',
+			'cp -vf include/* "{target_prefix}/include/flite"',
+			'cp -vf ./build/{bit_name}-mingw32/lib/*.a "{target_prefix}/lib"',
 		),
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.4', 'fancy_name' : 'flite' },
@@ -3431,9 +3875,9 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		"run_post_make": (
-			'cp -v lib/libgsm.a {target_prefix}/lib',
+			'cp -vf lib/libgsm.a {target_prefix}/lib',
 			'mkdir -pv {target_prefix}/include/gsm',
-			'cp -v inc/gsm.h {target_prefix}/include/gsm',
+			'cp -vf inc/gsm.h {target_prefix}/include/gsm',
 		),
 		#'cpu_count' : '1',
 		'make_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
@@ -3456,7 +3900,7 @@ DEPENDS = {
 		"run_post_install": (
 			'sed -i.bak "s/  -lmingw32 -lSDL2main -lSDL2 /  -lmingw32 -lSDL2main -lSDL2  -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
 			#'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{target_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
-			'cp -v "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+			'cp -vf "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 		),
 		'configure_options': '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
@@ -3472,6 +3916,21 @@ DEPENDS = {
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-silent-rules',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'opus' },
+	},
+	'opusfile' : { # per mabs https://github.com/jb-alvarado/media-autobuild_suite/commit/e08b2de3d10bd585f986071e582b7db7afcb1ee0 
+		'repo_type' : 'git',
+		'url' : 'https://github.com/xiph/opusfile.git',
+		'patches': (
+			("https://raw.githubusercontent.com/hydra3333/python_cross_compile_script/master/patches/opusfile-from-Alexpux/no-openssl-wincert.patch", '-Np1'),
+		),
+		'run_post_patch' : [
+			'./autogen.sh',
+		],
+		'configure_options': '--host={target_host} --prefix={target_host} --disable-shared --enable-static --disable-examples --disable-doc',
+		'depends_on': [
+			'libopus', 'libogg',
+		],		
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'opusfile' },
 	},
 	'opencore-amr' : {
 		'repo_type' : 'archive',
@@ -3532,16 +3991,16 @@ DEPENDS = {
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/theora_remove_rint_1.2.0alpha1.patch', '-p1'),
 		),
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-spec --disable-oggtest --disable-vorbistest --disable-example',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'theora' },
 	},
 	'freetype' : {
 		'is_dep_inheriter' : True,
-		'depends_on' : [ 'bzip2', 'freetype_lib', 'harfbuzz_lib-with-freetype', ], # 'freetype_lib-with-harfbuzz' ],
+		'depends_on' : [ 'bzip2', 'freetype_lib', 'harfbuzz_lib-with-freetype2', ], # 'freetype_lib-with-harfbuzz' ],
 	},
 	'harfbuzz' : {
 		'is_dep_inheriter' : True,
-		'depends_on' : [ 'bzip2', 'freetype_lib', 'harfbuzz_lib-with-freetype', ],
+		'depends_on' : [ 'bzip2', 'libglib2', 'freetype_lib', 'harfbuzz_lib-with-freetype2', ],
 	},
 	'harfbuzz_lib' : {
 		'repo_type' : 'archive',
@@ -3550,25 +4009,34 @@ DEPENDS = {
 			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
 		],
+		'folder_name' : 'harfbuzz-2.1.1_lib',
+		'rename_folder' : 'harfbuzz-2.1.1_lib',
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz' },
+		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --enable-shared=no --enable-static=yes --enable-introspection --with-icu=no --with-glib=yes --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
+
+		'depends_on': [
+			'libglib2'
+		],
+		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz_lib' },
 	},
-	'harfbuzz_lib-with-freetype' : {
+	'harfbuzz_lib-with-freetype2' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
 			#UPDATECHECKS https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D
 			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
 		],
+		'folder_name' : 'harfbuzz-2.1.1-lib-with-freetype2',
+		'rename_folder' : 'harfbuzz-2.1.1-lib-with-freetype2',
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 		],
-		'folder_name' : 'harfbuzz-with-freetype',
-		'rename_folder' : 'harfbuzz-with-freetype',
-		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --enable-shared=no --enable-static=yes --enable-introspection --with-icu=no --with-glib=yes --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
+		'depends_on': [
+			'libglib2'
+		],
 		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
@@ -3578,8 +4046,8 @@ DEPENDS = {
 			{ "url" : "https://fossies.org/linux/misc/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], },
 			{ "url" : "https://sourceforge.net/projects/freetype/files/freetype2/2.9.1/freetype-2.9.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "db8d87ea720ea9d5edc5388fc7a0497bb11ba9fe972245e0f7f4c7e8b1e1e84d" }, ], },
 		],
-		'folder_name' : 'freetype-with-harfbuzz',
-		'rename_folder' : 'freetype-with-harfbuzz',
+		'folder_name' : 'freetype-2.9.1-with-harfbuzz',
+		'rename_folder' : 'freetype-2.9.1-with-harfbuzz',
 		'configure_options': '--host={target_host} --build=x86_64-linux-gnu --prefix={target_prefix} --disable-shared --enable-static --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
 		'run_post_install': (
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2 -lharfbuzz/\' "{pkg_config_path}/freetype2.pc"',
@@ -3680,9 +4148,15 @@ DEPENDS = {
 			{ "url" : "https://download.videolan.org/contrib/soxr/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 		],
+		'patches' : [ # 2018.09.02 added 2 patches from Alexpux for 0.1.3
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-libsoxr/0001-libsoxr-fix-pc-file-installation.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-libsoxr/0002-libsoxr-fix-documentation-installation.patch','-Np1'),
+		],
 		'needs_configure' : False,
 		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_BUILD_TYPE=Release -DWITH_OPENMP:bool=ON -DWITH_LSR_BINDINGS:bool=ON -DBUILD_LSR_TESTS:bool=OFF -DBUILD_EXAMPLES:bool=OFF -DHAVE_WORDS_BIGENDIAN_EXITCODE:bool=OFF -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR # 2018.08.17 added a couple of options # 2018.09.02 added alexpux options -DWITH_OPENMP=ON
+		# -DWITH_PFFFT:bool=ON not needed for x86 cpu
+		# -DWITH_AVFFT:bool=ON not needed for x86 cpu
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'soxr' },
 	},
 	'libebur128' : { # uneeded
@@ -3700,7 +4174,7 @@ DEPENDS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON ', # no cli, as this is just for the library.
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder': 'source',
@@ -3714,7 +4188,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix}',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix} -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON ',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'run_post_make' : [
@@ -3737,7 +4211,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_10bit',
 		'source_subfolder' : 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON ',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
 		],
@@ -3750,7 +4224,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_12bit',
 		'source_subfolder' : 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
+		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON ',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
 		],
@@ -3778,7 +4252,7 @@ DEPENDS = {
 			{ "url" : "https://code.soundsoftware.ac.uk/attachments/download/2206/vamp-plugin-sdk-2.7.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "c6fef3ff79d2bf9575ce4ce4f200cbf219cbe0a21cfbad5750e86ff8ae53cb0b" }, ], },
 		],
 		'run_post_patch': (
-			'cp -v build/Makefile.mingw64 Makefile',
+			'cp -vf build/Makefile.mingw64 Makefile',
 		),
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','-p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
@@ -3786,14 +4260,14 @@ DEPENDS = {
 		'make_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
 		'needs_make_install' : False, # doesnt s support xcompile installing
 		'run_post_make' : ( # lets install it manually then I guess?
-			'cp -v libvamp-sdk.a "{target_prefix}/lib/"',
-			'cp -v libvamp-hostsdk.a "{target_prefix}/lib/"',
+			'cp -vf libvamp-sdk.a "{target_prefix}/lib/"',
+			'cp -vf libvamp-hostsdk.a "{target_prefix}/lib/"',
 			'cp -rv vamp-hostsdk/ "{target_prefix}/include/"',
 			'cp -rv vamp-sdk/ "{target_prefix}/include/"',
 			'cp -rv vamp/ "{target_prefix}/include/"',
-			'cp -v pkgconfig/vamp.pc.in "{target_prefix}/lib/pkgconfig/vamp.pc"',
-			'cp -v pkgconfig/vamp-hostsdk.pc.in "{target_prefix}/lib/pkgconfig/vamp-hostsdk.pc"',
-			'cp -v pkgconfig/vamp-sdk.pc.in "{target_prefix}/lib/pkgconfig/vamp-sdk.pc"',
+			'cp -vf pkgconfig/vamp.pc.in "{target_prefix}/lib/pkgconfig/vamp.pc"',
+			'cp -vf pkgconfig/vamp-hostsdk.pc.in "{target_prefix}/lib/pkgconfig/vamp-hostsdk.pc"',
+			'cp -vf pkgconfig/vamp-sdk.pc.in "{target_prefix}/lib/pkgconfig/vamp-sdk.pc"',
 			'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp.pc"',
 			'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-hostsdk.pc"',
 			'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-sdk.pc"',
@@ -3809,6 +4283,125 @@ DEPENDS = {
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3' },
+	},
+	'fftw3_dll_single' : { # libfftw3f.dll.a # create the FFTW DLLs which we can use with things like avisynth etc
+	    # see 
+		#	ftp://ftp.fftw.org/pub/fftw/ for the source
+		#	ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh for their 64bit build script
+		#	http://www.fftw.org/install/windows.html for extra advice on building, eg --enable-portable-binary
+		'repo_type' : 'archive',
+		'download_locations' : [
+			#UPDATECHECKS: http://fftw.org/download.html
+			{ "url" : "http://fftw.org/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+		],
+		'rename_folder' : 'fftw3_dll_single',
+		'needs_configure' : True,
+		'needs_make' : True,
+		'needs_make_install' : True,
+		'is_cmake' : False,
+		'env_exports' : {
+			'CFLAGS'   : '-O3',
+		},
+		# note: this "configure" line is for "single" only, refer to ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh 
+		#'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_single --exec-prefix={product_prefix}/fftw3_dll_single --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --enable-sse2 --disable-altivec --disable-vsx --disable-neon --enable-single ',
+		'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_single  --exec-prefix={product_prefix}/fftw3_dll_single --disable-silent-rules --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --with-incoming-stack-boundary=2 --enable-sse2 --enable-avx --disable-altivec --disable-vsx --disable-neon --enable-single ',
+		'run_post_install' : (
+			'ls -alR {product_prefix}/fftw3_dll_single/bin',
+		),
+		#'depends_on' : [
+		#	'gettext',
+		#],
+		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3-dll-single only' },
+	},
+	'fftw3_dll_double' : { # create the FFTW DLLs which we can use with things like avisynth etc
+	    # see 
+		#	ftp://ftp.fftw.org/pub/fftw/ for the source
+		#	ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh for their 64bit build script
+		#	http://www.fftw.org/install/windows.html for extra advice on building, eg --enable-portable-binary
+		'repo_type' : 'archive',
+		'download_locations' : [
+			#UPDATECHECKS: http://fftw.org/download.html
+			{ "url" : "http://fftw.org/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+		],
+		'rename_folder' : 'fftw3_dll_double',
+		'needs_configure' : True,
+		'needs_make' : True,
+		'needs_make_install' : True,
+		'is_cmake' : False,
+		'env_exports' : {
+			'CFLAGS'   : '-O3',
+		},
+		# note: this "configure" line is for "double" only, refer to ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh 
+		#'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_double --exec-prefix={product_prefix}/fftw3_dll_double --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --enable-sse2 --disable-altivec --disable-vsx --disable-neon ',
+		'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_double  --exec-prefix={product_prefix}/fftw3_dll_double --disable-silent-rules --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --with-incoming-stack-boundary=2 --enable-sse2 --enable-avx --disable-altivec --disable-vsx --disable-neon ',
+		'run_post_install' : (
+			'ls -alR {product_prefix}/fftw3_dll_double/bin',
+		),
+		#'depends_on' : [
+		#	'gettext',
+		#],
+		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3-dll-double only' },
+	},
+	'fftw3_dll_ldouble' : { # create the FFTW DLLs which we can use with things like avisynth etc
+	    # see 
+		#	ftp://ftp.fftw.org/pub/fftw/ for the source
+		#	ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh for their 64bit build script
+		#	http://www.fftw.org/install/windows.html for extra advice on building, eg --enable-portable-binary
+		'repo_type' : 'archive',
+		'download_locations' : [
+			#UPDATECHECKS: http://fftw.org/download.html
+			{ "url" : "http://fftw.org/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+		],
+		'rename_folder' : 'fftw3_dll_ldouble',
+		'needs_configure' : True,
+		'needs_make' : True,
+		'needs_make_install' : True,
+		'is_cmake' : False,
+		'env_exports' : {
+			'CFLAGS'   : '-O3',
+		},
+		# note: this "configure" line is for "ldouble" only, refer to ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh 
+		#'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_ldouble --exec-prefix={product_prefix}/fftw3_dll_ldouble --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --disable-altivec --disable-vsx --disable-neon --enable-long-double ', # --enable-sse2 --enable-avx 
+		'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_ldouble --exec-prefix={product_prefix}/fftw3_dll_ldouble --disable-silent-rules --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --with-incoming-stack-boundary=2 --disable-altivec --disable-vsx --disable-neon --enable-long-double ', # --enable-sse2 --enable-avx 
+		'run_post_install' : (
+			'ls -alR {product_prefix}/fftw3_dll_ldouble/bin',
+		),
+		#'depends_on' : [
+		#	'gettext',
+		#],
+		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3-dll-ldouble only' },
+	},
+	'fftw3_dll_quad' : { # create the FFTW DLLs which we can use with things like avisynth etc
+	    # see 
+		#	ftp://ftp.fftw.org/pub/fftw/ for the source
+		#	ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh for their 64bit build script
+		#	http://www.fftw.org/install/windows.html for extra advice on building, eg --enable-portable-binary
+		'repo_type' : 'archive',
+		'download_locations' : [
+			#UPDATECHECKS: http://fftw.org/download.html
+			{ "url" : "http://fftw.org/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/fftw-3.3.8.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303" }, ], },
+		],
+		'rename_folder' : 'fftw3_dll_quad',
+		'needs_configure' : True,
+		'needs_make' : True,
+		'needs_make_install' : True,
+		'is_cmake' : False,
+		'env_exports' : {
+			'CFLAGS'   : '-O3',
+		},
+		# note: this "configure" line is for "quad" only, refer to ftp://ftp.fftw.org/pub/fftw/BUILD-MINGW64.sh 
+		'configure_options': '--host={target_host} --prefix={product_prefix}/fftw3_dll_quad --exec-prefix={product_prefix}/fftw3_dll_quad --disable-silent-rules --disable-doc --disable-alloca --with-our-malloc --with-windows-f77-mangling --enable-shared --disable-static --enable-threads --with-combined-threads --with-incoming-stack-boundary=2 --enable-sse2 --disable-altivec --disable-vsx --disable-neon --enable-quad-precision ', # --enable-sse2 --enable-avx 
+		'run_post_install' : (
+			'ls -alR {product_prefix}/fftw3_dll_quad/bin',
+		),
+		#'depends_on' : [
+		#	'gettext',
+		#],
+		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3-dll-quad only' },
 	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
@@ -3857,8 +4450,21 @@ DEPENDS = {
 			{ "url" : "https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/lame-3.100.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e" }, ], },
 		],
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-nasm --disable-frontend',
-		'_info' : { 'version' : '3.10', 'fancy_name' : 'LAME (library)' },
+		'folder_name' : 'liblame_3.100',
+		'patches' : (
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0002-07-field-width-fix.all.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0005-no-gtk.all.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0006-dont-use-outdated-symbol-list.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0007-revert-posix-code.patch','-Np1'),
+			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0008-skip-termcap.patch','-Np1'),
+		),
+		),
+		'run_post_patch' : (
+			'autoreconf -fiv',
+		),
+		'configure_options': '--build=x86_64-linux-gnu --host={target_host} --target={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-nasm --disable-frontend',
+		'depends_on' : ['iconv'],
+		'_info' : { 'version' : '3.100', 'fancy_name' : 'LAME 3.100 (library)' },
 	},
 	'twolame' : {
 		'repo_type' : 'archive',
@@ -3935,7 +4541,7 @@ DEPENDS = {
 		'env_exports' : {
 			'LIBS' : '-lpng',
 		},
-		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --enable-nls --disable-proxy --without-doxygen',
 		'make_subdir' : 'src',
 		'patches': (
 		    ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi/0001-zvbi-0.2.35_win32.patch', '-p1'),
@@ -3987,19 +4593,24 @@ DEPENDS = {
 		'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 		'folder_name' : 'fontconfig_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/0001-fontconfig-remove-tests.patch', '-p1' ],
-			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/fontconfig-git-utimes.patch', '-p1' ],
-			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
+		'patches' : [ 
+			['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-fontconfig/0001-fix-config-linking.all.patch', '-Np1' ],
+			['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-fontconfig//0002-fix-mkdir.mingw.patch', '-Np1' ],
+			['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-fontconfig//0004-fix-mkdtemp.mingw.patch', '-Np1' ],
+			['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-fontconfig//0005-fix-setenv.mingw.patch', '-Np1' ],
+			['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-fontconfig//0007-pkgconfig.mingw.patch', '-Np1' ],
+			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/0001-fontconfig-remove-tests.patch', '-Np1' ],
+			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/fontconfig-git-utimes.patch', '-Np1' ],
 		],
 		'run_post_patch': [
 			'autoreconf -fiv',
 		],
 		'run_post_install': (
-			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv -lintl/\' "{pkg_config_path}/fontconfig.pc"',
+			'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -lintl -liconv/\' "{pkg_config_path}/fontconfig.pc"',
+			# not any more ?????  -lintl causes build fail ????? 'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -lintl -liconv/\' "{pkg_config_path}/fontconfig.pc"',
 		),
 		'depends_on' : [
-			'iconv','libxml2','freetype',
+			'iconv', 'gettext', 'libxml2', 'freetype', 'bzip2', 'expat',
 		],
 		'packages': {
 			'arch' : [ 'gperf' ],
@@ -4019,7 +4630,7 @@ DEPENDS = {
 		#'branch' : 'c8fb314d9cab3e4803054eb9829373f014684dc0', # 'b534ab2642f694c3106d5bc8d0a8beae60bf60d3',
 		'url' : 'https://github.com/fribidi/fribidi.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-docs',
-		'_info' : { 'version' : '1.0.1', 'fancy_name' : 'libfribidi' },
+		'_info' : { 'version' : '(git)', 'fancy_name' : 'libfribidi' },
 	},
 	'libass' : {
 		'repo_type' : 'git',
@@ -4070,14 +4681,15 @@ DEPENDS = {
 		'needs_configure': False,
 		# doesn't compile with openssl1.1
 		'install_options': 'SYS=mingw CRYPTO=GNUTLS LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lhogweed -lnettle -lgmp -lcrypt32 -lz" OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix}',
-		'make_options': 'SYS=mingw CRYPTO=GNUTLS LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lhogweed -lnettle -lgmp -lcrypt32 -lz"	 OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix}',
+		'make_options': 'SYS=mingw CRYPTO=GNUTLS LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lhogweed -lnettle -lgmp -lcrypt32 -lwinmm -lz -liconv -lintl -liconv " OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix} ', # -lintl
+
 		# 'install_options' : 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix} LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz -lintl -liconv"',
 		# 'make_options': 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix} LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz -lintl -liconv"',
 		'run_post_install':(
-			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
+			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz -lintl -liconv/\' "{pkg_config_path}/librtmp.pc"',
 		),
 		'depends_on' : (
-			'gnutls',
+			'iconv', 'gnutls', 'gettext',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'rtmpdump' },
 	},
@@ -4085,7 +4697,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/x264.git',
 		'rename_folder' : 'libx264_git',
-		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={target_prefix} --enable-strip --disable-lavf --disable-cli',
+		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={target_prefix} --enable-strip --disable-lavf --disable-cli --bit-depth=all --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264 (library)' },
 	},
 	'libaom' : {
