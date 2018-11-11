@@ -1,0 +1,68 @@
+--- configure.ac.orig	2018-08-10 19:15:29.674842931 -0700
++++ configure.ac	2018-08-10 19:29:56.173833000 -0700
+@@ -1753,11 +1753,12 @@
+ dnl The fallback code doesn't really implement the same behaviors - e.g.
+ dnl so on linux we want to require libmount unless specifically disabled
+ dnl
+-enable_libmount_default=${glib_os_linux:-no}
++enable_libmount_default=no
++enable_libmount=no
+ AC_ARG_ENABLE(libmount,
+               [AS_HELP_STRING([--enable-libmount],
+                               [build with libmount support [default for Linux]])],,
+-              [enable_libmount=$enable_libmount_default])
++              [enable_libmount=no])
+ AS_IF([ test "x$enable_libmount" = "xyes"],[
+ PKG_CHECK_MODULES([LIBMOUNT], [mount >= 2.23], [have_libmount=yes], [have_libmount=no])
+ if test $have_libmount = no ; then
+@@ -2366,27 +2367,29 @@
+ AS_IF([ test "x$with_pcre" = xsystem], [
+   PKG_CHECK_MODULES(PCRE,
+                     libpcre >= $PCRE_REQUIRED_VERSION)
+-  AC_CACHE_CHECK([for Unicode support in PCRE],glib_cv_pcre_has_unicode,[
+-                  glib_save_CFLAGS="$CFLAGS"
+-                  glib_save_LIBS="$LIBS"
+-                  CFLAGS="$CFLAGS $PCRE_CFLAGS" LIBS="$PCRE_LIBS"
+-                  AC_TRY_RUN([#include <pcre.h>
+-                              int main () {
+-                                int support;
+-                                pcre_config (PCRE_CONFIG_UTF8, &support);
+-                                if (!support)
+-                                  return 1;
+-                                pcre_config (PCRE_CONFIG_UNICODE_PROPERTIES, &support);
+-                                if (!support)
+-                                  return 1;
+-                                return 0;
+-                              }],
+-                  glib_cv_pcre_has_unicode=yes,
+-                  glib_cv_pcre_has_unicode=no,
+-                  glib_cv_pcre_has_unicode=yes)
+-                  CFLAGS="$glib_save_CFLAGS"
+-                  LIBS="$glib_save_LIBS"
+-      ])
++#  AC_CACHE_CHECK([for Unicode support in PCRE],glib_cv_pcre_has_unicode,[
++#                  glib_save_CFLAGS="$CFLAGS"
++#                  glib_save_LIBS="$LIBS"
++#                  CFLAGS="$CFLAGS $PCRE_CFLAGS" LIBS="$PCRE_LIBS"
++#                  AC_TRY_RUN([#include <pcre.h>
++#                              int main () {
++#                                int support;
++#                                pcre_config (PCRE_CONFIG_UTF8, &support);
++#                                if (!support)
++#                                  return 1;
++#                                pcre_config (PCRE_CONFIG_UNICODE_PROPERTIES, &support);
++#                                if (!support)
++#                                  return 1;
++#                                return 0;
++#                              }],
++#                  glib_cv_pcre_has_unicode=yes,
++#                  glib_cv_pcre_has_unicode=no,
++#                  glib_cv_pcre_has_unicode=yes)
++#                  CFLAGS="$glib_save_CFLAGS"
++#                  LIBS="$glib_save_LIBS"
++#      ])
++                  glib_cv_pcre_has_unicode=yes
++                  #glib_cv_pcre_has_unicode=no
+   if test "$glib_cv_pcre_has_unicode" = "no"; then
+     AC_MSG_ERROR([*** The system-supplied PCRE does not support Unicode properties or UTF-8.])
+   fi
