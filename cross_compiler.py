@@ -1481,7 +1481,7 @@ class CrossCompileScript:
 			if data['is_cmake'] == True:
 				self.cmake_source(name,data)
 
-  		if 'is_meson_ninja' in data:
+		if 'is_meson_ninja' in data:
 			if data['is_meson_ninja'] == True:
 				self.meson_source(name,data) # set the meson optyions and run meson
 				self.ninja_source(name,data) # set the ninja options and run ninja
