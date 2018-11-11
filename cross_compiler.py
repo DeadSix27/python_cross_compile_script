@@ -2217,7 +2217,7 @@ PRODUCTS = {
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/wget.timegm.patch', '-p1' ],
 		],
 		'depends_on': (
-			'zlib', 'libressl', 'libpsl',
+			'zlib', 'libressl_2_8_2', 'libpsl',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wget' },
 	},
@@ -2607,10 +2607,10 @@ PRODUCTS = {
 	# 		'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
 	# 	],
 	# 	'depends_on': [
-	# 		'zlib', 'libressl',
+	# 		'zlib', 'libressl_2_8_2',
 	# 	],
 	# 	# 'depends_on': [
-	# 		# 'zlib', 'libxml2', 'expat', 'gmp', 'libsqlite3', 'libssh2', 'cppunit', 'libressl', #'gnutls', # 'c-ares', 'libsqlite3', 'openssl_1_1'
+	# 		# 'zlib', 'libxml2', 'expat', 'gmp', 'libsqlite3', 'libssh2', 'cppunit', 'libressl_2_8_2', #'gnutls', # 'c-ares', 'libsqlite3', 'openssl_1_1'
 	# 	# ],
 	# 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aria2' },
 	# },
@@ -3097,7 +3097,7 @@ DEPENDS = {
 			'--with-crypto=openssl'
 		,
 		'depends_on': (
-			'zlib', 'libressl'
+			'zlib', 'libressl_2_8_2'
 		),
 		'env_exports' : {
 			'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
@@ -3253,6 +3253,28 @@ DEPENDS = {
 			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', '-p1' ),
 		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
+	},
+	'libressl_2_8_2' : { # 2018.11.12 since git libressl is broken :( :( :( ... build per Alexpux
+		'repo_type' : 'archive',
+		'folder_name' : 'libressl_2.8.2',
+		'download_locations' : [
+			#UPDATECHECKS: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/
+			{ "url" : "https://fossies.org/linux/misc/libressl-2.8.2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "b8cb31e59f1294557bfc80f2a662969bc064e83006ceef0574e2553a1c254fd5" }, ], },
+			{ "url" : "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.8.2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "b8cb31e59f1294557bfc80f2a662969bc064e83006ceef0574e2553a1c254fd5" }, ], },
+		],
+		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static ',
+		'patches' : [
+			( 'https://raw.githubusercontent.com/hydra3333/python_cross_compile_script/master/patches/libressl-from-Alexpux/libressl-0001-ignore-compiling-test-and-man-module.patch', '-Np1' ),
+		],
+		'run_post_patch' : (
+			'cp -fv libtls.pc.in liblibretls.pc.in', 
+			'cp -fv libcrypto.pc.in liblibrecrypto.pc.in', 
+			'cp -fv libssl.pc.in liblibressl.pc.in', 
+			'cp -fv openssl.pc.in libressl.pc.in', 
+			'cp -fv apps/openssl/openssl.c apps/openssl/libressl.c', 
+			'autoreconf -fiv',
+		),
+		'_info' : { 'version' : '2.8.2', 'fancy_name' : 'libressl' },
 	},
 	'libpsl' : {
 		'repo_type' : 'git',
@@ -5018,7 +5040,7 @@ DEPENDS = {
 	#		'--with-crypto=openssl'
 	#	,
 	#	'depends_on': (
-	#		'zlib', 'libressl'
+	#		'zlib', 'libressl_2_8_2'
 	#	),
 	#	'env_exports' : {
 	#		'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
