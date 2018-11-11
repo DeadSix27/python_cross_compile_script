@@ -3251,6 +3251,7 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static ',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', '-p1' ),
+		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
 	},
 	'libpsl' : {
@@ -4457,7 +4458,6 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0006-dont-use-outdated-symbol-list.patch','-Np1'),
 			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0007-revert-posix-code.patch','-Np1'),
 			('https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-lame/0008-skip-termcap.patch','-Np1'),
-		),
 		),
 		'run_post_patch' : (
 			'autoreconf -fiv',
