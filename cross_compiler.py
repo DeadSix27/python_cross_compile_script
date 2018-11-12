@@ -2225,9 +2225,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_git',
-		'patches': (
-			'',
-		),
+		#'patches': (
+		#	'',
+		#),
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_git.installed --disable-shared --enable-static --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static)' },
@@ -2236,9 +2236,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_opencl_git',
-		'patches': (
-			'',
-		),
+		#'patches': (
+		#	'',
+		#),
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_opencl_git.installed --disable-shared --enable-static --enable-opencl --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (static (OpenCL))' },
@@ -2247,9 +2247,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free',
-		'patches': (
-			'',
-		),
+		#'patches': (
+		#	'',
+		#),
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free.installed --disable-shared --enable-static --enable-nonfree --enable-libfdk-aac --enable-decklink --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static)' },
@@ -2258,9 +2258,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_static_non_free_opencl',
-		'patches': (
-			'',
-		),
+		#'patches': (
+		#	'',
+		#),
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --enable-libbluray --prefix={product_prefix}/ffmpeg_static_non_free_opencl.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
 		'depends_on': [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg NonFree (static (OpenCL))' },
@@ -2269,9 +2269,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'ffmpeg_shared_git',
-		'patches': (
-			'',
-		),
+		#'patches': (
+		#	'',
+		#),
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={product_prefix}/ffmpeg_shared_git.installed --enable-shared --disable-static --disable-libbluray --disable-libgme',
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
@@ -3109,9 +3109,9 @@ DEPENDS = {
 		'url' : 'https://github.com/curl/curl',
 		'rename_folder' : 'curl_git',
 		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-gnutls --prefix={target_prefix} --exec-prefix={target_prefix}',
-		'patches' : [
-			'',
-		],
+		#'patches' : [
+		#	'',
+		#],
 		'depends_on': (
 			'zlib','libssh2',
 		),
@@ -3607,9 +3607,9 @@ DEPENDS = {
 		'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 		'rename_folder' : 'libffmpeg_git',
 		'configure_options': '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs --enable-amf --extra-cflags="-DLIBXML_STATIC" --extra-cflags="-DGLIB_STATIC_COMPILATION" ',
-		'patches' : (
-			'', 
-		),
+		#'patches' : (
+		#	'', 
+		#),
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FFmpeg (library)' },
 	},
