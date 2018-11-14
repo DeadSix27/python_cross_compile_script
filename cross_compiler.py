@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = 'c69c7a706d767c5ca3c7d1c70887fcd8e1f940b3' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '8a9a6eebe110e7170dcd8e6e4b37d5ba6cb8ae87' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -3620,7 +3620,9 @@ DEPENDS = {
 	'nv-codec-headers' : { # https://git.videolan.org/?p=ffmpeg/nv-codec-headers.git;a=shortlog
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/ffmpeg/nv-codec-headers.git',
-		"needs_configure": False,
+		# commit after 450c616c7242afc577fb6ecd01732495fc263520 require API 8.2 yet nvidia drivers to 416.94 (eg for a 1050Ti) only ship with API 8.1
+		# ffmpeg throws a runtime Error:  "nvenc API version. Required: 8.2 Found: 8.1"
+		'branch' : '450c616c7242afc577fb6ecd01732495fc263520', 		"needs_configure": False,
 		'make_options': 'PREFIX={target_prefix}',
 		'install_options' : 'PREFIX={target_prefix}',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'nVidia (headers)' },
