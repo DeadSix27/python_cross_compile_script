@@ -3847,7 +3847,7 @@ DEPENDS = {
 	'librubberband' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/breakfastquay/rubberband.git',
-		'download_header' : ( # some packages apparently do not come with specific headers.. like this one. so this function exists... files listed here will be downloaded into the {prefix}/include folder
+		'download_header' : (
 			'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/ladspa.h',
 		),
 		'env_exports' : {
