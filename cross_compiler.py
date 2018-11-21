@@ -42,7 +42,7 @@ _LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
 _LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
 _WORKDIR           = 'workdir' # default: workdir
 _MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = 'c69c7a706d767c5ca3c7d1c70887fcd8e1f940b3' #'08189cc9655a6fa6023e80e31d8226536ee23ab2' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
+_MINGW_COMMIT      = '172cf5520c61a607cc5acb59e2709bf303e5ec47' #'8a9a6eebe110e7170dcd8e6e4b37d5ba6cb8ae87' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
 _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
@@ -2326,6 +2326,7 @@ PRODUCTS = {
 			# [ 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ], # osc: seekranges enhancement
 			# [ 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ], # some left-shift to mmouse alias PR
 			# [ 'https://github.com/mpv-player/mpv/pull/6158.patch', '-p1' ], # wm4's controversial giant pr
+			# [ 'https://github.com/mpv-player/mpv/pull/6326.patch', '-p1' ], # hwdec_cuda: Use explicit synchronisation in vulkan interop	
 		],
 		'run_post_configure': (
 			'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
@@ -3089,7 +3090,7 @@ DEPENDS = {
 			' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0001-versioned-w32-dll.mingw.patch', '-p1'),
-			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0002-w32ize-portaudio-loading.mingw.patch', '-p1'),
+			# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0002-w32ize-portaudio-loading.mingw.patch', '-p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0003-openal-not-32.mingw.patch', '-p1'),
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0004-disable-OSS-windows.patch', '-p1'),
 		),
@@ -3570,21 +3571,21 @@ DEPENDS = {
 		'repo_type' : 'archive',
 		'download_locations' : [
 			#UPDATECHECKS https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.3.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "613264460bb6814c3894e3953225c5357402915853a652d40b4230ce5faf0bee" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.3.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "613264460bb6814c3894e3953225c5357402915853a652d40b4230ce5faf0bee" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --without-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html', #--with-graphite2 --with-cairo --with-icu --with-gobject
-		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz' },
+		'_info' : { 'version' : '2.1.3', 'fancy_name' : 'harfbuzz' },
 	},
 	'harfbuzz_lib-with-freetype' : {
 		'repo_type' : 'archive',
 		'download_locations' : [
 			#UPDATECHECKS https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D
-			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
-			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.1.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "83bf5d552df72c52969332f294cd97d8f6b46b77b41b61346ca56ebb81884e14" }, ], },
+			{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.1.3.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "613264460bb6814c3894e3953225c5357402915853a652d40b4230ce5faf0bee" }, ], },
+			{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.1.3.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "613264460bb6814c3894e3953225c5357402915853a652d40b4230ce5faf0bee" }, ], },
 		],
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
@@ -3592,7 +3593,7 @@ DEPENDS = {
 		'folder_name' : 'harfbuzz-with-freetype',
 		'rename_folder' : 'harfbuzz-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html',
-		'_info' : { 'version' : '2.1.1', 'fancy_name' : 'harfbuzz (with freetype2)' },
+		'_info' : { 'version' : '2.1.3', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
 		'repo_type' : 'archive',
