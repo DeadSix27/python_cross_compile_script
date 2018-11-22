@@ -1466,20 +1466,33 @@ class CrossCompileScript:
 							self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
 
-		if 'needs_configure' in data:
-			if data['needs_configure'] == True:
+		build_system = "autoconf"
+		build_system_specifics = {
+			"gnumake_based_systems" : [ "cmake", "autoconf" ]
+		}
+		
+		if 'build_system' in data:
+			if data['build_system'] == "autoconf":
+				pass
+			elif data['build_system'] == "cmake":
+				build_system = "cmake"
+			elif data['build_system'] == "meson":
+				build_system = "meson"
+				
+		if build_system == "autoconf":
+			if 'needs_configure' in data:
+				if data['needs_configure'] == True:
+					self.configure_source(name,data)
+			else:
 				self.configure_source(name,data)
-		else:
-			self.configure_source(name,data)
 
 		if 'patches_post_configure' in data:
 			if data['patches_post_configure'] != None:
 				for p in data['patches_post_configure']:
 					self.apply_patch(p[0],p[1],True)
-
-		if 'is_cmake' in data:
-			if data['is_cmake'] == True:
-				self.cmake_source(name,data)
+					
+		if build_system == "cmake":
+			self.cmake_source(name,data)
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
@@ -1487,17 +1500,18 @@ class CrossCompileScript:
 					os.makedirs(data['make_subdir'], exist_ok=True)
 				self.cchdir(data['make_subdir'])
 
-		if 'needs_make' in data: # there has to be a cleaner way than if'ing it all the way, lol, but im lazy
-			if data['needs_make'] == True:
+		if build_system in build_system_specifics["gnumake_based_systems"]:
+			if 'needs_make' in data:
+				if data['needs_make'] == True:
+					self.make_source(name,data)
+			else:
 				self.make_source(name,data)
-		else:
-			self.make_source(name,data)
-
-		if 'needs_make_install' in data:
-			if data['needs_make_install'] == True:
+			
+			if 'needs_make_install' in data:
+				if data['needs_make_install'] == True:
+					self.make_install_source(name,data)
+			else:
 				self.make_install_source(name,data)
-		else:
-			self.make_install_source(name,data)
 
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -1661,8 +1675,8 @@ class CrossCompileScript:
 			self.removeAlreadyFiles()
 
 			makeOpts = ''
-			if 'cmake_options' in data:
-				makeOpts = self.replaceVariables(data["cmake_options"])
+			if 'configure_options' in data:
+				makeOpts = self.replaceVariables(data["configure_options"])
 			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
 
 			self.run_process('cmake {0}'.format( makeOpts ))
@@ -1984,11 +1998,10 @@ PRODUCTS = {
 	'aom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'needs_configure' : False,
 		'branch' : '9284af62c37d62117c007d100e0442f144220ab8', #'f8b03215b8924c610d98142d8e4258ee1da1364c',
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'source_subfolder' : 'build',
-		'cmake_options': '.. {cmake_prefix_options} ' 
+		'configure_options': '.. {cmake_prefix_options} ' 
 			'-DCMAKE_INSTALL_PREFIX={product_prefix}/aom.installed '
 			'-DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
 			'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '
@@ -2028,9 +2041,9 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/SCXvid-standalone',
 		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'source_subfolder' : 'build',
-		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/SCXvid-standalone_git.installed',
+		'configure_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/SCXvid-standalone_git.installed',
 		'run_post_install': [
 			'{cross_prefix_bare}strip -v {product_prefix}/scxvid.installed/bin/scxvid.exe',
 		],
@@ -2138,9 +2151,8 @@ PRODUCTS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_10bit',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
+		'build_system' : 'cmake',
 		'source_subfolder': 'source',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
 	},
@@ -2149,9 +2161,8 @@ PRODUCTS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_multibit_hg',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
+		'build_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
 	},
@@ -2245,12 +2256,11 @@ PRODUCTS = {
 	'w2x' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/waifu2x-converter-cpp',
-		'needs_configure' : False,
 		'needs_make_install':False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'source_subfolder' : 'out',
 		# 'depends_on': [ 'opencl_icd' ],
-		'cmake_options': '.. {cmake_prefix_options} -DFORCE_AMD=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/w2x.installed',
+		'configure_options': '.. {cmake_prefix_options} -DFORCE_AMD=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/w2x.installed',
 		# 'custom_cflag' : '-DTAGLIB_STATIC',
 	},
 	'mp4box' : {
@@ -2466,10 +2476,9 @@ PRODUCTS = {
 	#'clementine' : { # requires qt4....... so no. we'll keep it for future reference.
 	#	'repo_type' : 'git',
 	#	'url' : 'https://github.com/clementine-player/Clementine.git',
-	#	'needs_configure' : False,
 	#	'needs_make_install':False,
-	#	'is_cmake' : True,
-	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
+	#	'build_system' : 'cmake',
+	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 	#	'depends_on': [
 	#		'qt4',
 	#	],
@@ -2478,10 +2487,9 @@ PRODUCTS = {
 	#'amarok' : { # requires qt4....... so no. we'll keep it for future reference.
 	#	'repo_type' : 'git',
 	#	'url' : 'git://anongit.kde.org/amarok.git',
-	#	'needs_configure' : False,
 	#	'needs_make_install':False,
-	#	'is_cmake' : True,
-	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
+	#	'build_system' : 'cmake',
+	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
 	#	# 'custom_cflag' : '-DTAGLIB_STATIC',
 	#	'env_exports' : {
 	#		'CPPDEFINES' : '-DTAGLIB_STATIC',
@@ -2593,10 +2601,9 @@ DEPENDS = {
 	'shaderc' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/google/shaderc.git',
-		'needs_configure' : False,
-		'cmake_options': 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
+		'configure_options': 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
 		'source_subfolder' : '_build', #-B. -H..
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'cpu_count' : '1', #...
 		'needs_make_install' : False,
 		'make_options': '',
@@ -2661,19 +2668,17 @@ DEPENDS = {
 	'vulkan_headers' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Headers.git',
-		'needs_configure' : False,
 		'recursive_git' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix}',
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix}',
+		'build_system' : 'cmake',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan headers' },
 	},
 	'vulkan_loader' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
-		'needs_configure' : False,
 		'recursive_git' : True, 
-		'cmake_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON -DCMAKE_C_FLAGS=\'-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS\' -DCMAKE_CXX_FLAGS=\'-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600\'', #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON -DCMAKE_C_FLAGS=\'-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS\' -DCMAKE_CXX_FLAGS=\'-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600\'', #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
+		'build_system' : 'cmake',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','-p1'],
 		],
@@ -2695,10 +2700,9 @@ DEPENDS = {
 	'opencl_icd' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
-		'needs_configure' : False,
 		'needs_make_install':False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'depends_on' : [ 'opencl_headers' ],
 		'run_post_patch' : [
 			'sed -i.bak \'s/Devpkey.h/devpkey.h/\' icd_windows_hkr.c',
@@ -2727,10 +2731,9 @@ DEPENDS = {
 	'cmark' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/commonmark/cmark.git',
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'source_subfolder': '_build',
-		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMARK_STATIC=ON -DCMARK_SHARED=OFF -DCMARK_TESTS=OFF', #CMARK_STATIC_DEFINE
+		'configure_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMARK_STATIC=ON -DCMARK_SHARED=OFF -DCMARK_TESTS=OFF', #CMARK_STATIC_DEFINE
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cmark' },
 	},
 	'libzip' : {
@@ -2840,9 +2843,8 @@ DEPENDS = {
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_STATIC=ON -DENABLE_SHARED=OFF -DCMAKE_BUILD_TYPE=Release',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_STATIC=ON -DENABLE_SHARED=OFF -DCMAKE_BUILD_TYPE=Release',
 		'patches': [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0001-libjpeg-turbo-git-mingw-compat.patch', '-p1'],
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0002-libjpeg-turbo-git-libmng-compat.patch', '-p1'],
@@ -2857,9 +2859,8 @@ DEPENDS = {
 			{ "url" : "https://fossies.org/linux/misc/libpng-1.6.35.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "23912ec8c9584917ed9b09c5023465d71709dce089be503c7867fec68a93bcd7" }, ],	},
 		],
 		# 'custom_cflag' : '-fno-asynchronous-unwind-tables',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPNG_TESTS=OFF -DPNG_SHARED=OFF -DPNG_STATIC=ON',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPNG_TESTS=OFF -DPNG_SHARED=OFF -DPNG_STATIC=ON',
 		# 'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --oldincludedir={target_prefix}/include',
 		'patches' : [
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.35-apng.patch', '-p1'),
@@ -2874,12 +2875,11 @@ DEPENDS = {
 			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/pcre2-10.32.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 		],
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
 		],
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
 		'depends_on' : [
 			'bzip2',
 		],
@@ -2998,9 +2998,8 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://anongit.freedesktop.org/git/uchardet/uchardet.git',
 		# 'branch' : 'f136d434f0809e064ac195b5bc4e0b50484a474c', #master fails
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
 	'libcdio' : {
@@ -3079,12 +3078,11 @@ DEPENDS = {
 	'openal' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/kcat/openal-soft.git',
-		'needs_configure' : False,
 		# 'branch' : '46f18ba114831ff26e8f270c6b5c881b45838439',
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		# 'source_subfolder' : '_build',
 		'custom_cflag' : '-O3', # native tools have to use the same march as end product else it fails*
-		'cmake_options':
+		'configure_options':
 			'. {cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={target_host}'
 			' -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_FIND_ROOT_PATH='
 			' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
@@ -3249,9 +3247,8 @@ DEPENDS = {
 	'libsnappy' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/google/snappy.git',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DSNAPPY_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DSNAPPY_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release',
 		'run_post_install': (
 			'rm -vf {target_prefix}/lib/libsnappy.dll.a',
 		),
@@ -3349,12 +3346,11 @@ DEPENDS = {
 			{ "url" : "https://files.dyne.org/frei0r/frei0r-plugins-1.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e0c24630961195d9bd65aa8d43732469e8248e8918faa942cfb881769d11515e" }, ], },
 			{ "url" : "https://ftp.osuosl.org/pub/blfs/conglomeration/frei0r/frei0r-plugins-1.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e0c24630961195d9bd65aa8d43732469e8248e8918faa942cfb881769d11515e" }, ], },
 		],
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'run_post_patch': ( # runs commands post the patch process
 			'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
 		),
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DWITHOUT_OPENCV=YES',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DWITHOUT_OPENCV=YES',
 		'_info' : { 'version' : '1.6.1', 'fancy_name' : 'frei0r-plugins' },
 	},
 	'libsndfile' : {
@@ -3403,9 +3399,8 @@ DEPENDS = {
 	'libgme_game_music_emu' : {
 		'repo_type' : 'git',
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=OFF',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=OFF',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'game-music-emu' },
 	},
 	'libwebp' : {
@@ -3704,17 +3699,15 @@ DEPENDS = {
 			{ "url" : "https://download.videolan.org/contrib/soxr/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 		],
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'soxr' },
 	},
 	'libebur128' : { # uneeded
 		'repo_type' : 'git',
 		'url' : 'https://github.com/jiixyj/libebur128.git',
-		'cmake_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'build_system' : 'cmake',
 		'run_post_patch': (
 			'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
 		),
@@ -3724,9 +3717,8 @@ DEPENDS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
+		'build_system' : 'cmake',
 		'source_subfolder': 'source',
 		'run_post_install' : [
 			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
@@ -3738,9 +3730,8 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix}',
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix}',
+		'build_system' : 'cmake',
 		'run_post_make' : [
 			'mv -vf libx265.a libx265_main.a',
 			'cp -vf {offtree_prefix}/libx265_10bit/lib/libx265_main10.a libx265_main10.a',
@@ -3761,12 +3752,11 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_10bit',
 		'source_subfolder' : 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
 		],
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
 	},
 	'libx265_multibit_12' : {
@@ -3774,12 +3764,11 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_12bit',
 		'source_subfolder' : 'source',
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
 		],
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
 	},
 	'libopenh264' : {
@@ -3897,9 +3886,8 @@ DEPENDS = {
 	'vidstab' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/georgmartius/vid.stab.git', #"Latest commit 97c6ae2  on May 29, 2015" .. master then I guess?
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DUSE_OMP=OFF', #fatal error: omp.h: No such file or directory
+		'build_system' : 'cmake',
+		'configure_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DUSE_OMP=OFF', #fatal error: omp.h: No such file or directory
 		'run_post_patch': (
 			'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
 		),
@@ -3910,9 +3898,8 @@ DEPENDS = {
 		'url' : 'https://github.com/hoene/libmysofa',
 		#'branch' : '16d77ad6b4249c3ba3b812d26c4cbb356300f908',
 		'source_subfolder' : '_build',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS=no',
+		'build_system' : 'cmake',
+		'configure_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS=no',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmysofa' },
 	},
 	'libcaca' : {
@@ -4061,9 +4048,8 @@ DEPENDS = {
 	'libopenjpeg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/uclouvain/openjpeg.git',
-		'needs_configure' : False,
-		'is_cmake' : True,
-		'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off',
+		'build_system' : 'cmake',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openjpeg' },
 	},
 	'intel_quicksync_mfx' : {
@@ -4116,10 +4102,9 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'branch' : '9284af62c37d62117c007d100e0442f144220ab8',
-		'needs_configure' : False,
-		'is_cmake' : True,
+		'build_system' : 'cmake',
 		'source_subfolder' : 'build',
-		'cmake_options': '.. {cmake_prefix_options} '
+		'configure_options': '.. {cmake_prefix_options} '
 			'-DCMAKE_INSTALL_PREFIX={target_prefix} '
 			'-DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
 			'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '
@@ -4309,9 +4294,8 @@ DEPENDS = {
 	#	'repo_type' : 'archive',
 	#	'url' : 'https://downloads.sourceforge.net/project/freeglut/freeglut/3.0.0/freeglut-3.0.0.tar.gz',
 	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-	#	'needs_configure' : False,
-	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DFREEGLUT_GLES=OFF -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_REPLACE_GLUT=ON -DFREEGLUT_BUILD_STATIC_LIBS=ON -DFREEGLUT_BUILD_SHARED_LIBS=OFF',
-	#	'is_cmake' : True,
+	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DFREEGLUT_GLES=OFF -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_REPLACE_GLUT=ON -DFREEGLUT_BUILD_STATIC_LIBS=ON -DFREEGLUT_BUILD_SHARED_LIBS=OFF',
+	#	'build_system' : 'cmake',
 	#	'_info' : { 'version' : '3.0', 'fancy_name' : 'FreeGLUT (libary?)' },
 	#},
     #
@@ -4375,9 +4359,8 @@ DEPENDS = {
 	#	'url' : 'https://github.com/opencv/opencv/archive/3.4.1.tar.gz',
 	#	'folder_name' : 'opencv-3.4.1',
 	#	'source_subfolder' : 'build',
-	#	'cmake_options': '.. -G"Unix Makefiles" -DCMAKE_SKIP_RPATH=ON -DBUILD_TESTS=OFF -DBUILD_opencv_world=ON -DBUILD_PERF_TESTS=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DWITH_FFMPEG=OFF -DINSTALL_C_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_JASPER=OFF -DBUILD_OPENEXR=OFF -DWITH_VTK=OFF -DWITH_IPP=OFF -DWITH_DSHOW=OFF -DENABLE_PRECOMPILED_HEADERS=OFF -DENABLE_STATIC_RUNTIME=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}',
-	#	'is_cmake' : True,
-	#	'needs_configure' : False,
+	#	'configure_options': '.. -G"Unix Makefiles" -DCMAKE_SKIP_RPATH=ON -DBUILD_TESTS=OFF -DBUILD_opencv_world=ON -DBUILD_PERF_TESTS=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DWITH_FFMPEG=OFF -DINSTALL_C_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_JASPER=OFF -DBUILD_OPENEXR=OFF -DWITH_VTK=OFF -DWITH_IPP=OFF -DWITH_DSHOW=OFF -DENABLE_PRECOMPILED_HEADERS=OFF -DENABLE_STATIC_RUNTIME=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}',
+	#	'build_system' : 'cmake',
 	#	# 'patches' : [
 	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0001-mingw-w64-cmake.patch', '-p1', '..'],
 	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0002-solve_deg3-underflow.patch', '-p1', '..'],
@@ -4396,9 +4379,8 @@ DEPENDS = {
 	# 'taglib' : { # unused
 	# 	'repo_type' : 'archive',
 	# 	'url' : 'http://taglib.org/releases/taglib-1.11.1.tar.gz',
-	# 	'needs_configure' : False,
-	# 	'is_cmake' : True,
-	# 	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DWITH_MP4=ON -DWITH_ASF=ON',
+	# 	'build_system' : 'cmake',
+	# 	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DWITH_MP4=ON -DWITH_ASF=ON',
 	# },
 	#'libmediainfo' : {
 	#	'repo_type' : 'git',
@@ -4684,12 +4666,11 @@ DEPENDS = {
 	#'libgme_game_music_emu' : {
 	#	'repo_type' : 'archive',
 	#	'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
-	#	'needs_configure' : False,
-	#	'is_cmake' : True,
+	#	'build_system' : 'cmake',
 	#	#'run_post_patch': ( # runs commands post the patch process
 	#	#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
 	#	#),
-	#	'cmake_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
+	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 	#	'_info' : { 'version' : '0.6.1', 'fancy_name' : 'game-music-emu' },
 	#},
 }
