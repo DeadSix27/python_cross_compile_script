@@ -1985,7 +1985,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'needs_configure' : False,
-		'branch' : 'f8b03215b8924c610d98142d8e4258ee1da1364c', #'35be78dc10ed77875b760fed4ea454e41e904749', # '2754f83f65eb57fb9aff7029f355ad57421b57f3',
+		'branch' : '9284af62c37d62117c007d100e0442f144220ab8', #'f8b03215b8924c610d98142d8e4258ee1da1364c',
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
 		'cmake_options': '.. {cmake_prefix_options} ' 
@@ -2020,7 +2020,7 @@ PRODUCTS = {
 		},
 		'custom_cflag' : '-fno-asynchronous-unwind-tables',
 		'patches': (
-			( 'https://raw.githubusercontent.com/hydra3333/h3333_python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
+			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vpx' },
 	},
@@ -2939,7 +2939,7 @@ DEPENDS = {
 	},
 	'libfile_local' : { # the local variant is for bootstrapping, please make sure to always keep both at the same commit, otherwise it could fail.
 		'repo_type' : 'git',
-		'branch' : '42d9a8a34607e8b0336b4c354cd5e7e7692bfec7', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
+		'branch' : '4091ea8660a4355b0379564dc901e06bdcdc8c50', #'42d9a8a34607e8b0336b4c354cd5e7e7692bfec7',
 		'url' : 'https://github.com/file/file.git',
 		'rename_folder' : 'libfile_local.git',
 		'configure_options': '--prefix={target_prefix} --disable-shared --enable-static',
@@ -2951,7 +2951,7 @@ DEPENDS = {
 	'libfile' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/file/file.git',
-		'branch' : '42d9a8a34607e8b0336b4c354cd5e7e7692bfec7', # 'e64f6d716bd04cbd50bc484f0e2fcc6eb5810ba5',
+		'branch' : '4091ea8660a4355b0379564dc901e06bdcdc8c50', #'42d9a8a34607e8b0336b4c354cd5e7e7692bfec7',
 		'rename_folder' : 'libfile.git',
 		'patches' : [
 			( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
@@ -4007,7 +4007,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'do_not_bootstrap' : True,
 		'cpu_count' : '1', # I had strange build issues with multiple threads..
-		'branch' : '648e0cf3d5a53efeab93b24ae37490427d05229d', #'8badaae15b1225bbf200c46533b1761002c760de',
+		'branch' : '2bd559f75d76b514f789e32c5cc9643fd7c1e9a2', #'648e0cf3d5a53efeab93b24ae37490427d05229d',
 		'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 		'folder_name' : 'fontconfig_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
@@ -4115,7 +4115,7 @@ DEPENDS = {
 	'libaom' : {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
-		'branch' : 'f8b03215b8924c610d98142d8e4258ee1da1364c',
+		'branch' : '9284af62c37d62117c007d100e0442f144220ab8',
 		'needs_configure' : False,
 		'is_cmake' : True,
 		'source_subfolder' : 'build',
