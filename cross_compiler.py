@@ -2004,6 +2004,7 @@ VARIABLES = {
 		'--enable-libx264 '
 		'--enable-libx265 '
 		'--enable-libaom '
+		'--enable-libdav1d '
 		'--enable-frei0r '
 		'--enable-filter=frei0r '
 		'--enable-librubberband '
@@ -2051,6 +2052,23 @@ PRODUCTS = {
 			'-DCONFIG_SPATIAL_RESAMPLING=1 -DENABLE_NASM=off'
 		,
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aom-av1' },
+	},
+	'dav1d' : {
+		'repo_type' : 'git',
+		'url' : 'https://code.videolan.org/videolan/dav1d.git',
+		'conf_system' : 'meson',
+		'build_system' : 'ninja',
+		'source_subfolder' : 'build',
+		'configure_options': ''
+			'--prefix={product_prefix}/dav1d.installed  '
+			'--libdir={product_prefix}/dav1d.installed/lib '
+			'--default-library=static '
+			'--buildtype=plain '
+			'--backend=ninja '
+			'--buildtype=release '
+			'--cross-file={meson_env_file} ./ ..'
+      ,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'dav1d' },
 	},
 	'vpx' : {
 		'repo_type' : 'git',
@@ -4137,6 +4155,26 @@ DEPENDS = {
 		'rename_folder' : 'libx264_git',
 		'configure_options': '--host={target_host} --enable-static --cross-prefix={cross_prefix_bare} --prefix={target_prefix} --enable-strip --disable-lavf --disable-cli',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264 (library)' },
+	},
+	'libdav1d' : {
+		'repo_type' : 'git',
+		'url' : 'https://code.videolan.org/videolan/dav1d.git',
+		'conf_system' : 'meson',
+		'build_system' : 'ninja',
+		'rename_folder' : 'libdav1d_git',
+		'source_subfolder' : 'build',
+		'configure_options':
+			'--prefix={target_prefix} '
+			'--libdir={target_prefix}/lib '
+			'--default-library=static '
+			'--buildtype=plain '
+			'--backend=ninja '
+			'-Dbuild_tests=false '
+			'-Dbuild_tools=false '
+			'--buildtype=release '
+			'--cross-file={meson_env_file} ./ ..'
+      ,
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libaom' },
 	},
 	'libaom' : {
 		'repo_type' : 'git',
