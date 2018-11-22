@@ -444,6 +444,7 @@ class CrossCompileScript:
 		self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.targetPrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
 		self.currentBitness     = b
+		self.mesonEnvFile       = os.path.join(self.targetSubPrefix, "meson_environment.txt")
 		self.cpuCount           = _CPU_COUNT
 		self.originalCflags     = _ORIG_CFLAGS
 
@@ -669,6 +670,42 @@ class CrossCompileScript:
 
 				return fullOutputPath
 	#:
+	
+	def create_meson_environment_file(self):
+		if not os.path.isfile(self.mesonEnvFile):
+			self.logger.info("Creating Meson Environment file at: '%s'" % (self.mesonEnvFile))
+			with open(self.mesonEnvFile, 'w') as f:
+				f.write("[binaries]\n")
+				f.write("c = '{0}gcc'\n".format(self.fullCrossPrefix))
+				f.write("cpp = '{0}g++'\n".format(self.fullCrossPrefix))
+				f.write("ld = '{0}ld'\n".format(self.fullCrossPrefix))
+				f.write("ar = '{0}ar'\n".format(self.fullCrossPrefix))
+				f.write("strip = '{0}strip'\n".format(self.fullCrossPrefix))
+				f.write("windres = '{0}windres'\n".format(self.fullCrossPrefix))
+				f.write("ranlib = '{0}ranlib'\n".format(self.fullCrossPrefix))
+				f.write("pkgconfig = '{0}pkg-config'\n".format(self.fullCrossPrefix)) # ??
+				f.write("dlltool = '{0}dlltool'\n".format(self.fullCrossPrefix))
+				f.write("gendef = '{0}/gendef'\n".format(self.mingwBinpath))
+				f.write("needs_exe_wrapper = false\n")
+				f.write("#exe_wrapper = 'wine' # A command used to run generated executables.\n")
+				f.write("\n")
+				f.write("[host_machine]\n")
+				f.write("system = 'windows'\n")
+				f.write("cpu_family = '{0}'\n".format(self.bitnessDir))
+				f.write("cpu = '{0}'\n".format(self.bitnessDir))
+				f.write("endian = 'little'\n")
+				f.write("\n")
+				f.write("[target_machine]\n")
+				f.write("system = 'windows'\n")
+				f.write("cpu_family = '{0}'\n".format(self.bitnessDir))
+				f.write("cpu = '{0}'\n".format(self.bitnessDir))
+				f.write("endian = 'little'\n")
+				f.write("\n")
+				f.write("[properties]\n")
+				f.write("c_link_args = ['-static', '-static-libgcc']\n")
+				f.write("# sys_root = Directory that contains 'bin', 'lib', etc for the toolchain and system libraries\n")
+				f.write("sys_root = '{0}'\n".format(self.targetSubPrefix))
+				f.close()
 
 	def download_file_old(self,link, targetName = None):
 		_MAX_REDIRECTS = 5
@@ -1466,33 +1503,45 @@ class CrossCompileScript:
 							self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
 
-		build_system = "autoconf"
-		build_system_specifics = {
-			"gnumake_based_systems" : [ "cmake", "autoconf" ]
-		}
+		conf_system = "autoconf"
+		build_system = "make"
 		
-		if 'build_system' in data:
-			if data['build_system'] == "autoconf":
-				pass
-			elif data['build_system'] == "cmake":
-				build_system = "cmake"
-			elif data['build_system'] == "meson":
-				build_system = "meson"
+		# conf_system_specifics = {
+			# "gnumake_based_systems" : [ "cmake", "autoconf" ],
+			# "ninja_based_systems" : [ "meson" ]
+		# }
+		
+		if 'build_system' in data:                 # Kinda redundant, but ill keep it for now, maybe add an alias system for this.
+			if data['build_system'] == "ninja":    #
+				build_system = "ninja"             #
+			if data['build_system'] == "waf":      #
+				build_system = "waf"               #
+			if data['build_system'] == "rake":     #
+				build_system = "rake"              #
+		if 'conf_system' in data:                  #
+			if data['conf_system'] == "cmake":     #
+				conf_system = "cmake"              #
+			elif data['conf_system'] == "meson":   #
+				conf_system = "meson"              #
 				
-		if build_system == "autoconf":
+		if conf_system == "autoconf":
 			if 'needs_configure' in data:
 				if data['needs_configure'] == True:
-					self.configure_source(name,data)
+					self.configure_source(name,data,conf_system)
 			else:
-				self.configure_source(name,data)
+				self.configure_source(name,data,conf_system)
 
 		if 'patches_post_configure' in data:
 			if data['patches_post_configure'] != None:
 				for p in data['patches_post_configure']:
 					self.apply_patch(p[0],p[1],True)
 					
-		if build_system == "cmake":
+		if conf_system == "cmake":
 			self.cmake_source(name,data)
+			
+		if conf_system == "meson":
+			self.create_meson_environment_file()
+			self.meson_source(name,data)
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
@@ -1500,18 +1549,18 @@ class CrossCompileScript:
 					os.makedirs(data['make_subdir'], exist_ok=True)
 				self.cchdir(data['make_subdir'])
 
-		if build_system in build_system_specifics["gnumake_based_systems"]:
-			if 'needs_make' in data:
-				if data['needs_make'] == True:
-					self.make_source(name,data)
-			else:
-				self.make_source(name,data)
-			
-			if 'needs_make_install' in data:
-				if data['needs_make_install'] == True:
-					self.make_install_source(name,data)
-			else:
-				self.make_install_source(name,data)
+		if 'needs_make' in data:
+			if data['needs_make'] == True:
+				self.build_source(name,data,build_system)
+		else:
+			self.build_source(name,data,build_system)
+		
+		if 'needs_make_install' in data:
+			if data['needs_make_install'] == True:
+				self.install_source(name,data,build_system)
+		else:
+			self.install_source(name,data,build_system)
+
 
 		if 'env_exports' in data:
 			if data['env_exports'] != None:
@@ -1568,14 +1617,8 @@ class CrossCompileScript:
 			elif os.path.isfile("configure.ac"):
 				self.run_process('autoreconf -fiv')
 
-	def configure_source(self,name,data):
+	def configure_source(self,name,data,conf_system):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
-
-
-		isWaf = False
-		if 'is_waf' in data:
-			if data['is_waf'] == True:
-				isWaf = True
 
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
@@ -1587,7 +1630,7 @@ class CrossCompileScript:
 					doBootStrap = False
 
 			if doBootStrap:
-				if isWaf:
+				if conf_system == "waf":
 					if not os.path.isfile("waf"):
 						if os.path.isfile("bootstrap.py"):
 							self.run_process('./bootstrap.py')
@@ -1600,7 +1643,7 @@ class CrossCompileScript:
 			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
 
 			confCmd = './configure'
-			if isWaf:
+			if conf_system == "waf":
 				confCmd = './waf --color=yes configure'
 			elif 'configure_path' in data:
 				if data['configure_path'] != None:
@@ -1622,7 +1665,7 @@ class CrossCompileScript:
 
 			if doClean:
 				mCleanCmd = 'make clean'
-				if isWaf:
+				if conf_system == "waf":
 					mCleanCmd = './waf --color=yes clean'
 				self.run_process('{0} -j {1}'.format( mCleanCmd, _CPU_COUNT ),True)
 
@@ -1667,9 +1710,24 @@ class CrossCompileScript:
 		if folderToPatchIn != None:
 			self.cchdir(originalFolder)
 	#:
+	
+	def meson_source(self,name,data):
+		touch_name = "already_ran_meson_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options	")))
+
+		if not os.path.isfile(touch_name):
+			self.removeAlreadyFiles()
+
+			makeOpts = ''
+			if 'configure_options' in data:
+				makeOpts = self.replaceVariables(data["configure_options"])
+			self.logger.info("Meson'ing '{0}' with: {1}".format( name, makeOpts ))
+
+			self.run_process('meson {0}'.format( makeOpts ))
+
+			self.touch(touch_name)
 
 	def cmake_source(self,name,data):
-		touch_name = "already_ran_cmake_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
+		touch_name = "already_ran_cmake_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
 
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
@@ -1685,35 +1743,27 @@ class CrossCompileScript:
 
 			self.touch(touch_name)
 
-
-	def make_source(self,name,data):
-		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"make_options")))
+	def build_source(self,name,data,build_system):
+		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"build_options")))
 		if not os.path.isfile(touch_name):
-
-			isWaf = False
-			if 'is_waf' in data:
-				if data['is_waf'] == True:
-					isWaf = True
-
-			isRake = False
-			if 'is_rake' in data:
-				if data['is_rake'] == True:
-					isRake = True
-
 			mkCmd = 'make'
-			if isWaf:
+			
+			if build_system == "waf":
 				mkCmd = './waf --color=yes'
-			if isRake:
+			if build_system == "rake":
 				mkCmd = 'rake'
-
-			if os.path.isfile("configure"):
-				self.run_process('{0} clean -j {1}'.format( mkCmd, _CPU_COUNT ),True)
+			if build_system == "ninja":
+				mkCmd = 'ninja'
+			
+			if build_system == "make":
+				if os.path.isfile("configure"):
+					self.run_process('{0} clean -j {1}'.format( mkCmd, _CPU_COUNT ),True)
 
 			makeOpts = ''
-			if 'make_options' in data:
-				makeOpts = self.replaceVariables(data["make_options"])
+			if 'build_options' in data:
+				makeOpts = self.replaceVariables(data["build_options"])
 
-			self.logger.info("Making '{0}' with: {1} in {2}".format( name, makeOpts, os.getcwd() ))
+			self.logger.info("Building '{0}' with: {1} in {2}".format( name, makeOpts, os.getcwd() ))
 
 			cpcnt = '-j {0}'.format(_CPU_COUNT)
 
@@ -1721,40 +1771,35 @@ class CrossCompileScript:
 				if data['cpu_count'] != None:
 					cpcnt = ""
 
-			if 'ignore_make_fail_and_run' in data:
-				if len(data['ignore_make_fail_and_run']) > 0: #todo check if its a list too
+			if 'ignore_build_fail_and_run' in data:
+				if len(data['ignore_build_fail_and_run']) > 0: #todo check if its a list too
 					try:
-						if isWaf:
+						if build_system == "waf":
 							mkCmd = './waf --color=yes build'
 						self.run_process('{0} {2} {1}'.format( mkCmd, cpcnt, makeOpts ))
 					except Exception as e:
-						#print("GOT HERE")
-						#exit()
 						self.logger.info("Ignoring failed make process...")
-						for cmd in data['ignore_make_fail_and_run']:
+						for cmd in data['ignore_build_fail_and_run']:
 							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-failed-make-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
 			else:
-				if isWaf:
+				if build_system == "waf":
 					mkCmd = './waf --color=yes build'
 				self.run_process('{0} {2} {1}'.format( mkCmd, cpcnt, makeOpts ))
 
-			if 'run_post_make' in data:
-				if data['run_post_make'] != None:
-					for cmd in data['run_post_make']:
+			if 'run_post_build' in data:
+				if data['run_post_build'] != None:
+					for cmd in data['run_post_build']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running post-make-command: '{0}'".format( cmd ))
+						self.logger.info("Running post-build-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
 
 			self.touch(touch_name)
-	#:
 
-	def make_install_source(self,name,data):
-		touch_name = "already_ran_make_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
+	def install_source(self,name,data,build_system):
+		touch_name = "already_ran_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
-
-
 			cpcnt = '-j {0}'.format(_CPU_COUNT)
 
 			if 'cpu_count' in data:
@@ -1771,23 +1816,15 @@ class CrossCompileScript:
 					installTarget = data['install_target']
 
 
-			self.logger.info("Make installing '{0}' with: {1}".format( name, makeInstallOpts ))
-
-			isWaf = False
-			if 'is_waf' in data:
-				if data['is_waf'] == True:
-					isWaf = True
-
-			isRake = False
-			if 'is_rake' in data:
-				if data['is_rake'] == True:
-					isRake = True
+			self.logger.info("Installing '{0}' with: {1}".format( name, makeInstallOpts ))
 
 			mkCmd = "make"
-			if isWaf:
+			if build_system == "waf":
 				mkCmd = "./waf"
-			if isRake:
-				mkCmd = "rake"
+			if build_system == "rake":
+				mkCmd = "rake"	
+			if build_system == "ninja":
+				mkCmd = "ninja"
 
 			self.run_process('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt ))
 
@@ -1870,7 +1907,8 @@ class CrossCompileScript:
 			original_cflags            = self.originalCflags,
 			cflag_string               = self.generateCflagString('--extra-cflags='),
 			current_path               = os.getcwd(),
-			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH")
+			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH"),
+			meson_env_file             = self.mesonEnvFile
 		)
 		# needed actual commands sometimes, so I made this custom command support, comparable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
 
@@ -1999,7 +2037,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'branch' : '9284af62c37d62117c007d100e0442f144220ab8', #'f8b03215b8924c610d98142d8e4258ee1da1364c',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder' : 'build',
 		'configure_options': '.. {cmake_prefix_options} ' 
 			'-DCMAKE_INSTALL_PREFIX={product_prefix}/aom.installed '
@@ -2041,7 +2079,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/SCXvid-standalone',
 		'needs_configure' : False,
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder' : 'build',
 		'configure_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/SCXvid-standalone_git.installed',
 		'run_post_install': [
@@ -2152,7 +2190,7 @@ PRODUCTS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_10bit',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder': 'source',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
 	},
@@ -2162,14 +2200,14 @@ PRODUCTS = {
 		'rename_folder' : 'x265_multibit_hg',
 		'source_subfolder': 'source',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
 	},
 	'mkvtoolnix': {
 		'repo_type' : 'git',
 		'recursive_git' : True,
-		'is_rake' : True,
+		'build_system' : 'rake',
 		'url' : 'https://gitlab.com/mbunkus/mkvtoolnix.git', #why gitlab? At least its not sourceforge...
 		'configure_options':
 			'--host={target_host} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
@@ -2177,7 +2215,7 @@ PRODUCTS = {
 			' --with-moc={mingw_binpath2}/moc --with-uic={mingw_binpath2}/uic --with-rcc={mingw_binpath2}/rcc --with-qmake={mingw_binpath2}/qmake'
 			#' QT_LIBS="-lws2_32 -lprcre"'
 		,
-		'make_options': '-v',
+		'build_options': '-v',
 		'depends_on' : [
 			'cmark','libfile','libflac','boost','qt5','gettext'
 		],
@@ -2257,7 +2295,7 @@ PRODUCTS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/DeadSix27/waifu2x-converter-cpp',
 		'needs_make_install':False,
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder' : 'out',
 		# 'depends_on': [ 'opencl_icd' ],
 		'configure_options': '.. {cmake_prefix_options} -DFORCE_AMD=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/w2x.installed',
@@ -2284,7 +2322,8 @@ PRODUCTS = {
 	'mpv' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
-		'is_waf' : True,
+		'build_system' : 'waf',
+		'conf_system' : 'waf',
 		'env_exports' : {
 			'DEST_OS' : 'win32',
 			'TARGET'  : '{target_host}',
@@ -2358,7 +2397,7 @@ PRODUCTS = {
 		'run_post_install' : [
 			'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
 		],
-		'make_options': 'youtube-dl',
+		'build_options': 'youtube-dl',
 		'patches' : [
 			( 'https://github.com/DeadSix27/youtube-dl/commit/4a386648cf85511d9eb283ba488858b6a5dc2444.patch', '-p1' ),
 		],
@@ -2477,7 +2516,7 @@ PRODUCTS = {
 	#	'repo_type' : 'git',
 	#	'url' : 'https://github.com/clementine-player/Clementine.git',
 	#	'needs_make_install':False,
-	#	'build_system' : 'cmake',
+	#	'conf_system' : 'cmake',
 	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 	#	'depends_on': [
 	#		'qt4',
@@ -2488,7 +2527,7 @@ PRODUCTS = {
 	#	'repo_type' : 'git',
 	#	'url' : 'git://anongit.kde.org/amarok.git',
 	#	'needs_make_install':False,
-	#	'build_system' : 'cmake',
+	#	'conf_system' : 'cmake',
 	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
 	#	# 'custom_cflag' : '-DTAGLIB_STATIC',
 	#	'env_exports' : {
@@ -2569,7 +2608,7 @@ PRODUCTS = {
 	# 	'run_post_configure' : [
 	# 		'sed -i.bak \'s/ -DSIZE_T_IS_LONG//g\' Makefile',
 	# 	],
-	# 	'make_options': '{make_prefix_options}',
+	# 	'build_options': '{make_prefix_options}',
 	# 	'depends_on': [
 	# 		'zenlib', 'libcurl',
 	# 	],
@@ -2587,7 +2626,7 @@ DEPENDS = {
 		'cpu_count' : '1',
 		'recursive_git' : True,
 		'needs_configure' : False,
-		'make_options': '{make_prefix_options} static',
+		'build_options': '{make_prefix_options} static',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} install-static',
 		'run_post_patch' : [
 			'git submodule update --remote --recursive',
@@ -2603,10 +2642,10 @@ DEPENDS = {
 		'url' : 'https://github.com/google/shaderc.git',
 		'configure_options': 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
 		'source_subfolder' : '_build', #-B. -H..
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'cpu_count' : '1', #...
 		'needs_make_install' : False,
-		'make_options': '',
+		'build_options': '',
 		# 'patches' : [
 			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/shaderc/shaderc-0001-add-script-for-cloning-dependencies.patch', '-p1', '..'],
 		# ],
@@ -2627,7 +2666,7 @@ DEPENDS = {
 			'ln -sf {inTreePrefix}/spirv-tools spirv-tools',
 			'!SWITCHDIR|..',
 		],
-		'run_post_make' : (
+		'run_post_build' : (
 			'cp -rv "../libshaderc/include/shaderc" "{target_prefix}/include/"',
 			'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_combined.a"',
 			# 'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_shared.a"',
@@ -2670,7 +2709,7 @@ DEPENDS = {
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Headers.git',
 		'recursive_git' : True,
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix}',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan headers' },
 	},
 	'vulkan_loader' : {
@@ -2678,7 +2717,7 @@ DEPENDS = {
 		'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 		'recursive_git' : True, 
 		'configure_options': '. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as -DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON -DCMAKE_C_FLAGS=\'-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS\' -DCMAKE_CXX_FLAGS=\'-D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600\'', #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','-p1'],
 		],
@@ -2701,13 +2740,13 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
 		'needs_make_install':False,
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF',
 		'depends_on' : [ 'opencl_headers' ],
 		'run_post_patch' : [
 			'sed -i.bak \'s/Devpkey.h/devpkey.h/\' icd_windows_hkr.c',
 		],
-		'run_post_make' : [
+		'run_post_build' : [
 			'if [ ! -f "already_ran_make_install" ] ; then cp -vf "libOpenCL.dll.a" "{target_prefix}/lib/libOpenCL.dll.a" ; fi',
 			'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
 		],
@@ -2731,7 +2770,7 @@ DEPENDS = {
 	'cmark' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/commonmark/cmark.git',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder': '_build',
 		'configure_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMARK_STATIC=ON -DCMARK_SHARED=OFF -DCMARK_TESTS=OFF', #CMARK_STATIC_DEFINE
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cmark' },
@@ -2753,7 +2792,8 @@ DEPENDS = {
 	'libmpv' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/mpv-player/mpv.git',
-		'is_waf' : True,
+		'build_system' : 'waf',
+		'conf_system' : 'waf',
 		'rename_folder' : "libmpv_git",
 		'env_exports' : {
 			'DEST_OS' : 'win32',
@@ -2832,7 +2872,7 @@ DEPENDS = {
 		'url' : 'git://git.ghostscript.com/mujs.git',
 		# 'branch' : '3430d9a06d6f8a3696e2bbdca7681937e60ca7a9',
 		'needs_configure' : False,
-		'make_options': '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
+		'build_options': '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
 		'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
 		'patches' : [
 			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-building-with-mingw.patch', '-p1'],
@@ -2843,7 +2883,7 @@ DEPENDS = {
 	'libjpeg-turbo' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/libjpeg-turbo/libjpeg-turbo.git',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_STATIC=ON -DENABLE_SHARED=OFF -DCMAKE_BUILD_TYPE=Release',
 		'patches': [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libjpeg-turbo/0001-libjpeg-turbo-git-mingw-compat.patch', '-p1'],
@@ -2859,7 +2899,7 @@ DEPENDS = {
 			{ "url" : "https://fossies.org/linux/misc/libpng-1.6.35.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "23912ec8c9584917ed9b09c5023465d71709dce089be503c7867fec68a93bcd7" }, ],	},
 		],
 		# 'custom_cflag' : '-fno-asynchronous-unwind-tables',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPNG_TESTS=OFF -DPNG_SHARED=OFF -DPNG_STATIC=ON',
 		# 'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --oldincludedir={target_prefix}/include',
 		'patches' : [
@@ -2875,7 +2915,7 @@ DEPENDS = {
 			{ "url" : "https://ftp.pcre.org/pub/pcre/pcre2-10.32.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 			{ "url" : "https://fossies.org/linux/misc/pcre2-10.32.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "9ca9be72e1a04f22be308323caa8c06ebd0c51efe99ee11278186cafbc4fe3af" }, ], },
 		],
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
 		],
@@ -2998,7 +3038,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://anongit.freedesktop.org/git/uchardet/uchardet.git',
 		# 'branch' : 'f136d434f0809e064ac195b5bc4e0b50484a474c', #master fails
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'uchardet' },
 	},
@@ -3079,7 +3119,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/kcat/openal-soft.git',
 		# 'branch' : '46f18ba114831ff26e8f270c6b5c881b45838439',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		# 'source_subfolder' : '_build',
 		'custom_cflag' : '-O3', # native tools have to use the same march as end product else it fails*
 		'configure_options':
@@ -3112,7 +3152,7 @@ DEPENDS = {
 		'url' : 'https://github.com/DeadSix27/python_mingw_libs.git',
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.7.1',
+		'build_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool PYTHON_VERSION=3.7.1',
 		'_info' : { 'version' : '3.7.1', 'fancy_name' : 'Python (library-only)' },
 	},
 	'vapoursynth_libs': {
@@ -3121,7 +3161,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		'depends_on' : [ 'python3_libs' ],
-		'make_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R45',
+		'build_options': 'PREFIX={target_prefix} GENDEF={mingw_binpath}/gendef DLLTOOL={mingw_binpath}/{cross_prefix_bare}dlltool VAPOURSYNTH_VERSION=R45',
 		'packages': {
 			'arch' : [ '7za' ],
 		},
@@ -3133,7 +3173,7 @@ DEPENDS = {
 		'needs_configure' : False,
 		'custom_cflag' : '-O3', # doesn't like march's past ivybridge (yet), so we override it.
 		'install_options' : 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static FILE_T=luajit.exe PREFIX={target_prefix}',
-		'make_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
+		'build_options': 'CROSS={cross_prefix_bare} HOST_CC="gcc -m{bit_num}" TARGET_SYS=Windows BUILDMODE=static amalg',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'LuaJIT2' },
 	},
 	'a52dec' : {
@@ -3147,7 +3187,7 @@ DEPENDS = {
 		'run_post_patch' : [
 			'rm configure',
 		],
-		'make_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
+		'build_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 		'install_options': 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 		'_info' : { 'version' : '0.7.4', 'fancy_name' : 'a52dec' },
 	},
@@ -3170,7 +3210,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://git.videolan.org/git/ffmpeg/nv-codec-headers.git',
 		"needs_configure": False,
-		'make_options': 'PREFIX={target_prefix}',
+		'build_options': 'PREFIX={target_prefix}',
 		'install_options' : 'PREFIX={target_prefix}',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'nVidia (headers)' },
 	},
@@ -3195,7 +3235,7 @@ DEPENDS = {
 		"needs_configure": False,
 		"needs_make": True,
 		"needs_make_install": False,
-		'make_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install',
+		'build_options': '{make_prefix_options} libbz2.a bzip2 bzip2recover install',
 		'_info' : { 'version' : '1.0.6', 'fancy_name' : 'BZip2 (library)' },
 	},
 	'decklink_headers' : { # not gpl
@@ -3227,7 +3267,7 @@ DEPENDS = {
 			'CXX'    : '{cross_prefix_bare}g++',
 		},
 		'configure_options': '--static --prefix={target_prefix}',
-		'make_options': '{make_prefix_options} ARFLAGS=rcs',
+		'build_options': '{make_prefix_options} ARFLAGS=rcs',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zlib' },
 	},
 	'xz' : { #lzma
@@ -3247,7 +3287,7 @@ DEPENDS = {
 	'libsnappy' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/google/snappy.git',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DSNAPPY_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release',
 		'run_post_install': (
 			'rm -vf {target_prefix}/lib/libsnappy.dll.a',
@@ -3346,7 +3386,7 @@ DEPENDS = {
 			{ "url" : "https://files.dyne.org/frei0r/frei0r-plugins-1.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e0c24630961195d9bd65aa8d43732469e8248e8918faa942cfb881769d11515e" }, ], },
 			{ "url" : "https://ftp.osuosl.org/pub/blfs/conglomeration/frei0r/frei0r-plugins-1.6.1.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "e0c24630961195d9bd65aa8d43732469e8248e8918faa942cfb881769d11515e" }, ], },
 		],
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'run_post_patch': ( # runs commands post the patch process
 			'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
 		),
@@ -3399,7 +3439,7 @@ DEPENDS = {
 	'libgme_game_music_emu' : {
 		'repo_type' : 'git',
 		'url' : 'https://bitbucket.org/mpyne/game-music-emu.git',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_UBSAN=OFF',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'game-music-emu' },
 	},
@@ -3425,7 +3465,7 @@ DEPENDS = {
 		'run_post_patch': (
 			'sed -i.bak "s|i386-mingw32-|{cross_prefix_bare}|" configure',
 		),
-		"run_post_make": (
+		"run_post_build": (
 			'mkdir -pv "{target_prefix}/include/flite"',
 			'cp -v include/* "{target_prefix}/include/flite"',
 			'cp -v ./build/{bit_name}-mingw32/lib/*.a "{target_prefix}/lib"',
@@ -3449,13 +3489,13 @@ DEPENDS = {
 		),
 		'needs_configure' : False,
 		'needs_make_install' : False,
-		"run_post_make": (
+		"run_post_build": (
 			'cp -v lib/libgsm.a {target_prefix}/lib',
 			'mkdir -pv {target_prefix}/include/gsm',
 			'cp -v inc/gsm.h {target_prefix}/include/gsm',
 		),
 		#'cpu_count' : '1',
-		'make_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
+		'build_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
 		'_info' : { 'version' : '1.0.17', 'fancy_name' : 'gsm' },
 	},
 	'sdl2' : {
@@ -3699,7 +3739,7 @@ DEPENDS = {
 			{ "url" : "https://download.videolan.org/contrib/soxr/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 		],
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'soxr' },
 	},
@@ -3707,7 +3747,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/jiixyj/libebur128.git',
 		'configure_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'run_post_patch': (
 			'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
 		),
@@ -3718,7 +3758,7 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder': 'source',
 		'run_post_install' : [
 			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
@@ -3731,8 +3771,8 @@ DEPENDS = {
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix}',
-		'build_system' : 'cmake',
-		'run_post_make' : [
+		'conf_system' : 'cmake',
+		'run_post_build' : [
 			'mv -vf libx265.a libx265_main.a',
 			'cp -vf {offtree_prefix}/libx265_10bit/lib/libx265_main10.a libx265_main10.a',
 			'cp -vf {offtree_prefix}/libx265_12bit/lib/libx265_main12.a libx265_main12.a',
@@ -3756,7 +3796,7 @@ DEPENDS = {
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
 		],
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
 	},
 	'libx265_multibit_12' : {
@@ -3768,7 +3808,7 @@ DEPENDS = {
 		'run_post_install' : [
 			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
 		],
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
 	},
 	'libopenh264' : {
@@ -3778,7 +3818,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openh264/0001-remove-fma3-call.patch','-p1'),
 		),
 		'needs_configure' : False,
-		'make_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
+		'build_options': '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
 		'install_options': '{make_prefix_options} OS=mingw_nt',
 		'install_target' : 'install-static',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openh264' },
@@ -3796,9 +3836,9 @@ DEPENDS = {
 		'patches' : (
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','-p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
 		),
-		'make_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
+		'build_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
 		'needs_make_install' : False, # doesnt s support xcompile installing
-		'run_post_make' : ( # lets install it manually then I guess?
+		'run_post_build' : ( # lets install it manually then I guess?
 			'cp -v libvamp-sdk.a "{target_prefix}/lib/"',
 			'cp -v libvamp-hostsdk.a "{target_prefix}/lib/"',
 			'cp -rv vamp-hostsdk/ "{target_prefix}/include/"',
@@ -3849,9 +3889,9 @@ DEPENDS = {
 			'CXX'    : '{cross_prefix_bare}g++',
 		},
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-		'make_options': '{make_prefix_options}',
+		'build_options': '{make_prefix_options}',
 		'needs_make_install' : False,
-		'run_post_make' : (
+		'run_post_build' : (
 			'cp lib/* "{target_prefix}/lib"',
 			'cp -r rubberband "{target_prefix}/include"',
 			'cp rubberband.pc.in "{pkg_config_path}/rubberband.pc"',
@@ -3886,7 +3926,7 @@ DEPENDS = {
 	'vidstab' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/georgmartius/vid.stab.git', #"Latest commit 97c6ae2  on May 29, 2015" .. master then I guess?
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '{cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DUSE_OMP=OFF', #fatal error: omp.h: No such file or directory
 		'run_post_patch': (
 			'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
@@ -3898,7 +3938,7 @@ DEPENDS = {
 		'url' : 'https://github.com/hoene/libmysofa',
 		#'branch' : '16d77ad6b4249c3ba3b812d26c4cbb356300f908',
 		'source_subfolder' : '_build',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS=no',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmysofa' },
 	},
@@ -3953,7 +3993,7 @@ DEPENDS = {
 			('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi/0002-zvbi-0.2.35_ioctl.patch', '-p1'),
 		),
 		#sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
-		'run_post_make' : (
+		'run_post_build' : (
 			'pwd',
 			'cp -rv "../zvbi-0.2.pc" "{target_prefix}/lib/pkgconfig/zvbi-0.2.pc"',
 		),
@@ -4048,7 +4088,7 @@ DEPENDS = {
 	'libopenjpeg' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/uclouvain/openjpeg.git',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS:bool=off',
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openjpeg' },
 	},
@@ -4080,9 +4120,9 @@ DEPENDS = {
 		'needs_configure': False,
 		# doesn't compile with openssl1.1
 		'install_options': 'SYS=mingw CRYPTO=GNUTLS LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lhogweed -lnettle -lgmp -lcrypt32 -lz" OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix}',
-		'make_options': 'SYS=mingw CRYPTO=GNUTLS LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lhogweed -lnettle -lgmp -lcrypt32 -lz"	 OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix}',
+		'build_options': 'SYS=mingw CRYPTO=GNUTLS LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lhogweed -lnettle -lgmp -lcrypt32 -lz"	 OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix}',
 		# 'install_options' : 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix} LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz -lintl -liconv"',
-		# 'make_options': 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix} LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz -lintl -liconv"',
+		# 'build_options': 'SYS=mingw CRYPTO=GNUTLS OPT=-O2 CROSS_COMPILE={cross_prefix_bare} SHARED=no prefix={target_prefix} LIB_GNUTLS="-L{target_prefix}/lib -lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv -lz -lintl -liconv"',
 		'run_post_install':(
 			'sed -i.bak \'s/-lrtmp -lz/-lrtmp -lwinmm -lz/\' "{pkg_config_path}/librtmp.pc"',
 		),
@@ -4102,7 +4142,7 @@ DEPENDS = {
 		'repo_type' : 'git',
 		'url' : 'https://aomedia.googlesource.com/aom',
 		'branch' : '9284af62c37d62117c007d100e0442f144220ab8',
-		'build_system' : 'cmake',
+		'conf_system' : 'cmake',
 		'source_subfolder' : 'build',
 		'configure_options': '.. {cmake_prefix_options} '
 			'-DCMAKE_INSTALL_PREFIX={target_prefix} '
@@ -4162,7 +4202,7 @@ DEPENDS = {
 	#	'repo_type' : 'archive',
 	#	'url' : 'https://www.lua.org/ftp/lua-5.3.4.tar.gz',
 	#	'needs_configure' : False,
-	#	'make_options': 'CC={cross_prefix_bare}gcc PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++ AR="{cross_prefix_bare}ar rcu" mingw', # LUA_A=lua53.dll LUA_T=lua.exe LUAC_T=luac.exe
+	#	'build_options': 'CC={cross_prefix_bare}gcc PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++ AR="{cross_prefix_bare}ar rcu" mingw', # LUA_A=lua53.dll LUA_T=lua.exe LUAC_T=luac.exe
 	#	'install_options' : 'TO_BIN="lua.exe luac.exe lua53.dll" TO_LIB="liblua.a" INSTALL_TOP="{target_prefix}"', #TO_LIB="liblua.a liblua.dll.a"
 	#	'install_target' : 'install',
 	#	'packages': {
@@ -4250,7 +4290,7 @@ DEPENDS = {
 	#	'configure_options' : '{bit_name3} enable-capieng  --prefix={target_prefix} --openssldir={target_prefix}/ssl --cross-compile-prefix={cross_prefix_bare} no-shared no-asm',
 	#	'configure_path' : './Configure',
 	#	'install_target' : 'install_sw', # we don't need the docs..
-	#	'make_options' : 'all',
+	#	'build_options' : 'all',
 	#	'env_exports' : {
 	#		'CROSS_COMPILE' : '{cross_prefix_bare}',
 	#	},
@@ -4295,7 +4335,7 @@ DEPENDS = {
 	#	'url' : 'https://downloads.sourceforge.net/project/freeglut/freeglut/3.0.0/freeglut-3.0.0.tar.gz',
 	#	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 	#	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DFREEGLUT_GLES=OFF -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_REPLACE_GLUT=ON -DFREEGLUT_BUILD_STATIC_LIBS=ON -DFREEGLUT_BUILD_SHARED_LIBS=OFF',
-	#	'build_system' : 'cmake',
+	#	'conf_system' : 'cmake',
 	#	'_info' : { 'version' : '3.0', 'fancy_name' : 'FreeGLUT (libary?)' },
 	#},
     #
@@ -4326,7 +4366,7 @@ DEPENDS = {
 	#	'url' : 'https://github.com/DeadSix27/mingw_ca_bundle_script.git',
 	#	'needs_configure' : False,
 	#	'needs_make_install' : False,
-	#	'make_options': 'PREFIX={target_prefix}',
+	#	'build_options': 'PREFIX={target_prefix}',
 	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ca-bundles' },
 	#},
 	#'librsvg' : {
@@ -4360,7 +4400,7 @@ DEPENDS = {
 	#	'folder_name' : 'opencv-3.4.1',
 	#	'source_subfolder' : 'build',
 	#	'configure_options': '.. -G"Unix Makefiles" -DCMAKE_SKIP_RPATH=ON -DBUILD_TESTS=OFF -DBUILD_opencv_world=ON -DBUILD_PERF_TESTS=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DWITH_FFMPEG=OFF -DINSTALL_C_EXAMPLES=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_JASPER=OFF -DBUILD_OPENEXR=OFF -DWITH_VTK=OFF -DWITH_IPP=OFF -DWITH_DSHOW=OFF -DENABLE_PRECOMPILED_HEADERS=OFF -DENABLE_STATIC_RUNTIME=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}',
-	#	'build_system' : 'cmake',
+	#	'conf_system' : 'cmake',
 	#	# 'patches' : [
 	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0001-mingw-w64-cmake.patch', '-p1', '..'],
 	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0002-solve_deg3-underflow.patch', '-p1', '..'],
@@ -4372,14 +4412,14 @@ DEPENDS = {
 	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0010-find-libpng-header.patch', '-p1', '..'],
 	#		# ['https://raw.githubusercontent.com/Alexpux/MINGW-packages/master/mingw-w64-opencv/0011-dshow-build-fix.patch', '-p1', '..'],
 	#	# ],
-	#	'make_options' : 'VERBOSE=1',
+	#	'build_options' : 'VERBOSE=1',
 	#	'install_options' : '{make_prefix_options} prefix={target_prefix} install',
 	#	'_info' : { 'version' : '3.4.1', 'fancy_name' : 'opencv' },
 	#},
 	# 'taglib' : { # unused
 	# 	'repo_type' : 'archive',
 	# 	'url' : 'http://taglib.org/releases/taglib-1.11.1.tar.gz',
-	# 	'build_system' : 'cmake',
+	# 	'conf_system' : 'cmake',
 	# 	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON -DWITH_MP4=ON -DWITH_ASF=ON',
 	# },
 	#'libmediainfo' : {
@@ -4666,7 +4706,7 @@ DEPENDS = {
 	#'libgme_game_music_emu' : {
 	#	'repo_type' : 'archive',
 	#	'url' : 'https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-0.6.1.tar.bz2', # ffmpeg doesnt like git
-	#	'build_system' : 'cmake',
+	#	'conf_system' : 'cmake',
 	#	#'run_post_patch': ( # runs commands post the patch process
 	#	#	'sed -i.bak "s|SHARED|STATIC|" gme/CMakeLists.txt',
 	#	#),
