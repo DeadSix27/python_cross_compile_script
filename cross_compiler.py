@@ -47,6 +47,7 @@ _MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with
 _BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
 _ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
 _USER_AGENT        = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36 " # change this as you like, default is most popular according to http://www.browser-info.net/useragents
+_OVBERWRITE_MINGW_SCRIPT = False # Wether to always overwrite the toolchain script or keep it, if it exists (allows for local modifying of it)
 
 
 # Remove a product, re-order them or add your own, do as you like, the default order only builds mpv & ffmpeg (shared & static)
@@ -503,9 +504,17 @@ class CrossCompileScript:
 			os.unsetenv("CFLAGS")
 
 			# self.cchdir(_MINGW_DIR)
-
-			mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
-
+			
+			downlaod_toolchain_script = False
+			if not os.path.isfile(os.path.join(self.fullCurrentPath,"build_mingw_toolchain.py")):
+				downlaod_toolchain_script = True
+			elif _OVBERWRITE_MINGW_SCRIPT:
+				downlaod_toolchain_script = True
+				
+			mingw_script_file = None
+			
+			if downlaod_toolchain_script:
+				mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
 
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
@@ -523,7 +532,7 @@ class CrossCompileScript:
 
 			# self.cchdir("..")
 		else:
-			raise Exception("It looks like the previous MinGW build failed, please delete the folder '{0}' and re-run this script" % _MINGW_DIR)
+			raise Exception("It looks like the previous MinGW build failed, please delete the folder '%s' and re-run this script" % _MINGW_DIR)
 	#:
 
 	def downloadHeader(self,url):
