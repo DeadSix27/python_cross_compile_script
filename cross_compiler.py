@@ -4185,7 +4185,7 @@ DEPENDS = {
 			'--buildtype=release '
 			'--cross-file={meson_env_file} ./ ..'
       ,
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libaom' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'dav1d (library)' },
 	},
 	'libaom' : {
 		'repo_type' : 'git',
