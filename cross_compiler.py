@@ -2759,7 +2759,7 @@ DEPENDS = {
 		'depends_on' : [
 			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
 			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libaom', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass',
+			'libx265_multibit', 'libaom', 'libdav1d', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass',
 			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
 		],
 	},
@@ -3525,34 +3525,13 @@ DEPENDS = {
 		'build_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
 		'_info' : { 'version' : '1.0.17', 'fancy_name' : 'gsm' },
 	},
-	'sdl2' : {
-		'folder_name' : 'sdl2_merc',
-		'repo_type' : 'mercurial',
-		'source_subfolder' : '_build',
-		'url' : 'https://hg.libsdl.org/SDL',
-		'configure_path' : '../configure',
-		'run_post_patch' : [
-			'sed -i.bak "s/ -mwindows//" ../configure',
-		],
-		# SDL2 patch superseded per https://hg.libsdl.org/SDL/rev/117d4ce1390e
-		#'patches' : (
-		#	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2_hg.xinput_state_ex.patch', '-p1', '..'),
-		#),
-		'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
-		"run_post_install": (
-			'sed -i.bak "s/  -lmingw32 -lSDL2main -lSDL2 /  -lmingw32 -lSDL2main -lSDL2  -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
-			#'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{target_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
-			'cp -v "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
-		),
-		'configure_options': '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
-		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
-	},
 	'libopus' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/opus.git',
 		'patches': (
 			("https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opus/opus_git_strip_declspec.patch", '-p1'),
 		),
+		'custom_cflag' : '-O3',
 		'run_post_install': [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lopus.*/Libs: -L${{libdir}} -lopus -lssp/\' "{pkg_config_path}/opus.pc"', # ???, keep checking whether this is needed, apparently it is for now.
 		],
@@ -3890,14 +3869,37 @@ DEPENDS = {
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw3' },
 	},
+	'sdl2' : {
+		'folder_name' : 'sdl2_merc',
+		'repo_type' : 'mercurial',
+		'source_subfolder' : '_build',
+		'url' : 'https://hg.libsdl.org/SDL',
+		'configure_path' : '../configure',
+		'run_post_patch' : [
+			'sed -i.bak "s/ -mwindows//" ../configure',
+		],
+		# SDL2 patch superseded per https://hg.libsdl.org/SDL/rev/117d4ce1390e
+		#'patches' : (
+		#	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2_hg.xinput_state_ex.patch', '-p1', '..'),
+		#),
+		# 'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
+		"run_post_install": (
+			'sed -i.bak "s/  -lmingw32 -lSDL2main -lSDL2 /  -lmingw32 -lSDL2main -lSDL2  -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|
+			#'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{target_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
+			'cp -v "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
+		),
+		'configure_options': '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
+		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
+	},
 	'libsamplerate' : {
 		'repo_type' : 'git',
-		#'branch' : '7dcc9bb727dae4e2010cdc6ef7cda101b05509a4', #'1601e2cdec84182a1a2e659b6a6db0c2766ba5cd',
+		#'branch' : '7dcc9bb727dae4e2010cdc6ef7cda101b05509a4',
 		'url' : 'https://github.com/erikd/libsamplerate.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-alsa',
-		'_info' : { 'version' : 'git (c99874)', 'fancy_name' : 'fftw3' },
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsamplerate' },
 		'depends_on' : [
 			'libflac',
+			'fftw3',
 		],
 	},
 	'librubberband' : {
