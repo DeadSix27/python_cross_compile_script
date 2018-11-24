@@ -2271,15 +2271,6 @@ PRODUCTS = {
 		'depends_on': [ 'ffmpeg_depends' ],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ffmpeg (shared)' },
 	},
-	'x265_10bit' : {
-		'repo_type' : 'mercurial',
-		'url' : 'https://bitbucket.org/multicoreware/x265',
-		'rename_folder' : 'x265_10bit',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_10bit.installed -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DHIGH_BIT_DEPTH=ON -DCMAKE_AR={cross_prefix_full}ar',
-		'conf_system' : 'cmake',
-		'source_subfolder': 'source',
-		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265' },
-	},
 	'x265_multibit' : {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
@@ -2289,35 +2280,6 @@ PRODUCTS = {
 		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
 		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
-	},
-	'mkvtoolnix': {
-		'repo_type' : 'git',
-		'recursive_git' : True,
-		'build_system' : 'rake',
-		'url' : 'https://gitlab.com/mbunkus/mkvtoolnix.git', #why gitlab? At least its not sourceforge...
-		'configure_options':
-			'--host={target_host} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
-			' --with-boost={target_prefix} --with-boost-system=boost_system --with-boost-filesystem=boost_filesystem --with-boost-date-time=boost_date_time --with-boost-regex=boost_regex --enable-optimization --enable-qt --enable-static-qt'
-			' --with-moc={mingw_binpath2}/moc --with-uic={mingw_binpath2}/uic --with-rcc={mingw_binpath2}/rcc --with-qmake={mingw_binpath2}/qmake'
-			#' QT_LIBS="-lws2_32 -lprcre"'
-		,
-		'build_options': '-v',
-		'depends_on' : [
-			'cmark','libfile','libflac','boost','qt5','gettext'
-		],
-		'packages': {
-			'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'docbook-xsl' ],
-		},
-		'run_post_install': (
-			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvmerge.exe',
-			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvtoolnix-gui.exe',
-			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvextract.exe',
-			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo-gui.exe',
-			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvpropedit.exe',
-			'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo.exe',
-		),
-		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mkvtoolnix' },
-
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -2499,6 +2461,35 @@ PRODUCTS = {
 	# ## Most of these packages I haven't used/updated in a long while, most if not all probably stopped building. ##
 	# ###############################################################################################################
 	# ###############################################################################################################
+	#'mkvtoolnix': {
+	#	'repo_type' : 'git',
+	#	'recursive_git' : True,
+	#	'build_system' : 'rake',
+	#	'url' : 'https://gitlab.com/mbunkus/mkvtoolnix.git', #why gitlab? At least its not sourceforge...
+	#	'configure_options':
+	#		'--host={target_host} --prefix={product_prefix}/mkvtoolnix_git.installed --disable-shared --enable-static'
+	#		' --with-boost={target_prefix} --with-boost-system=boost_system --with-boost-filesystem=boost_filesystem --with-boost-date-time=boost_date_time --with-boost-regex=boost_regex --enable-optimization --enable-qt --enable-static-qt'
+	#		' --with-moc={mingw_binpath2}/moc --with-uic={mingw_binpath2}/uic --with-rcc={mingw_binpath2}/rcc --with-qmake={mingw_binpath2}/qmake'
+	#		#' QT_LIBS="-lws2_32 -lprcre"'
+	#	,
+	#	'build_options': '-v',
+	#	'depends_on' : [
+	#		'cmark','libfile','libflac','boost','qt5','gettext'
+	#	],
+	#	'packages': {
+	#		'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'docbook-xsl' ],
+	#	},
+	#	'run_post_install': (
+	#		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvmerge.exe',
+	#		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvtoolnix-gui.exe',
+	#		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvextract.exe',
+	#		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo-gui.exe',
+	#		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvpropedit.exe',
+	#		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo.exe',
+	#	),
+	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mkvtoolnix' },
+    #
+	#},
 	#'gdb' : {
 	#	'repo_type' : 'git',
 	#	'url' : 'git://sourceware.org/git/binutils-gdb.git',
