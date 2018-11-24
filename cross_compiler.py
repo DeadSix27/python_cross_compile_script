@@ -1533,11 +1533,21 @@ class CrossCompileScript:
 				conf_system = "cmake"              #
 			elif data['conf_system'] == "meson":   #
 				conf_system = "meson"              #
-				
-		if conf_system == "autoconf":
-			if 'needs_configure' in data:
-				if data['needs_configure'] == True:
-					self.configure_source(name,data,conf_system)
+			elif data['conf_system'] == "waf":     #
+				conf_system = "waf"                #
+			
+		needs_conf = True
+			
+		if 'needs_configure' in data:
+			if data['needs_configure'] == False:
+				needs_conf = False
+		
+		if needs_conf:
+			if conf_system == "cmake":
+				self.cmake_source(name,data)
+			elif conf_system == "meson":
+				self.create_meson_environment_file()
+				self.meson_source(name,data)
 			else:
 				self.configure_source(name,data,conf_system)
 
