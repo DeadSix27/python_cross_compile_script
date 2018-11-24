@@ -317,14 +317,15 @@ class CrossCompileScript:
 
 
 		group2 = parser.add_mutually_exclusive_group( required = True )
-		group2.add_argument( '-p',  '--build_product',         dest='PRODUCT',         help='Build this product (and dependencies)'                        )
-		group2.add_argument( '-pl', '--build_product_list',    dest='PRODUCT_LIST',    help='Build this product list'                                      )
-		group2.add_argument( '-d',  '--build_dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
-		group2.add_argument( '-dl', '--build_dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency list'                                   )
-		group2.add_argument( '-a',  '--build_all',                                     help='Build all products (according to order)', action='store_true' )
+		group2.add_argument( '-p',  '--build-product',         dest='PRODUCT',         help='Build this product (and dependencies)'                        )
+		group2.add_argument( '-pl', '--build-product_list',    dest='PRODUCT_LIST',    help='Build this product list'                                      )
+		group2.add_argument( '-d',  '--build-dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
+		group2.add_argument( '-dl', '--build-dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency list'                                   )
+		group2.add_argument( '-a',  '--build-all',                                     help='Build all products (according to order)', action='store_true' )
 		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                   , action='store_true' )
 		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'   , action='store_true' )
 		parser.add_argument( '-g',  '--debug',                                         help='Show debug information'                 , action='store_true' )
+		parser.add_argument( '-s',  '--skip-depends',                                  help='Skip dependencies when building'        , action='store_true' )
 
 		if len(sys.argv)==1:
 			self.defaultEntrace()
@@ -401,9 +402,9 @@ class CrossCompileScript:
 					main.build_mingw(b)
 					main.initBuildFolders()
 					if buildType == "PRODUCT":
-						self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild)
+						self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild,args.skip_depends)
 					else:
-						self.build_thing(thing,self.DEPENDS[thing],buildType,forceRebuild)
+						self.build_thing(thing,self.DEPENDS[thing],buildType,forceRebuild,args.skip_depends)
 					main.finishBuilding()
 
 	def defaultEntrace(self):
