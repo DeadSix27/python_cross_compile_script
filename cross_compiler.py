@@ -2032,12 +2032,34 @@ VARIABLES = {
 		'--enable-fontconfig '
 		'--enable-libfontconfig '
 		'--enable-libfreetype '
-		'--enable-opengl '
-		'--enable-d3d11va '
+		'--enable-libbluray '
+		'--enable-libcdio '
 		'--enable-libmfx '
 		'--disable-schannel '
 		'--disable-gcrypt '
+		#'--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.
+		'--enable-ladspa '
+		'--enable-libxml2 '
+		'--enable-libdavs2 '
+		'--enable-libkvazaar '
+		'--enable-libopenmpt '
+		'--enable-libxavs '
+		'--enable-libxavs2 '
+		
+		# HW Dec/Enc
+		'--enable-libmfx '
+		'--enable-amf '
+		'--enable-ffnvcodec '
+		'--enable-cuvid '
+		#'--enable-cuda-sdk ' --enable-nonfree
+		'--enable-opengl '
+		'--enable-d3d11va '
+		'--enable-nvenc '
+		'--enable-nvdec '
+		'--enable-dxva2 '
+		
 		'--enable-gpl '
+		
 		'--extra-version=DeadSix27/python_cross_compile_script '
 		#'--enable-avresample ' # deprecated.
 		'--pkg-config-flags="--static" '
@@ -2360,9 +2382,13 @@ PRODUCTS = {
 			'TARGET'  : '{target_host}',
 			# 'LDFLAGS' : '-ld3d11 -llzma',
 		},
-		'run_post_patch' : (
-			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',#-n stands for --no-clobber, because --no-overwrite is too mainstream, also, yes we still need this odd work-around.
-		),
+		'run_post_patch' : [
+			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.h', # Dirty work-around for xavs2, no idea how else to fix this.
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" video/out/vo_lavc.c',  #
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" audio/out/ao_lavc.c',  #
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.c', #
+		],
 		'configure_options':
 			'--enable-libmpv-shared '
 			'--disable-debug-build '
@@ -2674,7 +2700,6 @@ DEPENDS = {
 		'configure_options': 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
 		'source_subfolder' : '_build', #-B. -H..
 		'conf_system' : 'cmake',
-		'cpu_count' : '1', #...
 		'needs_make_install' : False,
 		'build_options': '',
 		# 'patches' : [
@@ -2761,10 +2786,11 @@ DEPENDS = {
 	'ffmpeg_depends' : { # this is fake dependency used to just inherit other dependencies, you could make other programs depend on this and have a smaller config for example.
 		'is_dep_inheriter' : True,
 		'depends_on' : [
-			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack', 'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2',
-			'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeex', 'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'libsoxr',
-			'libx265_multibit', 'libaom', 'libdav1d', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug', 'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass',
-			'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers',
+			'zlib', 'bzip2', 'xz', 'libzimg', 'libsnappy', 'libpng', 'gmp', 'libnettle', 'gnutls', 'iconv', 'frei0r', 'libsndfile', 'libbs2b', 'wavpack',
+			'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2', 'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeex', 'davs2', 'openmpt',
+			'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'xavs2', 'libsoxr', 'libx265_multibit', 'kvazaar', 'libaom',
+			'libdav1d', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug',
+			'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers'
 		],
 	},
 	'opencl_icd' : {
@@ -2833,6 +2859,10 @@ DEPENDS = {
 		},
 		'run_post_patch' : (
 			'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.h', # Dirty work-around for xavs2, no idea how else to fix this.
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" video/out/vo_lavc.c',  #
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" audio/out/ao_lavc.c',  #
+			'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.c', #
 		),
 		'configure_options':
 			'--enable-libmpv-shared '
@@ -3529,6 +3559,39 @@ DEPENDS = {
 		'build_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
 		'_info' : { 'version' : '1.0.17', 'fancy_name' : 'gsm' },
 	},
+	'davs2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/pkuvcl/davs2.git',
+		'source_subfolder' : 'build/linux',
+		'configure_options': '--prefix={target_prefix} --host={target_host} --cross-prefix={cross_prefix_bare} --disable-cli',
+		'install_target' : 'install-lib-static',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'davs2' },
+	},
+	'kvazaar' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/ultravideo/kvazaar.git',
+		'configure_options': '--prefix={target_prefix} --host={target_host}',
+		'run_post_patch': [
+			'sed -i.bak "s/KVZ_PUBLIC const kvz_api/const kvz_api/g" src/kvazaar.h',
+		],
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'kvazaar' },
+	},
+	'openmpt' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/OpenMPT/openmpt.git',
+		# 'source_subfolder' : '_build',
+		'needs_configure' : False,
+		'build_options': 'CONFIG=mingw64-win64 TEST=0 SHARED_LIB=0 STATIC_LIB=1 EXAMPLES=0 MODERN=1',
+		'install_options': 'CONFIG=mingw64-win64 TEST=0 SHARED_LIB=0 STATIC_LIB=1 EXAMPLES=0 MODERN=1 PREFIX={target_prefix}',
+		# 'configure_path' : '../build/autotools/configure',
+		# 'run_post_patch' : [
+			# '!SWITCHDIR|../build/autotools',
+			# 'autoreconf -fiv',
+			# '!SWITCHDIR|../../_build',
+		# ],
+		# 'configure_options': '--prefix={target_prefix} --host={target_host}',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openmpt' },
+	},
 	'libopus' : {
 		'repo_type' : 'git',
 		'url' : 'https://github.com/xiph/opus.git',
@@ -3741,6 +3804,14 @@ DEPENDS = {
 			'arch' : [ 'yasm' ],
 		},
 		'_info' : { 'version' : 'svn (master)', 'fancy_name' : 'xavs' },
+	},
+	'xavs2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/pkuvcl/xavs2.git',
+		'source_subfolder': 'build/linux',
+		'configure_options': '--prefix={target_prefix} --host={target_host} --cross-prefix={cross_prefix_bare} --disable-cli',
+		'install_target' : 'install-lib-static',
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'xavs2' },
 	},
 	'libsoxr' : {
 		'repo_type' : 'archive',
@@ -4210,6 +4281,25 @@ DEPENDS = {
       ,
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libaom' },
 	},
+	'libssh2' : {
+		'repo_type' : 'git',
+		'url' : 'https://github.com/libssh2/libssh2.git',
+		'configure_options':
+			'--host={target_host} '
+			'--prefix={target_prefix} '
+			'--disable-shared '
+			'--enable-static '
+			'--disable-examples-build '
+			# '--with-crypto=openssl'
+		,
+		'depends_on': (
+			'zlib', #'libressl'
+		),
+		'env_exports' : {
+			'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
+		},
+		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libssh2' },
+	},
 	# ############################################################################################################
 	# ############################################################################################################
 	# ## Most of these deps I haven't used/updated in a  long while, most if not all probably stopped building. ##
@@ -4492,25 +4582,6 @@ DEPENDS = {
 	#		'zenlib', 'libcurl',
 	#	],
 	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmediainfo' },
-	#},
-	#'libssh2' : {
-	#	'repo_type' : 'git',
-	#	'url' : 'https://github.com/libssh2/libssh2.git',
-	#	'configure_options':
-	#		'--host={target_host} '
-	#		'--prefix={target_prefix} '
-	#		'--disable-shared '
-	#		'--enable-static '
-	#		'--disable-examples-build '
-	#		'--with-crypto=openssl'
-	#	,
-	#	'depends_on': (
-	#		'zlib', 'libressl'
-	#	),
-	#	'env_exports' : {
-	#		'LIBS' : '-lcrypt32' # Otherwise: libcrypto.a(e_capi.o):e_capi.c:(.text+0x476d): undefined reference to `__imp_CertFreeCertificateContext'
-	#	},
-	#	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libssh2' },
 	#},
 	#'libsqlite3' : {
 	#	'repo_type' : 'archive',
