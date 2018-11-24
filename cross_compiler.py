@@ -141,7 +141,7 @@ class CrossCompileScript:
 				'mingw_debug_build': False,
 				'mingw_dir': 'toolchain',
 				'work_dir': 'workdir',
-				'original_cflags': '-ffast-math -mtune=skylake -O3 -march=skylake',
+				'original_cflags': '-O3',
 			}
 		}
 		with open(config_file,"w",encoding="utf-8") as f:
