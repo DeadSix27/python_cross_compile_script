@@ -2197,14 +2197,14 @@ PRODUCTS = {
 			'LIBS' : '-lcrypt32',
 			'libsuff' : '/',
 		},
-		'patches' : [
-			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', '-p1' ],
-		],
+		# 'patches' : [
+			# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/curl/0001-fix-build-with-libressl.patch', '-p1' ],
+		# ],
 		'run_post_patch' : [
 			'sed -i.bak \'s/SSL_LDFLAGS="-L$LIB_OPENSSL"/SSL_LDFLAGS=""/\' configure.ac',
 			'autoreconf -fiv',
 		],
-		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-ca-fallback --with-ssl=openssl --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
+		'configure_options': '--enable-static --disable-shared --target={bit_name2}-{bit_name_win}-gcc --host={target_host} --build=x86_64-linux-gnu --with-libssh2 --with-ca-fallback --without-winssl --prefix={product_prefix}/curl_git.installed --exec-prefix={product_prefix}/curl_git.installed',
 		'depends_on': (
 			'zlib', 'libssh2',
 		),
@@ -2223,9 +2223,12 @@ PRODUCTS = {
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/0001-wget-look-for-ca-bundle.trust.crt-in-exe-path-by-def.patch', '-p1' ],
 			[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/wget/wget.timegm.patch', '-p1' ],
 		],
-		'depends_on': (
+		'run_post_build': [
+			'if [ -f "/etc/ssl/certs/ca-certificates.crt" ] ; then cp -v /etc/ssl/certs/ca-certificates.crt "{product_prefix}/wget_git.installed/bin/ca-bundle.trust.crt" ; fi',
+		],
+		'depends_on': [
 			'zlib', 'libressl', 'libpsl',
-		),
+		],
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wget' },
 	},
 	'ffmpeg_static' : {
@@ -3023,7 +3026,7 @@ DEPENDS = {
 		'folder_name' : 'libressl_git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared',
 		'patches' : [
-			( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', '-p1' ),
+			# ( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', '-p1' ),
 			# ( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0002-tls-revert-Add-tls-tls_keypair.c-commit.patch', '-p1' ),
 			# ( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', '-p1' ),
 		],
