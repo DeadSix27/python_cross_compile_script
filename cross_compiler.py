@@ -16,6 +16,11 @@
 # ###################################################
 
 # ###################################################
+# ### Settings are located in cross_compiler.yaml ###
+# ###### That file will be generated on start. ######
+# ###################################################
+
+# ###################################################
 # ################ REQUIRED PACKAGES ################
 # ###################################################
 # Package dependencies (some may be missing):
@@ -23,6 +28,7 @@
 
 import progressbar # Run pip3 install progressbar2
 import requests # Run pip3 install requests
+import yaml
 
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
 import hashlib,glob,traceback,time,zlib,codecs,argparse
@@ -31,32 +37,6 @@ from multiprocessing import cpu_count
 from pathlib import Path
 from urllib.parse import urlparse
 from collections import OrderedDict
-
-# ###################################################
-# ################# CONFIGURATION ###################
-# ###################################################
-
-_CPU_COUNT         = cpu_count() # the default automatically sets it to your core-count but you can set it manually too # default: cpu_count()
-_QUIET             = False # This is only for the 'just build it all mode', in CLI you should use "-q" # default: false
-_LOG_DATEFORMAT    = '%H:%M:%S' # default: %H:%M:%S
-_LOGFORMAT         = '[%(asctime)s][%(levelname)s] %(message)s' # default: [%(asctime)s][%(levelname)s] %(message)s
-_WORKDIR           = 'workdir' # default: workdir
-_MINGW_DIR         = 'toolchain' # default: toolchain
-_MINGW_COMMIT      = '172cf5520c61a607cc5acb59e2709bf303e5ec47' #'8a9a6eebe110e7170dcd8e6e4b37d5ba6cb8ae87' # See https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/log/?path= # I prefer to stay on a known good commit for mingw.
-_MINGW_DEBUG_BUILD = False # Setting this to true, will build the toolchain with -ggdb -O0, instead of -ggdb -O3
-_BITNESS           = ( 64, ) # Only 64 bit is supported (32 bit is not even implemented, no one should need this today...)
-_ORIG_CFLAGS       = '-ggdb -O3' # Set options like -march=skylake or -ggdb for debugging here. # Default: -ggdb -O3
-_USER_AGENT        = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36 " # change this as you like, default is most popular according to http://www.browser-info.net/useragents
-_OVBERWRITE_MINGW_SCRIPT = False # Wether to always overwrite the toolchain script or keep it, if it exists (allows for local modifying of it)
-
-
-# Remove a product, re-order them or add your own, do as you like, the default order only builds mpv & ffmpeg (shared & static)
-PRODUCT_ORDER      = ( 'mpv', 'ffmpeg_static', 'ffmpeg_shared' )
-
-#
-# ###################################################
-# ###################################################
-# ###################################################
 
 class Colors: #ansi colors
 	RESET           = '\033[0m'
@@ -82,57 +62,101 @@ class MissingDependency(Exception):
 	def __init__(self, message):
 		self.message = message
 
-class MyFormatter(logging.Formatter):
-
-	inf_fmt  = Colors.LIGHTCYAN_EX   + _LOGFORMAT + Colors.RESET
-	err_fmt  = Colors.LIGHTRED_EX    + _LOGFORMAT + Colors.RESET
-	dbg_fmt  = Colors.LIGHTYELLOW_EX + _LOGFORMAT + Colors.RESET
-	war_fmt  = Colors.YELLOW         + _LOGFORMAT + Colors.RESET
-
-	def __init__(self):
-		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=_LOG_DATEFORMAT, style='%')
+class MyLogFormatter(logging.Formatter):
+	def __init__(self,l,ld):
+		MyLogFormatter.log_format = l
+		MyLogFormatter.log_date_format = ld
+		MyLogFormatter.inf_fmt  = Colors.LIGHTCYAN_EX   + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.err_fmt  = Colors.LIGHTRED_EX    + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.dbg_fmt  = Colors.LIGHTYELLOW_EX + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.war_fmt  = Colors.YELLOW         + MyLogFormatter.log_format + Colors.RESET
+		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=MyLogFormatter.log_date_format, style='%')
 
 	def format(self, record):
 		format_orig = self._style._fmt
 		if record.levelno == logging.DEBUG:
-			self._style._fmt = MyFormatter.dbg_fmt
+			self._style._fmt = MyLogFormatter.dbg_fmt
 		elif record.levelno == logging.INFO:
-			self._style._fmt = MyFormatter.inf_fmt
+			self._style._fmt = MyLogFormatter.inf_fmt
 		elif record.levelno == logging.ERROR:
-			self._style._fmt = MyFormatter.err_fmt
+			self._style._fmt = MyLogFormatter.err_fmt
 		elif record.levelno == logging.WARNING:
-			self._style._fmt = MyFormatter.war_fmt
+			self._style._fmt = MyLogFormatter.war_fmt
 		result = logging.Formatter.format(self, record)
 		self._style._fmt = format_orig
 		return result
-
-_MINGW_SCRIPT_URL  = 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py'
-_DEBUG             = False # for.. debugging.. purposes this is the same as --debug in CLI, only use this if you do not use CLI.
+		
 _OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
 _TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.6.7', '3.7.0']
 
 class CrossCompileScript:
 
-	def __init__(self,product_order,products,depends,variables):
+	def __init__(self,products,depends,variables):
 		sys.dont_write_bytecode     = True # Avoid __pycache__ folder, never liked that solution.
-		self.PRODUCT_ORDER          = product_order
 		self.PRODUCTS               = products
 		self.DEPENDS                = depends
 		self.VARIABLES              = variables
-		self.init()
-
-	def init(self):
-		fmt                         = MyFormatter()
 		hdlr                        = logging.StreamHandler(sys.stdout)
+		fmt                         = MyLogFormatter("[%(asctime)s][%(levelname)s] %(message)s","%H:%M:%S")
 		hdlr.setFormatter(fmt)
 		self.logger                 = logging.getLogger(__name__)
 		self.logger.addHandler(hdlr)
+		self.logger.setLevel(logging.INFO)
+		self.config                 = self.loadConfig()
+		fmt                         = MyLogFormatter(self.config["script"]["log_format"],self.config["script"]["log_date_format"])
+		hdlr.setFormatter(fmt)
+		self.init()
+
+	def loadConfig(self):
+		config_file = os.path.splitext(os.path.basename(__file__))[0] + ".yaml"
+		
+		if not os.path.isfile(config_file):
+			self.writeDefaultConfig(config_file)
+			
+		with open(config_file, 'r') as cs:
+			try:
+				return yaml.load(cs)
+			except yaml.YAMLError as e:
+				self.logger.error("Failed to load config file " + str(e))
+				traceback.print_exc()
+				sys.exit(1)
+				
+	def writeDefaultConfig(self,config_file):
+		self.config = {
+			'version': 1.0,
+			'script': {
+				'debug' : False,
+				'quiet': False,
+				'log_date_format': '%H:%M:%S',
+				'log_format': '[%(asctime)s][%(levelname)s] %(message)s',
+				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
+				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
+				'mingw_script_url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py',
+				'overwrite_mingw_script': True,
+			},
+			'toolchain': {
+				'bitness': [64,],
+				'cpu_count': cpu_count(),
+				'mingw_commit': None,
+				'mingw_debug_build': False,
+				'mingw_dir': 'toolchain',
+				'work_dir': 'workdir',
+				'original_cflags': '-ffast-math -mtune=skylake -O3 -march=skylake',
+			}
+		}
+		with open(config_file,"w",encoding="utf-8") as f:
+			f.write(yaml.dump(self.config))
+		self.logger.info("Wrote default configuration file to: '%s'" % (config_file))
+
+	def init(self):
+		self.product_order          = self.config["script"]["product_order"]
 		self.fullCurrentPath        = os.getcwd()
-		self.fullWorkDir            = os.path.join(self.fullCurrentPath,_WORKDIR)
+		self.fullWorkDir            = os.path.join(self.fullCurrentPath,self.config["toolchain"]["work_dir"])
+		self.mingwDir               = self.config["toolchain"]["mingw_dir"]
 		self.fullProductDir         = None
-		self.targetBitness          = _BITNESS
+		self.targetBitness          = self.config["toolchain"]["bitness"]
 		self.originalPATH           = os.environ["PATH"]
-		self.mingwScriptURL         =  _MINGW_SCRIPT_URL
+		self.mingwScriptURL         = self.config["script"]["mingw_script_url"]
 		self.targetHost             = None
 		self.targetPrefix           = None
 		self.mingwBinpath           = None
@@ -147,9 +171,9 @@ class CrossCompileScript:
 		self.cpuCount               = None
 		self.originalCflags         = None
 		self.buildLogFile           = None
-		self.quietMode              = _QUIET
-		self.debugMode              = _DEBUG
-		self.logger.setLevel(logging.INFO)
+		self.quietMode              = self.config["script"]["quiet"]
+		self.debugMode              = self.config["script"]["debug"]
+		self.userAgent              = self.config["script"]["user_agent"]
 		if self.debugMode:
 			self.init_debugMode()
 		if self.quietMode:
@@ -395,6 +419,11 @@ class CrossCompileScript:
 				return
 
 			self.logger.warning('Starting custom build process for: {0}'.format(thingToBuild))
+			
+			skipDeps = False
+			
+			if args.skip_depends:
+				skipDeps = True
 
 			for thing in finalThingList:
 				for b in self.targetBitness:
@@ -402,9 +431,9 @@ class CrossCompileScript:
 					main.build_mingw(b)
 					main.initBuildFolders()
 					if buildType == "PRODUCT":
-						self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild,args.skip_depends)
+						self.build_thing(thing,self.PRODUCTS[thing],buildType,forceRebuild,skipDeps)
 					else:
-						self.build_thing(thing,self.DEPENDS[thing],buildType,forceRebuild,args.skip_depends)
+						self.build_thing(thing,self.DEPENDS[thing],buildType,forceRebuild,skipDeps)
 					main.finishBuilding()
 
 	def defaultEntrace(self):
@@ -412,7 +441,7 @@ class CrossCompileScript:
 			self.prepareBuilding(b)
 			self.build_mingw(b)
 			self.initBuildFolders()
-			for p in self.PRODUCT_ORDER:
+			for p in self.product_order:
 				self.build_thing(p,self.PRODUCTS[p],"PRODUCT")
 			self.finishBuilding()
 
@@ -423,22 +452,22 @@ class CrossCompileScript:
 		self.logger.info('Starting build script')
 		if _OUR_VER not in _TESTED_VERS:
 			self.logger.warning(Colors.LIGHTRED_EX + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET)
-		if not os.path.isdir(_WORKDIR):
-			self.logger.info("Creating workdir: %s" % (_WORKDIR))
-			os.makedirs(_WORKDIR, exist_ok=True)
-		self.cchdir(_WORKDIR)
+		if not os.path.isdir(self.fullWorkDir):
+			self.logger.info("Creating workdir: %s" % (self.fullWorkDir))
+			os.makedirs(self.fullWorkDir, exist_ok=True)
+		self.cchdir(self.fullWorkDir)
 
 		self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
 		self.bitnessDir2        = "x86_64" if b is 64 else "x86" # just for vpx...
 		self.bitnessDir3        = "mingw64" if b is 64 else "mingw" # just for openssl...
 		self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
 		self.targetHost         = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
-		self.targetPrefix       = "{0}/{1}/{2}-w64-mingw32/{3}".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir, self.targetHost ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+		self.targetPrefix       = "{0}/{1}/{2}-w64-mingw32/{3}".format( self.fullWorkDir, self.mingwDir, self.bitnessDir, self.targetHost ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
 		self.inTreePrefix       = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir) ) # workdir/x86_64
 		self.offtreePrefix      = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir + "_offtree") ) # workdir/x86_64_offtree
-		self.targetSubPrefix    = "{0}/{1}/{2}-w64-mingw32".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64
-		self.mingwBinpath       = "{0}/{1}/{2}-w64-mingw32/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
-		self.mingwBinpath2      = "{0}/{1}/{2}-w64-mingw32/{2}-w64-mingw32/bin".format( self.fullWorkDir, _MINGW_DIR, self.bitnessDir ) # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
+		self.targetSubPrefix    = "{0}/{1}/{2}-w64-mingw32".format( self.fullWorkDir, self.mingwDir, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64
+		self.mingwBinpath       = "{0}/{1}/{2}-w64-mingw32/bin".format( self.fullWorkDir, self.mingwDir, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
+		self.mingwBinpath2      = "{0}/{1}/{2}-w64-mingw32/{2}-w64-mingw32/bin".format( self.fullWorkDir, self.mingwDir, self.bitnessDir ) # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
 		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
 		self.makePrefixOptions  = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format( cross_prefix_bare=self.bareCrossPrefix, target_prefix=self.targetPrefix )
@@ -447,8 +476,8 @@ class CrossCompileScript:
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
 		self.currentBitness     = b
 		self.mesonEnvFile       = os.path.join(self.targetSubPrefix, "meson_environment.txt")
-		self.cpuCount           = _CPU_COUNT
-		self.originalCflags     = _ORIG_CFLAGS
+		self.cpuCount           = self.config["toolchain"]["cpu_count"]
+		self.originalCflags     = self.config["toolchain"]["original_cflags"]
 
 		if self.debugMode:
 			print('self.bitnessDir = \n'         + self.bitnessDir + '\n\n')
@@ -497,24 +526,24 @@ class CrossCompileScript:
 				raise Exception("GCC is not working properly, target is not mingw32.")
 				exit(1)
 
-		elif not os.path.isdir(_MINGW_DIR):
-			self.logger.info("Building MinGW-w64 in folder '{0}'".format( _MINGW_DIR ))
+		elif not os.path.isdir(self.mingwDir):
+			self.logger.info("Building MinGW-w64 in folder '{0}'".format( self.mingwDir ))
 
-			# os.makedirs(_MINGW_DIR, exist_ok=True)
+			# os.makedirs(self.mingwDir, exist_ok=True)
 
 			os.unsetenv("CFLAGS")
 
-			# self.cchdir(_MINGW_DIR)
+			# self.cchdir(self.mingwDir)
 			
-			downlaod_toolchain_script = False
+			download_toolchain_script = False
 			if not os.path.isfile(os.path.join(self.fullCurrentPath,"build_mingw_toolchain.py")):
-				downlaod_toolchain_script = True
-			elif _OVBERWRITE_MINGW_SCRIPT:
-				downlaod_toolchain_script = True
+				download_toolchain_script = True
+			elif self.config["script"]["overwrite_mingw_script"]:
+				download_toolchain_script = True
 				
 			mingw_script_file = None
 			
-			if downlaod_toolchain_script:
+			if download_toolchain_script:
 				mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
 
 			def toolchainBuildStatus(data):
@@ -524,16 +553,16 @@ class CrossCompileScript:
 
 			toolchainBuilder = MinGW64ToolChainBuilder()
 
-			toolchainBuilder.workDir = _MINGW_DIR
-			if _MINGW_COMMIT != None:
-				toolchainBuilder.setMinGWcheckout(_MINGW_COMMIT)
-			toolchainBuilder.setDebugBuild(_MINGW_DEBUG_BUILD)
+			toolchainBuilder.workDir = self.mingwDir
+			if self.config["toolchain"]["mingw_commit"] != None:
+				toolchainBuilder.setMinGWcheckout(self.config["toolchain"]["mingw_commit"])
+			toolchainBuilder.setDebugBuild(self.config["toolchain"]["mingw_debug_build"])
 			toolchainBuilder.onStatusUpdate += toolchainBuildStatus
 			toolchainBuilder.build()
 
 			# self.cchdir("..")
 		else:
-			raise Exception("It looks like the previous MinGW build failed, please delete the folder '%s' and re-run this script" % _MINGW_DIR)
+			raise Exception("It looks like the previous MinGW build failed, please delete the folder '%s' and re-run this script" % self.mingwDir)
 	#:
 
 	def downloadHeader(self,url):
@@ -565,7 +594,7 @@ class CrossCompileScript:
 				raise Exception('Specified path "{0}" does not exist'.format(outputPath))
 
 		fileName = os.path.basename(url) # Get URL filename
-		userAgent = _USER_AGENT
+		userAgent = self.userAgent
 
 		if 'sourceforge.net' in url.lower():
 			userAgent = 'wget/1.18' # sourceforce <3 wget
@@ -1250,11 +1279,11 @@ class CrossCompileScript:
 
 	def check_mirrors(self,dl_locations):
 		for loc in dl_locations:
-			userAgent = _USER_AGENT
+			userAgent = self.userAgent
 			if 'sourceforge.net' in loc["url"].lower():
 				userAgent = 'wget/1.18' # sourceforce <3 wget
 			try:
-				req = requests.request("GET", loc["url"], stream=True, allow_redirects=True, headers = { "User-Agent": _USER_AGENT } )
+				req = requests.request("GET", loc["url"], stream=True, allow_redirects=True, headers = { "User-Agent": self.userAgent } )
 			except requests.exceptions.RequestException as e:
 				self.logger.debug(e)
 			else:
@@ -1475,6 +1504,7 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
+				os.environ["LDFLAGS"] = data['custom_cflag']
 
 		if 'custom_path' in data:
 			if data['custom_path'] != None:
@@ -1632,7 +1662,7 @@ class CrossCompileScript:
 
 	def configure_source(self,name,data,conf_system):
 		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
-
+		
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
@@ -1641,7 +1671,7 @@ class CrossCompileScript:
 			if 'do_not_bootstrap' in data:
 				if data['do_not_bootstrap'] == True:
 					doBootStrap = False
-
+			
 			if doBootStrap:
 				if conf_system == "waf":
 					if not os.path.isfile("waf"):
@@ -1680,7 +1710,7 @@ class CrossCompileScript:
 				mCleanCmd = 'make clean'
 				if conf_system == "waf":
 					mCleanCmd = './waf --color=yes clean'
-				self.run_process('{0} -j {1}'.format( mCleanCmd, _CPU_COUNT ),True)
+				self.run_process('{0} -j {1}'.format( mCleanCmd, self.cpuCount ),True)
 
 			self.touch(touch_name)
 			self.logger.info("Finsihed configuring '{0}'".format( name ))
@@ -1770,7 +1800,7 @@ class CrossCompileScript:
 			
 			if build_system == "make":
 				if os.path.isfile("configure"):
-					self.run_process('{0} clean -j {1}'.format( mkCmd, _CPU_COUNT ),True)
+					self.run_process('{0} clean -j {1}'.format( mkCmd, self.cpuCount ),True)
 
 			makeOpts = ''
 			if 'build_options' in data:
@@ -1778,7 +1808,7 @@ class CrossCompileScript:
 
 			self.logger.info("Building '{0}' with: {1} in {2}".format( name, makeOpts, os.getcwd() ))
 
-			cpcnt = '-j {0}'.format(_CPU_COUNT)
+			cpcnt = '-j {0}'.format(self.cpuCount)
 
 			if 'cpu_count' in data:
 				if data['cpu_count'] != None:
@@ -1813,7 +1843,7 @@ class CrossCompileScript:
 	def install_source(self,name,data,build_system):
 		touch_name = "already_ran_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
-			cpcnt = '-j {0}'.format(_CPU_COUNT)
+			cpcnt = '-j {0}'.format(self.cpuCount)
 
 			if 'cpu_count' in data:
 				if data['cpu_count'] != None:
@@ -1852,9 +1882,9 @@ class CrossCompileScript:
 	#:
 
 	def defaultCFLAGS(self):
-		self.logger.debug("Reset CFLAGS to: {0}".format( _ORIG_CFLAGS ) )
-		os.environ["CFLAGS"] = _ORIG_CFLAGS
-		os.environ["LDFLAGS"] = _ORIG_CFLAGS
+		self.logger.debug("Reset CFLAGS to: {0}".format( self.originalCflags ) )
+		os.environ["CFLAGS"] = self.originalCflags
+		os.environ["LDFLAGS"] = self.originalCflags
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
@@ -2429,8 +2459,8 @@ PRODUCTS = {
 		},
 		'patches' : [
 			# Enable PR's by preference
-			# [ 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ], # osc: seekranges enhancement
-			# [ 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ], # some left-shift to mmouse alias PR
+			[ 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ], # osc: seekranges enhancement
+			[ 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ], # some left-shift to mmouse alias PR
 			# [ 'https://github.com/mpv-player/mpv/pull/6158.patch', '-p1' ], # wm4's controversial giant pr
 			# [ 'https://github.com/mpv-player/mpv/pull/6326.patch', '-p1' ], # hwdec_cuda: Use explicit synchronisation in vulkan interop	
 		],
@@ -2700,6 +2730,7 @@ DEPENDS = {
 		'configure_options': 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
 		'source_subfolder' : '_build', #-B. -H..
 		'conf_system' : 'cmake',
+		# 'cpu_count' : '1', #...
 		'needs_make_install' : False,
 		'build_options': '',
 		# 'patches' : [
@@ -4840,5 +4871,5 @@ DEPENDS = {
 }
 
 if __name__ == "__main__": # use this as an example on how to implement this in custom building scripts.
-	main = CrossCompileScript(PRODUCT_ORDER,PRODUCTS,DEPENDS,VARIABLES)
+	main = CrossCompileScript(PRODUCTS,DEPENDS,VARIABLES)
 	main.commandLineEntrace()
