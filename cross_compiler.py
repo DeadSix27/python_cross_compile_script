@@ -1555,13 +1555,6 @@ class CrossCompileScript:
 			if data['patches_post_configure'] != None:
 				for p in data['patches_post_configure']:
 					self.apply_patch(p[0],p[1],True)
-					
-		if conf_system == "cmake":
-			self.cmake_source(name,data)
-			
-		if conf_system == "meson":
-			self.create_meson_environment_file()
-			self.meson_source(name,data)
 
 		if 'make_subdir' in data:
 			if data['make_subdir'] != None:
