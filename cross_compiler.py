@@ -4028,9 +4028,9 @@ DEPENDS = {
 		'build_options': '{make_prefix_options}',
 		'needs_make_install' : False,
 		'run_post_build' : (
-			'cp lib/* "{target_prefix}/lib"',
-			'cp -r rubberband "{target_prefix}/include"',
-			'cp rubberband.pc.in "{pkg_config_path}/rubberband.pc"',
+			'cp -fv lib/* "{target_prefix}/lib"',
+			'cp -frv rubberband "{target_prefix}/include"',
+			'cp -fv rubberband.pc.in "{pkg_config_path}/rubberband.pc"',
 			'sed -i.bak "s|%PREFIX%|{target_prefix_sed_escaped}|" "{pkg_config_path}/rubberband.pc"',
 			'sed -i.bak \'s/-lrubberband *$/-lrubberband -lfftw3 -lsamplerate -lstdc++/\' "{pkg_config_path}/rubberband.pc"',
 		),
