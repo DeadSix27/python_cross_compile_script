@@ -3002,9 +3002,13 @@ DEPENDS = {
 		'patches' : [
 			['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/pcre2/0001-pcre2-iswild.patch', '-p1'],
 		],
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_SUPPORT_JIT=ON',
+		'configure_options': '. {cmake_prefix_options} '
+			'-DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DPCRE2_BUILD_TESTS=OFF '
+			'-DPCRE2_BUILD_PCRE2_8=ON -DPCRE2_BUILD_PCRE2_16=ON -DPCRE2_BUILD_PCRE2_32=ON -DPCRE2_NEWLINE=ANYCRLF '
+			'-DPCRE2_SUPPORT_UNICODE=ON -DPCRE2_SUPPORT_JIT=ON'
+		,
 		'depends_on' : [
-			'bzip2',
+			'bzip2', 'zlib', 'pcre',
 		],
 		'_info' : { 'version' : '10.32', 'fancy_name' : 'pcre2' },
 	},
