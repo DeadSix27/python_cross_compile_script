@@ -3198,7 +3198,7 @@ DEPENDS = {
 			'sed -i.bak \'s/-lbluray.*$/-lbluray -lfreetype -lexpat -lz -lbz2 -lxml2 -lws2_32 -lgdi32 -liconv/\' "{pkg_config_path}/libbluray.pc"', # fix undefined reference to `xmlStrEqual' and co
 		),
 		'depends_on' : (
-			'freetype',
+			'freetype', 'libcdio-paranoia'
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libbluray' },
 	},
