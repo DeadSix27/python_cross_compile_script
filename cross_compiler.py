@@ -3555,11 +3555,12 @@ DEPENDS = {
 		'needs_make_install' : False,
 		'run_post_patch': (
 			'sed -i.bak "s|i386-mingw32-|{cross_prefix_bare}|" configure',
+			'sed -i "s|-DWIN32 -shared|-DWIN64 -static|" configure',
 		),
 		"run_post_build": (
 			'mkdir -pv "{target_prefix}/include/flite"',
-			'cp -v include/* "{target_prefix}/include/flite"',
-			'cp -v ./build/{bit_name}-mingw32/lib/*.a "{target_prefix}/lib"',
+			'cp -fv include/* "{target_prefix}/include/flite"',
+			'cp -fv ./build/{bit_name}-mingw32/lib/*.a "{target_prefix}/lib"',
 		),
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
 		'_info' : { 'version' : '1.4', 'fancy_name' : 'flite' },
