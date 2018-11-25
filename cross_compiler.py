@@ -2272,10 +2272,10 @@ PRODUCTS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'x265_multibit_hg',
 		'source_subfolder': 'source',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_SHARED=OFF -DENABLE_ASSEMBLY=ON -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON -DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed',
 		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (multibit 12/10/8)' },
-		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
+		'depends_on' : [ 'libxml2', 'libx265_multibit_10', 'libx265_multibit_12' ],
 	},
 	'flac' : {
 		'repo_type' : 'git',
@@ -3869,9 +3869,10 @@ DEPENDS = {
 		'repo_type' : 'mercurial',
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar', # no cli, as this is just for the library.
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_ASSEMBLY=ON -DENABLE_CLI:BOOL=OFF -DENABLE_SHARED=OFF -DCMAKE_AR={cross_prefix_full}ar -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON', # no cli, as this is just for the library.
 		'conf_system' : 'cmake',
 		'source_subfolder': 'source',
+		'depends_on' : [ 'libxml2' ],
 		'run_post_install' : [
 			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
 		],
@@ -3882,18 +3883,18 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_multibit',
 		'source_subfolder': 'source',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix}',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DENABLE_SHARED=OFF -DENABLE_CLI:BOOL=OFF -DEXTRA_LIB="x265_main10.a;x265_main12.a" -DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" -DLINKED_10BIT=ON -DLINKED_12BIT=ON -DCMAKE_INSTALL_PREFIX={target_prefix} -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON',
 		'conf_system' : 'cmake',
 		'run_post_build' : [
-			'mv -vf libx265.a libx265_main.a',
-			'cp -vf {offtree_prefix}/libx265_10bit/lib/libx265_main10.a libx265_main10.a',
-			'cp -vf {offtree_prefix}/libx265_12bit/lib/libx265_main12.a libx265_main12.a',
+			'mv -fv libx265.a libx265_main.a',
+			'cp -fv {offtree_prefix}/libx265_10bit/lib/libx265_main10.a libx265_main10.a',
+			'cp -fv {offtree_prefix}/libx265_12bit/lib/libx265_main12.a libx265_main12.a',
 			'"{cross_prefix_full}ar" -M <<EOF\nCREATE libx265.a\nADDLIB libx265_main.a\nADDLIB libx265_main10.a\nADDLIB libx265_main12.a\nSAVE\nEND\nEOF',
 		],
 		'run_post_install' : [
 			'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
 		],
-		'depends_on' : [ 'libx265_multibit_10', 'libx265_multibit_12' ],
+		'depends_on' : [ 'libxml2', 'libx265_multibit_10', 'libx265_multibit_12' ],
 		# 'patches': [ # for future reference
 		# 	[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/x265/0001-Remove_exports.patch', '-p1', '..' ],
 		# ],
@@ -3904,9 +3905,9 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_10bit',
 		'source_subfolder' : 'source',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_10bit -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON',
 		'run_post_install' : [
-			'mv -vf "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
+			'mv -fv "{offtree_prefix}/libx265_10bit/lib/libx265.a" "{offtree_prefix}/libx265_10bit/lib/libx265_main10.a"'
 		],
 		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (10))' },
@@ -3916,9 +3917,9 @@ DEPENDS = {
 		'url' : 'https://bitbucket.org/multicoreware/x265',
 		'rename_folder' : 'libx265_hg_12bit',
 		'source_subfolder' : 'source',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit',
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_AR={cross_prefix_full}ar -DENABLE_ASSEMBLY=ON -DHIGH_BIT_DEPTH=ON -DEXPORT_C_API=OFF -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DMAIN12=ON -DCMAKE_INSTALL_PREFIX={offtree_prefix}/libx265_12bit -DLIBXML_STATIC=ON -DGLIB_STATIC_COMPILATION=ON',
 		'run_post_install' : [
-			'mv -vf "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
+			'mv -fv "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
 		],
 		'conf_system' : 'cmake',
 		'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
