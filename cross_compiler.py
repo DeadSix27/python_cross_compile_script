@@ -3582,13 +3582,13 @@ DEPENDS = {
 		'needs_configure' : False,
 		'needs_make_install' : False,
 		"run_post_build": (
-			'cp -v lib/libgsm.a {target_prefix}/lib',
+			'cp -fv lib/libgsm.a {target_prefix}/lib',
 			'mkdir -pv {target_prefix}/include/gsm',
-			'cp -v inc/gsm.h {target_prefix}/include/gsm',
+			'cp -fv inc/gsm.h {target_prefix}/include/gsm',
 		),
 		#'cpu_count' : '1',
 		'build_options': '{make_prefix_options} INSTALL_ROOT={target_prefix}',
-		'_info' : { 'version' : '1.0.17', 'fancy_name' : 'gsm' },
+		'_info' : { 'version' : '1.0.18', 'fancy_name' : 'gsm' },
 	},
 	'davs2' : {
 		'repo_type' : 'git',
