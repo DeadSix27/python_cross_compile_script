@@ -3155,7 +3155,7 @@ DEPENDS = {
 		'url' : 'https://code.videolan.org/videolan/libdvdcss.git',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-doc',
 		'run_post_patch' : (
-			'autoreconf -i',
+			'autoreconf -fiv',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdcss' },
 	},
@@ -3167,7 +3167,7 @@ DEPENDS = {
 			'libdvdcss',
 		),
 		'run_post_patch' : (
-			'autoreconf -i',
+			'autoreconf -fiv',
 		),
 		'run_post_install' : (
 			'sed -i.bak \'s/-ldvdread/-ldvdread -ldvdcss/\' "{pkg_config_path}/dvdread.pc"', # fix undefined reference to `dvdcss_close'
@@ -3182,7 +3182,7 @@ DEPENDS = {
 			'libdvdread',
 		),
 		'run_post_patch' : (
-			'autoreconf -i',
+			'autoreconf -fiv',
 		),
 		'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdnav' },
 	},
