@@ -3461,7 +3461,11 @@ DEPENDS = {
 			# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-3.2.7-rpath.patch','-p1'),
 			# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-fix-external-libtasn1-detection.patch','-p1'),
 		# ],
-		'depends_on' : [ 'gmp', 'zlib', 'iconv', 'libnettle', ],
+		'depends_on' : [
+			'gmp',
+			'libnettle',
+		],
+		# 'env_exports' : {
 		'_info' : { 'version' : '3.6.4', 'fancy_name' : 'gnutls' },
 	},
 	'frei0r' : {
@@ -3848,13 +3852,13 @@ DEPENDS = {
 			{ "url" : "https://sourceforge.net/projects/soxr/files/soxr-0.1.3-Source.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "b111c15fdc8c029989330ff559184198c161100a59312f5dc19ddeb9b5a15889" }, ], },
 		],
 		'conf_system' : 'cmake',
-		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_BUILD_TYPE=Release -DWITH_LSR_BINDINGS:bool=ON -DBUILD_LSR_TESTS:bool=OFF -DBUILD_EXAMPLES:bool=OFF -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
+		'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DBUILD_SHARED_LIBS:bool=off -DBUILD_TESTS:BOOL=OFF -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'_info' : { 'version' : '0.1.3', 'fancy_name' : 'soxr' },
 	},
 	'libebur128' : { # uneeded
 		'repo_type' : 'git',
 		'url' : 'https://github.com/jiixyj/libebur128.git',
-		'configure_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar',
+		'configure_options': '. {cmake_prefix_options} -DENABLE_INTERNAL_QUEUE_H:BOOL=ON -DCMAKE_AR={cross_prefix_full}ar', #not sure why it cries about AR
 		'conf_system' : 'cmake',
 		'run_post_patch': (
 			'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
