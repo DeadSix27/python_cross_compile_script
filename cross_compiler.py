@@ -3492,15 +3492,12 @@ DEPENDS = {
 			#('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libsndfile/0003-fix-source-searches.mingw.patch', '-p0'),
 		#],
 		'run_post_patch': [
-			'autoreconf -fi -I M4',
+			'autoreconf -fiv -I M4',
 		],
 		'run_post_install' : [
 			'sed -i.bak \'s/Libs: -L${{libdir}} -lsndfile/Libs: -L${{libdir}} -lsndfile -lFLAC -lvorbis -lvorbisenc -logg -lspeex/\' "{pkg_config_path}/sndfile.pc"', #issue with rubberband not using pkg-config option "--static" or so idk?
 		],
-		'depends_on':
-		[
-			'libspeex',
-		],
+		'depends_on': [	'libspeex' ],
 		'packages': {
 			'arch' : [ 'autogen' ],
 		},
