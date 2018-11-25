@@ -73,6 +73,11 @@ class MyLogFormatter(logging.Formatter):
 		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=MyLogFormatter.log_date_format, style='%')
 
 	def format(self, record):
+		if not hasattr(record,"type"):
+			record.type = ""
+		else:
+			record.type = "[" + record.type.upper() + "]"
+		
 		format_orig = self._style._fmt
 		if record.levelno == logging.DEBUG:
 			self._style._fmt = MyLogFormatter.dbg_fmt
@@ -94,7 +99,7 @@ class CrossCompileScript:
 		self.DEPENDS                = depends
 		self.VARIABLES              = variables
 		hdlr                        = logging.StreamHandler(sys.stdout)
-		fmt                         = MyLogFormatter("[%(asctime)s][%(levelname)s] %(message)s","%H:%M:%S")
+		fmt                         = MyLogFormatter("[%(asctime)s][%(levelname)s]%(type)s %(message)s","%H:%M:%S")
 		hdlr.setFormatter(fmt)
 		self.logger                 = logging.getLogger(__name__)
 		self.logger.addHandler(hdlr)
@@ -125,7 +130,7 @@ class CrossCompileScript:
 				'debug' : False,
 				'quiet': False,
 				'log_date_format': '%H:%M:%S',
-				'log_format': '[%(asctime)s][%(levelname)s] %(message)s',
+				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
 				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
 				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
 				'mingw_script_url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py',
@@ -1385,7 +1390,7 @@ class CrossCompileScript:
 			if data['is_dep_inheriter'] == True:
 				return
 
-		self.logger.info("Building {0} '{1}'".format(type,name))
+		self.logger.info("Building {0} '{1}'".format(type.lower(),name))
 		self.defaultCFLAGS()
 
 		if 'warnings' in data:
@@ -1626,7 +1631,7 @@ class CrossCompileScript:
 		else:
 			self.DEPENDS[name]["_already_built"] = True
 
-		self.logger.info("Building {0} '{1}': Done!".format(type,name))
+		self.logger.info("Building {0} '{1}': Done!".format(type.lower(),name))
 		if 'debug_exitafter' in data:
 			exit()
 
@@ -1676,7 +1681,7 @@ class CrossCompileScript:
 			configOpts = ''
 			if 'configure_options' in data:
 				configOpts = self.replaceVariables(data["configure_options"])
-			self.logger.info("Configuring '{0}' with: {1}".format( name, configOpts ))
+			self.logger.info("Configuring '{0}' with: {1}".format(name, configOpts ),extra={'type': conf_system})
 
 			confCmd = './configure'
 			if conf_system == "waf":
@@ -1706,7 +1711,6 @@ class CrossCompileScript:
 				self.run_process('{0} -j {1}'.format( mCleanCmd, self.cpuCount ),True)
 
 			self.touch(touch_name)
-			self.logger.info("Finsihed configuring '{0}'".format( name ))
 
 	def apply_patch(self,url,type = "-p1", postConf = False, folderToPatchIn = None):
 
@@ -1799,7 +1803,7 @@ class CrossCompileScript:
 			if 'build_options' in data:
 				makeOpts = self.replaceVariables(data["build_options"])
 
-			self.logger.info("Building '{0}' with: {1} in {2}".format( name, makeOpts, os.getcwd() ))
+			self.logger.info("Building '{0}' with: {1} in {2}".format(name, makeOpts, os.getcwd()),extra={'type': build_system})
 
 			cpcnt = '-j {0}'.format(self.cpuCount)
 
@@ -1852,7 +1856,7 @@ class CrossCompileScript:
 					installTarget = data['install_target']
 
 
-			self.logger.info("Installing '{0}' with: {1}".format( name, makeInstallOpts ))
+			self.logger.info("Installing '{0}' with: {1}".format(name, makeInstallOpts ),extra={'type': build_system})
 
 			mkCmd = "make"
 			if build_system == "waf":
