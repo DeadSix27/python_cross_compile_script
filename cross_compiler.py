@@ -129,7 +129,7 @@ class CrossCompileScript:
 				'quiet': False,
 				'log_date_format': '%H:%M:%S',
 				'log_format': '[%(asctime)s][%(levelname)s] %(message)s',
-				'product_order': ['mpv', 'ffmpeg_static'] #, 'ffmpeg_shared'],
+				'product_order': ['mpv', 'ffmpeg_static'], #, 'ffmpeg_shared'],
 				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
 				'mingw_script_url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py',
 				'overwrite_mingw_script': True,
@@ -3996,7 +3996,8 @@ DEPENDS = {
 		'rename_folder' : 'harfbuzz-with-freetype',
 		'configure_options': '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --enable-shared=no --enable-static=yes --enable-introspection --with-icu=no --with-glib=yes --with-gobject=no --disable-gtk-doc-html', # 3018.11.23
 		'depends_on': [
-			'libglib2'
+			'libglib2',
+		],
 		'_info' : { 'version' : '2.1.3', 'fancy_name' : 'harfbuzz (with freetype2)' },
 	},
 	'freetype_lib-with-harfbuzz' : {
