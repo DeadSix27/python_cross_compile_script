@@ -85,9 +85,6 @@ class MyLogFormatter(logging.Formatter):
 		result = logging.Formatter.format(self, record)
 		self._style._fmt = format_orig
 		return result
-		
-_OUR_VER           = ".".join(str(x) for x in sys.version_info[0:3])
-_TESTED_VERS       = ['3.5.3', '3.6.3', '3.6.4', '3.6.5', '3.6.6', '3.6.7', '3.7.0']
 
 class CrossCompileScript:
 
@@ -312,8 +309,6 @@ class CrossCompileScript:
 				return text.splitlines()
 
 		_epilog = 'Copyright (C) 2018 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
-		if _OUR_VER not in _TESTED_VERS:
-			_epilog = Colors.RED + "Warning: This script is not tested on your Python Version, it may or may not work properly.: " + _OUR_VER + Colors.RESET + "\n\n" +_epilog
 
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
 		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper (MPL2.0)' + Colors.RESET + '\n\nExample usages:' \
@@ -450,8 +445,6 @@ class CrossCompileScript:
 
 	def prepareBuilding(self,b):
 		self.logger.info('Starting build script')
-		if _OUR_VER not in _TESTED_VERS:
-			self.logger.warning(Colors.LIGHTRED_EX + "Warning: This script is not tested on your Python Version: " + _OUR_VER + Colors.RESET)
 		if not os.path.isdir(self.fullWorkDir):
 			self.logger.info("Creating workdir: %s" % (self.fullWorkDir))
 			os.makedirs(self.fullWorkDir, exist_ok=True)
@@ -2815,7 +2808,7 @@ DEPENDS = {
 			'libgme_game_music_emu', 'libwebp', 'flite', 'libgsm', 'sdl2', 'libopus', 'opencore-amr', 'vo-amrwbenc', 'libogg', 'libspeex', 'davs2', 'openmpt',
 			'libvorbis', 'libtheora', 'freetype', 'expat', 'libxml2', 'libbluray', 'libxvid', 'xavs', 'xavs2', 'libsoxr', 'libx265_multibit', 'kvazaar', 'libaom',
 			'libdav1d', 'vamp_plugin', 'fftw3', 'libsamplerate', 'librubberband', 'liblame' ,'twolame', 'vidstab', 'libmysofa', 'libcaca', 'libmodplug',
-			'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'amf_headers', 'nv-codec-headers'
+			'zvbi', 'libvpx', 'libilbc', 'libfribidi', 'gettext', 'libass', 'intel_quicksync_mfx', 'rtmpdump', 'libx264', 'libcdio', 'libcdio-paranoia', 'amf_headers', 'nv-codec-headers'
 		],
 	},
 	'opencl_icd' : {
@@ -3534,7 +3527,7 @@ DEPENDS = {
 		'url' : 'https://chromium.googlesource.com/webm/libwebp',
 		#'branch' : '082757087332f55c7daa5a869a19f1598d0be401', #old: e4eb458741f61a95679a44995c212b5f412cf5a1
 		'run_post_patch': [
-			'sed -i.bak "s/\$LIBPNG_CONFIG /\$LIBPNG_CONFIG --static /g" configure.ac', # fix building wiht libpng
+			'sed -i.bak "s/\$LIBPNG_CONFIG /\$LIBPNG_CONFIG --static /g" configure.ac', # fix building with libpng
 			'autoreconf -fiv',
 		],
 		'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
