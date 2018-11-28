@@ -418,7 +418,7 @@ class CrossCompileScript:
 				self.defaultEntrace()
 				return
 
-			self.logger.warning('Starting custom build process for: {0}'.format(thingToBuild))
+			self.logger.info('Starting custom build process for: {0}'.format(thingToBuild))
 			
 			skipDeps = False
 			
