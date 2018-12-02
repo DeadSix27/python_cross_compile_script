@@ -2,8 +2,8 @@
 	'repo_type' : 'archive',
 	'download_locations' : [
 		#UPDATECHECKS: https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/
-		{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.4.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c663a792fbc84349c27c36059181f2ca86c9442e75ee8b0ad72f5f9b35deab3a" }, ], },
-		{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.4.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c663a792fbc84349c27c36059181f2ca86c9442e75ee8b0ad72f5f9b35deab3a" }, ], },
+		{ "url" : "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.5.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c0ee1442876d022ab93fa111cd072ce131519325f6ede55c4930463e" }, ], },
+		{ "url" : "https://fossies.org/linux/misc/gnutls-3.6.5.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "c0ee1442876d022ab93fa111cd072ce131519325f6ede55c4930463e" }, ], },
 	],
 	'configure_options':
 		'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
@@ -46,5 +46,5 @@
 		'libnettle',
 	],
 	# 'env_exports' : {
-	'_info' : { 'version' : '3.6.4', 'fancy_name' : 'gnutls' },
+	'_info' : { 'version' : '3.6.5', 'fancy_name' : 'gnutls' },
 }
