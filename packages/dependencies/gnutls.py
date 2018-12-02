@@ -36,11 +36,12 @@
 	'run_post_install': [
 		'sed -i.bak \'s/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -liconv/\' "{pkg_config_path}/gnutls.pc"', #TODO -lintl
 	],
-	# 'patches' : [
+	'patches' : [
+		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gnutls/gnutls-3.6.5-use-nettle34.patch', '-p1'),
 		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gnutls/0001-gnutls-3.5.11-arpainet_pkgconfig.patch', '-p1'),
 		# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-3.2.7-rpath.patch','-p1'),
 		# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-fix-external-libtasn1-detection.patch','-p1'),
-	# ],
+	],
 	'depends_on' : [
 		'gmp',
 		'libnettle',
