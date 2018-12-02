@@ -272,6 +272,7 @@ class CrossCompileScript:
 	def init(self):
 		self.product_order          = self.config["script"]["product_order"]
 		self.fullCurrentPath        = os.getcwd()
+		self.fullPatchDir           = os.path.join(self.fullCurrentPath,"patches")
 		self.fullWorkDir            = os.path.join(self.fullCurrentPath,self.config["toolchain"]["work_dir"])
 		self.mingwDir               = self.config["toolchain"]["mingw_dir"]
 		self.fullProductDir         = None
@@ -1838,19 +1839,29 @@ class CrossCompileScript:
 
 			self.touch(touch_name)
 
-	def apply_patch(self,url,type = "-p1", postConf = False, folderToPatchIn = None):
-
+	def apply_patch( self, url, type = "-p1", postConf = False, folderToPatchIn = None):		
 		originalFolder = os.getcwd()
 
 		if folderToPatchIn != None:
 			self.cchdir(folderToPatchIn)
 			self.logger.info("Moving to patch folder: {0}" .format( os.getcwd() ))
-
-		fileName = os.path.basename(urlparse(url).path)
-
-		if not os.path.isfile(fileName):
+		pUrl = urlparse(url)
+		if pUrl.scheme != '':
+			fileName = os.path.basename(pUrl.path)
 			self.logger.info("Downloading patch '{0}' to: {1}".format( url, fileName ))
 			self.download_file(url,fileName)
+		else:
+			local_patch_path = os.path.join(self.fullPatchDir,url)
+			fileName = os.path.basename(Path(local_patch_path).name)
+			if os.path.isfile(local_patch_path):
+				copyPath = os.path.join(os.getcwd(),fileName)
+				print(local_patch_path,copyPath)
+				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path,copyPath))
+				shutil.copyfile(local_patch_path,copyPath)
+			else:
+				fileName = os.path.basename(urlparse(url).url)
+				url = "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches" + url
+				self.download_file(url,fileName)
 
 		patch_touch_name = "%s.done" % (fileName)
 
