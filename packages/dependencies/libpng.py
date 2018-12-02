@@ -2,8 +2,8 @@
 	'repo_type' : 'archive',
 	'download_locations' : [
 		#UPDATECHECKS: https://sourceforge.net/projects/libpng/files/libpng16/
-		{ "url" : "https://sourceforge.net/projects/libpng/files/libpng16/1.6.36/libpng-1.6.36.tar.xz",	"hashes" : [ { "type" : "sha256", "sum" : "53e54609120f0cd5fb58eab4f0f40386d2f45a8469f5cd252da1b3b0" },	], },
-		{ "url" : "https://fossies.org/linux/misc/libpng-1.6.36.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "53e54609120f0cd5fb58eab4f0f40386d2f45a8469f5cd252da1b3b0" }, ],	},
+		{ "url" : "https://sourceforge.net/projects/libpng/files/libpng16/1.6.36/libpng-1.6.36.tar.xz",	"hashes" : [ { "type" : "sha256", "sum" : "eceb924c1fa6b79172fdfd008d335f0e59172a86a66481e09d4089df872aa319" },	], },
+		{ "url" : "https://fossies.org/linux/misc/libpng-1.6.36.tar.xz", "hashes" : [ { "type" : "sha256", "sum" : "eceb924c1fa6b79172fdfd008d335f0e59172a86a66481e09d4089df872aa319" }, ],	},
 	],
 	# 'custom_cflag' : '-fno-asynchronous-unwind-tables',
 	'conf_system' : 'cmake',

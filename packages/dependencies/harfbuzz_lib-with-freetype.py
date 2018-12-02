@@ -2,8 +2,8 @@
 	'repo_type' : 'archive',
 	'download_locations' : [
 		#UPDATECHECKS https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D
-		{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.2.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "49b8d984d2e9a0157ffaf880d4bdeda4207aff6431d85303df77a0d4" }, ], },
-		{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.2.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "49b8d984d2e9a0157ffaf880d4bdeda4207aff6431d85303df77a0d4" }, ], },
+		{ "url" : "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-2.2.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "b7ccfcbd56b970a709e8b9ea9fb46c922c606c2feef8f086fb6a8492e530f810" }, ], },
+		{ "url" : "https://fossies.org/linux/misc/harfbuzz-2.2.0.tar.bz2", "hashes" : [ { "type" : "sha256", "sum" : "b7ccfcbd56b970a709e8b9ea9fb46c922c606c2feef8f086fb6a8492e530f810" }, ], },
 	],
 	'run_post_install': [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',

@@ -2,8 +2,8 @@
 	'repo_type' : 'archive',
 	'download_locations' : [
 		#UPDATECHECKS: http://xmlsoft.org/sources/?C=M;O=D
-		{ "url" : "http://xmlsoft.org/sources/libxml2-2.9.9-rc2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "90a1190415c18d04fbb4d541cc6abac9dc1a4037d51e91fe00b7fba5" }, ], },
-		{ "url" : "https://fossies.org/linux/www/libxml2-2.9.9-rc2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "90a1190415c18d04fbb4d541cc6abac9dc1a4037d51e91fe00b7fba5" }, ], },
+		{ "url" : "http://xmlsoft.org/sources/libxml2-2.9.9-rc2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "3102fa5a9f45378bb656b6f8e8402ff2ec1a7391815df156066d4683fe06abe8" }, ], },
+		{ "url" : "https://fossies.org/linux/www/libxml2-2.9.9-rc2.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "3102fa5a9f45378bb656b6f8e8402ff2ec1a7391815df156066d4683fe06abe8" }, ], },
 	],
 	'folder_name' : 'libxml2-2.9.9',
 	'rename_folder' : 'libxml2-2.9.9-rc2',
