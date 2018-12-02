@@ -1839,12 +1839,29 @@ class CrossCompileScript:
 
 			self.touch(touch_name)
 
-	def apply_patch( self, url, type = "-p1", postConf = False, folderToPatchIn = None):		
+	def apply_patch( self, url, type = "-p1", postConf = False, folderToPatchIn = None):
+	
 		originalFolder = os.getcwd()
-
 		if folderToPatchIn != None:
 			self.cchdir(folderToPatchIn)
 			self.logger.info("Moving to patch folder: {0}" .format( os.getcwd() ))
+			
+		patch_touch_name = "patch_%s.done" % (self.md5(url))
+		
+		ignoreErr = False
+		exitOn = True
+		ignore = ""
+
+		if postConf:
+			patch_touch_name = patch_touch_name + "_past_conf"
+			ignore = "-N "
+			ignoreErr = True
+			exitOn = False
+		
+		if os.path.isfile(patch_touch_name):
+			self.logger.debug("Patch '{0}' already applied".format( url ))
+			return
+
 		pUrl = urlparse(url)
 		if pUrl.scheme != '':
 			fileName = os.path.basename(pUrl.path)
@@ -1863,27 +1880,14 @@ class CrossCompileScript:
 				url = "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches" + url
 				self.download_file(url,fileName)
 
-		patch_touch_name = "%s.done" % (fileName)
-
-		ignoreErr = False
-		exitOn = True
-		ignore = ""
-
-		if postConf:
-			patch_touch_name = patch_touch_name + "_past_conf"
-			ignore = "-N "
-			ignoreErr = True
-			exitOn = False
-
-		if not os.path.isfile(patch_touch_name):
-			self.logger.info("Patching source using: '{0}'".format( fileName ))
-			self.run_process('patch {2}{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
-			self.touch(patch_touch_name)
-			if not postConf:
-				self.removeAlreadyFiles()
-		else:
-			self.logger.debug("Patch '{0}' already applied".format( fileName ))
-
+		self.logger.info("Patching source using: '{0}'".format( fileName ))
+		self.run_process('patch {2}{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
+		
+		if not postConf:
+			self.removeAlreadyFiles()
+			
+		self.touch(patch_touch_name)
+			
 		if folderToPatchIn != None:
 			self.cchdir(originalFolder)
 	#:
