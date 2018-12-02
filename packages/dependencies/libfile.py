@@ -1,7 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/file/file.git',
-	'branch' : '4091ea8660a4355b0379564dc901e06bdcdc8c50', #'42d9a8a34607e8b0336b4c354cd5e7e7692bfec7',
+	'branch' : 'bf8b5f2cf7ce59ae2170e7f2fb026182c4dddcdc',
 	'rename_folder' : 'libfile.git',
 	'patches' : [
 		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
