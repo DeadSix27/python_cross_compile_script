@@ -8,10 +8,10 @@
 		{ "url" : "http://www.quut.com/gsm/gsm-1.0.18.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "04f68087c3348bf156b78d59f4d8aff545da7f6e14f33be8f47d33f4efae2a10" }, ], },
 	],
 	'folder_name' : 'gsm-1.0-pl18',
-	'patches' : (
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16.patch', '-p0'),
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gsm-1.0.16_Makefile.patch', '-p0'), # toast fails. so lets just patch it out of the makefile..
-	),
+	'patches' : [
+		('gsm/gsm-1.0.16.patch', '-p0'),
+		('gsm/gsm-1.0.16_Makefile.patch', '-p0'), # toast fails. so lets just patch it out of the makefile..
+	],
 	'needs_configure' : False,
 	'needs_make_install' : False,
 	"run_post_build": (

@@ -8,9 +8,9 @@
 		'sed -i.bak "s/ -mwindows//" ../configure',
 	],
 	# SDL2 patch superseded per https://hg.libsdl.org/SDL/rev/117d4ce1390e
-	#'patches' : (
+	#'patches' : [
 	#	('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/sdl2/0001-SDL2_hg.xinput_state_ex.patch', '-p1', '..'),
-	#),
+	#],
 	# 'custom_cflag' : '-DDECLSPEC=', # avoid SDL trac tickets 939 and 282, and not worried about optimizing yet...
 	"run_post_install": (
 		'sed -i.bak "s/  -lmingw32 -lSDL2main -lSDL2 /  -lmingw32 -lSDL2main -lSDL2  -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{pkg_config_path}/sdl2.pc"', # allow ffmpeg to output anything to console :|

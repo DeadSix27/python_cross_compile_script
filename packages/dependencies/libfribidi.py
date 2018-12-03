@@ -3,7 +3,7 @@
 	'repo_type' : 'git',
 	'do_not_bootstrap' : True,
 	'patches' : [
-		[ 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fribidi/0001-mingwcompat-remove-doc-tests.patch', '-p1' ],
+		( 'fribidi/0001-mingwcompat-remove-doc-tests.patch', '-p1' ),
 	],
 	'run_post_patch': [
 		'autoreconf -fiv',

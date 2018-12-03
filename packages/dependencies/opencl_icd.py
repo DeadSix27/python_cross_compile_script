@@ -13,8 +13,8 @@
 		'if [ ! -f "already_ran_make_install" ] ; then touch already_ran_make_install ; fi',
 	],
 	'patches' : [
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opencl/0001-OpenCL-git-prefix.patch','-p1'),
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/opencl/0002-OpenCL-git-header.patch','-p1'),
+		('opencl/0001-OpenCL-git-prefix.patch','-p1'),
+		('opencl/0002-OpenCL-git-header.patch','-p1'),
 	],
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'OpenCL ICD' },
 }

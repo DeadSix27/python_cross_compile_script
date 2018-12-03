@@ -10,7 +10,7 @@
 	'configure_options': '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DBUILD_BINARY=OFF -DCMAKE_BUILD_TYPE=Release -DPNG_TESTS=OFF -DPNG_SHARED=OFF -DPNG_STATIC=ON',
 	# 'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --oldincludedir={target_prefix}/include',
 	'patches' : [
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libpng/libpng-1.6.36-apng.patch', '-p1'),
+		('libpng/libpng-1.6.36-apng.patch', '-p1'),
 	],
 	'depends_on' : [ 'zlib', ],
 	'_info' : { 'version' : '1.6.36', 'fancy_name' : 'libpng' },

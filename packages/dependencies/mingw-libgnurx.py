@@ -15,8 +15,8 @@
 		#'make -f "Makefile.mingw-cross-env" libgnurx.a V=1'
 	],
 	'patches' : [
-		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mingw-libgnurx-static.patch', '-p1' ),
-		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libgnurx-1-build-static-lib.patch', '-p1' ),
+		( 'libgnurx/mingw-libgnurx-static.patch', '-p1' ),
+		( 'libgnurx/libgnurx-1-build-static-lib.patch', '-p1' ),
 	],
 	'_info' : { 'version' : '2.5.1', 'fancy_name' : 'mingw-libgnurx' },
 }

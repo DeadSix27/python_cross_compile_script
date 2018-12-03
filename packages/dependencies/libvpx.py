@@ -15,8 +15,8 @@
 		'CROSS' : '{cross_prefix_bare}',
 	},
 	'custom_cflag' : '-fno-asynchronous-unwind-tables',
-	'patches': (
-		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vpx_160_semaphore.patch', '-p1' ),
-	),
+	'patches': [
+		( 'vpx/vpx_160_semaphore.patch', '-p1' ),
+	],
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libvpx' },
 }

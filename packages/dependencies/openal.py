@@ -9,12 +9,12 @@
 		'. {cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={target_host}'
 		' -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_FIND_ROOT_PATH='
 		' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
-	'patches' : (
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0001-versioned-w32-dll.mingw.patch', '-p1'),
-		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0002-w32ize-portaudio-loading.mingw.patch', '-p1'),
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0003-openal-not-32.mingw.patch', '-p1'),
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/openal/0004-disable-OSS-windows.patch', '-p1'),
-	),
+	'patches' : [
+		('openal/0001-versioned-w32-dll.mingw.patch', '-p1'),
+		# ('openal/0002-w32ize-portaudio-loading.mingw.patch', '-p1'),
+		('openal/0003-openal-not-32.mingw.patch', '-p1'),
+		('openal/0004-disable-OSS-windows.patch', '-p1'),
+	],
 	'run_post_patch' : [
 		"sed -i.bak 's/CMAKE_INSTALL_PREFIX \"\${{CMAKE_FIND_ROOT_PATH}}\"/CMAKE_INSTALL_PREFIX ""/' XCompile.txt",
 	],

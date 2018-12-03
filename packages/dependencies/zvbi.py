@@ -10,10 +10,10 @@
 	},
 	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-dvb --disable-bktr --disable-nls --disable-proxy --without-doxygen',
 	'make_subdir' : 'src',
-	'patches': (
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi/0001-zvbi-0.2.35_win32.patch', '-p1'),
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/zvbi/0002-zvbi-0.2.35_ioctl.patch', '-p1'),
-	),
+	'patches': [
+		('zvbi/0001-zvbi-0.2.35_win32.patch', '-p1'),
+		('zvbi/0002-zvbi-0.2.35_ioctl.patch', '-p1'),
+	],
 	#sed -i.bak 's/-lzvbi *$/-lzvbi -lpng/' "$PKG_CONFIG_PATH/zvbi.pc"
 	'run_post_build' : (
 		'pwd',

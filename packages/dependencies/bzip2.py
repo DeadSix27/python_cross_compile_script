@@ -4,10 +4,10 @@
 		#{ "url" : "http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], }, # Website is dead.
 		{ "url" : "https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" }, ], },
 	],
-	'patches' : (
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2/bzip2_cross_compile.diff', '-p0'),
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/bzip2/bzip2-1.0.6-gcc8.patch', '-p0'),
-	),
+	'patches' : [
+		('bzip2/bzip2_cross_compile.diff', '-p0'),
+		('bzip2/bzip2-1.0.6-gcc8.patch', '-p0'),
+	],
 	"needs_configure": False,
 	"needs_make": True,
 	"needs_make_install": False,

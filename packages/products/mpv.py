@@ -55,8 +55,8 @@
 	},
 	'patches' : [
 		# Enable PR's by preference
-		[ 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ], # osc: seekranges enhancement
-		[ 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ], # some left-shift to mmouse alias PR
+		( 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ), # osc: seekranges enhancement
+		( 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ), # some left-shift to mmouse alias PR
 		# [ 'https://github.com/mpv-player/mpv/pull/6158.patch', '-p1' ], # wm4's controversial giant pr
 		# [ 'https://github.com/mpv-player/mpv/pull/6326.patch', '-p1' ], # hwdec_cuda: Use explicit synchronisation in vulkan interop	
 	],

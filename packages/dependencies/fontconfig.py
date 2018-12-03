@@ -7,8 +7,8 @@
 	'folder_name' : 'fontconfig_git',
 	'configure_options': '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
 	'patches' : [
-		['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/0001-fontconfig-remove-tests.patch', '-p1' ],
-		['https://raw.githubusercontent.com/DeadSix27/misc_patches/master/fontconfig/fontconfig-git-utimes.patch', '-p1' ],
+		('fontconfig/0001-fontconfig-remove-tests.patch', '-p1' ),
+		('fontconfig/fontconfig-git-utimes.patch', '-p1' ),
 		# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ],
 	],
 	'run_post_patch': [

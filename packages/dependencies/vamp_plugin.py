@@ -8,9 +8,9 @@
 	'run_post_patch': (
 		'cp -fv build/Makefile.mingw64 Makefile',
 	),
-	'patches' : (
-		('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/vamp-plugin-sdk-2.7.1.patch','-p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
-	),
+	'patches' : [
+		('vamp/vamp-plugin-sdk-2.7.1.patch','-p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
+	],
 	'build_options': '{make_prefix_options} sdkstatic', # for DLL's add 'sdk rdfgen'
 	'needs_make_install' : False, # doesnt s support xcompile installing
 	'run_post_build' : ( # lets install it manually then I guess?

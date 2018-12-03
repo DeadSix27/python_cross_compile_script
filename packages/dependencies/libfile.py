@@ -4,7 +4,7 @@
 	'branch' : 'bf8b5f2cf7ce59ae2170e7f2fb026182c4dddcdc',
 	'rename_folder' : 'libfile.git',
 	'patches' : [
-		( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/file-win32.patch', '-p1' ),
+		( 'libfile/file-win32.patch', '-p1' ),
 	],
 	'configure_options': '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-fsect-man5',
 	'depends_on' : [ 'mingw-libgnurx', 'libfile_local' ],
