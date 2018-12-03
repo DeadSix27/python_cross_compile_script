@@ -436,6 +436,7 @@ class CrossCompileScript:
 		_epilog = 'Copyright (C) 2018 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)\n\n This Source Code Form is subject to the terms of the Mozilla Public\n License, v. 2.0. If a copy of the MPL was not distributed with this\n file, You can obtain one at https://mozilla.org/MPL/2.0/.\n '
 
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
+		parser.set_defaults(which='main')
 		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper (MPL2.0)' + Colors.RESET + '\n\nExample usages:' \
 			'\n "{0} list -p"             - lists all the products' \
 			'\n "{0} -a"                  - builds everything' \
@@ -446,6 +447,7 @@ class CrossCompileScript:
 		subparsers = parser.add_subparsers(help='Sub commands')
 
 		list_p = subparsers.add_parser('list', help= 'Type: \'' + parser.prog + ' list --help\' for more help')
+		list_p.set_defaults(which='list_p')
 
 		list_p.add_argument('-md', '--markdown', help='Print list in markdown format', action='store_true')
 		list_p.add_argument('-cv', '--csv', help='Print list as CSV-like string', action='store_true')
@@ -455,12 +457,20 @@ class CrossCompileScript:
 
 
 		chelps_p = subparsers.add_parser('chelps', help= 'Type: \'' + parser.prog + ' chelps --help\' for more help')
+		list_p.set_defaults(which='chelps_p')
 		chelps_p_group1 = chelps_p.add_mutually_exclusive_group(required=True)
 		chelps_p_group1.add_argument('-p', '--products',    nargs=0, help='Write all product config helps to confighelps.txt',     action=self.assembleConfigHelps(self.packages["prods"],"P",self))
 		chelps_p_group1.add_argument('-d', '--dependencies', nargs=0, help='Write all dependency config helps to confighelps.txt',  action=self.assembleConfigHelps(self.packages["deps"], "D",self))
+		
+		info_p = subparsers.add_parser('info', help= 'Type: \'' + parser.prog + ' info --help\' for more help')
+		info_p.set_defaults(which='info_p')
+		
+		info_p_group1 = info_p.add_mutually_exclusive_group( required = True )
+		info_p_group1.add_argument('-r', '--required-by', help='List all packages this dependency is required by')
+		
 
 
-		group2 = parser.add_mutually_exclusive_group( required = True )
+		group2 = parser.add_mutually_exclusive_group( required = False )
 		group2.add_argument( '-p',  '--build-product',         dest='PRODUCT',         help='Build this product (and dependencies)'                        )
 		group2.add_argument( '-pl', '--build-product_list',    dest='PRODUCT_LIST',    help='Build this product list'                                      )
 		group2.add_argument( '-d',  '--build-dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
@@ -482,6 +492,11 @@ class CrossCompileScript:
 					print(m)
 				exit(1)
 			args = parser.parse_args()
+			
+			if args.which == "info_p":
+				self.listRequiredBy(args.required_by)
+				return
+			
 			forceRebuild = False
 			if args.debug:
 				self.debugMode = True
@@ -555,6 +570,41 @@ class CrossCompileScript:
 					else:
 						self.build_thing(thing,self.packages["deps"][thing],buildType,forceRebuild,skipDeps)
 					main.finishBuilding()
+					
+	def listRequiredBy(self,o):
+		ptype = None
+		if o in self.packages["prods"]:
+			ptype = "prods"
+		elif o in self.packages["deps"]:
+			ptype = "deps"
+		else:
+			self.logger.error("'%s' is not an existing package." % (o))
+			sys.exit(1)
+			
+		prods_requiring_it = []
+		deps_requiring_it = []
+		
+		for p in self.packages["deps"]:
+			pkg = self.packages["deps"][p]
+			if "depends_on" in pkg:
+				if o in pkg["depends_on"]:
+					deps_requiring_it.append(p)
+		for p in self.packages["prods"]:
+			pkg = self.packages["prods"][p]
+			if "depends_on" in pkg:
+				if o in pkg["depends_on"]:
+					prods_requiring_it.append(p)
+					
+		if len(prods_requiring_it) > 0 or len(deps_requiring_it) > 0:
+			self.logger.info("Packages requiring '%s':" % (o))
+			if len(deps_requiring_it) > 0:
+				self.logger.info("\tDependencies: %s" % (",".join(deps_requiring_it)))
+			if len(prods_requiring_it) > 0:
+				self.logger.info("\tProducts    : %s" % (",".join(prods_requiring_it)))
+		else:
+			self.logger.warning("There are no packages that require '%s'." % (o))
+		
+		sys.exit(0)
 
 	def defaultEntrace(self):
 		for b in self.targetBitness:
@@ -1513,8 +1563,15 @@ class CrossCompileScript:
 						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
 					else:
 						self.build_thing(libraryName,self.packages["deps"][libraryName],"DEPENDENCY")
+		
 		if 'is_dep_inheriter' in data:
 			if data['is_dep_inheriter'] == True:
+				print("Gothere")
+				if type == "PRODUCT":
+					self.packages["prods"][name]["_already_built"] = True
+				else:
+					self.packages["deps"][name]["_already_built"] = True
+				
 				return
 
 		self.logger.info("Building {0} '{1}'".format(type.lower(),name))
