@@ -2,7 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 	'recursive_git' : True, 
-	'configure_options': 
+	'configure_options' : 
 		'. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} '
 		'-DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_ASM-ATT_COMPILER={mingw_binpath}/{cross_prefix_bare}as '
 		'-DBUILD_TESTS=OFF -DENABLE_STATIC_LOADER=ON '

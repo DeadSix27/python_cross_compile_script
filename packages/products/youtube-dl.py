@@ -8,7 +8,7 @@
 	'run_post_install' : [
 		'if [ -f "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" ] ; then mv "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl" "{product_prefix}/youtube-dl_git.installed/bin/youtube-dl.py" ; fi',
 	],
-	'build_options': 'youtube-dl',
+	'build_options' : 'youtube-dl',
 	'patches' : [
 		( 'https://github.com/DeadSix27/youtube-dl/commit/4a386648cf85511d9eb283ba488858b6a5dc2444.patch', '-p1' ),
 	],

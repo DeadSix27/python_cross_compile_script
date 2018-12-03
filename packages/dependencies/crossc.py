@@ -4,7 +4,7 @@
 	'cpu_count' : '1',
 	'recursive_git' : True,
 	'needs_configure' : False,
-	'build_options': '{make_prefix_options} static',
+	'build_options' : '{make_prefix_options} static',
 	'install_options' : '{make_prefix_options} prefix={target_prefix} install-static',
 	'run_post_patch' : [
 		'git submodule update --remote --recursive',

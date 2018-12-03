@@ -5,7 +5,7 @@
 	'build_system' : 'ninja',
 	'rename_folder' : 'libdav1d_git',
 	'source_subfolder' : 'build',
-	'configure_options':
+	'configure_options' :
 		'--prefix={target_prefix} '
 		'--libdir={target_prefix}/lib '
 		'--default-library=static '

@@ -15,7 +15,7 @@
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" audio/out/ao_lavc.c',  #
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.c', #
 	],
-	'configure_options':
+	'configure_options' :
 		'--enable-libmpv-shared '
 		'--disable-debug-build '
 		'--prefix={product_prefix}/mpv_git.installed '
@@ -50,7 +50,7 @@
 	'depends_on' : [
 		'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
 	],
-	'packages': {
+	'packages' : {
 		'arch' : [ 'rst2pdf' ],
 	},
 	'patches' : [
@@ -60,10 +60,10 @@
 		# [ 'https://github.com/mpv-player/mpv/pull/6158.patch', '-p1' ], # wm4's controversial giant pr
 		# [ 'https://github.com/mpv-player/mpv/pull/6326.patch', '-p1' ], # hwdec_cuda: Use explicit synchronisation in vulkan interop	
 	],
-	'run_post_configure': (
+	'run_post_configure' : (
 		'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 	),
-	'run_post_install': (
+	'run_post_install' : (
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv-1.dll',

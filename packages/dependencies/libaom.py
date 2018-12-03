@@ -4,7 +4,7 @@
 	'branch' : '67aec0fc602b068216b43e0fe5060e5eb903bcb8',
 	'conf_system' : 'cmake',
 	'source_subfolder' : 'build',
-	'configure_options': '.. {cmake_prefix_options} '
+	'configure_options' : '.. {cmake_prefix_options} '
 		'-DCMAKE_INSTALL_PREFIX={target_prefix} '
 		'-DCONFIG_LOWBITDEPTH=0 -DCONFIG_HIGHBITDEPTH=1 '
 		'-DCONFIG_AV1=1 -DHAVE_PTHREAD=1 -DBUILD_SHARED_LIBS=0 -DENABLE_DOCS=0 -DCONFIG_INSTALL_DOCS=0 '

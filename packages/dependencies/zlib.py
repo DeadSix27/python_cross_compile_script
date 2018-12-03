@@ -10,7 +10,7 @@
 		'STRIP'  : '{cross_prefix_bare}strip',
 		'CXX'    : '{cross_prefix_bare}g++',
 	},
-	'configure_options': '--static --prefix={target_prefix}',
-	'build_options': '{make_prefix_options} ARFLAGS=rcs',
+	'configure_options' : '--static --prefix={target_prefix}',
+	'build_options' : '{make_prefix_options} ARFLAGS=rcs',
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zlib' },
 }

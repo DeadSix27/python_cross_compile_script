@@ -3,20 +3,20 @@
 	'url' : 'https://github.com/mpv-player/mpv.git',
 	'build_system' : 'waf',
 	'conf_system' : 'waf',
-	'rename_folder' : "libmpv_git",
+	'rename_folder' : 'libmpv_git',
 	'env_exports' : {
 		'DEST_OS' : 'win32',
 		'TARGET'  : '{target_host}',
 		'LDFLAGS' : '-ld3d11',
 	},
-	'run_post_patch' : (
+	'run_post_patch' : [
 		'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.h', # Dirty work-around for xavs2, no idea how else to fix this.
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" video/out/vo_lavc.c',  #
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" audio/out/ao_lavc.c',  #
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.c', #
-	),
-	'configure_options':
+	],
+	'configure_options' :
 		'--enable-libmpv-shared '
 		'--disable-debug-build '
 		'--prefix={target_prefix} '
@@ -52,11 +52,11 @@
 	'depends_on' : [
 		'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
 	],
-	'packages': {
+	'packages' : {
 		'arch' : [ 'rst2pdf' ],
 	},
-	'run_post_configure': (
+	'run_post_configure' : [
 		'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
-	),
+	],
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
 }

@@ -7,7 +7,7 @@
 	'run_post_patch' : [
 		'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"', # gotta fix this properly at some point.
 	],
-	'configure_options':
+	'configure_options' :
 		'--prefix={target_prefix} '
 		'--libdir={target_prefix}/lib '
 		'--default-library=static '

@@ -3,9 +3,9 @@
 	'folder_name' : 'mingw-libgnurx-2.5.1',
 	'download_locations' : [
 		#UPDATECHECKS: https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/
-		{ "url" : "https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz", "hashes" : [ { "type" : "sha256", "sum" : "7147b7f806ec3d007843b38e19f42a5b7c65894a57ffc297a76b0dcd5f675d76" }, ], },
+		{ 'url' : 'https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '7147b7f806ec3d007843b38e19f42a5b7c65894a57ffc297a76b0dcd5f675d76' }, ], },
 	],
-	'configure_options': '--host={target_host} --prefix={target_prefix}', # --disable-shared --enable-static --enable-fsect-man5
+	'configure_options' : '--host={target_host} --prefix={target_prefix}', # --disable-shared --enable-static --enable-fsect-man5
 	'cpu_count' : '1', #...
 	'needs_make' : False,
 	'needs_make_install' : False,

@@ -5,7 +5,7 @@
 	'conf_system' : 'cmake',
 	# 'source_subfolder' : '_build',
 	'custom_cflag' : '-O3', # native tools have to use the same march as end product else it fails*
-	'configure_options':
+	'configure_options' :
 		'. {cmake_prefix_options} -DCMAKE_TOOLCHAIN_FILE=XCompile.txt -DHOST={target_host}'
 		' -DCMAKE_INSTALL_PREFIX={target_prefix} -DCMAKE_FIND_ROOT_PATH='
 		' -DLIBTYPE=STATIC -DALSOFT_UTILS=OFF -DALSOFT_EXAMPLES=OFF',
