@@ -1,6 +1,7 @@
 # My stuff
 workdir/
 sandbox/
+cross_compiler.yaml
 tools/_deps_split
 tools/_prods_split
 tools/merged_deps.py
