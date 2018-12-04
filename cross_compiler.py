@@ -1933,7 +1933,7 @@ class CrossCompileScript:
 				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path,copyPath))
 				shutil.copyfile(local_patch_path,copyPath)
 			else:
-				fileName = os.path.basename(urlparse(url).url)
+				fileName = os.path.basename(urlparse(url).path)
 				url = "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches" + url
 				self.download_file(url,fileName)
 
