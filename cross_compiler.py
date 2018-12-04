@@ -1929,7 +1929,6 @@ class CrossCompileScript:
 			fileName = os.path.basename(Path(local_patch_path).name)
 			if os.path.isfile(local_patch_path):
 				copyPath = os.path.join(os.getcwd(),fileName)
-				print(local_patch_path,copyPath)
 				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path,copyPath))
 				shutil.copyfile(local_patch_path,copyPath)
 			else:
