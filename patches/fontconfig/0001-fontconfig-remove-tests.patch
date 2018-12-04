@@ -1,0 +1,12 @@
+diff -Nur fontconfig_git.orig/Makefile.am fontconfig_git/Makefile.am
+--- fontconfig_git.orig/Makefile.am	2018-10-19 16:54:48.932261440 +0000
++++ fontconfig_git/Makefile.am	2018-10-19 16:58:06.046355031 +0000
+@@ -24,7 +24,7 @@
+ SUBDIRS=fontconfig fc-case fc-lang src \
+ 	fc-cache fc-cat fc-conflist fc-list fc-match \
+ 	fc-pattern fc-query fc-scan fc-validate conf.d \
+-	its po po-conf test
++	its po po-conf
+ if ENABLE_DOCS
+ SUBDIRS += doc
+ endif
