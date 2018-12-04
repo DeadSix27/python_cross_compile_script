@@ -72,6 +72,8 @@
 		'--enable-libopenmpt '
 		'--enable-libxavs '
 		'--enable-libxavs2 '
+		'--enable-libsrt '
+		'--enable-liblensfun '
 		
 		# HW Dec/Enc
 		'--enable-libmfx '
