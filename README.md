@@ -10,7 +10,7 @@ See `./cross_compiler.py list -p` and `./cross_compiler.py list -d` for a full l
 
 ## **Install**
 
-Download the python file:
+Clone the repository:
 
 ```bash
 git clone "https://github.com/DeadSix27/python_cross_compile_script.git"
