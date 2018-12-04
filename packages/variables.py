@@ -74,6 +74,7 @@
 		'--enable-libxavs2 '
 		'--enable-libsrt '
 		'--enable-liblensfun '
+		'--enable-libtesseract '
 		
 		# HW Dec/Enc
 		'--enable-libmfx '
