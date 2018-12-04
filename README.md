@@ -19,17 +19,17 @@ chmod u+x python_cross_compile_script/cross_compiler.py
 
 ## **Usage**
 
-Simple usage: `./cross_compiler.py -p <product>` (e.g x264)
+Simple usage: `./cross_compiler.py -p <product>` (e.g mpv)
 
 For more see: `./cross_compiler.py --help`
 
 ## **System requirements:**
 
-* Python 3.4+ (Tested only on 3.6.4)
+* Python 3.4+ (Tested only on 3.6.x)
   * Required python packages: requests, progressbar2
-* Linux (Tested on ArchLinux & Ubuntu 17+)
-* 20+GB is recommended, but sizes vary depending on the packages.
-* Windows Vista 64-Bit or newer for the resulting binaries. (32-bit and Windows XP are not supported)
+* GNU/Linux (Tested on ArchLinux & Ubuntu 17+)
+* 20+GB is recommended, but sizes vary depending on the packages
+* Resulting binaries support Win7 and newer, 64bit only
 
 ## **Package requirements (no auto-check yet)**
 ```
@@ -47,7 +47,7 @@ youtube-dl  - pando
 x264        - nasm 2.13
 ```
 
-### Thanks to these people:
+### Thanks to:
 
 - [mxe](https://github.com/mxe/mxe)
 - [rdp](https://github.com/rdp/ffmpeg-windows-build-helpers)
@@ -56,4 +56,4 @@ x264        - nasm 2.13
 - [Martchus](https://github.com/Martchus/PKGBUILDs/commits/master)
 - [Alexpux](https://github.com/Alexpux/MINGW-packages)
 - [shinchiro](https://github.com/shinchiro/mpv-winbuild-cmake)
-- and many more..
+- and more
