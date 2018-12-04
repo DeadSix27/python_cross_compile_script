@@ -1,20 +1,8 @@
 [![Discord](https://img.shields.io/badge/Discord-Join-blue.svg)](https://discord.gg/gAvufS2)
 
-# NOTE: Development is currently on halt or very slow, as I have lost my main development system/server. I will return around February 2019 most likely.
+# Linux to Windows x64 cross-compile helper script
 
----
-
-# A Linux to Windows-x64 cross-compile helper script
-
-_python_cross_compile_script_ is written in Python primarily for Linux.
-
-It's main purpose is to simplify the cross compiling of various multi-OS programs (e.g mpv).
-
-It comes with a relatively large preset of packages but can be easily expanded upon.
-
-Currently it's mainly focusing on Media programs, e.g mpv and ffmpeg.
-
-The packages are split into depends and products, products being things like 'mpv' and dependencies (their needed libraries, e.g 'libx264').
+This script automatically builds toolchain and target library/program without much user interaction.
 
 See `./cross_compiler.py list -p` and `./cross_compiler.py list -d` for a full list of packages.
 
@@ -24,25 +12,24 @@ See `./cross_compiler.py list -p` and `./cross_compiler.py list -d` for a full l
 
 Download the python file:
 
-`wget 'https://github.com/DeadSix27/python_cross_compile_script/blob/master/cross_compiler.py' && chmod u+x cross_compiler.py`
-
-and run it.
-
-_Git-cloning this repo is not recommended nor needed, unless you want to submit patches or help working on the project._
+```bash
+git clone "https://github.com/DeadSix27/python_cross_compile_script.git"
+chmod u+x python_cross_compile_script/cross_compiler.py
+```
 
 ## **Usage**
 
-Simple usage: `./cross_compiler.py -p <product>` (e.g x264)
+Simple usage: `./cross_compiler.py -p <product>` (e.g mpv)
 
 For more see: `./cross_compiler.py --help`
 
 ## **System requirements:**
 
-* Python 3+ (Tested only on 3.6.4)
+* Python 3.4+ (Tested only on 3.6.x)
   * Required python packages: requests, progressbar2
-* Linux (Tested only on ArchLinux)
-* 20+GB is recommended, but sizes vary depending on the packages.
-* Windows Vista 64-Bit or newer for the resulting binaries. (32-bit and Windows XP are not supported)
+* GNU/Linux (Tested on ArchLinux & Ubuntu 17+)
+* 20+GB is recommended, but sizes vary depending on the packages
+* Resulting binaries support Win7 and newer, 64bit only
 
 ## **Package requirements (no auto-check yet)**
 ```
@@ -60,7 +47,7 @@ youtube-dl  - pando
 x264        - nasm 2.13
 ```
 
-### Thanks to these people for some patches and hints:
+### Thanks to:
 
 - [mxe](https://github.com/mxe/mxe)
 - [rdp](https://github.com/rdp/ffmpeg-windows-build-helpers)
@@ -69,4 +56,4 @@ x264        - nasm 2.13
 - [Martchus](https://github.com/Martchus/PKGBUILDs/commits/master)
 - [Alexpux](https://github.com/Alexpux/MINGW-packages)
 - [shinchiro](https://github.com/shinchiro/mpv-winbuild-cmake)
-- and many more..
+- and more

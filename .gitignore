@@ -1,6 +1,11 @@
 # My stuff
 workdir/
 sandbox/
+cross_compiler.yaml
+tools/_deps_split
+tools/_prods_split
+tools/merged_deps.py
+tools/merged_prods.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

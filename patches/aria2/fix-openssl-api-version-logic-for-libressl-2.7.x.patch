@@ -1,0 +1,22 @@
+From 376854cfc4dd2141eeb1358fca0a2df84b3d1955 Mon Sep 17 00:00:00 2001
+From: Ben Chaney <chaneybenjamini@gmail.com>
+Date: Sun, 3 Jun 2018 01:10:36 -0400
+Subject: [PATCH] Fix openssl API version logic for libressl 2.7.x
+
+---
+ src/libssl_compat.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/libssl_compat.h b/src/libssl_compat.h
+index 0e03bfd70..cb2e3d97f 100644
+--- a/src/libssl_compat.h
++++ b/src/libssl_compat.h
+@@ -44,6 +44,7 @@
+ #endif // !defined(LIBRESSL_VERSION_NUMBER)
+ 
+ #define OPENSSL_101_API                                                        \
+-  (!LIBRESSL_IN_USE && OPENSSL_VERSION_NUMBER >= 0x1010000fL)
++  ((!LIBRESSL_IN_USE && OPENSSL_VERSION_NUMBER >= 0x1010000fL) || \
++  (LIBRESSL_IN_USE && LIBRESSL_VERSION_NUMBER >= 0x20700000L))
+ 
+ #endif // LIBSSL_COMPAT_H
