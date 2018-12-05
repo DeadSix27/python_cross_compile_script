@@ -8,6 +8,6 @@
 	'depends_on' : [
 		'gmp',
 	],
-	'update_check_url' : { 'url' : 'https://ftp.gnu.org/gnu/nettle/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'nettle-(?P<version_num>[\d.]+)\.tar\.gz' },
+	'update_check' : { 'url' : 'https://ftp.gnu.org/gnu/nettle/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'nettle-(?P<version_num>[\d.]+)\.tar\.gz' },
 	'_info' : { 'version' : '3.4', 'fancy_name' : 'nettle' },
 }

@@ -16,6 +16,6 @@
 	'depends_on' : [
 		'bzip2', 'zlib',
 	],
-	'update_check_url' : { 'url' : 'ftp://ftp.pcre.org/pub/pcre/', 'type' : 'ftpindex', 'regex' : 'pcre2-(?P<version_num>[\d.]+)\.tar\.bz2' },
+	'update_check' : { 'url' : 'ftp://ftp.pcre.org/pub/pcre/', 'type' : 'ftpindex', 'regex' : r'pcre2-(?P<version_num>[\d.]+)\.tar\.bz2' },
 	'_info' : { 'version' : '10.32', 'fancy_name' : 'pcre2' },
 }

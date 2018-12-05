@@ -15,6 +15,6 @@
 		'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows address-model=64 architecture=x86 --prefix={target_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 		'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 	],
-	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/boost/files/boost/', 'type' : 'sourceforge', 'regex' : r'(?P<version_num>[\d.]+)\.beta\.(?P<rc_num>[0-9])', },
+	'update_check' : { 'url' : 'https://sourceforge.net/projects/boost/files/boost/', 'type' : 'sourceforge', 'regex' : r'(?P<version_num>[\d.]+)\.beta\.(?P<rc_num>[0-9])', },
 	'_info' : { 'version' : '1.68.0', 'fancy_name' : 'Boost' },
 }

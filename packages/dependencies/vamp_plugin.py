@@ -25,6 +25,6 @@
 		'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-hostsdk.pc"',
 		'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-sdk.pc"',
 	],
-	'update_check_url' : { 'url' : 'https://vamp-plugins.org/develop.html', 'type' : 'httpregex', 'regex' : r'.*<ul><li>Download the <b>Vamp plugin SDK<\/b> \(version (?P<version_num>[\d.]+)\):.*' },
+	'update_check' : { 'url' : 'https://vamp-plugins.org/develop.html', 'type' : 'httpregex', 'regex' : r'.*<ul><li>Download the <b>Vamp plugin SDK<\/b> \(version (?P<version_num>[\d.]+)\):.*' },
 	'_info' : { 'version' : '2.7.1', 'fancy_name' : 'vamp-plugin-sdk' },
 }

@@ -19,6 +19,6 @@
 		'cp -fv include/* "{target_prefix}/include/flite"',
 		'cp -fv ./build/{bit_name}-mingw32/lib/*.a "{target_prefix}/lib"',
 	],
-	'update_check_url' : { 'url' : 'http://www.speech.cs.cmu.edu/flite/packed/', 'type' : 'httpindex', 'regex' : 'flite-(?P<version_num>[\d.]+)\/' },
+	'update_check' : { 'url' : 'http://www.speech.cs.cmu.edu/flite/packed/', 'type' : 'httpindex', 'regex' : r'flite-(?P<version_num>[\d.]+)\/' },
 	'_info' : { 'version' : '1.4', 'fancy_name' : 'flite' },
 }

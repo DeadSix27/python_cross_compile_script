@@ -16,6 +16,6 @@
 		'rm -v {target_prefix}/lib/xvidcore.dll.a',
 		'mv -v {target_prefix}/lib/xvidcore.a {target_prefix}/lib/libxvidcore.a',
 	],
-	'update_check_url' : { 'url' : 'https://labs.xvid.com/', 'type' : 'httpregex', 'regex' : r'<p>.+ - <strong>Xvid (?P<version_num>[\d.]+) released<\/strong><\/p>' },
+	'update_check' : { 'url' : 'https://labs.xvid.com/', 'type' : 'httpregex', 'regex' : r'<p>.+ - <strong>Xvid (?P<version_num>[\d.]+) released<\/strong><\/p>' },
 	'_info' : { 'version' : '1.3.5', 'fancy_name' : 'xvidcore' },
 }

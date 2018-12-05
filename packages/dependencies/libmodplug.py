@@ -11,6 +11,6 @@
 		#'sed -i.bak 's/__declspec(dllexport)//' "{target_prefix}/include/libmodplug/modplug.h"', #strip DLL import/export directives
 		#'sed -i.bak 's/__declspec(dllimport)//' "{target_prefix}/include/libmodplug/modplug.h"',
 	],
-	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/', 'type' : 'sourceforge', },
+	'update_check' : { 'url' : 'https://sourceforge.net/projects/modplug-xmms/files/libmodplug/', 'type' : 'sourceforge', },
 	'_info' : { 'version' : '0.8.9.0', 'fancy_name' : 'libmodplug' },
 }

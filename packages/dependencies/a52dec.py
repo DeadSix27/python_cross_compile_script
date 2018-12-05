@@ -10,6 +10,6 @@
 	],
 	'build_options' : 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
 	'install_options' : 'bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=',
-	'update_check_url' : { 'url' : 'http://liba52.sourceforge.net/', 'type' : 'httpregex', 'regex' : '<a href="files\/a52dec-(?P<version_num>[\d.]+)\.tar\.gz">released<\/a>' },
+	'update_check' : { 'url' : 'http://liba52.sourceforge.net/', 'type' : 'httpregex', 'regex' : r'<a href="files\/a52dec-(?P<version_num>[\d.]+)\.tar\.gz">released<\/a>' },
 	'_info' : { 'version' : '0.7.4', 'fancy_name' : 'a52dec' },
 }

@@ -17,6 +17,6 @@
 		( 'libgnurx/mingw-libgnurx-static.patch', '-p1' ),
 		( 'libgnurx/libgnurx-1-build-static-lib.patch', '-p1' ),
 	],
-	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/', 'type' : 'sourceforge', 'regex' : 'mingw-regex-(?P<version_num>[\d.]+)', },
+	'update_check' : { 'url' : 'https://sourceforge.net/projects/mingw/files/Other/UserContributed/regex/', 'type' : 'sourceforge', 'regex' : r'mingw-regex-(?P<version_num>[\d.]+)', },
 	'_info' : { 'version' : '2.5.1', 'fancy_name' : 'mingw-libgnurx' },
 }

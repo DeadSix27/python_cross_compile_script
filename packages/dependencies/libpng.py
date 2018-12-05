@@ -12,6 +12,6 @@
 		('libpng/libpng-1.6.36-apng.patch', '-p1'),
 	],
 	'depends_on' : [ 'zlib', ],
-	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/', 'type' : 'sourceforge', },
+	'update_check' : { 'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/', 'type' : 'sourceforge', },
 	'_info' : { 'version' : '1.6.36', 'fancy_name' : 'libpng' },
 }

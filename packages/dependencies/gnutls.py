@@ -45,6 +45,6 @@
 		'libnettle',
 	],
 	# 'env_exports' : {
-	'update_check_url' : { 'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.6', 'type' : 'ftpindex', 'regex' : 'gnutls-(?P<version_num>[\d.]+)\.tar\.xz' },
+	'update_check' : { 'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.6', 'type' : 'ftpindex', 'regex' : r'gnutls-(?P<version_num>[\d.]+)\.tar\.xz' },
 	'_info' : { 'version' : '3.6.5', 'fancy_name' : 'gnutls' },
 }

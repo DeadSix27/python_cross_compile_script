@@ -20,6 +20,6 @@
 	],
 	#'cpu_count' : '1',
 	'build_options' : '{make_prefix_options} INSTALL_ROOT={target_prefix}',
-	'update_check_url' : { 'url' : 'http://www.quut.com/gsm', 'type' : 'httpregex', 'regex' : '<a href="http:\/\/www.quut.com/gsm/gsm-(?P<version_num>[\d.]+)\.tar\.gz">sourcecode<\/a>' },
+	'update_check' : { 'url' : 'http://www.quut.com/gsm', 'type' : 'httpregex', 'regex' : r'<a href="http:\/\/www.quut.com/gsm/gsm-(?P<version_num>[\d.]+)\.tar\.gz">sourcecode<\/a>' },
 	'_info' : { 'version' : '1.0.18', 'fancy_name' : 'gsm' },
 }

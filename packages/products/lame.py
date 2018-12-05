@@ -10,6 +10,6 @@
 	],
 	'depends_on' : ['iconv'],
 	'configure_options' : '--host={target_host} --without-libiconv-prefix --prefix={product_prefix}/lame-3.100.installed --disable-shared --enable-static --enable-nasm',
-	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/lame/files/lame/', 'type' : 'sourceforge', },
+	'update_check' : { 'url' : 'https://sourceforge.net/projects/lame/files/lame/', 'type' : 'sourceforge', },
 	'_info' : { 'version' : '3.100', 'fancy_name' : 'LAME3' },
 }

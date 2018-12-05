@@ -8,6 +8,6 @@
 		'ac_cv_func_malloc_0_nonnull' : 'yes', # fixes undefined reference to `rpl_malloc'
 	},
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/bs2b/files/libbs2b/', 'type' : 'sourceforge', },
+	'update_check' : { 'url' : 'https://sourceforge.net/projects/bs2b/files/libbs2b/', 'type' : 'sourceforge', },
 	'_info' : { 'version' : '3.1.0', 'fancy_name' : 'libbs2b' },
 }

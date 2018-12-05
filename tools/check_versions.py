@@ -322,9 +322,9 @@ for name, d in pkgs["deps"].items():
 	if specificPkgs != None:
 		if not any(word in name for word in specificPkgs):
 			continue
-	if "update_check_url" in d:
+	if "update_check" in d:
 		ourVer = d["_info"]["version"]
-		latestVer = geLatestVersion(d["update_check_url"])
+		latestVer = geLatestVersion(d["update_check"])
 		if LooseVersion(ourVer) < LooseVersion(latestVer):
 			print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
 		else:

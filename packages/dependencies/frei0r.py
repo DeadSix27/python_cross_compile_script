@@ -10,6 +10,6 @@
 	'run_post_patch' : [ # runs commands post the patch process
 		'sed -i.bak "s/find_package (Cairo)//g" CMakeLists.txt', #idk
 	],
-	'update_check_url' : { 'url' : 'https://files.dyne.org/frei0r/releases/', 'type' : 'httpindex', 'regex' : 'frei0r-plugins-(?P<version_num>[\d.]+)\.tar\.gz' },
+	'update_check' : { 'url' : 'https://files.dyne.org/frei0r/releases/', 'type' : 'httpindex', 'regex' : r'frei0r-plugins-(?P<version_num>[\d.]+)\.tar\.gz' },
 	'_info' : { 'version' : '1.6.1', 'fancy_name' : 'frei0r-plugins' },
 }

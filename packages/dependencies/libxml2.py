@@ -19,6 +19,6 @@
 	'depends_on' : [
 		'xz', 'iconv'
 	],
-	'update_check_url' : { 'url' : 'http://xmlsoft.org/sources/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'libxml2-(?P<version_num>[\d.]+)-rc(?P<rc_num>[0-9]).tar.gz' },
+	'update_check' : { 'url' : 'http://xmlsoft.org/sources/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'libxml2-(?P<version_num>[\d.]+)-rc(?P<rc_num>[0-9]).tar.gz' },
 	'_info' : { 'version' : '2.9.9.2', 'fancy_name' : 'libxml2' },
 }
