@@ -3,8 +3,11 @@ additional_headers/* linguist-vendored
 patches/* linguist-vendored
 mingw_build_scripts/* linguist-vendored
 
-*.py text=auto
-*.patch text=auto
-*.diff text=auto
-*.sh text=auto
-*.txt text=auto
+*       text=auto
+*.py    text eol=lf
+*.patch text eol=lf
+*.diff  text eol=lf
+*.sh    text eol=lf
+*.txt   text eol=lf
+*.md    text eol=lf
+*.gz    -text
