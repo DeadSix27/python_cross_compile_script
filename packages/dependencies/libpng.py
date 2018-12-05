@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		#UPDATECHECKS: https://sourceforge.net/projects/libpng/files/libpng16/
 		{ 'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/1.6.36/libpng-1.6.36.tar.xz',	'hashes' : [ { 'type' : 'sha256', 'sum' : 'eceb924c1fa6b79172fdfd008d335f0e59172a86a66481e09d4089df872aa319' },	], },
 		{ 'url' : 'https://fossies.org/linux/misc/libpng-1.6.36.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'eceb924c1fa6b79172fdfd008d335f0e59172a86a66481e09d4089df872aa319' }, ],	},
 	],
@@ -13,5 +12,6 @@
 		('libpng/libpng-1.6.36-apng.patch', '-p1'),
 	],
 	'depends_on' : [ 'zlib', ],
+	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/', 'type' : 'sourceforge', },
 	'_info' : { 'version' : '1.6.36', 'fancy_name' : 'libpng' },
 }

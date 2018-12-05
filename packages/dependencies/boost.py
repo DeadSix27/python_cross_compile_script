@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		#UPDATECHECKS: https://sourceforge.net/projects/boost/files/boost/
 		{ 'url' : 'https://sourceforge.net/projects/boost/files/boost/1.68.0/boost_1_68_0.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7' }, ], },
 		{ 'url' : 'https://fossies.org/linux/misc/boost_1_68_0.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7' }, ], },
 	],
@@ -16,5 +15,6 @@
 		'if [ ! -f "already_ran_make_0" ] ; then ./b2 toolset=gcc-mingw link=static threading=multi target-os=windows address-model=64 architecture=x86 --prefix={target_prefix} variant=release --with-system --with-filesystem --with-regex --with-date_time --with-thread --user-config=user-config.jam install ; fi',
 		'if [ ! -f "already_ran_make_0" ] ; then touch already_ran_make_0 ; fi',
 	],
+	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/boost/files/boost/', 'type' : 'sourceforge', 'regex' : r'(?P<version_num>[\d.]+)\.beta\.(?P<rc_num>[0-9])', },
 	'_info' : { 'version' : '1.68.0', 'fancy_name' : 'Boost' },
 }

@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		#UPDATECHECKS: https://vamp-plugins.org/develop.html
 		{ 'url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/sources/vamp-plugin-sdk-2.7.1.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'c6fef3ff79d2bf9575ce4ce4f200cbf219cbe0a21cfbad5750e86ff8ae53cb0b' }, ], },
 		{ 'url' : 'https://code.soundsoftware.ac.uk/attachments/download/2206/vamp-plugin-sdk-2.7.1.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'c6fef3ff79d2bf9575ce4ce4f200cbf219cbe0a21cfbad5750e86ff8ae53cb0b' }, ], },
 	],
@@ -26,5 +25,6 @@
 		'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-hostsdk.pc"',
 		'sed -i.bak \'s/\%PREFIX\%/{target_prefix_sed_escaped}/\' "{pkg_config_path}/vamp-sdk.pc"',
 	],
+	'update_check_url' : { 'url' : 'https://vamp-plugins.org/develop.html', 'type' : 'httpregex', 'regex' : r'.*<ul><li>Download the <b>Vamp plugin SDK<\/b> \(version (?P<version_num>[\d.]+)\):.*' },
 	'_info' : { 'version' : '2.7.1', 'fancy_name' : 'vamp-plugin-sdk' },
 }

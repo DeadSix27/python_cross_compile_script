@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		#UPDATECHECKS: https://sourceforge.net/projects/zapping/files/zvbi/
 		{ 'url' : 'https://sourceforge.net/projects/zapping/files/zvbi/0.2.35/zvbi-0.2.35.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'fc883c34111a487c4a783f91b1b2bb5610d8d8e58dcba80c7ab31e67e4765318' }, ], },
 		{ 'url' : 'https://download.videolan.org/contrib/zvbi/zvbi-0.2.35.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'fc883c34111a487c4a783f91b1b2bb5610d8d8e58dcba80c7ab31e67e4765318' }, ], },
 	],
@@ -19,5 +18,6 @@
 		'pwd',
 		'cp -rv "../zvbi-0.2.pc" "{target_prefix}/lib/pkgconfig/zvbi-0.2.pc"',
 	],
+	'update_check_url' : { 'url' : 'https://sourceforge.net/projects/zapping/files/zvbi/', 'type' : 'sourceforge', },
 	'_info' : { 'version' : '0.2.35', 'fancy_name' : 'zvbi' },
 }

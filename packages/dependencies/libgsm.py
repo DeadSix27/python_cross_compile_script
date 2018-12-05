@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		#UPDATECHECKS: http://www.quut.com/gsm
 		{ 'url' : 'https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.18.tar.gz/sha512/c5b597f68d4a270e1d588f480dcde66fda8302564c687d753f2bd4fc41d246109243e567568da61eddce170f5232d869984743ddf1eea7696d673014a1a453b7/gsm-1.0.18.tar.gz',
 			'hashes' : [ { 'type' : 'sha256', 'sum' : '04f68087c3348bf156b78d59f4d8aff545da7f6e14f33be8f47d33f4efae2a10' }, ],
 		},
@@ -21,5 +20,6 @@
 	],
 	#'cpu_count' : '1',
 	'build_options' : '{make_prefix_options} INSTALL_ROOT={target_prefix}',
+	'update_check_url' : { 'url' : 'http://www.quut.com/gsm', 'type' : 'httpregex', 'regex' : '<a href="http:\/\/www.quut.com/gsm/gsm-(?P<version_num>[\d.]+)\.tar\.gz">sourcecode<\/a>' },
 	'_info' : { 'version' : '1.0.18', 'fancy_name' : 'gsm' },
 }
