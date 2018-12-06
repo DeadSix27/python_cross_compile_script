@@ -1366,8 +1366,8 @@ class CrossCompileScript:
 						self.run_process('git pull origin {0}'.format(properBranchString))
 					else:
 						self.run_process('git pull'.format(properBranchString))
-					self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
-					self.run_process('git submodule foreach --recursive git clean -xfdf')
+					self.run_process('git clean -ffdx') #https://gist.github.com/nicktoumpelis/11214362
+					self.run_process('git submodule foreach --recursive git clean -ffdx')
 					self.run_process('git reset --hard')
 					self.run_process('git submodule foreach --recursive git reset --hard')
 					self.run_process('git submodule update --init --recursive')
@@ -1690,6 +1690,14 @@ class CrossCompileScript:
 						cmd = self.replaceVariables(cmd)
 						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
 						self.run_process(cmd)
+						
+		if force_rebuild:
+			if os.path.isdir(".git"):
+				self.run_process('git clean -ffdx') #https://gist.github.com/nicktoumpelis/11214362
+				self.run_process('git submodule foreach --recursive git clean -ffdx')
+				self.run_process('git reset --hard')
+				self.run_process('git submodule foreach --recursive git reset --hard')
+				self.run_process('git submodule update --init --recursive')
 
 		if 'source_subfolder' in data:
 			if data['source_subfolder'] != None:
@@ -1700,12 +1708,6 @@ class CrossCompileScript:
 		if force_rebuild:
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
-			if os.path.isdir(".git"):
-				self.run_process('git clean -xfdf') #https://gist.github.com/nicktoumpelis/11214362
-				self.run_process('git submodule foreach --recursive git clean -xfdf')
-				self.run_process('git reset --hard')
-				self.run_process('git submodule foreach --recursive git reset --hard')
-				self.run_process('git submodule update --init --recursive')
 
 		if 'debug_confighelp_and_exit' in data:
 			if data['debug_confighelp_and_exit'] == True:
