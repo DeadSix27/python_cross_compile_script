@@ -17,5 +17,5 @@
 	'packages' : {
 		'arch' : [ 'autogen' ],
 	},
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsndfile' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libsndfile' },
 }

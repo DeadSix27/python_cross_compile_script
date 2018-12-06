@@ -5,5 +5,5 @@
 	'depends_on' : [
 		'libogg',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'flac (library)' },
+	'_info' : { 'version' : None, 'fancy_name' : 'flac (library)' },
 }

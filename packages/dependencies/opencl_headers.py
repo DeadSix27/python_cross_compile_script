@@ -9,5 +9,5 @@
 	'needs_make' : False,
 	'needs_make_install' : False,
 	'needs_configure' : False,
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'OpenCL Headers' },
+	'_info' : { 'version' : None, 'fancy_name' : 'OpenCL Headers' },
 }

@@ -17,5 +17,5 @@
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lvulkan/Libs: -L${{libdir}} -lvulkan -lshlwapi -lcfgmgr32/\' "{target_prefix}/lib/pkgconfig/vulkan.pc"',
 	],
 	'depends_on' : [ 'vulkan_headers' ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Vulkan Loader' },
+	'_info' : { 'version' : None, 'fancy_name' : 'Vulkan Loader' },
 }

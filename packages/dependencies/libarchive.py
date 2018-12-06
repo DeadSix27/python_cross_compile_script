@@ -8,5 +8,5 @@
 	'run_post_install' : [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma -lbcrypt/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libarchive' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libarchive' },
 }

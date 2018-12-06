@@ -8,5 +8,5 @@
 	'packages' : {
 		'ubuntu' : [ 'docbook-to-man' ],
 	},
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'FLAC' },
+	'_info' : { 'version' : None, 'fancy_name' : 'FLAC' },
 }

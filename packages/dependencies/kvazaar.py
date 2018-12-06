@@ -5,5 +5,5 @@
 	'run_post_patch' : [
 		'sed -i.bak "s/KVZ_PUBLIC const kvz_api/const kvz_api/g" src/kvazaar.h',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'kvazaar' },
+	'_info' : { 'version' : None, 'fancy_name' : 'kvazaar' },
 }

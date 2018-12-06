@@ -8,5 +8,5 @@
 	'depends_on' : [
 		'libvorbis',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vorbis-tools' },
+	'_info' : { 'version' : None, 'fancy_name' : 'vorbis-tools' },
 }

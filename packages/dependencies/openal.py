@@ -22,5 +22,5 @@
 		"sed -i.bak 's/^Libs: -L\${{libdir}} -lopenal $/Libs: -L\${{libdir}} -lopenal -lwinmm/' '{pkg_config_path}/openal.pc'", #issue with it not using pkg-config option "--static" or so idk?
 	],
 	'install_options' : 'DESTDIR={target_prefix}',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openal-soft' },
+	'_info' : { 'version' : None, 'fancy_name' : 'openal-soft' },
 }

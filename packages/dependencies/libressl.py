@@ -8,5 +8,5 @@
 		# ( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0002-tls-revert-Add-tls-tls_keypair.c-commit.patch', '-p1' ),
 		# ( 'https://raw.githubusercontent.com/DeadSix27/misc_patches/master/libressl/libressl-0001-rename-timegm-for-mingw-compat.patch', '-p1' ),
 	# ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libressl' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libressl' },
 }

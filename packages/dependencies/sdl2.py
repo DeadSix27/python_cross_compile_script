@@ -18,5 +18,5 @@
 		'cp -fv "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 	],
 	'configure_options' : '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
-	'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'SDL2' },
+	'_info' : { 'version' : None, 'fancy_name' : 'SDL2' },
 }

@@ -8,5 +8,5 @@
 		'mv -fv "{offtree_prefix}/libx265_12bit/lib/libx265.a" "{offtree_prefix}/libx265_12bit/lib/libx265_main12.a"'
 	],
 	'conf_system' : 'cmake',
-	'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library (12))' },
+	'_info' : { 'version' : None, 'fancy_name' : 'x265 (library (12))' },
 }

@@ -8,5 +8,5 @@
 	],
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-swap-16bit-csp --enable-experimental --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras',
 	'depends_on' : [ 'libpng', 'libjpeg-turbo' ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libwebp' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libwebp' },
 }

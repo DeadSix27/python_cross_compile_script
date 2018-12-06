@@ -7,5 +7,5 @@
 		('libjpeg-turbo/0001-libjpeg-turbo-git-mingw-compat.patch', '-p1'),
 		('libjpeg-turbo/0002-libjpeg-turbo-git-libmng-compat.patch', '-p1'),
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libjpeg-turbo' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libjpeg-turbo' },
 }

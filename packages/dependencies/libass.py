@@ -9,5 +9,5 @@
 		'sed -i.bak \'s/-lass -lm/-lass -lfribidi -lfreetype -lexpat -lm/\' "{pkg_config_path}/libass.pc"', #-lfontconfig
 	],
 	'depends_on' : [ 'fontconfig', 'harfbuzz', 'libfribidi', 'freetype', 'iconv', ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libass' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libass' },
 }

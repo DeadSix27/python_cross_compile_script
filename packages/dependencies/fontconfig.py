@@ -23,5 +23,6 @@
 	'packages' : {
 		'arch' : [ 'gperf' ],
 	},
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'fontconfig' },
+	'update_check' : { 'type' : 'git', },
+	'_info' : { 'version' : None, 'fancy_name' : 'fontconfig' },
 }

@@ -14,5 +14,5 @@
 	'depends_on' : [
 		 'sdl2', 'libffmpeg',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mp4box' },
+	'_info' : { 'version' : None, 'fancy_name' : 'mp4box' },
 }

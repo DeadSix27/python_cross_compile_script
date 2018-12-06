@@ -18,5 +18,5 @@
 	'depends_on' : (
 		'zlib', 'libssh2',
 	),
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cURL' },
+	'_info' : { 'version' : None, 'fancy_name' : 'cURL' },
 }

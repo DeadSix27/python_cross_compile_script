@@ -7,5 +7,5 @@
 	'run_post_patch' : [
 		'sed -i.bak "s/SHARED/STATIC/g" CMakeLists.txt',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vid.stab' },
+	'_info' : { 'version' : None, 'fancy_name' : 'vid.stab' },
 }

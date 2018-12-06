@@ -6,5 +6,5 @@
 	'run_post_install' : [
 		'rm -vf {target_prefix}/lib/libsnappy.dll.a',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libsnappy' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libsnappy' },
 }

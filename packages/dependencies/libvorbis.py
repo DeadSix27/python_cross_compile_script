@@ -6,5 +6,5 @@
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lvorbisenc/Libs: -L${{libdir}} -lvorbisenc -lvorbis -logg/\' "{pkg_config_path}/vorbisenc.pc"', # dunno why ffmpeg doesnt work with Requires.private
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lvorbis/Libs: -L${{libdir}} -lvorbis -logg/\' "{pkg_config_path}/vorbis.pc"', # dunno why ffmpeg doesnt work with Requires.private
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'vorbis' },
+	'_info' : { 'version' : None, 'fancy_name' : 'vorbis' },
 }

@@ -16,5 +16,5 @@
 		('opencl/0001-OpenCL-git-prefix.patch','-p1'),
 		('opencl/0002-OpenCL-git-header.patch','-p1'),
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'OpenCL ICD' },
+	'_info' : { 'version' : None, 'fancy_name' : 'OpenCL ICD' },
 }

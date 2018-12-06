@@ -9,5 +9,5 @@
 		# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-building-with-mingw.patch', '-p1'],
 		('mujs/mujs-0002-fix-install-with-mingw.patch', '-p1'),
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mujs' },
+	'_info' : { 'version' : None, 'fancy_name' : 'mujs' },
 }

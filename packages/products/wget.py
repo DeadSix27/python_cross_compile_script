@@ -17,5 +17,5 @@
 	'depends_on' : [
 		'zlib', 'libressl', 'libpsl',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'wget' },
+	'_info' : { 'version' : None, 'fancy_name' : 'wget' },
 }

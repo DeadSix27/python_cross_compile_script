@@ -2,5 +2,5 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/mm2/Little-CMS.git',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'Little-CMS2' },
+	'_info' : { 'version' : None, 'fancy_name' : 'Little-CMS2' },
 }

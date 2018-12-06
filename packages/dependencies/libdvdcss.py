@@ -5,5 +5,5 @@
 	'run_post_patch' : [
 		'autoreconf -fiv',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdcss' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libdvdcss' },
 }

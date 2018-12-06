@@ -7,5 +7,5 @@
 	'run_post_install' : [
 		'{cross_prefix_bare}strip -v {product_prefix}/SCXvid-standalone_git.installed/bin/scxvid.exe',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SCXvid-standalone' },
+	'_info' : { 'version' : None, 'fancy_name' : 'SCXvid-standalone' },
 }

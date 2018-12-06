@@ -8,5 +8,5 @@
 	'depends_on' : [
 		'libffmpeg',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'x264' },
+	'_info' : { 'version' : None, 'fancy_name' : 'x264' },
 }

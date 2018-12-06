@@ -13,5 +13,5 @@
 		'--buildtype=release '
 		'--cross-file={meson_env_file} ./ ..'
 	,
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'dav1d' },
+	'_info' : { 'version' : None, 'fancy_name' : 'dav1d' },
 }

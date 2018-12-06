@@ -17,5 +17,6 @@
 		'-DLIBXML_STATIC=1 -DGLIB_STATIC_COMPILATION=1'
 	,
 	'depends_on' : [ 'libxml2' ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libaom' },
+	'update_check' : { 'type' : 'git', },
+	'_info' : { 'version' : None, 'fancy_name' : 'libaom' },
 }

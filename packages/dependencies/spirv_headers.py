@@ -6,5 +6,5 @@
 	'needs_make_install' : False,
 	'needs_configure' : False,
 	'recursive_git' : True,
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SPIRV Headers' },
+	'_info' : { 'version' : None, 'fancy_name' : 'SPIRV Headers' },
 }

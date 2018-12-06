@@ -11,5 +11,5 @@
 	'run_post_install' : [
 		'sed -i.bak \'s/-ldvdread/-ldvdread -ldvdcss/\' "{pkg_config_path}/dvdread.pc"', # fix undefined reference to `dvdcss_close'
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libdvdread' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libdvdread' },
 }

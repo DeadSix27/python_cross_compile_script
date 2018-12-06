@@ -4,5 +4,5 @@
 	'needs_configure' : False,
 	'build_options' : 'PREFIX={target_prefix}',
 	'install_options' : 'PREFIX={target_prefix}',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'nVidia (headers)' },
+	'_info' : { 'version' : None, 'fancy_name' : 'nVidia (headers)' },
 }

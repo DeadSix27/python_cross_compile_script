@@ -13,5 +13,5 @@
 	'depends_on' : [
 		'gnutls',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'rtmpdump' },
+	'_info' : { 'version' : None, 'fancy_name' : 'rtmpdump' },
 }

@@ -9,5 +9,5 @@
 	'run_post_install' : [
 		'sed -i.bak \'s|-lmingwex||g\' "{pkg_config_path}/x265.pc"',
 	],
-	'_info' : { 'version' : 'mercurial (default)', 'fancy_name' : 'x265 (library)' },
+	'_info' : { 'version' : None, 'fancy_name' : 'x265 (library)' },
 }

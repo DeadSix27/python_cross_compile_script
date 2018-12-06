@@ -15,11 +15,15 @@ import ftplib
 import libs.htmllistparse as htmllistparse # https://github.com/gumblex/htmllisting-parser
 
 PACKAGES_DIR = "../packages"
+BUILD_DIRS = [
+  "../workdir/x86_64/",
+  "../workdir/x86_64_products/",
+]
 
 HEADERS = {
-	'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
+	'User-Agent' 	  : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
 	'Accept-Language' : 'en,en-US;',
-	'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+	'Accept' 		  : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
 # SOURCEFORGE_APIKEY = None
@@ -277,6 +281,47 @@ class Parsers:
 def errorExit(msg):
 	print(msg)
 	sys.exit(1)
+	
+def getGitClonePathFromPkg(pkg):
+	clonePath = None
+	if "folder_name" in pkg:
+		clonePath = pkg["folder_name"]
+	if "rename_folder" in pkg:
+		clonePath = pkg["rename_folder"]
+	if not "rename_folder" in pkg and not "folder_name" in pkg:
+		pUrl = urlparse(pkg["url"])
+		clonePath = os.path.basename(pUrl.path).replace(".","_")
+		if not clonePath.endswith("_git"):
+			clonePath = clonePath + "_git"
+		
+	dirs = []
+		
+	for dir in BUILD_DIRS:
+		mDir = os.path.join(dir,clonePath)
+		dirs.append(mDir)
+		if os.path.isdir(mDir):
+			return mDir
+			
+	# print("Debug: None of those exist: " + ", ".join(dirs))
+			
+	return None
+	
+def run(cmd):
+	return os.popen(cmd).read()
+	
+def getCommitsDiff(pkg):
+	curCommit = pkg["branch"]
+	
+	origDir = os.getcwd()
+
+	clonePath = getGitClonePathFromPkg(pkg)
+	
+	if clonePath != None:
+		os.chdir(clonePath)	
+		cmts = [c.split(";;") for c in run("git log --pretty=format:\"%H;;%an;;%s\" {0}..master".format(curCommit)).split("\n")]
+		os.chdir(origDir)
+		return cmts
+	return None
 
 def geLatestVersion(versionEl):
 	url = versionEl["url"]	
@@ -318,14 +363,38 @@ if len(sys.argv) > 1:
 
 pkgs = loadPackages(PACKAGES_DIR)
 
+
 for name, d in pkgs["deps"].items():
 	if specificPkgs != None:
 		if not any(word in name for word in specificPkgs):
 			continue
 	if "update_check" in d:
-		ourVer = d["_info"]["version"]
-		latestVer = geLatestVersion(d["update_check"])
-		if LooseVersion(ourVer) < LooseVersion(latestVer):
-			print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+	
+		versionEl = d["update_check"]
+		vType = versionEl["type"]
+		
+		
+		if vType == "git":
+			if "branch" not in d:
+				# print("Package is has update check, but isn't set to a commit, ignore.")
+				continue
+			di = getCommitsDiff(d)
+			
+			if di != None:
+				numCmts = len(di)
+				
+				if numCmts > 0:
+					print(Style.DIM + Fore.YELLOW + "%s is %d commits behind!" % (name.rjust(30),numCmts) + Style.RESET_ALL)
+				else:
+					print(Style.BRIGHT +            "%s is up to date." % (name.rjust(30)) + Style.RESET_ALL)
+			
 		else:
-			print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+			
+			ourVer = d["_info"]["version"]
+			
+			latestVer = geLatestVersion(versionEl)
+			
+			if LooseVersion(ourVer) < LooseVersion(latestVer):
+				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+			else:
+				print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)

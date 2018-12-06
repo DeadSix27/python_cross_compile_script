@@ -58,5 +58,5 @@
 	'run_post_configure' : [
 		'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv (library)' },
+	'_info' : { 'version' : None, 'fancy_name' : 'mpv (library)' },
 }

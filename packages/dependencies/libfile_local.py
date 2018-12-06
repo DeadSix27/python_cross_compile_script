@@ -7,5 +7,6 @@
 	'needs_make' : False,
 	'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 	'run_post_patch' : [ 'autoreconf -fiv' ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libfile (bootstrap)' },
+	'update_check' : { 'type' : 'git', },
+	'_info' : { 'version' : None, 'fancy_name' : 'libfile (bootstrap)' },
 }

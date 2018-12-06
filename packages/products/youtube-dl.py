@@ -13,5 +13,5 @@
 		( 'https://github.com/DeadSix27/youtube-dl/commit/4a386648cf85511d9eb283ba488858b6a5dc2444.patch', '-p1' ),
 	],
 	'needs_configure' : False,
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'youtube-dl' },
+	'_info' : { 'version' : None, 'fancy_name' : 'youtube-dl' },
 }

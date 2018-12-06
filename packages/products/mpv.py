@@ -68,5 +68,5 @@
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv-1.dll',
 	),
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mpv' },
+	'_info' : { 'version' : None, 'fancy_name' : 'mpv' },
 }

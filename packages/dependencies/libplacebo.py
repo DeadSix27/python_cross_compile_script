@@ -17,5 +17,5 @@
 		'--cross-file={meson_env_file} ./ ..'
 	,
 	'depends_on' : [ 'lcms2', 'shaderc', 'vulkan_loader' ],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'dav1d (library)' },
+	'_info' : { 'version' : None, 'fancy_name' : 'dav1d (library)' },
 }

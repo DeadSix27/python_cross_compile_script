@@ -24,5 +24,5 @@
 	'depends_on': [
 		'zlib', 'libxml2', 'expat', 'gmp', 'sqlite3', 'libssh2', 'cppunit', #'gnutls', # 'c-ares', 'libsqlite3', 'openssl_1_1'
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'aria2' },
+	'_info' : { 'version' : None, 'fancy_name' : 'aria2' },
 }

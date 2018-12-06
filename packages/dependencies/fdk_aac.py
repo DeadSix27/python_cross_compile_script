@@ -5,5 +5,5 @@
 	],
 	'url' : 'https://github.com/mstorsjo/fdk-aac.git',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'fdk-aac' },
+	'_info' : { 'version' : None, 'fancy_name' : 'fdk-aac' },
 }

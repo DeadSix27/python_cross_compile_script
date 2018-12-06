@@ -322,9 +322,19 @@ class CrossCompileScript:
 					longestVer = 1
 					for key,val in pdlist.items():
 						if '_info' in val:
-							if 'version' in val['_info']:
+							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
+								if 'branch' in val:
+									if val['branch'] != None:
+										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
+										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
+								else:
+									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
+								val['_info']['version'] = cVer
+								
+							if 'version' in val['_info']:			
 								if len(val['_info']['version']) > longestVer:
 									longestVer = len(val['_info']['version'])
+								
 							name = key
 							if len(name) > longestName:
 								longestName = len(name)
@@ -350,6 +360,14 @@ class CrossCompileScript:
 					for key,val in sorted(pdlist.items()):
 						ver = Colors.RED + "(no version)" + Colors.RESET
 						if '_info' in val:
+							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
+								if 'branch' in val:
+									if val['branch'] != None:
+										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
+										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
+								else:
+									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
+								val['_info']['version'] = cVer
 							if 'version' in val['_info']:
 								ver = Colors.GREEN + val['_info']['version'] + Colors.RESET
 						name = key
@@ -363,6 +381,15 @@ class CrossCompileScript:
 					longestVer = 1
 					for key,val in pdlist.items():
 						if '_info' in val:
+							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
+								if 'branch' in val:
+									if val['branch'] != None:
+										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
+										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
+								else:
+									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
+								val['_info']['version'] = cVer
+							
 							if 'version' in val['_info']:
 								if len(val['_info']['version']) > longestVer:
 									longestVer = len(val['_info']['version'])
@@ -388,6 +415,15 @@ class CrossCompileScript:
 						if '_info' in val:
 							ver = "?"
 							name = key
+							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
+								if 'branch' in val:
+									if val['branch'] != None:
+										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
+										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
+								else:
+									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
+								val['_info']['version'] = cVer
+							
 							if 'version' in val['_info']:
 								ver = val['_info']['version']
 							if 'fancy_name' in val['_info']:

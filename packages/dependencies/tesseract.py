@@ -12,5 +12,5 @@
 		'sed -i.bak \'s/set(LIB_Ws2_32 Ws2_32)/set(LIB_Ws2_32 ws2_32)/\' ../CMakeLists.txt',
 		'sed -i.bak \'s/Libs: -L${{libdir}} -ltesseract40*$/Requires.private: lept\\nLibs: -L${{libdir}} -ltesseract40 -lstdc++ -lws2_32/\' "{pkg_config_path}/tesseract.pc"',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'tesseract' },
+	'_info' : { 'version' : None, 'fancy_name' : 'tesseract' },
 }

@@ -11,5 +11,6 @@
 	'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 	'run_post_patch' : [ 'autoreconf -fiv' ],
 	'flipped_path' : True,
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'file' },
+	'update_check' : { 'type' : 'git', },
+	'_info' : { 'version' : None, 'fancy_name' : 'file' },
 }

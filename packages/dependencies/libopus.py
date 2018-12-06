@@ -9,5 +9,5 @@
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lopus.*/Libs: -L${{libdir}} -lopus -lssp/\' "{pkg_config_path}/opus.pc"', # ???, keep checking whether this is needed, apparently it is for now.
 	],
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-silent-rules',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'opus' },
+	'_info' : { 'version' : None, 'fancy_name' : 'opus' },
 }

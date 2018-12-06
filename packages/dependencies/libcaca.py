@@ -14,5 +14,5 @@
 		"sed -i.bak 's/-lcaca *$/-lcaca -lz/' \"{pkg_config_path}/caca.pc\"",
 	],
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --libdir={target_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libcaca' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libcaca' },
 }

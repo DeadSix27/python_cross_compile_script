@@ -6,5 +6,5 @@
 	'run_post_patch' : [
 		'sed -i.bak \'s/ SHARED / STATIC /\' ebur128/CMakeLists.txt',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libebur128' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libebur128' },
 }

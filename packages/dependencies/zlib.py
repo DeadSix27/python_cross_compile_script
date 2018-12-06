@@ -12,5 +12,5 @@
 	},
 	'configure_options' : '--static --prefix={target_prefix}',
 	'build_options' : '{make_prefix_options} ARFLAGS=rcs',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'zlib' },
+	'_info' : { 'version' : None, 'fancy_name' : 'zlib' },
 }

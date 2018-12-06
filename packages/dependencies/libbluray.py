@@ -12,5 +12,5 @@
 	'depends_on' : [
 		'freetype', 'libcdio-paranoia'
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libbluray' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libbluray' },
 }

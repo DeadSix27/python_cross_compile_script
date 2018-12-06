@@ -15,5 +15,5 @@
 	'depends_on' : [
 		'libvorbis','gettext',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'SoX' },
+	'_info' : { 'version' : None, 'fancy_name' : 'SoX' },
 }

@@ -9,5 +9,5 @@
 	'run_post_patch' : [
 		'autoreconf -fiv',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libzip' },
+	'_info' : { 'version' : None, 'fancy_name' : 'libzip' },
 }

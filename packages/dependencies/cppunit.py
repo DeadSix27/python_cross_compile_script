@@ -7,5 +7,5 @@
 		'--disable-shared '
 		'--enable-static '
 	,
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'cppunit' },
+	'_info' : { 'version' : None, 'fancy_name' : 'cppunit' },
 }

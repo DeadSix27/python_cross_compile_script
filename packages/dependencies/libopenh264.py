@@ -8,5 +8,5 @@
 	'build_options' : '{make_prefix_options} OS=mingw_nt ARCH={bit_name} ASM=yasm',
 	'install_options' : '{make_prefix_options} OS=mingw_nt',
 	'install_target' : 'install-static',
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'openh264' },
+	'_info' : { 'version' : None, 'fancy_name' : 'openh264' },
 }
