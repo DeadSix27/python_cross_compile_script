@@ -703,6 +703,7 @@ class CrossCompileScript:
 		#os.environ["PATH"]           = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.targetPrefix,'bin'), self.originalPATH ) #todo properly test this..
 		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
+		os.environ["COLOR"] = "ON" # Force coloring on (for CMake primarily)
 	#:
 	def initBuildFolders(self):
 		if not os.path.isdir(self.bitnessDir):
