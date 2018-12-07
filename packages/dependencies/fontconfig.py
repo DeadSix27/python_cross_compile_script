@@ -1,8 +1,7 @@
 {
 	'repo_type' : 'git',
 	'do_not_bootstrap' : True,
-	'cpu_count' : '1', # I had strange build issues with multiple threads..
-	'branch' : '65c7427c019c1cb7c621e6be87fb298564d45f51',
+	'branch' : 'b047e299546ac3abb79cf0bac3c67f5c2dfc7fb6',
 	'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 	'folder_name' : 'fontconfig_git',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --enable-libxml2 --disable-shared --enable-static --disable-docs --disable-silent-rules',
