@@ -219,23 +219,24 @@ class CrossCompileScript:
 		self.config = { # Default config
 			'version': 1.0,
 			'script': {
-				'debug' : False,
-				'quiet': False,
-				'log_date_format': '%H:%M:%S',
-				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
-				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
-				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
+				'debug' 			   : False,
+				'quiet'				   : False,
+				'log_date_format'	   : '%H:%M:%S',
+				'log_format'		   : '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
+				'product_order'		   : ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
+				'user_agent'		   : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
 				'mingw_toolchain_path' : 'mingw_toolchain_script/mingw_toolchain_script.py',
-				'packages_folder' : 'packages',
+				'packages_folder' 	   : 'packages',
 			},
-			'toolchain': {
-				'bitness': [64,],
-				'cpu_count': cpu_count(),
-				'mingw_commit': None,
-				'mingw_debug_build': False,
-				'mingw_dir': 'toolchain',
-				'work_dir': 'workdir',
-				'original_cflags': '-O3',
+			'toolchain' : {
+				'bitness' 			   : [64,],
+				'cpu_count' 		   : cpu_count(),
+				'mingw_commit' 		   : None,
+				'mingw_debug_build'	   : False,
+				'mingw_dir' 		   : 'toolchain',
+				'mingw_custom_cflags'  : None,
+				'work_dir' 			   : 'workdir',
+				'original_cflags' 	   : '-O3',
 			}
 		}
 		
@@ -742,6 +743,8 @@ class CrossCompileScript:
 			toolchainBuilder.workDir = self.mingwDir
 			if self.config["toolchain"]["mingw_commit"] != None:
 				toolchainBuilder.setMinGWcheckout(self.config["toolchain"]["mingw_commit"])
+			if self.config["toolchain"]["mingw_custom_cflags"] != None:
+				toolchainBuilder.setCustomCflags(self.config["toolchain"]["mingw_custom_cflags"])
 			toolchainBuilder.setDebugBuild(self.config["toolchain"]["mingw_debug_build"])
 			toolchainBuilder.onStatusUpdate += toolchainBuildStatus
 			toolchainBuilder.build()

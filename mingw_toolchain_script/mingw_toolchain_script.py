@@ -28,10 +28,8 @@ from collections import OrderedDict
 _WORKDIR	     = "toolchain"
 _CPU_COUNT	     = cpu_count()
 _NO_CONFIG_GUESS = True # Instead of downloading config.guess we use gcc -dumpmachine, this obviously only works when gcc is installed, but we need it to be installed anyway.
-_DEBUG           = True
-_VERSION         = "4.2"
-_DEBUG_BUILD     = True
-
+_DEBUG           = False
+_VERSION         = "4.3"
 
 SOURCES = OrderedDict() # Order matters.
 
@@ -279,11 +277,12 @@ class MinGW64ToolChainBuilder:
 		self.workDir = _WORKDIR
 		self.nativeHost = ""
 		self.cwd = os.getcwd()
+		self.debugBuild = False
+		self.customCflags = None
 		self.targetHost = "x86_64-w64-mingw32"
 		self.targetPrefix = os.path.join(self.cwd,self.workDir,self.targetHost)
 		self.targetPrefixBin = os.path.join(self.targetPrefix,"bin")
 		self.quietMode = False
-
 		self.sourceDir  = os.path.join(self.cwd,self.workDir,"src")
 		self.buildDir  = os.path.join(self.cwd,self.workDir,"bld")
 		self.logFile = None
@@ -758,10 +757,22 @@ class MinGW64ToolChainBuilder:
 			if "cpu_count" in p:
 				cpuCount = p["cpu_count"]
 			
-			if _DEBUG_BUILD:
-				os.environ["CFLAGS"] = "-ggdb -O0"
+			if self.customCflags != None:
+				if _DEBUG:
+					self.log("Setting custom C(PP)FLAGS to: " + self.customCflags)
+				os.environ["CFLAGS"] = self.customCflags
+				os.environ["CPPFLAGS"] = self.customCflags
 			else:
-				os.environ["CFLAGS"] = "-ggdb -O3"
+				if self.debugBuild:
+					if _DEBUG:
+						self.log("Setting C(PP)FLAGS to: -ggdb -O0")
+					os.environ["CFLAGS"] = "-ggdb -O0"
+					os.environ["CPPFLAGS"] = "-ggdb -O0"
+				else:
+					if _DEBUG:
+						self.log("Setting C(PP)FLAGS to: -O3")
+					os.environ["CFLAGS"] = "-O3"
+					os.environ["CPPFLAGS"] = "-O3"
 				
 			if not os.path.isfile(confOptsHash):
 				self.log("Building: %s" % pn)
@@ -838,15 +849,18 @@ class MinGW64ToolChainBuilder:
 		#:
 		self.cchdir(origDir)
 	#:
+	def setCustomCflags(self,flags):
+		self.customCflags = flags
+		self.log("MinGW custom C(PP)FLAGS: " + self.customCflags)
+		
 	def setMinGWcheckout(self,hash):
 		if hash != "":
 			SOURCES['mingw-w64']['checkout'] = hash
 			self.log("Set MinGW checkout to: " + hash)
 			
-	def setDebugBuild(self,onoff):
-		_DEBUG_BUILD = onoff
-		self.log("Set MinGW debug build to: " + ("Yes" if _DEBUG_BUILD == True else "No"))
-	
+	def setDebugBuild(self,switch):
+		self.debugBuild = switch
+		self.log("MinGW debug build: " + ("On" if self.debugBuild == True else "Off"))
 	#:
 	def build(self):
 		self.nativeHost = self.getConfigGuess()
