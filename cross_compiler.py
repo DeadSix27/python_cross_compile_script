@@ -2096,9 +2096,9 @@ class CrossCompileScript:
 	#:
 
 	def defaultCFLAGS(self):
-		self.logger.debug("Reset CFLAGS/CPPFLAGS to: {0}".format( self.originalCflags ) )
+		self.logger.debug("Reset CFLAGS/CXXFLAGS to: {0}".format( self.originalCflags ) )
 		os.environ["CFLAGS"] = self.originalCflags
-		os.environ["CPPFLAGS"] = self.originalCflags
+		os.environ["CXXFLAGS"] = self.originalCflags
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 

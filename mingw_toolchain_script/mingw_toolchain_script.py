@@ -759,20 +759,20 @@ class MinGW64ToolChainBuilder:
 			
 			if self.customCflags != None:
 				if _DEBUG:
-					self.log("Setting custom C(PP)FLAGS to: " + self.customCflags)
+					self.log("Setting custom C(XX)FLAGS to: " + self.customCflags)
 				os.environ["CFLAGS"] = self.customCflags
-				os.environ["CPPFLAGS"] = self.customCflags
+				os.environ["CXXFLAGS"] = self.customCflags
 			else:
 				if self.debugBuild:
 					if _DEBUG:
-						self.log("Setting C(PP)FLAGS to: -ggdb -O0")
+						self.log("Setting C(XX)FLAGS to: -ggdb -O0")
 					os.environ["CFLAGS"] = "-ggdb -O0"
-					os.environ["CPPFLAGS"] = "-ggdb -O0"
+					os.environ["CXXFLAGS"] = "-ggdb -O0"
 				else:
 					if _DEBUG:
-						self.log("Setting C(PP)FLAGS to: -O3")
+						self.log("Setting C(XX)FLAGS to: -O3")
 					os.environ["CFLAGS"] = "-O3"
-					os.environ["CPPFLAGS"] = "-O3"
+					os.environ["CXXFLAGS"] = "-O3"
 				
 			if not os.path.isfile(confOptsHash):
 				self.log("Building: %s" % pn)
@@ -851,7 +851,7 @@ class MinGW64ToolChainBuilder:
 	#:
 	def setCustomCflags(self,flags):
 		self.customCflags = flags
-		self.log("MinGW custom C(PP)FLAGS: " + self.customCflags)
+		self.log("MinGW custom C(XX)FLAGS: " + self.customCflags)
 		
 	def setMinGWcheckout(self,hash):
 		if hash != "":
