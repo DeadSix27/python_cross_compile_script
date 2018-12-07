@@ -29,7 +29,7 @@ _WORKDIR	     = "toolchain"
 _CPU_COUNT	     = cpu_count()
 _NO_CONFIG_GUESS = True # Instead of downloading config.guess we use gcc -dumpmachine, this obviously only works when gcc is installed, but we need it to be installed anyway.
 _DEBUG           = True
-_VERSION         = "4.1"
+_VERSION         = "4.2"
 _DEBUG_BUILD     = True
 
 
@@ -53,22 +53,26 @@ SOURCES['mingw-w64'] = {
 SOURCES['gmp'] = {
 	'type' : 'archive',
 	'version'   : '6.1.2',
-	'url' : 'https://ftp.gnu.org/gnu/gmp/gmp-{version}.tar.xz'
+	'url' : 'https://ftp.gnu.org/gnu/gmp/gmp-{version}.tar.xz',
+	'update_check' : { 'url' : 'https://ftp.gnu.org/gnu/gmp/', 'type' : 'httpindex', 'regex' : r'gmp-(?P<version_num>[\d.]+)\.tar\.xz' },
 }
 SOURCES['mpfr'] = {
 	'type' : 'archive',
 	'version'   : '4.0.1',
-	'url' : 'https://ftp.gnu.org/gnu/mpfr/mpfr-{version}.tar.xz'
+	'url' : 'https://ftp.gnu.org/gnu/mpfr/mpfr-{version}.tar.xz',
+	'update_check' : { 'url' : 'https://ftp.gnu.org/gnu/mpfr/', 'type' : 'httpindex', 'regex' : r'mpfr-(?P<version_num>[\d.]+)\.tar\.xz' },
 }
 SOURCES['mpc'] = {
 	'type' : 'archive',
 	'version'   : '1.1.0',
-	'url' : 'https://ftp.gnu.org/gnu/mpc/mpc-{version}.tar.gz'
+	'url' : 'https://ftp.gnu.org/gnu/mpc/mpc-{version}.tar.gz',
+	'update_check' : { 'url' : 'https://ftp.gnu.org/gnu/mpc/', 'type' : 'httpindex', 'regex' : r'mpc-(?P<version_num>[\d.]+)\.tar\.gz' },
 }
 SOURCES['isl'] = {
 	'type' : 'archive',
 	'version'   : '0.18',
-	'url' : 'https://gcc.gnu.org/pub/gcc/infrastructure/isl-{version}.tar.bz2'
+	'url' : 'https://gcc.gnu.org/pub/gcc/infrastructure/isl-{version}.tar.bz2',
+	'update_check' : { 'url' : 'https://gcc.gnu.org/pub/gcc/infrastructure/', 'type' : 'httpindex', 'regex' : r'isl-(?P<version_num>[\d.]+)\.tar\.bz2' },
 }
 SOURCES['binutils'] = {
 	'type' : 'archive',
@@ -81,6 +85,7 @@ SOURCES['binutils'] = {
 		( 'isl'  , 'isl' ),
 		( 'gmp'  , 'gmp' ),
 	],
+	'update_check' : { 'url' : 'https://ftp.gnu.org/gnu/binutils/', 'type' : 'httpindex', 'regex' : r'binutils-(?P<version_num>[\d.]+)\.tar\.bz2' },
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
@@ -99,7 +104,8 @@ SOURCES['gcc'] = {
 	'builds' : [
 		'gcc-1',
 		'gcc-2',
-	]
+	],
+	'update_check' : { 'url' : 'https://gcc.gnu.org/pub/gcc/releases/', 'type' : 'httpindex', 'regex' : r'gcc-(?P<version_num>[\d.]+)' },
 }
 
 

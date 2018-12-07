@@ -364,7 +364,9 @@ if len(sys.argv) > 1:
 pkgs = loadPackages(PACKAGES_DIR)
 
 
-for name, d in pkgs["deps"].items():
+print("Checking package versions:")
+
+for name, d in {**pkgs["deps"], **pkgs["prods"]}.items():
 	if specificPkgs != None:
 		if not any(word in name for word in specificPkgs):
 			continue
@@ -394,6 +396,28 @@ for name, d in pkgs["deps"].items():
 			
 			latestVer = geLatestVersion(versionEl)
 			
+			if LooseVersion(ourVer) < LooseVersion(latestVer):
+				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+			else:
+				print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+
+if os.path.isfile(os.path.join("..","mingw_toolchain_script","mingw_toolchain_script.py")):
+	print("Checking toolchain versions:")
+				
+	# mingw stuff
+	sys.path.append('..')
+
+	from mingw_toolchain_script.mingw_toolchain_script import SOURCES
+
+	for name, d in SOURCES.items():
+		if specificPkgs != None:
+			if not any(word in name for word in specificPkgs):
+				continue
+		if "update_check" in d and "version" in d:
+			versionEl = d["update_check"]
+			vType = versionEl["type"]
+			ourVer = d["version"]
+			latestVer = geLatestVersion(versionEl)
 			if LooseVersion(ourVer) < LooseVersion(latestVer):
 				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
 			else:
