@@ -318,7 +318,7 @@ def getCommitsDiff(pkg):
 	
 	if clonePath != None:
 		os.chdir(clonePath)	
-		cmts = [c.split(";;") for c in run("git log --pretty=format:\"%H;;%an;;%s\" {0}..master".format(curCommit)).split("\n")]
+		cmts = [c.split(";;") for c in run("git log --pretty=format:\"%H;;%an;;%s\" {0}..master".format(curCommit)).split("\n") if c != ""]
 		os.chdir(origDir)
 		return cmts
 	return None
