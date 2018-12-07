@@ -1920,6 +1920,8 @@ class CrossCompileScript:
 			self.cchdir(folderToPatchIn)
 			self.logger.info("Moving to patch folder: {0}" .format( os.getcwd() ))
 			
+		self.logger.debug("Applying patch '{0}' in '{1}'" .format( url, os.getcwd() ))
+			
 		patch_touch_name = "patch_%s.done" % (self.md5(url))
 		
 		ignoreErr = False
@@ -1934,6 +1936,7 @@ class CrossCompileScript:
 		
 		if os.path.isfile(patch_touch_name):
 			self.logger.debug("Patch '{0}' already applied".format( url ))
+			self.cchdir(originalFolder)
 			return
 
 		pUrl = urlparse(url)
