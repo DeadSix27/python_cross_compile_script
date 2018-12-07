@@ -1703,7 +1703,7 @@ class CrossCompileScript:
 			if data['custom_cflag'] != None:
 				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
 				os.environ["CFLAGS"] = data['custom_cflag']
-				os.environ["LDFLAGS"] = data['custom_cflag']
+				os.environ["CXXFLAGS"] = data['custom_cflag']
 
 		if 'custom_path' in data:
 			if data['custom_path'] != None:
