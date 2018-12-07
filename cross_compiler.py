@@ -107,6 +107,11 @@ class CrossCompileScript:
 		self.packages               = self.loadPackages(self.config["script"]["packages_folder"])
 		self.init()
 		
+	def errorExit(self,msg):
+		self.logger.error(msg)
+		sys.exit(1)
+	
+		
 	def loadPackages(self,packages_folder):
 		def isPathDisabled(path):
 			for part in path.parts:
@@ -114,20 +119,16 @@ class CrossCompileScript:
 					return True
 			return False
 			
-		def errorExit(msg):
-			self.logger.error(msg)
-			sys.exit(1)
-		
 		depsFolder = Path(os.path.join(packages_folder,"dependencies"))
 		prodFolder = Path(os.path.join(packages_folder,"products"))
 		varsPath   = Path(os.path.join(packages_folder,"variables.py"))
 	
 		if not os.path.isdir(packages_folder):
-			errorExit("Packages folder '%s' does not exist." % (packages_folder))
+			self.errorExit("Packages folder '%s' does not exist." % (packages_folder))
 		if not os.path.isdir(depsFolder): #TODO simplify code
-			errorExit("Packages folder '%s' does not exist." % (depsFolder))
+			self.errorExit("Packages folder '%s' does not exist." % (depsFolder))
 		if not os.path.isfile(varsPath):
-			errorExit("Variables file '%s' does not exist." % (varsPath))
+			self.errorExit("Variables file '%s' does not exist." % (varsPath))
 			
 		tmpPkglist = { 'deps' : [], 'prods' : [], 'vars' : [] }
 		packages = { 'deps' : {}, 'prods' : {}, 'vars' : {} }
@@ -147,19 +148,19 @@ class CrossCompileScript:
 						tmpPkglist["prods"].append(p)
 				
 		if len(tmpPkglist["deps"]) < 1: #TODO simplify code
-			errorExit("There's no packages in the folder '%s'." % (depsFolder))
+			self.errorExit("There's no packages in the folder '%s'." % (depsFolder))
 				
 		if len(tmpPkglist["prods"]) < 1:
-			errorExit("There's no packages in the folder '%s'." % (prodFolder))
+			self.errorExit("There's no packages in the folder '%s'." % (prodFolder))
 		
 		with open(varsPath,"r",encoding="utf-8") as f:
 			try:
 				o = ast.literal_eval(f.read()) # was gonna use .json instead of eval on py files, but I like having multiline strings and comments.. so.
 				if not isinstance(o, dict):
-					errorExit("Variables file is misformatted")					
+					self.errorExit("Variables file is misformatted")					
 				packages["vars"] = o
 			except SyntaxError:
-				errorExit("Loading variables.py failed:\n\n" + traceback.format_exc())
+				self.errorExit("Loading variables.py failed:\n\n" + traceback.format_exc())
 			
 		for d in tmpPkglist["deps"]:
 			with open(d,"r",encoding="utf-8") as f:
@@ -168,7 +169,7 @@ class CrossCompileScript:
 				try:
 					o = ast.literal_eval(f.read())
 					if not isinstance(o, dict):
-						errorExit("Package file '%s' is misformatted" % (p.name))
+						self.errorExit("Package file '%s' is misformatted" % (p.name))
 						
 					if "_info" not in o and not self.bool_key(o,"is_dep_inheriter"):
 						self.logger.warning("Package '%s.py' is missing '_info' tag." % (package_name))
@@ -179,7 +180,7 @@ class CrossCompileScript:
 						packages["deps"][package_name] = o
 						
 				except SyntaxError as e:
-					errorExit("Loading '%s.py' failed:\n\n%s" % ( package_name,traceback.format_exc() ))
+					self.errorExit("Loading '%s.py' failed:\n\n%s" % ( package_name,traceback.format_exc() ))
 		
 		for d in tmpPkglist["prods"]:
 			with open(d,"r",encoding="utf-8") as f:
@@ -188,7 +189,7 @@ class CrossCompileScript:
 				try:
 					o = ast.literal_eval(f.read())
 					if not isinstance(o, dict):
-						errorExit("Package file '%s' is misformatted" % (p.name))
+						self.errorExit("Package file '%s' is misformatted" % (p.name))
 						
 					if "_info" not in o and not self.bool_key(o,"is_dep_inheriter"):
 						self.logger.warning("Package '%s.py' is missing '_info' tag." % (package_name))
@@ -199,7 +200,7 @@ class CrossCompileScript:
 						packages["prods"][package_name] = o
 						
 				except SyntaxError as e:
-					errorExit("Loading '%s.py' failed:\n\n%s" % ( package_name,traceback.format_exc() ))
+					self.errorExit("Loading '%s.py' failed:\n\n%s" % ( package_name,traceback.format_exc() ))
 		
 		self.logger.info("Loaded %d packages", len(packages["prods"])+len(packages["deps"]))
 		return packages
@@ -507,15 +508,13 @@ class CrossCompileScript:
 
 
 		group2 = parser.add_mutually_exclusive_group( required = False )
-		group2.add_argument( '-p',  '--build-product',         dest='PRODUCT',         help='Build this product (and dependencies)'                        )
-		group2.add_argument( '-pl', '--build-product_list',    dest='PRODUCT_LIST',    help='Build this product list'                                      )
-		group2.add_argument( '-d',  '--build-dependency',      dest='DEPENDENCY',      help='Build this dependency'                                        )
-		group2.add_argument( '-dl', '--build-dependency_list', dest='DEPENDENCY_LIST', help='Build this dependency list'                                   )
-		group2.add_argument( '-a',  '--build-all',                                     help='Build all products (according to order)', action='store_true' )
-		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                   , action='store_true' )
-		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'   , action='store_true' )
-		parser.add_argument( '-g',  '--debug',                                         help='Show debug information'                 , action='store_true' )
-		parser.add_argument( '-s',  '--skip-depends',                                  help='Skip dependencies when building'        , action='store_true' )
+		group2.add_argument( '-p',  '--build-product',         dest='PRODUCT',         help='Build the specificed product package(s)'                         )
+		group2.add_argument( '-d',  '--build-dependency',      dest='DEPENDENCY',      help='Build the specificed dependency package(s)'                      )
+		group2.add_argument( '-a',  '--build-all',                                     help='Build all products (according to order)'   , action='store_true' )
+		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                      , action='store_true' )
+		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'      , action='store_true' )
+		parser.add_argument( '-g',  '--debug',                                         help='Show debug information'                    , action='store_true' )
+		parser.add_argument( '-s',  '--skip-depends',                                  help='Skip dependencies when building'           , action='store_true' )
 
 		if len(sys.argv)==1:
 			self.defaultEntrace()
@@ -545,58 +544,37 @@ class CrossCompileScript:
 			thingToBuild = None
 			buildType = None
 
-			finalThingList = []
+			finalPkgList = []
 
-			if args.PRODUCT:
-				buildType = "PRODUCT"
-				thingToBuild = args.PRODUCT
-				if thingToBuild in self.packages["prods"]:
-					finalThingList.append(thingToBuild)
-				else:
-					errorOut(thingToBuild,buildType)
-
-			elif args.DEPENDENCY:
+			if args.PRODUCT or args.DEPENDENCY:
+				strPkgs = args.DEPENDENCY
 				buildType = "DEPENDENCY"
-				thingToBuild = args.DEPENDENCY
-				if thingToBuild in self.packages["deps"]:
-					finalThingList.append(thingToBuild)
-				else:
-					errorOut(thingToBuild,buildType)
-
-			elif args.DEPENDENCY_LIST:
-				buildType = "DEPENDENCY"
-				thingToBuild = args.DEPENDENCY_LIST
-				if "," not in thingToBuild:
-					errorOut(None,None,"Error: are you sure the list format is correct? It must be dependency1,dependency2,dependency3, ...")
-				for d in thingToBuild.split(","):
-					if d in self.packages["deps"]:
-						finalThingList.append(d)
-					else:
-						errorOut(d,buildType)
-
-			elif args.PRODUCT_LIST:
-				buildType = "PRODUCT"
-				thingToBuild = args.PRODUCT_LIST
-				if "," not in thingToBuild:
-					errorOut(None,None,"Error: are you sure the list format is correct? It must be product1,product2,product3, ...")
-				for d in thingToBuild.split(","):
-					if d in self.packages["prods"]:
-						finalThingList.append(d)
-					else:
-						errorOut(d,buildType)
+				if args.PRODUCT != None:
+					strPkgs = args.PRODUCT
+					buildType = "PRODUCT"
+				pkgList = re.split(r'(?<!\\),', strPkgs)
+				for p in pkgList:
+					if buildType == "PRODUCT":
+						if p not in self.packages["prods"]:
+							self.errorExit("Product package '%s' does not exist." % (p))
+					if buildType == "DEPENDENCY":
+						if p not in self.packages["deps"]:
+							self.errorExit("Dependency package '%s' does not exist." % (p))
+					
+					finalPkgList.append(p.replace("\\,",","))
 
 			elif args.build_all:
 				self.defaultEntrace()
 				return
 
-			self.logger.info('Starting custom build process for: {0}'.format(thingToBuild))
+			self.logger.info('Starting custom build process for: {0}'.format(",".join(finalPkgList)))
 			
 			skipDeps = False
 			
 			if args.skip_depends:
 				skipDeps = True
 
-			for thing in finalThingList:
+			for thing in finalPkgList:
 				for b in self.targetBitness:
 					main.prepareBuilding(b)
 					main.build_mingw(b)
