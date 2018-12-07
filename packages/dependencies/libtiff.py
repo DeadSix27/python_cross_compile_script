@@ -8,6 +8,9 @@
 	'depends_on' : [
 		'zlib','libjpeg-turbo','libwebp'
 	],
+	'run_post_install' : [
+		'sed -i.bak \'s/Libs: -L${{libdir}} -ltiff$/Libs: -L${{libdir}} -ltiff -lwebp -llzma -ljpeg -lz/\' "{pkg_config_path}/libtiff-4.pc"',
+	],
 	'update_check' : { 'url' : 'https://download.osgeo.org/libtiff/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'tiff-(?P<version_num>[\d.]+)\.tar\.gz' },
 	'_info' : { 'version' : '4.0.10', 'fancy_name' : 'libtiff' },
 }
