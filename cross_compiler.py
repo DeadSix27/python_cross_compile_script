@@ -225,8 +225,7 @@ class CrossCompileScript:
 				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
 				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
 				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
-				'mingw_script_url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/mingw_toolchain_script.py',
-				'overwrite_mingw_script': True,
+				'mingw_toolchain_path' : 'mingw_toolchain_script/mingw_toolchain_script.py',
 				'packages_folder' : 'packages',
 			},
 			'toolchain': {
@@ -279,7 +278,6 @@ class CrossCompileScript:
 		self.fullProductDir         = None
 		self.targetBitness          = self.config["toolchain"]["bitness"]
 		self.originalPATH           = os.environ["PATH"]
-		self.mingwScriptURL         = self.config["script"]["mingw_script_url"]
 		self.targetHost             = None
 		self.targetPrefix           = None
 		self.mingwBinpath           = None
@@ -724,23 +722,22 @@ class CrossCompileScript:
 
 			# self.cchdir(self.mingwDir)
 			
-			download_toolchain_script = False
-			if not os.path.isfile(os.path.join(self.fullCurrentPath,"mingw_toolchain_script.py")):
-				download_toolchain_script = True
-			elif self.config["script"]["overwrite_mingw_script"]:
-				download_toolchain_script = True
-				
-			mingw_script_file = None
+
+			module_path = self.config["script"]["mingw_toolchain_path"].replace("/",".").rstrip(".py")
 			
-			if download_toolchain_script:
-				mingw_script_file = self.download_file(self.mingwScriptURL,outputPath = self.fullCurrentPath)
+			if not os.path.isfile(os.path.join("..",self.config["script"]["mingw_toolchain_path"])):
+				self.errorExit("Specified MinGW build script path does not exist: '%s'" % (toolchain_script))
 
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
+				
+			import importlib
 
-			from mingw_toolchain_script import MinGW64ToolChainBuilder
+			mod = importlib.import_module(module_path)
+			
+			# from mingw_toolchain_script.mingw_toolchain_script import MinGW64ToolChainBuilder
 
-			toolchainBuilder = MinGW64ToolChainBuilder()
+			toolchainBuilder = mod.MinGW64ToolChainBuilder()
 
 			toolchainBuilder.workDir = self.mingwDir
 			if self.config["toolchain"]["mingw_commit"] != None:
@@ -2096,9 +2093,9 @@ class CrossCompileScript:
 	#:
 
 	def defaultCFLAGS(self):
-		self.logger.debug("Reset CFLAGS to: {0}".format( self.originalCflags ) )
+		self.logger.debug("Reset CFLAGS/CPPFLAGS to: {0}".format( self.originalCflags ) )
 		os.environ["CFLAGS"] = self.originalCflags
-		os.environ["LDFLAGS"] = self.originalCflags
+		os.environ["CPPFLAGS"] = self.originalCflags
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
