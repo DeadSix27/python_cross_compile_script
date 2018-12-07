@@ -225,7 +225,7 @@ class CrossCompileScript:
 				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
 				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
 				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
-				'mingw_script_url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/toolchain_build_scripts/build_mingw_toolchain.py',
+				'mingw_script_url' : 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/mingw_toolchain_script.py',
 				'overwrite_mingw_script': True,
 				'packages_folder' : 'packages',
 			},
@@ -725,7 +725,7 @@ class CrossCompileScript:
 			# self.cchdir(self.mingwDir)
 			
 			download_toolchain_script = False
-			if not os.path.isfile(os.path.join(self.fullCurrentPath,"build_mingw_toolchain.py")):
+			if not os.path.isfile(os.path.join(self.fullCurrentPath,"mingw_toolchain_script.py")):
 				download_toolchain_script = True
 			elif self.config["script"]["overwrite_mingw_script"]:
 				download_toolchain_script = True
@@ -738,7 +738,7 @@ class CrossCompileScript:
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
 
-			from build_mingw_toolchain import MinGW64ToolChainBuilder
+			from mingw_toolchain_script import MinGW64ToolChainBuilder
 
 			toolchainBuilder = MinGW64ToolChainBuilder()
 
