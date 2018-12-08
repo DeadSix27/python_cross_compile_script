@@ -1417,10 +1417,15 @@ class CrossCompileScript:
 		else:
 			customFolder = True
 		folderToCheck = folderName
+		
+		if "rename_folder" in data and data["rename_folder"] != "" and data["rename_folder"] != None:
+			folderToCheck = data["rename_folder"]
+		
 		if workDir != None:
 			folderToCheck = workDir
-
-		if not os.path.isfile(os.path.join(folderToCheck,"unpacked.successfully")):
+			
+		check_file = os.path.join(folderToCheck,"unpacked.successfully")
+		if not os.path.isfile(check_file):
 			dl_loc = self.get_best_mirror(data)
 			url = dl_loc["url"]
 			fileName = os.path.basename(urlparse(url).path)
