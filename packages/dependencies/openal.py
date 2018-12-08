@@ -1,7 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/kcat/openal-soft.git',
-	# 'branch' : '46f18ba114831ff26e8f270c6b5c881b45838439',
+	'branch' : '0f24139b57460c71d66b9a090217d34706d64dde', # stick to last working commit
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
 	'custom_cflag' : '-O3', # native tools have to use the same march as end product else it fails*
