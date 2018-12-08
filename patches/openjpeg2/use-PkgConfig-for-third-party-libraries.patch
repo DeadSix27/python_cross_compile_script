@@ -1,0 +1,59 @@
+From 0c9cacafc8c75a73498a0780d4ca3f08e7708647 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Sat, 8 Dec 2018 06:17:48 +0100
+Subject: [PATCH] use PkgConfig for third party libraries
+
+I had issues with FIND_PACKAGE not finding additional libraries needed by the requested packages.
+E.g libtiff not also adding libwebp
+---
+ thirdparty/CMakeLists.txt | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/thirdparty/CMakeLists.txt b/thirdparty/CMakeLists.txt
+index b0b229c8d..d23361bc2 100644
+--- a/thirdparty/CMakeLists.txt
++++ b/thirdparty/CMakeLists.txt
+@@ -1,5 +1,7 @@
+ # 3rd party libs
+ 
++find_package(PkgConfig REQUIRED)
++
+ #------------
+ # Try to find lib Z
+ if(BUILD_THIRDPARTY)
+@@ -11,7 +13,7 @@ if(BUILD_THIRDPARTY)
+   set(ZLIB_FOUND 1)
+ else(BUILD_THIRDPARTY)
+   # Try to find lib Z
+-  find_package(ZLIB)
++  pkg_check_modules(ZLIB REQUIRED zlib)
+   if(ZLIB_FOUND)
+     set(Z_LIBNAME ${ZLIB_LIBRARIES} PARENT_SCOPE)
+     set(Z_INCLUDE_DIRNAME ${ZLIB_INCLUDE_DIRS} PARENT_SCOPE)
+@@ -35,7 +37,7 @@ if(BUILD_THIRDPARTY)
+   set(PNG_INCLUDE_DIRNAME ${OPENJPEG_SOURCE_DIR}/thirdparty/libpng PARENT_SCOPE)
+ else(BUILD_THIRDPARTY)
+   if(ZLIB_FOUND)
+-    find_package(PNG)
++    pkg_check_modules(PNG REQUIRED libpng)
+     if(PNG_FOUND)
+       message(STATUS "Your system seems to have a PNG lib available, we will use it")
+       set(OPJ_HAVE_PNG_H 1 PARENT_SCOPE)
+@@ -65,7 +67,7 @@ if(BUILD_THIRDPARTY)
+   set(OPJ_HAVE_TIFF_H 1 PARENT_SCOPE)
+   set(OPJ_HAVE_LIBTIFF 1 PARENT_SCOPE)
+ else(BUILD_THIRDPARTY)
+-  find_package(TIFF)
++  pkg_check_modules(TIFF REQUIRED libtiff-4)
+   if(TIFF_FOUND)
+     message(STATUS "Your system seems to have a TIFF lib available, we will use it")
+     set(OPJ_HAVE_TIFF_H 1 PARENT_SCOPE)
+@@ -93,7 +95,7 @@ if( BUILD_THIRDPARTY)
+   set(OPJ_HAVE_LCMS2_H 1 PARENT_SCOPE)
+   set(OPJ_HAVE_LIBLCMS2 1 PARENT_SCOPE)
+ else(BUILD_THIRDPARTY)
+-  find_package(LCMS2)
++  pkg_check_modules(LCMS2 REQUIRED lcms2)
+   if(LCMS2_FOUND)
+     message(STATUS "Your system seems to have a LCMS2 lib available, we will use it")
+     set(OPJ_HAVE_LCMS2_H 1 PARENT_SCOPE)
