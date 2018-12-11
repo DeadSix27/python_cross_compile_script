@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://aomedia.googlesource.com/aom',
-	'branch' : '2d7eb8bce5c413e0944917cdfd378c26f4e3f85b',
 	'conf_system' : 'cmake',
 	'source_subfolder' : 'build',
 	'configure_options' :
