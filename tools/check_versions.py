@@ -418,7 +418,8 @@ if os.path.isfile(os.path.join("..","mingw_toolchain_script","mingw_toolchain_sc
 			vType = versionEl["type"]
 			ourVer = d["version"]
 			latestVer = geLatestVersion(versionEl)
-			if LooseVersion(ourVer) < LooseVersion(latestVer):
-				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
-			else:
-				print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+			if re.match("^(?P<version_num>(?:[\dx]{1,3}\.){0,3}[\dx]{1,3})$",ourVer) and re.match("^(?P<version_num>(?:[\dx]{1,3}\.){0,3}[\dx]{1,3})$",latestVer):
+				if LooseVersion(ourVer) < LooseVersion(latestVer):
+					print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+				else:
+					print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
