@@ -1,7 +1,7 @@
 {
 	'repo_type' : 'mercurial',
 	'url' : 'https://bitbucket.org/multicoreware/x265',
-	'rename_folder' : 'x265_multibit_hg',
+	'rename_folder' : 'x265_hg',
 	'source_subfolder' : '_build',
 	'configure_options' : 
 		'../source {cmake_prefix_options} '
@@ -12,7 +12,7 @@
 		'-DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" '
 		'-DLINKED_10BIT=ON '
 		'-DLINKED_12BIT=ON '
-		'-DCMAKE_INSTALL_PREFIX={product_prefix}/x265_multibit_hg.installed'
+		'-DCMAKE_INSTALL_PREFIX={product_prefix}/x265_hg.installed'
 	,
 	'conf_system' : 'cmake',
 	'depends_on' : [ 'libxml2', 'libx265_multibit_10', 'libx265_multibit_12' ],
