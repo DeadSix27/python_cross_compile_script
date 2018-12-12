@@ -3,6 +3,7 @@
 	'download_locations' : [
 		#{ 'url' : 'http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd' }, ], }, # Website is dead.
 		{ 'url' : 'https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd' }, ], },
+		{ 'url' : 'https://src.fedoraproject.org/lookaside/pkgs/bzip2/bzip2-1.0.6.tar.gz/00b516f4704d4a7cb50a1d97e6e8e15b/bzip2-1.0.6.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd' }, ], },
 	],
 	'patches' : [
 		('bzip2/bzip2_cross_compile.diff', '-p0'),
