@@ -363,6 +363,9 @@ if len(sys.argv) > 1:
 
 pkgs = loadPackages(PACKAGES_DIR)
 
+ignorePkgsUpdate = [ "bzip2" ]
+
+pkgsWithoutUpdateCheck = []
 
 print("Checking package versions:")
 
@@ -370,6 +373,12 @@ for name, d in {**pkgs["deps"], **pkgs["prods"]}.items():
 	if specificPkgs != None:
 		if not any(word in name for word in specificPkgs):
 			continue
+			
+	if "repo_type" in d and d["repo_type"] == "archive":
+		if "update_check" not in d:
+			if name not in ignorePkgsUpdate:
+				pkgsWithoutUpdateCheck.append(name)
+			
 	if "update_check" in d:
 	
 		versionEl = d["update_check"]
@@ -400,6 +409,9 @@ for name, d in {**pkgs["deps"], **pkgs["prods"]}.items():
 				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
 			else:
 				print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+				
+if len(pkgsWithoutUpdateCheck) > 0:
+	print("Packages without update check:\n%s" % (",".join(pkgsWithoutUpdateCheck)))
 
 if os.path.isfile(os.path.join("..","mingw_toolchain_script","mingw_toolchain_script.py")):
 	print("Checking toolchain versions:")
