@@ -1,8 +1,8 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'https://download.gnome.org/sources/glib/2.58/glib-2.58.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '97d6a9d926b6aa3dfaadad3077cfb43eec74432ab455dff14250c769d526d7d6' }, ], },
-		{ 'url' : 'https://fossies.org/linux/misc/glib-2.58.1.tar.xz/', 'hashes' : [ { 'type' : 'sha256', 'sum' : '97d6a9d926b6aa3dfaadad3077cfb43eec74432ab455dff14250c769d526d7d6' }, ], },
+		{ 'url' : 'https://download.gnome.org/sources/glib/2.58/glib-2.58.2.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'c7b24ed6536f1a10fc9bce7994e55c427b727602e78342821f1f07fb48753d4b' }, ], },
+		{ 'url' : 'https://fossies.org/linux/misc/glib-2.58.2.tar.xz/', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'c7b24ed6536f1a10fc9bce7994e55c427b727602e78342821f1f07fb48753d4b' }, ], },
 	],
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --with-pcre=internal --with-threads=posix --disable-fam --disable-shared --disable-libmount',
 	'depends_on' : [ 'libffi','gettext' ],
@@ -16,5 +16,5 @@
 		( 'glib2/0001-win32-Make-the-static-build-work-with-MinGW-when-pos.patch', '-p1' ),
 	],
 	'update_check' : { 'url' : 'https://developer.gnome.org/glib/', 'type' : 'httpregex', 'regex' : r'<a class="doc-link" href="2.58/" lang="">(?P<version_num>[\d.]+)<\/a>' },
-	'_info' : { 'version' : '2.58.1', 'fancy_name' : 'glib2' },
+	'_info' : { 'version' : '2.58.2', 'fancy_name' : 'glib2' },
 }
