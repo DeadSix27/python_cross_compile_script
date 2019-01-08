@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # ####################################################
-# Copyright (C) 2018 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
+# Copyright (C) 2018-2019 DeadSix27 (https://github.com/DeadSix27/python_cross_compile_script)
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
