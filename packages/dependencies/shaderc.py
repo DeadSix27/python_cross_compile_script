@@ -1,7 +1,16 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/google/shaderc.git',
-	'configure_options' : 'cmake .. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake -DCMAKE_INSTALL_PREFIX={target_prefix} -DSHADERC_SKIP_INSTALL=ON -DSHADERC_SKIP_TESTS=ON -DMINGW_COMPILER_PREFIX={cross_prefix_bare}', #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
+	'configure_options' :
+		'cmake .. {cmake_prefix_options} '
+		'-DCMAKE_BUILD_TYPE=Release '
+		'-DCMAKE_TOOLCHAIN_FILE=cmake/linux-mingw-toolchain.cmake '
+		'-DCMAKE_INSTALL_PREFIX={target_prefix} '
+		'-DSHADERC_SKIP_INSTALL=ON '
+		'-DSHADERC_SKIP_TESTS=ON '
+		'-DSHADERC_ENABLE_SPVC=ON '
+		'-DMINGW_COMPILER_PREFIX={cross_prefix_bare} '
+	, #-DCMAKE_CXX_FLAGS="${{CMAKE_CXX_FLAGS}} -fno-rtti"
 	'source_subfolder' : '_build', #-B. -H..
 	'conf_system' : 'cmake',
 	# 'cpu_count' : '1', #...
@@ -25,13 +34,15 @@
 		'ln -sf {inTreePrefix}/glslang glslang',
 		'ln -sf {inTreePrefix}/spirv-headers spirv-headers',
 		'ln -sf {inTreePrefix}/spirv-tools spirv-tools',
+		'ln -sf {inTreePrefix}/spirv-cross spirv-cross',
 		'!SWITCHDIR|..',
 	],
 	'run_post_build' : [
 		'cp -rv "../libshaderc/include/shaderc" "{target_prefix}/include/"',
+		'cp -rv "../libshaderc_util/include/libshaderc_util" "{target_prefix}/include/"',
 		'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_combined.a"',
 		'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_shared.a"',
 	],
-	'depends_on' : ['glslang', 'spirv_headers', 'spirv_tools', 'crossc'],
+	'depends_on' : ['glslang', 'spirv_headers', 'spirv_tools', 'spirv_cross', 'crossc'],
 	'_info' : { 'version' : None, 'fancy_name' : 'shaderc' },
 }
