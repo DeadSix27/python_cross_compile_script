@@ -56,7 +56,7 @@ SOURCES['gmp'] = {
 }
 SOURCES['mpfr'] = {
 	'type' : 'archive',
-	'version'   : '4.0.1',
+	'version'   : '4.0.2',
 	'url' : 'https://ftp.gnu.org/gnu/mpfr/mpfr-{version}.tar.xz',
 	'update_check' : { 'url' : 'https://ftp.gnu.org/gnu/mpfr/', 'type' : 'httpindex', 'regex' : r'mpfr-(?P<version_num>[\d.]+)\.tar\.xz' },
 }
