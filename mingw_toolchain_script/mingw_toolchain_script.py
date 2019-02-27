@@ -74,7 +74,7 @@ SOURCES['isl'] = {
 }
 SOURCES['binutils'] = {
 	'type' : 'archive',
-	'version'   : '2.31.1',
+	'version'   : '2.32',
 	# 'patches' : [
 		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-binutils-remove_provide_qualifiers_from_ctor_and_dtor_list.patch' , 'p1' ),
 	# ],
@@ -87,7 +87,7 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '8.2.0',
+	'version'   : '8.3.0',
 	'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
 	'patches' : [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
