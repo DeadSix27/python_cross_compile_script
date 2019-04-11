@@ -75,6 +75,7 @@
 		'--enable-libsrt '
 		'--enable-liblensfun '
 		'--enable-libtesseract '
+		#'--enable-libvmaf '
 		
 		# HW Dec/Enc
 		'--enable-libmfx '
@@ -93,6 +94,7 @@
 		'--extra-version=DeadSix27/python_cross_compile_script '
 		#'--enable-avresample ' # deprecated.
 		'--pkg-config-flags="--static" '
+		'--extra-libs="-lpsapi" '
 		#'--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
 		'--extra-cflags="-DLIBTWOLAME_STATIC" '
 		'--extra-cflags="-DMODPLUG_STATIC" '
