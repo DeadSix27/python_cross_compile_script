@@ -1,9 +1,10 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.6.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'bb9acab8af2ac430edf45faaaa4ed2c51f86e57cb57689be6701aceef4732ca7' }, ], },
-		{ 'url' : 'https://fossies.org/linux/misc/gnutls-3.6.6.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'bb9acab8af2ac430edf45faaaa4ed2c51f86e57cb57689be6701aceef4732ca7' }, ], },
+		{ 'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.7.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '881b26409ecd8ea4c514fd3fbdb6fae5fab422ca7b71116260e263940a4bbbad' }, ], },
+		{ 'url' : 'https://fossies.org/linux/misc/gnutls-3.6.7.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '881b26409ecd8ea4c514fd3fbdb6fae5fab422ca7b71116260e263940a4bbbad' }, ], },
 	],
+	'folder_name' : 'gnutls-3.6.7',
 	'configure_options' :
 		'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
 		'--disable-srp-authentication '
@@ -46,5 +47,5 @@
 	],
 	# 'env_exports' : {
 	'update_check' : { 'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.6', 'type' : 'ftpindex', 'regex' : r'gnutls-(?P<version_num>[\d.]+)\.tar\.xz' },
-	'_info' : { 'version' : '3.6.6', 'fancy_name' : 'gnutls' },
+	'_info' : { 'version' : '3.6.7.1', 'fancy_name' : 'gnutls' },
 }
