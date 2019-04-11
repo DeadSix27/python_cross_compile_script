@@ -11,7 +11,7 @@
 		( 'wget/0001-wget-look-for-ca-bundle.trust.crt-in-exe-path-by-def.patch', '-p1' ),
 		( 'wget/wget.timegm.patch', '-p1' ),
 	],
-	'run_post_build' : [
+	'run_post_install' : [
 		'if [ -f "/etc/ssl/certs/ca-certificates.crt" ] ; then cp -v /etc/ssl/certs/ca-certificates.crt "{product_prefix}/wget_git.installed/bin/ca-bundle.trust.crt" ; fi',
 	],
 	'depends_on' : [
