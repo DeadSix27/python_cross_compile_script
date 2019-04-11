@@ -5,9 +5,8 @@
 	'needs_configure' : False,
 	'build_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
 	'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
-	'patches' : [
-		# ['https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/mujs/mujs-0001-fix-building-with-mingw.patch', '-p1'],
-		('mujs/mujs-0002-fix-install-with-mingw.patch', '-p1'),
+	'run_post_patch' : [
+		'sed -i.bak \'s/install -m 755 $(OUT)\/mujs $(DESTDIR)$(bindir)/install -m 755 $(OUT)\/mujs.exe $(DESTDIR)$(bindir)/g\' Makefile',
 	],
 	'_info' : { 'version' : None, 'fancy_name' : 'mujs' },
 }
