@@ -659,6 +659,7 @@ class CrossCompileScript:
 		self.mesonEnvFile       = os.path.join(self.targetSubPrefix, "meson_environment.txt")
 		self.cpuCount           = self.config["toolchain"]["cpu_count"]
 		self.originalCflags     = self.config["toolchain"]["original_cflags"]
+		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else "" 
 
 		if self.debugMode:
 			print('self.bitnessDir = \n'         + self.bitnessDir + '\n\n')
@@ -912,9 +913,10 @@ class CrossCompileScript:
 				f.write("strip = '{0}strip'\n".format(self.fullCrossPrefix))
 				f.write("windres = '{0}windres'\n".format(self.fullCrossPrefix))
 				f.write("ranlib = '{0}ranlib'\n".format(self.fullCrossPrefix))
-				f.write("pkgconfig = '{0}pkg-config'\n".format(self.fullCrossPrefix)) # ??
+				f.write("pkgconfig = 'pkg-config'\n".format(self.fullCrossPrefix)) # ??
 				f.write("dlltool = '{0}dlltool'\n".format(self.fullCrossPrefix))
 				f.write("gendef = '{0}/gendef'\n".format(self.mingwBinpath))
+				f.write("cmake = 'cmake'\n")
 				f.write("needs_exe_wrapper = false\n")
 				f.write("#exe_wrapper = 'wine' # A command used to run generated executables.\n")
 				f.write("\n")
@@ -1740,11 +1742,14 @@ class CrossCompileScript:
 			if 'run_post_patch' in data:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
-						if cmd.startswith("!SWITCHDIR"):
-							self.cchdir("|".join(cmd.split("|")[1:]))
+						if cmd.startswith("!SWITCHDIRBACK"):
+							self.cchdir(currentFullDir)
+						elif cmd.startswith("!SWITCHDIR"):
+							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
+							self.cchdir(_dir)
 						else:
 							cmd = self.replaceVariables(cmd)
-							self.logger.debug("Running post-patch-command: '{0}'".format( cmd ))
+							self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
 							self.run_process(cmd)
 
 		conf_system = "autoconf"
@@ -2006,6 +2011,7 @@ class CrossCompileScript:
 			self.touch(touch_name)
 
 	def build_source(self,name,data,build_system):
+		_origDir = os.getcwd()
 		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"build_options")))
 		if not os.path.isfile(touch_name):
 			mkCmd = 'make'
@@ -2053,13 +2059,20 @@ class CrossCompileScript:
 			if 'run_post_build' in data:
 				if data['run_post_build'] != None:
 					for cmd in data['run_post_build']:
-						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running post-build-command: '{0}'".format( cmd ))
-						self.run_process(cmd)
+						if cmd.startswith("!SWITCHDIRBACK"):
+							self.cchdir(_origDir)
+						elif cmd.startswith("!SWITCHDIR"):
+							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
+							self.cchdir(_dir)
+						else:
+							cmd = self.replaceVariables(cmd)
+							self.logger.info("Running post-build-command: '{0}'".format( cmd ))
+							self.run_process(cmd)
 
 			self.touch(touch_name)
 
 	def install_source(self,name,data,build_system):
+		_origDir = os.getcwd()
 		touch_name = "already_ran_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
 		if not os.path.isfile(touch_name):
 			cpcnt = '-j {0}'.format(self.cpuCount)
@@ -2093,9 +2106,15 @@ class CrossCompileScript:
 			if 'run_post_install' in data:
 				if data['run_post_install'] != None:
 					for cmd in data['run_post_install']:
-						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running post-install-command: '{0}'".format( cmd ))
-						self.run_process(cmd)
+						if cmd.startswith("!SWITCHDIRBACK"):
+							self.cchdir(_origDir)
+						elif cmd.startswith("!SWITCHDIR"):
+							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
+							self.cchdir(_dir)
+						else:
+							cmd = self.replaceVariables(cmd)
+							self.logger.info("Running post-install-command: '{0}'".format( cmd ))
+							self.run_process(cmd)
 
 			self.touch(touch_name)
 	#:
