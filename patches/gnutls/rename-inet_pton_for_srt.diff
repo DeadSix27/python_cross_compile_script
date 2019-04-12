@@ -1,0 +1,42 @@
+diff -Nur gnutls-3.6.7/gl/inet_pton.c gnutls-3.6.7.patched/gl/inet_pton.c
+--- gnutls-3.6.7/gl/inet_pton.c	2019-04-02 19:59:04.000000000 +0200
++++ gnutls-3.6.7.patched/gl/inet_pton.c	2019-04-11 22:43:55.584757292 +0200
+@@ -44,7 +44,7 @@
+ int
+ rpl_inet_pton (int af, const char *restrict src, void *restrict dst)
+ {
+-  return inet_pton (af, src, dst);
++  return inet_pton_gtls (af, src, dst);
+ }
+ 
+ #else
+@@ -79,7 +79,7 @@
+  *      Paul Vixie, 1996.
+  */
+ int
+-inet_pton (int af, const char *restrict src, void *restrict dst)
++inet_pton_gtls (int af, const char *restrict src, void *restrict dst)
+ {
+   switch (af)
+     {
+diff -Nur gnutls-3.6.7/src/gl/inet_pton.c gnutls-3.6.7.patched/src/gl/inet_pton.c
+--- gnutls-3.6.7/src/gl/inet_pton.c	2019-01-11 07:40:41.000000000 +0100
++++ gnutls-3.6.7.patched/src/gl/inet_pton.c	2019-04-11 22:43:55.894754726 +0200
+@@ -44,7 +44,7 @@
+ int
+ rpl_inet_pton (int af, const char *restrict src, void *restrict dst)
+ {
+-  return inet_pton (af, src, dst);
++  return inet_pton_gtls (af, src, dst);
+ }
+ 
+ #else
+@@ -79,7 +79,7 @@
+  *      Paul Vixie, 1996.
+  */
+ int
+-inet_pton (int af, const char *restrict src, void *restrict dst)
++inet_pton_gtls (int af, const char *restrict src, void *restrict dst)
+ {
+   switch (af)
+     {
