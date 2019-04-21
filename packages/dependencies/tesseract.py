@@ -16,7 +16,7 @@
 	'cflag_addition' : '-DLIBARCHIVE_STATIC -lnettle -llzma -lz -L/home/vm/python_cross_compile_script/workdir/toolchain/x86_64-w64-mingw32/x86_64-w64-mingw32/lib -lxml2 -lz -llzma -liconv -lws2_32 -lbcrypt -lbz2',
 	'run_post_install' : [
 		'sed -i.bak \'s/set(LIB_Ws2_32 Ws2_32)/set(LIB_Ws2_32 ws2_32)/\' ../CMakeLists.txt',
-		'sed -i.bak \'s/Libs: -L${{libdir}} -ltesseract41*$/Requires: lept\\nRequires.private: lept\\nLibs: -L${{libdir}} -ltesseract41 -lstdc++ -lws2_32/\' "{pkg_config_path}/tesseract.pc"',
+		'sed -i.bak \'s/Libs: -L${{libdir}} -ltesseract50*$/Requires: lept\\nRequires.private: lept\\nLibs: -L${{libdir}} -ltesseract50 -lstdc++ -lws2_32/\' "{pkg_config_path}/tesseract.pc"',
 	],
 	'_info' : { 'version' : None, 'fancy_name' : 'tesseract' },
 }
