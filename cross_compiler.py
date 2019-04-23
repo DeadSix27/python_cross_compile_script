@@ -917,7 +917,7 @@ class CrossCompileScript:
 				f.write("dlltool = '{0}dlltool'\n".format(self.fullCrossPrefix))
 				f.write("gendef = '{0}/gendef'\n".format(self.mingwBinpath))
 				f.write("cmake = 'cmake'\n")
-				f.write("needs_exe_wrapper = false\n")
+				f.write("#needs_exe_wrapper = false\n")
 				f.write("#exe_wrapper = 'wine' # A command used to run generated executables.\n")
 				f.write("\n")
 				f.write("[host_machine]\n")
