@@ -1588,7 +1588,6 @@ class CrossCompileScript:
 		
 		if 'is_dep_inheriter' in data:
 			if data['is_dep_inheriter'] == True:
-				print("Gothere")
 				if type == "PRODUCT":
 					self.packages["prods"][name]["_already_built"] = True
 				else:
@@ -1705,6 +1704,7 @@ class CrossCompileScript:
 			if data['cflag_addition'] != None:
 				self.logger.debug("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
+				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + data['cflag_addition']
 
 		if 'custom_cflag' in data:
 			if data['custom_cflag'] != None:
