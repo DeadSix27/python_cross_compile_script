@@ -16,9 +16,6 @@
 	# 'cpu_count' : '1', #...
 	'needs_make_install' : False,
 	'build_options' : '',
-	# 'patches' : [
-		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/shaderc/shaderc-0001-add-script-for-cloning-dependencies.patch', '-p1', '..'),
-	# ],
 	'run_post_patch' : [
 		# 'mkdir _build',
 		# 'chmod u+x pull.sh',
@@ -37,6 +34,6 @@
 		'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_combined.a"',
 		# 'cp -rv "libshaderc/libshaderc_combined.a" "{target_prefix}/lib/libshaderc_shared.a"',
 	],
-	'depends_on' : ['glslang', 'spirv_headers', 'spirv_tools', 'spirv_cross', 'crossc'],
+	'depends_on' : ['glslang', 'spirv_headers', 'spirv_tools', 'spirv_cross', ],
 	'_info' : { 'version' : None, 'fancy_name' : 'shaderc' },
 }

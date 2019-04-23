@@ -6,7 +6,6 @@
 	'env_exports' : {
 		'DEST_OS' : 'win32',
 		'TARGET'  : '{target_host}',
-		# 'LDFLAGS' : '-ld3d11 -llzma',
 	},
 	'run_post_patch' : [
 		'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
@@ -48,17 +47,13 @@
 		'DEST_OS=win32 '
 	,
 	'depends_on' : [
-		'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader',
+		'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader', 'libplacebo',
 	],
 	'packages' : {
 		'arch' : [ 'rst2pdf' ],
 	},
 	'patches' : [
-		# Enable PR's by preference
-		( 'https://github.com/mpv-player/mpv/pull/5411.patch', '-p1' ), # osc: seekranges enhancement
-		( 'https://github.com/mpv-player/mpv/pull/6292.patch', '-p1' ), # some left-shift to mmouse alias PR
-		# [ 'https://github.com/mpv-player/mpv/pull/6158.patch', '-p1' ], # wm4's controversial giant pr
-		# [ 'https://github.com/mpv-player/mpv/pull/6326.patch', '-p1' ], # hwdec_cuda: Use explicit synchronisation in vulkan interop	
+		( 'https://github.com/mpv-player/mpv/pull/6646.patch', '-p1' ), # use spirv-cross
 	],
 	'run_post_configure' : (
 		'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
