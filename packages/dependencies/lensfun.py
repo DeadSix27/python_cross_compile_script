@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'git',
-	'url' : 'http://git.code.sf.net/p/lensfun/code',
-	'rename_folder' : 'lensfun_git',
+	'url' : 'https://github.com/lensfun/lensfun',
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
 	'run_post_patch' : [
