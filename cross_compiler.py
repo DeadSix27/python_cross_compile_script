@@ -33,8 +33,8 @@ import yaml
 import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
 import hashlib,glob,traceback,time,zlib,codecs,argparse,ast
 import http.cookiejar
+import pathlib
 from multiprocessing import cpu_count
-from pathlib import Path
 from urllib.parse import urlparse
 from collections import OrderedDict
 
@@ -119,9 +119,9 @@ class CrossCompileScript:
 					return True
 			return False
 			
-		depsFolder = Path(os.path.join(packages_folder,"dependencies"))
-		prodFolder = Path(os.path.join(packages_folder,"products"))
-		varsPath   = Path(os.path.join(packages_folder,"variables.py"))
+		depsFolder = pathlib.Path(os.path.join(packages_folder,"dependencies"))
+		prodFolder = pathlib.Path(os.path.join(packages_folder,"products"))
+		varsPath   = pathlib.Path(os.path.join(packages_folder,"variables.py"))
 	
 		if not os.path.isdir(packages_folder):
 			self.errorExit("Packages folder '%s' does not exist." % (packages_folder))
@@ -135,14 +135,14 @@ class CrossCompileScript:
 			
 		for path, subdirs, files in os.walk(depsFolder):
 			for name in files:
-				p = Path(os.path.join(path, name))
+				p = pathlib.Path(os.path.join(path, name))
 				if p.suffix == ".py" :
 					if not isPathDisabled(p):
 						tmpPkglist["deps"].append(p)
 				
 		for path, subdirs, files in os.walk(prodFolder):
 			for name in files:
-				p = Path(os.path.join(path, name))
+				p = pathlib.Path(os.path.join(path, name))
 				if p.suffix == ".py":
 					if not isPathDisabled(p):
 						tmpPkglist["prods"].append(p)
@@ -164,7 +164,7 @@ class CrossCompileScript:
 			
 		for d in tmpPkglist["deps"]:
 			with open(d,"r",encoding="utf-8") as f:
-				p = Path(d)
+				p = pathlib.Path(d)
 				package_name = p.stem.lower()
 				try:
 					o = ast.literal_eval(f.read())
@@ -184,7 +184,7 @@ class CrossCompileScript:
 		
 		for d in tmpPkglist["prods"]:
 			with open(d,"r",encoding="utf-8") as f:
-				p = Path(d)
+				p = pathlib.Path(d)
 				package_name = p.stem.lower()
 				try:
 					o = ast.literal_eval(f.read())
@@ -240,7 +240,7 @@ class CrossCompileScript:
 			}
 		}
 		
-		config_file = Path(__file__).stem + ".yaml"
+		config_file = pathlib.Path(__file__).stem + ".yaml"
 		
 		if not os.path.isfile(config_file):
 			self.writeDefaultConfig(config_file)
@@ -1233,7 +1233,7 @@ class CrossCompileScript:
 		return hash.hexdigest()
 
 	def touch(self,f):
-		Path(f).touch()
+		pathlib.Path(f).touch()
 
 	def chmodpux(self,file):
 		st = os.stat(file)
@@ -1733,6 +1733,16 @@ class CrossCompileScript:
 					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
 					os.environ[key] = val
 
+		if 'copy_over' in data and data['copy_over'] != None:
+			for f in data['copy_over']:
+				f_formatted = self.replaceVariables(f)
+				f_formatted = pathlib.Path(f_formatted)
+				if not f_formatted.is_file():
+					self.errorExit("Copy-over file '%s' (Unformatted: '%s') does not exist." % (f_formatted,f))
+				dst = os.path.join(currentFullDir,f_formatted.name)
+				self.logger.info("Copying file over from '%s' to '%s'" % (f_formatted,dst))
+				shutil.copyfile(f_formatted, dst)
+
 		if 'patches' in data:
 			if data['patches'] != None:
 				for p in data['patches']:
@@ -2173,6 +2183,7 @@ class CrossCompileScript:
 			cross_prefix_bare          = self.bareCrossPrefix,
 			cross_prefix_full          = self.fullCrossPrefix,
 			target_prefix              = self.targetPrefix,
+			project_root               = self.fullCurrentPath,
 			inTreePrefix               = self.inTreePrefix,
 			offtree_prefix             = self.offtreePrefix,
 			target_host                = self.targetHost,
