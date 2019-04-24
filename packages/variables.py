@@ -34,7 +34,7 @@
 		'--enable-libwebp '
 		'--enable-dxva2 '
 		'--enable-avisynth '
-		# '--enable-vapoursynth ' #maybe works?
+		'--enable-vapoursynth ' #maybe works?
 		'--enable-gray '
 		'--enable-libmysofa '
 		'--enable-libflite '
