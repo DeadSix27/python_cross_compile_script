@@ -1966,7 +1966,7 @@ class CrossCompileScript:
 			self.download_file(url,fileName)
 		else:
 			local_patch_path = os.path.join(self.fullPatchDir,url)
-			fileName = os.path.basename(Path(local_patch_path).name)
+			fileName = os.path.basename(pathlib.Path(local_patch_path).name)
 			if os.path.isfile(local_patch_path):
 				copyPath = os.path.join(os.getcwd(),fileName)
 				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path,copyPath))
