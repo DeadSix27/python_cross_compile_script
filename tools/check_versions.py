@@ -142,9 +142,9 @@ class Parsers:
 	def sourceforge(self):	
 		soup = BeautifulSoup(requests.get(self.url,headers=HEADERS).content,features="html5lib")
 		
-		allFolderTrs = soup.find_all("tr",attrs={"class": "folder ", "title" : re.compile(r".*")})
+		allFolderTrs = soup.find_all("tr",attrs={"class": re.compile(r"folder.*"), "title" : re.compile(r".*")})
 		
-		allFileTrs = soup.find_all("tr",attrs={"class": "file ", "title" : re.compile(r".*")})
+		allFileTrs = soup.find_all("tr",attrs={"class": re.compile(r"file.*"), "title" : re.compile(r".*")})
 			
 		newest = "0.0.0"
 		
@@ -395,9 +395,9 @@ for name, d in {**pkgs["deps"], **pkgs["prods"]}.items():
 				numCmts = len(di)
 				
 				if numCmts > 0:
-					print(Style.DIM + Fore.YELLOW + "%s is %d commits behind!" % (name.rjust(30),numCmts) + Style.RESET_ALL)
+					print(Style.DIM + Fore.YELLOW + "%s is %d commits behind!" % (name.rjust(30), numCmts) + Style.RESET_ALL)
 				else:
-					print(Style.BRIGHT +            "%s is up to date." % (name.rjust(30)) + Style.RESET_ALL)
+					print(Style.BRIGHT + "%s is up to date." % (name.rjust(30)) + Style.RESET_ALL)
 			
 		else:
 			
@@ -405,10 +405,12 @@ for name, d in {**pkgs["deps"], **pkgs["prods"]}.items():
 			
 			latestVer = geLatestVersion(versionEl)
 			
-			if LooseVersion(ourVer) < LooseVersion(latestVer):
-				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+			if latestVer == "0.0.0":
+				print(Fore.YELLOW + "%s has an update! [Local: %s Remote: %s] (Error parsing remote version)" % (name.rjust(30), ourVer.center(10), latestVer.center(10) ) + Style.RESET_ALL)
+			elif LooseVersion(ourVer) < LooseVersion(latestVer):
+				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30), ourVer.center(10), latestVer.center(10) ) + Style.RESET_ALL)
 			else:
-				print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30),ourVer.center(10) ,latestVer.center(10) ) + Style.RESET_ALL)
+				print(Style.BRIGHT + "%s is up to date. [Local: %s Remote: %s]" % (name.rjust(30), ourVer.center(10), latestVer.center(10) ) + Style.RESET_ALL)
 				
 if len(pkgsWithoutUpdateCheck) > 0:
 	print("Packages without update check:\n%s" % (",".join(pkgsWithoutUpdateCheck)))
