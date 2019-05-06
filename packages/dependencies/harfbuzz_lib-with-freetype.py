@@ -1,7 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/harfbuzz/harfbuzz',
-	'branch' : '2.4.0',
+	'branch' : '0d5fd168f8e3c1202358a82161a28e407149b1b4',
 	'run_post_install' : [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 	],
