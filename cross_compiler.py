@@ -682,6 +682,7 @@ class CrossCompileScript:
 		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 		os.environ["COLOR"] = "ON" # Force coloring on (for CMake primarily)
+		os.environ["CLICOLOR_FORCE"] = "ON" # Force coloring on (for CMake primarily)
 	#:
 	def initBuildFolders(self):
 		if not os.path.isdir(self.bitnessDir):
@@ -1570,10 +1571,6 @@ class CrossCompileScript:
 		if '_already_built' in data:
 			if data['_already_built'] == True:
 				return
-		if self.debugMode:
-			for tk in os.environ:
-				print("############ " + tk + " : " + os.environ[tk])
-
 		if 'skip_deps' in data:
 			if data['skip_deps'] == True:
 				skipDepends = True
@@ -1594,6 +1591,10 @@ class CrossCompileScript:
 					self.packages["deps"][name]["_already_built"] = True
 				
 				return
+				
+		if self.debugMode:
+			for tk in os.environ:
+				print("############ " + tk + " : " + os.environ[tk])
 
 		self.logger.info("Building {0} '{1}'".format(type.lower(),name))
 		self.defaultCFLAGS()
@@ -1752,6 +1753,10 @@ class CrossCompileScript:
 			if 'run_post_patch' in data:
 				if data['run_post_patch'] != None:
 					for cmd in data['run_post_patch']:
+						ignoreFail = False
+						if isinstance(cmd,tuple):
+							cmd = cmd[0]
+							ignoreFail = cmd[1]
 						if cmd.startswith("!SWITCHDIRBACK"):
 							self.cchdir(currentFullDir)
 						elif cmd.startswith("!SWITCHDIR"):
@@ -1760,7 +1765,8 @@ class CrossCompileScript:
 						else:
 							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
-							self.run_process(cmd)
+							# self.run_process(cmd)
+							self.run_process(cmd,ignoreFail)
 
 		conf_system = "autoconf"
 		build_system = "make"
@@ -2040,6 +2046,10 @@ class CrossCompileScript:
 			makeOpts = ''
 			if 'build_options' in data:
 				makeOpts = self.replaceVariables(data["build_options"])
+				
+			if self.debugMode:
+				for tk in os.environ:
+					print("\t" + tk + " : " + os.environ[tk])
 
 			self.logger.info("Building '{0}' with: {1} in {2}".format(name, makeOpts, os.getcwd()),extra={'type': build_system})
 
