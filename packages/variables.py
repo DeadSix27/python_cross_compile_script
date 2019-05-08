@@ -61,7 +61,6 @@
 		'--enable-libfreetype '
 		'--enable-libbluray '
 		'--enable-libcdio '
-		'--enable-libmfx '
 		'--disable-schannel '
 		'--disable-gcrypt '
 		#'--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.
