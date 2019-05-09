@@ -1,13 +1,12 @@
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 84a03f0..dff9200 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -23,7 +23,7 @@ endif ()
- include_directories (${OPENCL_INCLUDE_DIRS})
-
- add_library (OpenCL SHARED ${OPENCL_ICD_LOADER_SOURCES})
+diff -Nur OpenCL-ICD-Loader_git/CMakeLists.txt OpenCL-ICD-Loader_git.patched/CMakeLists.txt
+--- OpenCL-ICD-Loader_git/CMakeLists.txt	2019-05-09 14:26:49.812915015 +0200
++++ OpenCL-ICD-Loader_git.patched/CMakeLists.txt	2019-05-09 14:34:46.187661566 +0200
+@@ -58,7 +58,7 @@
+ set (OPENCL_ICD_LOADER_HEADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc CACHE PATH "Path to OpenCL Headers")
+ 
+ add_library (OpenCL ${OPENCL_ICD_LOADER_SOURCES})
 -set_target_properties (OpenCL PROPERTIES VERSION "1.2" SOVERSION "1")
 +set_target_properties (OpenCL PROPERTIES PREFIX "")
-
- if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-     set_target_properties (OpenCL PROPERTIES LINK_FLAGS "-pthread -Wl,--version-script -Wl,${CMAKE_CURRENT_SOURCE_DIR}/icd_exports.map")
+ 
+ if (WIN32)
+     target_link_libraries (OpenCL cfgmgr32.lib)
