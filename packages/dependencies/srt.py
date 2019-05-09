@@ -6,5 +6,5 @@
 	'conf_system' : 'cmake',
 	'depends_on' : [ 'gettext', 'gnutls' ],
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DENABLE_STATIC=1 -DUSE_STATIC_LIBSTDCXX=1 -DUSE_GNUTLS=1 -DENABLE_SHARED=0',
-	'_info' : { 'version' : None, 'fancy_name' : 'libmysofa' },
+	'_info' : { 'version' : None, 'fancy_name' : 'srt' },
 }
