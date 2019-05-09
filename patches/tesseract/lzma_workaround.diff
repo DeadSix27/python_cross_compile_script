@@ -1,0 +1,11 @@
+diff -Nur tesseract_git/CMakeLists.txt tesseract_git.patched/CMakeLists.txt
+--- tesseract_git/CMakeLists.txt	2019-05-09 13:01:20.946654969 +0200
++++ tesseract_git.patched/CMakeLists.txt	2019-05-09 13:01:10.483430233 +0200
+@@ -404,6 +404,7 @@
+     target_link_libraries       (libtesseract PUBLIC
+         ${Leptonica_LIBRARIES}
+         ${LibArchive_LIBRARIES}
++	lzma
+     )
+     export(TARGETS libtesseract FILE ${CMAKE_CURRENT_BINARY_DIR}/TesseractTargets.cmake)
+ endif()
