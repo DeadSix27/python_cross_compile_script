@@ -652,7 +652,7 @@ class CrossCompileScript:
 		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
 		self.makePrefixOptions  = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format( cross_prefix_bare=self.bareCrossPrefix, target_prefix=self.targetPrefix )
-		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefix, target_prefix=self.targetPrefix,bitness=self.bitnessDir )
+		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefix, target_prefix=self.targetPrefix,bitness=self.bitnessDir )
 		self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.targetPrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
 		self.currentBitness     = b
@@ -1593,8 +1593,10 @@ class CrossCompileScript:
 				return
 				
 		if self.debugMode:
+			print("### Environment variables: ###")
 			for tk in os.environ:
-				print("############ " + tk + " : " + os.environ[tk])
+				print("\t" + tk + " : " + os.environ[tk])
+			print("##############################")
 
 		self.logger.info("Building {0} '{1}'".format(type.lower(),name))
 		self.defaultCFLAGS()
@@ -2048,8 +2050,10 @@ class CrossCompileScript:
 				makeOpts = self.replaceVariables(data["build_options"])
 				
 			if self.debugMode:
+				print("### Environment variables: ###")
 				for tk in os.environ:
 					print("\t" + tk + " : " + os.environ[tk])
+				print("##############################")
 
 			self.logger.info("Building '{0}' with: {1} in {2}".format(name, makeOpts, os.getcwd()),extra={'type': build_system})
 
