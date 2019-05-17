@@ -13,7 +13,7 @@
 	, #-D_WIN32_WINNT=0x0600 -D__STDC_FORMAT_MACROS" -D__USE_MINGW_ANSI_STDIO -D__STDC_FORMAT_MACROS -fpermissive -D_WIN32_WINNT=0x0600"
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
-	'branch' : 'v1.1.106',
+	# 'branch' : 'v1.1.107',
 	'patches' : [
 		('vulkan/0001-vulkan-loader-cross-compile-static-linking-hacks.patch','-p1','..'),
 	],
