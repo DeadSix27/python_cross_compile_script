@@ -45,6 +45,7 @@
 		'--enable-libx265 '
 		'--enable-libaom '
 		'--enable-libdav1d '
+		'--enable-libopenh264 '
 		'--enable-frei0r '
 		'--enable-filter=frei0r '
 		'--enable-librubberband '
