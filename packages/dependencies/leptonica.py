@@ -7,8 +7,10 @@
 		'CPPFLAGS' : '-DOPJ_STATIC',
 		'CFLAGS' : '-DOPJ_STATIC'
 	},
+	'run_post_patch' : [
+		'sed -i.bak \'s/Libs: -L${{libdir}} -l@leptonica_NAME@/Libs: -L${{libdir}} -l@leptonica_NAME@-@leptonica_VERSION@/\' ../lept.pc.cmake',
+	],
 	'run_post_install' : [
-		'sed -i.bak \'s/set(LIB_Ws2_32 Ws2_32)/set(LIB_Ws2_32 ws2_32)/\' ../CMakeLists.txt',
 		'sed -i.bak \'s/Libs: -L${{libdir}} /Requires: libtiff-4 libpng libopenjp2 libjpeg libwebp\\nRequires.private: libtiff-4 libpng libopenjp2 libjpeg libwebp\\nLibs: -L${{libdir}} /\' "{pkg_config_path}/lept.pc"',
 		'sed -i \'s/Libs: -L${{libdir}} -lleptonica-\(.*\)$/Libs: -L${{libdir}} -lleptonica-\\1 -lgif/\' "{pkg_config_path}/lept.pc"',
 	],
