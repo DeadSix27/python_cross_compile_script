@@ -1,0 +1,12 @@
+diff -Nur shaderc_git.back/libshaderc_spvc/src/spvc.cc shaderc_git/libshaderc_spvc/src/spvc.cc
+--- shaderc_git.back/libshaderc_spvc/src/spvc.cc	2019-04-01 02:33:54.019993665 +0200
++++ shaderc_git/libshaderc_spvc/src/spvc.cc	2019-04-01 02:34:30.943326998 +0200
+@@ -142,7 +142,7 @@
+     shaderc_spvc_compile_options_t options, const uint8_t* data, size_t size) {
+   if (!data || size < sizeof(*options)) return 0;
+ 
+-  memcpy(options, data, sizeof(*options));
++  memcpy(static_cast<void*>(options), data, sizeof(*options));
+   return sizeof(*options);
+ }
+ 

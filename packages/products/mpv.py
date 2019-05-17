@@ -22,7 +22,7 @@
 		'--enable-rubberband '
 		'--enable-lcms2 '
 		'--enable-dvdread '
-		'--enable-openal '
+		#'--enable-openal '
 		'--enable-dvdnav '
 		'--enable-libbluray '
 		'--enable-cdda '
@@ -47,7 +47,24 @@
 		'DEST_OS=win32 '
 	,
 	'depends_on' : [
-		'libffmpeg', 'python3_libs', 'vapoursynth_libs','sdl2', 'luajit', 'lcms2', 'libdvdnav', 'libbluray', 'openal', 'libass', 'libcdio-paranoia', 'libjpeg-turbo', 'uchardet', 'libarchive', 'mujs', 'shaderc', 'vulkan_loader', 'libplacebo',
+		'libffmpeg',
+		'python3_libs',
+		'vapoursynth_libs',
+		'sdl2',
+		'luajit',
+		'lcms2',
+		'libdvdnav',
+		'libbluray',
+		#'openal',
+		'libass',
+		'libcdio-paranoia',
+		'libjpeg-turbo',
+		'uchardet',
+		'libarchive',
+		'mujs',
+		'shaderc',
+		'vulkan_loader',
+		'libplacebo'
 	],
 	'packages' : {
 		'arch' : [ 'rst2pdf' ],

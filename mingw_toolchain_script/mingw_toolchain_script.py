@@ -35,7 +35,7 @@ SOURCES = OrderedDict() # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type' : 'git',
-	'url' : 'git://git.code.sf.net/p/mingw-w64/mingw-w64', # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
+	'url' : 'https://git.code.sf.net/p/mingw-w64/mingw-w64', # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
 	'run_after_patches' : [
 		( 'autoreconf -fiv', ),
 		( 'mingw-w64-crt'  , 'autoreconf -fiv' ),
@@ -87,7 +87,7 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '8.3.0',
+	'version'   : '9.1.0',
 	'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
 	'patches' : [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
