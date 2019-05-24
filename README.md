@@ -6,6 +6,8 @@ This script automatically builds toolchain and target library/program without mu
 
 See `./cross_compiler.py list -p` and `./cross_compiler.py list -d` for a full list of packages.
 
+Support: If you need a VPN, maybe try https://www.azirevpn.com/ref/1OxiItOD6E? (Referral Link will help me)
+
 ---
 
 ## **Install**
