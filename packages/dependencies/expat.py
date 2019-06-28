@@ -1,8 +1,8 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'https://github.com/libexpat/libexpat/releases/download/R_2_2_6/expat-2.2.6.tar.bz2',	'hashes' : [ { 'type' : 'sha256', 'sum' : '17b43c2716d521369f82fc2dc70f359860e90fa440bea65b3b85f0b246ea81f2' },	], },
-		{ 'url' : 'https://fossies.org/linux/www/expat-2.2.6.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '17b43c2716d521369f82fc2dc70f359860e90fa440bea65b3b85f0b246ea81f2' }, ],	},
+		{ 'url' : 'https://github.com/libexpat/libexpat/releases/download/R_2_2_7/expat-2.2.7.tar.bz2',	'hashes' : [ { 'type' : 'sha256', 'sum' : 'cbc9102f4a31a8dafd42d642e9a3aa31e79a0aedaa1f6efd2795ebc83174ec18' },	], },
+		{ 'url' : 'https://fossies.org/linux/www/expat-2.2.7.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'cbc9102f4a31a8dafd42d642e9a3aa31e79a0aedaa1f6efd2795ebc83174ec18' }, ],	},
 	],
 	'env_exports' : {
 		'CPPFLAGS' : '-DXML_LARGE_SIZE',
@@ -14,5 +14,5 @@
 	],
 	'update_check' : { 'url' : 'https://github.com/libexpat/libexpat/releases', 'type' : 'githubreleases', 'name_or_tag' : 'name' },
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --without-docbook',
-	'_info' : { 'version' : '2.2.6', 'fancy_name' : 'expat' },
+	'_info' : { 'version' : '2.2.7', 'fancy_name' : 'expat' },
 }
