@@ -1,7 +1,8 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/KhronosGroup/OpenCL-ICD-Loader.git',
-	'needs_make_install' :False,
+	'branch' : '4adae11f4e87a3a5b2afbb4b8aa1f3cd4f167833',
+	'needs_make_install' : False,
 	'conf_system' : 'cmake',
 	'configure_options' : '. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=ON',
 	'depends_on' : [ 'opencl_headers' ],	
