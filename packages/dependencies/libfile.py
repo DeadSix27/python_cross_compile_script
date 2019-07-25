@@ -1,7 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/file/file.git',
-	'branch' : 'bf8b5f2cf7ce59ae2170e7f2fb026182c4dddcdc',
+	'branch' : '24c9c086cd7c55b7b0a003a145b32466468e2608',
 	'rename_folder' : 'libfile.git',
 	'patches' : [
 		( 'libfile/file-win32.patch', '-p1' ),
