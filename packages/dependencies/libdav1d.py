@@ -11,8 +11,8 @@
 		'--default-library=static '
 		'--buildtype=plain '
 		'--backend=ninja '
-		'-Dbuild_tests=false '
-		'-Dbuild_tools=false '
+		'-Denable_tests=false '
+		'-Denable_tools=false '
 		'--buildtype=release '
 		'--cross-file={meson_env_file} ./ ..'
   ,
