@@ -1,0 +1,12 @@
+diff -Nur OpenCL-ICD-Loader_git/CMakeLists.txt OpenCL-ICD-Loader_git.patched/CMakeLists.txt
+--- OpenCL-ICD-Loader_git/CMakeLists.txt	2019-05-09 14:21:47.746109716 +0200
++++ OpenCL-ICD-Loader_git.patched/CMakeLists.txt	2019-05-09 14:23:22.815118384 +0200
+@@ -77,7 +77,7 @@
+         target_link_libraries (OpenCL ${CMAKE_THREAD_LIBS_INIT})
+     else ()
+         set_target_properties (OpenCL PROPERTIES LINK_FLAGS "-Wl,--version-script -Wl,${CMAKE_CURRENT_SOURCE_DIR}/loader/linux/icd_exports.map")
+-        target_link_libraries (OpenCL ${CMAKE_THREAD_LIBS_INIT})
++        target_link_libraries (OpenCL ${CMAKE_THREAD_LIBS_INIT} cfgmgr32)
+     endif ()
+ endif ()
+ 

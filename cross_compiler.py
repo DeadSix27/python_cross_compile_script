@@ -249,7 +249,7 @@ class CrossCompileScript:
 		
 		with open(config_file, 'r') as cs:
 			try:
-				conf = yaml.load(cs)
+				conf = yaml.safe_load(cs)
 			except yaml.YAMLError as e:
 				self.logger.error("Failed to load config file " + str(e))
 				traceback.print_exc()
