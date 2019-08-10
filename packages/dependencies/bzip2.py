@@ -11,5 +11,7 @@
 	'needs_make' : True,
 	'needs_make_install' : False,
 	'build_options' : '{make_prefix_options} libbz2.a bzip2 bzip2recover install',
-	'_info' : { 'version' : '1.0.6', 'fancy_name' : 'BZip2 (library)' },
+
+	'update_check' : { 'url' : 'ftp://sourceware.org/pub/bzip2/', 'type' : 'ftpindex', 'regex' : r'bzip2-(?P<version_num>[\d.]+)\.tar\.gz' },
+	'_info' : { 'version' : '1.0.8', 'fancy_name' : 'BZip2 (library)' },
 }
