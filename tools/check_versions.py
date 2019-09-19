@@ -363,7 +363,7 @@ if len(sys.argv) > 1:
 
 pkgs = loadPackages(PACKAGES_DIR)
 
-ignorePkgsUpdate = [ "bzip2" ]
+ignorePkgsUpdate = []
 
 pkgsWithoutUpdateCheck = []
 
