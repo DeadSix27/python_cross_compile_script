@@ -8,6 +8,7 @@
 	'run_post_install' : [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lsndfile/Libs: -L${{libdir}} -lsndfile -lFLAC -lvorbis -lvorbisenc -logg -lspeex/\' "{pkg_config_path}/sndfile.pc"', #issue with rubberband not using pkg-config option "--static" or so idk?
 	],
+	'cflag_addition': '-D_FORTIFY_SOURCE=0',
 	'depends_on' : [ 'libspeex' ],
 	'packages' : {
 		'arch' : [ 'autogen' ],

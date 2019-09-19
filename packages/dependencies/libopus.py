@@ -4,7 +4,7 @@
 	'patches' : [
 		("opus/opus_git_strip_declspec.patch", '-p1'),
 	],
-	'custom_cflag' : '-O3',
+	'custom_cflag' : '-O3 -D_FORTIFY_SOURCE=0',
 	'run_post_install' : [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lopus.*/Libs: -L${{libdir}} -lopus -lssp/\' "{pkg_config_path}/opus.pc"', # ???, keep checking whether this is needed, apparently it is for now.
 	],
