@@ -1,0 +1,33 @@
+From 6cffaf5f7d50bb085a7fe23939d17c298e2883e6 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Thu, 19 Sep 2019 16:46:20 +0200
+Subject: [PATCH] get rid of the install error
+
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f8ef18d6..9e152826 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -541,14 +541,14 @@ install(FILES
+ 
+     #from lstm/makefile.am
+     src/lstm/convolve.h
+-    src/lstm/ctc.h
++    src/training/ctc.h
+     src/lstm/fullyconnected.h
+     src/lstm/functions.h
+     src/lstm/input.h
+     src/lstm/lstm.h
+     src/lstm/lstmrecognizer.h
+     src/lstm/maxpool.h
+-    src/lstm/networkbuilder.h
++    src/training/networkbuilder.h
+     src/lstm/network.h
+     src/lstm/networkio.h
+     src/lstm/networkscratch.h
+-- 
+2.22.0.windows.1
+
