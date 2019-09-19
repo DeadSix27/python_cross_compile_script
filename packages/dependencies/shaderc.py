@@ -16,9 +16,9 @@
 	# 'cpu_count' : '1', #...
 	'needs_make_install' : False,
 	'build_options' : '',
-	'patches' : [
-		('shaderc/gcc9-cast-error-workaround.patch', '-p1', '..'),
-	],
+	# 'patches' : [
+		# ('shaderc/gcc9-cast-error-workaround.patch', '-p1', '..'),
+	# ],
 	'run_post_patch' : [
 		# 'mkdir _build',
 		# 'chmod u+x pull.sh',
