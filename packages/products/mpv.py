@@ -21,7 +21,6 @@
 		'--enable-sdl2 '
 		'--enable-rubberband '
 		'--enable-lcms2 '
-		'--enable-dvdread '
 		#'--enable-openal '
 		'--enable-dvdnav '
 		'--enable-libbluray '
@@ -69,9 +68,6 @@
 	'packages' : {
 		'arch' : [ 'rst2pdf' ],
 	},
-	#'patches' : [
-	#	( 'https://github.com/mpv-player/mpv/pull/6646.patch', '-p1' ), # use spirv-cross
-	#],
 	'run_post_configure' : (
 		'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
 	),
