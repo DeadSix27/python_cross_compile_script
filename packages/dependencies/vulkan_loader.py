@@ -17,6 +17,7 @@
 	],
 	'run_post_install' : [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lvulkan/Libs: -L${{libdir}} -lvulkan -lshlwapi -lcfgmgr32/\' "{target_prefix}/lib/pkgconfig/vulkan.pc"',
+		'sed -i.bak \'s/Libs.private:  -lshlwapi/Libs.private: -lvulkan -lshlwapi/\' "{target_prefix}/lib/pkgconfig/vulkan.pc"',
 	],
 	'depends_on' : [ 'vulkan-d3dheaders', 'vulkan_headers' ],
 	'_info' : { 'version' : None, 'fancy_name' : 'Vulkan Loader' },
