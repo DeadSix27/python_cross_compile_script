@@ -1,6 +1,6 @@
-From 789290bbb6e414d1d50145f017571540868dd7cb Mon Sep 17 00:00:00 2001
+From f9f94d78361cf04ea08c264a47b314b5bf8827a7 Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Sat, 21 Sep 2019 14:03:33 +0200
+Date: Sat, 21 Sep 2019 14:53:16 +0200
 Subject: [PATCH 1/1] fix cross compiling with mingw
 
 ---
@@ -25,7 +25,7 @@ index 81532fdb4..bee984e0b 100644
      option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
  endif()
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index 6b1b4c202..cacb3fe2d 100644
+index 6b1b4c202..25ddb6bb5 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
 @@ -59,7 +59,7 @@ endif()
@@ -66,7 +66,7 @@ index 6b1b4c202..cacb3fe2d 100644
      endif()
  
 -    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-+    add_library(vulkan ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
++    add_library(vulkan ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} dxgi_loader.c)
      add_dependencies(vulkan loader_asm_gen_files)
 +    if (NOT ENABLE_STATIC_LOADER)
      target_compile_definitions(vulkan PUBLIC -DLOADER_DYNAMIC_LIB)
@@ -86,7 +86,7 @@ index 6b1b4c202..cacb3fe2d 100644
 -            foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
 -                set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
 -            endforeach()
-+            set(PRIVATE_LIBS "${PRIVATE_LIBS} -lshlwapi -lcfgmgr32 -ldxgi")
++            set(PRIVATE_LIBS "${PRIVATE_LIBS} -lshlwapi -lcfgmgr32")
              configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
              install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
          endif()
