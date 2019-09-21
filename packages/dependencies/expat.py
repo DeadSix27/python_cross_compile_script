@@ -2,7 +2,7 @@
 	'repo_type' : 'archive',
 	'download_locations' : [
 		{ 'url' : 'https://github.com/libexpat/libexpat/releases/download/R_2_2_8/expat-2.2.8.tar.xz',	'hashes' : [ { 'type' : 'sha256', 'sum' : '61caa81a49d858afb2031c7b1a25c97174e7f2009aa1ec4e1ffad2316b91779b' },	], },
-		{ 'url' : 'https://fossies.org/linux/www/expat-2.2.8.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '61caa81a49d858afb2031c7b1a25c97174e7f2009aa1ec4e1ffad2316b91779b' }, ],	},
+		{ 'url' : 'https://fossies.org/linux/www/expat-2.2.8.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '61caa81a49d858afb2031c7b1a25c97174e7f2009aa1ec4e1ffad2316b91779b' }, ],	},
 	],
 	'env_exports' : {
 		'CPPFLAGS' : '-DXML_LARGE_SIZE',
