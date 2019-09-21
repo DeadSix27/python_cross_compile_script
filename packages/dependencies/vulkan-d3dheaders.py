@@ -2,8 +2,8 @@
 	'repo_type' : 'none',
 	'folder_name' : 'vulkan_d3dheaders',
 	'run_post_patch' : [
-		'if [ ! -f "already_done" ] ; then wget https://going.full.moe/d3dukmdt.h ; fi',
-		'if [ ! -f "already_done" ] ; then wget https://going.full.moe/d3dkmthk.h ; fi',
+		'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/d3dukmdt.h ; fi',
+		'if [ ! -f "already_done" ] ; then wget https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/d3dkmthk.h ; fi',
 		'if [ ! -f "already_done" ] ; then cp -fv "d3dkmthk.h" "{target_prefix}/include/d3dkmthk.h" ; fi',
 		'if [ ! -f "already_done" ] ; then cp -fv "d3dukmdt.h" "{target_prefix}/include/d3dukmdt.h" ; fi',
 		'if [ ! -f "already_done" ] ; then touch  "already_done" ; fi',
