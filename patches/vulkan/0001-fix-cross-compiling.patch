@@ -1,15 +1,15 @@
-From 4bd08e4bd9420ffc4c9988d32dd49e8d9d912b6d Mon Sep 17 00:00:00 2001
+From 789290bbb6e414d1d50145f017571540868dd7cb Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Thu, 19 Sep 2019 18:19:41 +0200
-Subject: [PATCH] fix cross compiling with mingw
+Date: Sat, 21 Sep 2019 14:03:33 +0200
+Subject: [PATCH 1/1] fix cross compiling with mingw
 
 ---
  CMakeLists.txt        |  2 +-
  loader/CMakeLists.txt | 16 ++++++++--------
- loader/loader.c       |  6 +++++-
+ loader/loader.c       |  4 ++++
  loader/loader.rc      |  5 ++++-
  loader/vulkan.pc.in   |  4 ++--
- 5 files changed, 20 insertions(+), 13 deletions(-)
+ 5 files changed, 19 insertions(+), 12 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 81532fdb4..bee984e0b 100644
@@ -25,7 +25,7 @@ index 81532fdb4..bee984e0b 100644
      option(ENABLE_STATIC_LOADER "Build the loader as a static library" OFF)
  endif()
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index 8c2cedb15..d5dc31594 100644
+index 6b1b4c202..cacb3fe2d 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
 @@ -59,7 +59,7 @@ endif()
@@ -52,7 +52,7 @@ index 8c2cedb15..d5dc31594 100644
  
 -if(WIN32)
 +if(MSVC)
-     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c)
+     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c dxgi_loader.c)
      target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
      target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
      target_include_directories(loader-norm PRIVATE "$<TARGET_PROPERTY:Vulkan::Headers,INTERFACE_INCLUDE_DIRECTORIES>")
@@ -91,18 +91,9 @@ index 8c2cedb15..d5dc31594 100644
              install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
          endif()
 diff --git a/loader/loader.c b/loader/loader.c
-index 9d783b153..eb675d156 100644
+index 39ccc2522..dc9b55afd 100644
 --- a/loader/loader.c
 +++ b/loader/loader.c
-@@ -71,7 +71,7 @@
- #include <devpkey.h>
- #include <winternl.h>
- #include <d3dkmthk.h>
--#include <Dxgi1_6.h>
-+#include <dxgi1_6.h>
- 
- typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTEnumAdapters2)(const D3DKMT_ENUMADAPTERS2*);
- typedef _Check_return_ NTSTATUS (APIENTRY *PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
 @@ -675,6 +675,10 @@ out:
  //
  // *reg_data contains a string list of filenames as pointer.
@@ -145,5 +136,5 @@ index 2ce5aea43..6e897033f 100644
  
  Name: @CMAKE_PROJECT_NAME@
 -- 
-2.22.0.windows.1
+2.23.0
 
