@@ -10,6 +10,11 @@ Support: If you need a VPN, maybe try https://www.azirevpn.com/ref/1OxiItOD6E? (
 
 ---
 
+# Notes:
+
+- ##### If you have issues with any of the generated binaries, e.g *mpv-player* or *ffmpeg*, please report those issues here, not on their tracker.
+
+
 ## **Install**
 
 Clone the repository:
