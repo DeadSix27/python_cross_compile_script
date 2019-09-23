@@ -1504,7 +1504,8 @@ class CrossCompileScript:
 
 	def getBestMirror(self, packageName, packageData):  # returns the best online mirror of a file, and its hash.
 		if "url" in packageData:
-			self.logger.warning("Package has the old URL format, please update it.")
+			if packageData["repo_type"] == "archive":
+				self.logger.warning("Package has the old URL format, please update it.")
 			return {"url": packageData["url"], "hashes": []}
 		elif "download_locations" not in packageData:
 			raise Exception("download_locations not specificed for package: " + packageName)
@@ -1518,7 +1519,8 @@ class CrossCompileScript:
 
 	def getPrimaryPackageUrl(self, packageData, packageName):  # returns the URL of the first download_locations entry from a package, unlike get_best_mirror this one ignores the old url format
 		if "url" in packageData:
-			self.logger.debug("Package has the old URL format, please update it.")
+			if packageData["repo_type"] == "archive":
+				self.logger.debug("Package has the old URL format, please update it.")
 			return packageData["url"]
 		elif "download_locations" not in packageData:
 			raise Exception("download_locations in package '%s' not specificed" % (packageName))
