@@ -1901,6 +1901,15 @@ class CrossCompileScript:
 		touchName = "already_configured_%s" % (self.md5(packageName, self.getKeyOrBlankString(packageData, "configure_options")))
 
 		if not os.path.isfile(touchName):
+
+			cpuCountStr = '-j {0}'.format(self.cpuCount)
+
+			if 'cpu_count' in packageData:
+				if isinstance(packageData['cpu_count'], int) and packageData['cpu_count'] > 0:
+					cpuCountStr = '-j {0}'.format(packageData['cpu_count'])
+				else:
+					cpuCountStr = ""
+
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
 
@@ -1947,7 +1956,7 @@ class CrossCompileScript:
 				mCleanCmd = 'make clean'
 				if conf_system == "waf":
 					mCleanCmd = './waf --color=yes clean'
-				self.runProcess('{0} -j {1}'.format(mCleanCmd, self.cpuCount), True)
+				self.runProcess('{0} {1}'.format(mCleanCmd, cpuCountStr), True)
 
 			self.touch(touchName)
 
@@ -2040,7 +2049,16 @@ class CrossCompileScript:
 	def buildSource(self, packageName, packageData, buildSystem):
 		_origDir = os.getcwd()
 		touchName = "already_ran_make_%s" % (self.md5(packageName, self.getKeyOrBlankString(packageData, "build_options")))
+
 		if not os.path.isfile(touchName):
+			cpuCountStr = '-j {0}'.format(self.cpuCount)
+
+			if 'cpu_count' in packageData:
+				if isinstance(packageData['cpu_count'], int) and packageData['cpu_count'] > 0:
+					cpuCountStr = '-j {0}'.format(packageData['cpu_count'])
+				else:
+					cpuCountStr = ""
+
 			mkCmd = 'make'
 
 			if buildSystem == "waf":
@@ -2052,7 +2070,7 @@ class CrossCompileScript:
 
 			if buildSystem == "make":
 				if os.path.isfile("configure"):
-					self.runProcess('{0} clean {1}'.format(mkCmd, self.cpuCount), True)
+					self.runProcess('{0} clean {1}'.format(mkCmd, cpuCountStr), True)
 
 			makeOpts = ''
 			if 'build_options' in packageData:
@@ -2066,18 +2084,12 @@ class CrossCompileScript:
 
 			self.logger.info("Building '{0}' with: {1} in {2}".format(packageName, makeOpts, os.getcwd()), extra={'type': buildSystem})
 
-			cpcnt = '-j {0}'.format(self.cpuCount)
-
-			if 'cpu_count' in packageData:
-				if packageData['cpu_count'] is None:
-					cpcnt = ""
-
 			if 'ignore_build_fail_and_run' in packageData:
 				if len(packageData['ignore_build_fail_and_run']) > 0:  # todo check if its a list too
 					try:
 						if buildSystem == "waf":
 							mkCmd = './waf --color=yes build'
-						self.runProcess('{0} {2} {1}'.format(mkCmd, cpcnt, makeOpts))
+						self.runProcess('{0} {2} {1}'.format(mkCmd, cpuCountStr, makeOpts))
 					except Exception:  # todo, except specific exception
 						self.logger.info("Ignoring failed make process...")
 						for cmd in packageData['ignore_build_fail_and_run']:
@@ -2087,7 +2099,7 @@ class CrossCompileScript:
 			else:
 				if buildSystem == "waf":
 					mkCmd = './waf --color=yes build'
-				self.runProcess('{0} {2} {1}'.format(mkCmd, cpcnt, makeOpts))
+				self.runProcess('{0} {2} {1}'.format(mkCmd, cpuCountStr, makeOpts))
 
 			if 'run_post_build' in packageData:
 				if packageData['run_post_build'] is not None:
@@ -2108,11 +2120,13 @@ class CrossCompileScript:
 		_origDir = os.getcwd()
 		touchName = "already_ran_install_%s" % (self.md5(packageName, self.getKeyOrBlankString(packageData, "install_options")))
 		if not os.path.isfile(touchName):
-			cpcnt = '-j {0}'.format(self.cpuCount)
+			cpuCountStr = '-j {0}'.format(self.cpuCount)
 
 			if 'cpu_count' in packageData:
-				if packageData['cpu_count'] is not None:
-					cpcnt = ""
+				if isinstance(packageData['cpu_count'], int) and packageData['cpu_count'] > 0:
+					cpuCountStr = '-j {0}'.format(packageData['cpu_count'])
+				else:
+					cpuCountStr = ""
 
 			makeInstallOpts = ''
 			if 'install_options' in packageData:
@@ -2133,7 +2147,7 @@ class CrossCompileScript:
 			if buildSystem == "ninja":
 				mkCmd = "ninja"
 
-			self.runProcess('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt))
+			self.runProcess('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpuCountStr))
 
 			if 'run_post_install' in packageData:
 				if packageData['run_post_install'] is not None:
