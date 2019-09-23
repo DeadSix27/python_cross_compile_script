@@ -1502,7 +1502,7 @@ class CrossCompileScript:
 
 		return dlLocations[0]  # return the first if none could be found.
 
-	def getBestMirror(self, packageName, packageData):  # returns the best online mirror of a file, and its hash.
+	def getBestMirror(self, packageName, packageData):  # returns the first online mirror of a package, and its hash
 		if "url" in packageData:
 			if packageData["repo_type"] == "archive":
 				self.logger.warning("Package has the old URL format, please update it.")
