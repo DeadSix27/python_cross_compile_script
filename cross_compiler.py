@@ -26,58 +26,77 @@
 # Package dependencies (some may be missing):
 # sudo apt install build-essential autogen libtool libtool-bin pkg-config texinfo yasm git make automake gcc pax cvs subversion flex bison patch mercurial cmake gettext autopoint libxslt1.1 docbook-utils rake docbook-xsl gperf gyp p7zip-full p7zip docbook-to-man pandoc rst2pdf
 
-import progressbar # Run pip3 install progressbar2
-import requests # Run pip3 install requests
-import yaml
-
-import os.path,logging,re,subprocess,sys,shutil,urllib.request,urllib.parse,stat
-import hashlib,glob,traceback,time,zlib,codecs,argparse,ast
+import argparse
+import ast
+import codecs
+import glob
+import hashlib
 import http.cookiejar
+import importlib
+import logging
+import os.path
 import pathlib
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import time
+import traceback
+import urllib.parse
+import urllib.request
+import zlib
 from multiprocessing import cpu_count
 from urllib.parse import urlparse
-from collections import OrderedDict
 
-class Colors: #ansi colors
-	RESET           = '\033[0m'
-	BLACK           = '\033[30m'
-	RED             = '\033[31m'
-	GREEN           = '\033[32m'
-	YELLOW          = '\033[33m'
-	BLUE            = '\033[34m'
-	MAGENTA         = '\033[35m'
-	CYAN            = '\033[36m'
-	WHITE           = '\033[37m'
-	LIGHTBLACK_EX   = '\033[90m' # those seem to work on the major OS so meh.
-	LIGHTRED_EX     = '\033[91m'
-	LIGHTGREEN_EX   = '\033[92m'
-	LIGHTYELLOW_EX  = '\033[93m'
-	LIGHTBLUE_EX    = '\033[94m'
+import progressbar  # Run pip3 install progressbar2
+import requests  # Run pip3 install requests
+import yaml
+
+
+class Colors:  # ansi colors
+	RESET = '\033[0m'
+	BLACK = '\033[30m'
+	RED = '\033[31m'
+	GREEN = '\033[32m'
+	YELLOW = '\033[33m'
+	BLUE = '\033[34m'
+	MAGENTA = '\033[35m'
+	CYAN = '\033[36m'
+	WHITE = '\033[37m'
+	LIGHTBLACK_EX = '\033[90m'  # those seem to work on the major OS so meh.
+	LIGHTRED_EX = '\033[91m'
+	LIGHTGREEN_EX = '\033[92m'
+	LIGHTYELLOW_EX = '\033[93m'
+	LIGHTBLUE_EX = '\033[94m'
 	LIGHTMAGENTA_EX = '\033[95m'
-	LIGHTCYAN_EX    = '\033[96m'
-	LIGHTWHITE_EX   = '\033[9m'
+	LIGHTCYAN_EX = '\033[96m'
+	LIGHTWHITE_EX = '\033[9m'
+
 
 class MissingDependency(Exception):
 	__module__ = 'exceptions'
+
 	def __init__(self, message):
 		self.message = message
 
+
 class MyLogFormatter(logging.Formatter):
-	def __init__(self,l,ld):
+	def __init__(self, l, ld):
 		MyLogFormatter.log_format = l
 		MyLogFormatter.log_date_format = ld
-		MyLogFormatter.inf_fmt  = Colors.LIGHTCYAN_EX   + MyLogFormatter.log_format + Colors.RESET
-		MyLogFormatter.err_fmt  = Colors.LIGHTRED_EX    + MyLogFormatter.log_format + Colors.RESET
-		MyLogFormatter.dbg_fmt  = Colors.LIGHTYELLOW_EX + MyLogFormatter.log_format + Colors.RESET
-		MyLogFormatter.war_fmt  = Colors.YELLOW         + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.inf_fmt = Colors.LIGHTCYAN_EX + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.err_fmt = Colors.LIGHTRED_EX + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.dbg_fmt = Colors.LIGHTYELLOW_EX + MyLogFormatter.log_format + Colors.RESET
+		MyLogFormatter.war_fmt = Colors.YELLOW + MyLogFormatter.log_format + Colors.RESET
 		super().__init__(fmt="%(levelno)d: %(msg)s", datefmt=MyLogFormatter.log_date_format, style='%')
 
 	def format(self, record):
-		if not hasattr(record,"type"):
+		if not hasattr(record, "type"):
 			record.type = ""
 		else:
 			record.type = "[" + record.type.upper() + "]"
-		
+
 		format_orig = self._style._fmt
 		if record.levelno == logging.DEBUG:
 			self._style._fmt = MyLogFormatter.dbg_fmt
@@ -91,162 +110,162 @@ class MyLogFormatter(logging.Formatter):
 		self._style._fmt = format_orig
 		return result
 
+
 class CrossCompileScript:
 
 	def __init__(self):
-		sys.dont_write_bytecode     = True # Avoid __pycache__ folder, never liked that solution.	
-		hdlr                        = logging.StreamHandler(sys.stdout)
-		fmt                         = MyLogFormatter("[%(asctime)s][%(levelname)s]%(type)s %(message)s","%H:%M:%S")
+		sys.dont_write_bytecode = True  # Avoid __pycache__ folder, never liked that solution
+		hdlr = logging.StreamHandler(sys.stdout)
+		fmt = MyLogFormatter("[%(asctime)s][%(levelname)s]%(type)s %(message)s", "%H:%M:%S")
 		hdlr.setFormatter(fmt)
-		self.logger                 = logging.getLogger(__name__)
+		self.logger = logging.getLogger(__name__)
 		self.logger.addHandler(hdlr)
 		self.logger.setLevel(logging.INFO)
-		self.config                 = self.loadConfig()
-		fmt                         = MyLogFormatter(self.config["script"]["log_format"],self.config["script"]["log_date_format"])
+		self.config = self.loadConfig()
+		fmt = MyLogFormatter(self.config["script"]["log_format"], self.config["script"]["log_date_format"])
 		hdlr.setFormatter(fmt)
-		self.packages               = self.loadPackages(self.config["script"]["packages_folder"])
+		self.packages = self.loadPackages(self.config["script"]["packages_folder"])
 		self.init()
-		
-	def errorExit(self,msg):
+
+	def errorExit(self, msg):
 		self.logger.error(msg)
 		sys.exit(1)
-	
-		
-	def loadPackages(self,packages_folder):
+
+	def loadPackages(self, packages_folder):
 		def isPathDisabled(path):
 			for part in path.parts:
 				if part.lower().startswith("_disabled"):
 					return True
 			return False
-			
-		depsFolder = pathlib.Path(os.path.join(packages_folder,"dependencies"))
-		prodFolder = pathlib.Path(os.path.join(packages_folder,"products"))
-		varsPath   = pathlib.Path(os.path.join(packages_folder,"variables.py"))
-	
+
+		depsFolder = pathlib.Path(os.path.join(packages_folder, "dependencies"))
+		prodFolder = pathlib.Path(os.path.join(packages_folder, "products"))
+		varsPath = pathlib.Path(os.path.join(packages_folder, "variables.py"))
+
 		if not os.path.isdir(packages_folder):
 			self.errorExit("Packages folder '%s' does not exist." % (packages_folder))
-		if not os.path.isdir(depsFolder): #TODO simplify code
+		if not os.path.isdir(depsFolder):  # TODO simplify code
 			self.errorExit("Packages folder '%s' does not exist." % (depsFolder))
 		if not os.path.isfile(varsPath):
 			self.errorExit("Variables file '%s' does not exist." % (varsPath))
-			
-		tmpPkglist = { 'deps' : [], 'prods' : [], 'vars' : [] }
-		packages = { 'deps' : {}, 'prods' : {}, 'vars' : {} }
-			
+
+		tmpPkglist = {'deps': [], 'prods': [], 'vars': []}
+		packages = {'deps': {}, 'prods': {}, 'vars': {}}
+
 		for path, subdirs, files in os.walk(depsFolder):
 			for name in files:
 				p = pathlib.Path(os.path.join(path, name))
-				if p.suffix == ".py" :
+				if p.suffix == ".py":
 					if not isPathDisabled(p):
 						tmpPkglist["deps"].append(p)
-				
+
 		for path, subdirs, files in os.walk(prodFolder):
 			for name in files:
 				p = pathlib.Path(os.path.join(path, name))
 				if p.suffix == ".py":
 					if not isPathDisabled(p):
 						tmpPkglist["prods"].append(p)
-				
-		if len(tmpPkglist["deps"]) < 1: #TODO simplify code
+
+		if len(tmpPkglist["deps"]) < 1:  # TODO simplify code
 			self.errorExit("There's no packages in the folder '%s'." % (depsFolder))
-				
+
 		if len(tmpPkglist["prods"]) < 1:
 			self.errorExit("There's no packages in the folder '%s'." % (prodFolder))
-		
-		with open(varsPath,"r",encoding="utf-8") as f:
+
+		with open(varsPath, "r", encoding="utf-8") as f:
 			try:
-				o = ast.literal_eval(f.read()) # was gonna use .json instead of eval on py files, but I like having multiline strings and comments.. so.
+				o = ast.literal_eval(f.read())  # was gonna use .json instead of eval on py files, but I like having multiline strings and comments.. so.
 				if not isinstance(o, dict):
-					self.errorExit("Variables file is misformatted")					
+					self.errorExit("Variables file is misformatted")
 				packages["vars"] = o
 			except SyntaxError:
 				self.errorExit("Loading variables.py failed:\n\n" + traceback.format_exc())
-			
+
 		for d in tmpPkglist["deps"]:
-			with open(d,"r",encoding="utf-8") as f:
+			with open(d, "r", encoding="utf-8") as f:
 				p = pathlib.Path(d)
 				package_name = p.stem.lower()
 				try:
 					o = ast.literal_eval(f.read())
 					if not isinstance(o, dict):
 						self.errorExit("Package file '%s' is misformatted" % (p.name))
-						
-					if "_info" not in o and not self.bool_key(o,"is_dep_inheriter"):
+
+					if "_info" not in o and not self.bool_key(o, "is_dep_inheriter"):
 						self.logger.warning("Package '%s.py' is missing '_info' tag." % (package_name))
-					
-					if self.bool_key(o,"_disabled"):
-						self.logger.debug("Package '%s.py' has option '_disabled' set, not loading." % (package_name))						
+
+					if self.bool_key(o, "_disabled"):
+						self.logger.debug("Package '%s.py' has option '_disabled' set, not loading." % (package_name))
 					else:
 						packages["deps"][package_name] = o
-						
-				except SyntaxError as e:
-					self.errorExit("Loading '%s.py' failed:\n\n%s" % ( package_name,traceback.format_exc() ))
-		
+
+				except SyntaxError:
+					self.errorExit("Loading '%s.py' failed:\n\n%s" % (package_name, traceback.format_exc()))
+
 		for d in tmpPkglist["prods"]:
-			with open(d,"r",encoding="utf-8") as f:
+			with open(d, "r", encoding="utf-8") as f:
 				p = pathlib.Path(d)
 				package_name = p.stem.lower()
 				try:
 					o = ast.literal_eval(f.read())
 					if not isinstance(o, dict):
 						self.errorExit("Package file '%s' is misformatted" % (p.name))
-						
-					if "_info" not in o and not self.bool_key(o,"is_dep_inheriter"):
+
+					if "_info" not in o and not self.bool_key(o, "is_dep_inheriter"):
 						self.logger.warning("Package '%s.py' is missing '_info' tag." % (package_name))
-						
-					if self.bool_key(o,"_disabled"):
+
+					if self.bool_key(o, "_disabled"):
 						self.logger.debug("Package '%s.py' has option '_disabled' set, not loading." % (package_name))
 					else:
 						packages["prods"][package_name] = o
-						
-				except SyntaxError as e:
-					self.errorExit("Loading '%s.py' failed:\n\n%s" % ( package_name,traceback.format_exc() ))
-		
-		self.logger.info("Loaded %d packages", len(packages["prods"])+len(packages["deps"]))
+
+				except SyntaxError:
+					self.errorExit("Loading '%s.py' failed:\n\n%s" % (package_name, traceback.format_exc()))
+
+		self.logger.info("Loaded %d packages", len(packages["prods"]) + len(packages["deps"]))
 		return packages
-		
-	def confDiff(self,default,users): # very basic config comparison		
+
+	def confDiff(self, default, users):  # very basic config comparison
 		for category in default:
 			if category not in users:
-				return ( False, "User config is missing '%s' category, please delete your config to regenerate a new one or add it manually." % (category) )
+				return (False, "User config is missing '%s' category, please delete your config to regenerate a new one or add it manually." % (category))
 			elif category != "version":
 				for option in default[category]:
 					if option not in users[category]:
-						return ( False, "User config is missing '%s' option in '%s' category, please delete your config to regenerate a new one or add it manually." % (option,category) )
-		return ( True, 'Config Ok' )
-		
+						return (False, "User config is missing '%s' option in '%s' category, please delete your config to regenerate a new one or add it manually." % (option, category))
+		return (True, 'Config Ok')
+
 	def loadConfig(self):
-		self.config = { # Default config
+		self.config = {  # Default config
 			'version': 1.0,
 			'script': {
-				'debug' 			   : False,
-				'quiet'				   : False,
-				'log_date_format'	   : '%H:%M:%S',
-				'log_format'		   : '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
-				'product_order'		   : ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
-				'user_agent'		   : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
-				'mingw_toolchain_path' : 'mingw_toolchain_script/mingw_toolchain_script.py',
-				'packages_folder' 	   : 'packages',
+				'debug': False,
+				'quiet': False,
+				'log_date_format': '%H:%M:%S',
+				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
+				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
+				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
+				'mingw_toolchain_path': 'mingw_toolchain_script/mingw_toolchain_script.py',
+				'packages_folder': 'packages',
 			},
-			'toolchain' : {
-				'bitness' 			   : [64,],
-				'cpu_count' 		   : cpu_count(),
-				'mingw_commit' 		   : None,
-				'mingw_debug_build'	   : False,
-				'mingw_dir' 		   : 'toolchain',
-				'mingw_custom_cflags'  : None,
-				'work_dir' 			   : 'workdir',
-				'original_cflags' 	   : '-O3',
+			'toolchain': {
+				'bitness': [64, ],
+				'cpu_count': cpu_count(),
+				'mingw_commit': None,
+				'mingw_debug_build': False,
+				'mingw_dir': 'toolchain',
+				'mingw_custom_cflags': None,
+				'work_dir': 'workdir',
+				'original_cflags': '-O3',
 			}
 		}
-		
+
 		config_file = pathlib.Path(__file__).stem + ".yaml"
-		
+
 		if not os.path.isfile(config_file):
 			self.writeDefaultConfig(config_file)
-		
+
 		conf = None
-		
+
 		with open(config_file, 'r') as cs:
 			try:
 				conf = yaml.safe_load(cs)
@@ -254,48 +273,47 @@ class CrossCompileScript:
 				self.logger.error("Failed to load config file " + str(e))
 				traceback.print_exc()
 				sys.exit(1)
-		import pprint
-		
-		confCheck = self.confDiff(self.config,conf)
-		
+
+		confCheck = self.confDiff(self.config, conf)
+
 		if confCheck[0]:
 			return conf
 		else:
 			self.logger.error("%s" % (confCheck[1]))
 			sys.exit(1)
 			return None
-				
-	def writeDefaultConfig(self,config_file):
-		with open(config_file,"w",encoding="utf-8") as f:
+
+	def writeDefaultConfig(self, config_file):
+		with open(config_file, "w", encoding="utf-8") as f:
 			f.write(yaml.dump(self.config))
 		self.logger.info("Wrote default configuration file to: '%s'" % (config_file))
 
 	def init(self):
-		self.product_order          = self.config["script"]["product_order"]
-		self.fullCurrentPath        = os.getcwd()
-		self.fullPatchDir           = os.path.join(self.fullCurrentPath,"patches")
-		self.fullWorkDir            = os.path.join(self.fullCurrentPath,self.config["toolchain"]["work_dir"])
-		self.mingwDir               = self.config["toolchain"]["mingw_dir"]
-		self.fullProductDir         = None
-		self.targetBitness          = self.config["toolchain"]["bitness"]
-		self.originalPATH           = os.environ["PATH"]
-		self.targetHost             = None
-		self.targetPrefix           = None
-		self.mingwBinpath           = None
-		self.mingwBinpath2          = None
-		self.fullCrossPrefix        = None
-		self.makePrefixOptions      = None
-		self.bitnessDir             = None
-		self.bitnessDir2            = None
-		self.winBitnessDir          = None
-		self.pkgConfigPath          = None
-		self.bareCrossPrefix        = None
-		self.cpuCount               = None
-		self.originalCflags         = None
-		self.buildLogFile           = None
-		self.quietMode              = self.config["script"]["quiet"]
-		self.debugMode              = self.config["script"]["debug"]
-		self.userAgent              = self.config["script"]["user_agent"]
+		self.product_order = self.config["script"]["product_order"]
+		self.fullCurrentPath = os.getcwd()
+		self.fullPatchDir = os.path.join(self.fullCurrentPath, "patches")
+		self.fullWorkDir = os.path.join(self.fullCurrentPath, self.config["toolchain"]["work_dir"])
+		self.mingwDir = self.config["toolchain"]["mingw_dir"]
+		self.fullProductDir = None
+		self.targetBitness = self.config["toolchain"]["bitness"]
+		self.originalPATH = os.environ["PATH"]
+		self.targetHost = None
+		self.targetPrefix = None
+		self.mingwBinpath = None
+		self.mingwBinpath2 = None
+		self.fullCrossPrefix = None
+		self.makePrefixOptions = None
+		self.bitnessDir = None
+		self.bitnessDir2 = None
+		self.winBitnessDir = None
+		self.pkgConfigPath = None
+		self.bareCrossPrefix = None
+		self.cpuCount = None
+		self.originalCflags = None
+		self.buildLogFile = None
+		self.quietMode = self.config["script"]["quiet"]
+		self.debugMode = self.config["script"]["debug"]
+		self.userAgent = self.config["script"]["user_agent"]
 		if self.debugMode:
 			self.init_debugMode()
 		if self.quietMode:
@@ -303,12 +321,13 @@ class CrossCompileScript:
 
 	def init_quietMode(self):
 		self.logger.warning('Quiet mode is enabled')
-		self.buildLogFile = codecs.open("raw_build.log","w","utf-8")
+		self.buildLogFile = codecs.open("raw_build.log", "w", "utf-8")
+
 	def init_debugMode(self):
 		self.logger.setLevel(logging.DEBUG)
 		self.logger.debug('Debugging is on')
 
-	def listify_pdeps(self,pdlist,type):
+	def listify_pdeps(self, pdlist, type):
 		class customArgsAction(argparse.Action):
 			def __call__(self, parser, args, values, option_string=None):
 				format = "CLI"
@@ -320,27 +339,24 @@ class CrossCompileScript:
 				if format == "CLI":
 					longestName = 0
 					longestVer = 1
-					for key,val in pdlist.items():
+					for key, val in pdlist.items():
 						if '_info' in val:
 							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
 								if 'branch' in val:
-									if val['branch'] != None:
+									if val['branch'] is not None:
 										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
 										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
 								else:
 									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
 								val['_info']['version'] = cVer
-								
-							if 'version' in val['_info']:			
+
+							if 'version' in val['_info']:
 								if len(val['_info']['version']) > longestVer:
 									longestVer = len(val['_info']['version'])
-								
+
 							name = key
 							if len(name) > longestName:
 								longestName = len(name)
-							# if 'fancy_name' in val['_info']:
-								# if len(val['_info']['fancy_name']) > longestName:
-									# longestName = len(val['_info']['fancy_name'])
 						else:
 							if len(key) > longestName:
 								longestName = len(key)
@@ -354,15 +370,15 @@ class CrossCompileScript:
 					if longestVer < len(HEADER_V):
 						longestVer = len(HEADER_V)
 
-					print(' {0} - {1}'.format(HEADER.rjust(longestName,' '),HEADER_V.ljust(longestVer, ' ')))
+					print(' {0} - {1}'.format(HEADER.rjust(longestName, ' '), HEADER_V.ljust(longestVer, ' ')))
 					print('')
 
-					for key,val in sorted(pdlist.items()):
+					for key, val in sorted(pdlist.items()):
 						ver = Colors.RED + "(no version)" + Colors.RESET
 						if '_info' in val:
 							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
 								if 'branch' in val:
-									if val['branch'] != None:
+									if val['branch'] is not None:
 										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
 										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
 								else:
@@ -371,25 +387,22 @@ class CrossCompileScript:
 							if 'version' in val['_info']:
 								ver = Colors.GREEN + val['_info']['version'] + Colors.RESET
 						name = key
-						# if '_info' in val:
-							# if 'fancy_name' in val['_info']:
-								# name = val['_info']['fancy_name']
 
-						print(' {0} - {1}'.format(name.rjust(longestName,' '),ver.ljust(longestVer, ' ')))
+						print(' {0} - {1}'.format(name.rjust(longestName, ' '), ver.ljust(longestVer, ' ')))
 				elif format == "MD":
 					longestName = 0
 					longestVer = 1
-					for key,val in pdlist.items():
+					for key, val in pdlist.items():
 						if '_info' in val:
 							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
 								if 'branch' in val:
-									if val['branch'] != None:
+									if val['branch'] is not None:
 										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
 										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
 								else:
 									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
 								val['_info']['version'] = cVer
-							
+
 							if 'version' in val['_info']:
 								if len(val['_info']['version']) > longestVer:
 									longestVer = len(val['_info']['version'])
@@ -409,33 +422,33 @@ class CrossCompileScript:
 					if longestVer < len(HEADER_V):
 						longestVer = len(HEADER_V)
 
-					print('| {0} | {1} |'.format(HEADER.ljust(longestName,' '),HEADER_V.ljust(longestVer,' ')))
+					print('| {0} | {1} |'.format(HEADER.ljust(longestName, ' '), HEADER_V.ljust(longestVer, ' ')))
 					print('| {0}:|:{1} |'.format(longestName * '-', longestVer * '-'))
-					for key,val in sorted(pdlist.items()):
+					for key, val in sorted(pdlist.items()):
 						if '_info' in val:
 							ver = "?"
 							name = key
 							if val['repo_type'] == 'git' or val['repo_type'] == 'mercurial':
 								if 'branch' in val:
-									if val['branch'] != None:
+									if val['branch'] is not None:
 										rTypeStr = 'git' if val['repo_type'] == 'git' else 'hg '
 										cVer = rTypeStr + ' (' + val['branch'][0:6] + ')'
 								else:
 									cVer = 'git (master)' if val['repo_type'] == 'git' else 'hg (default)'
 								val['_info']['version'] = cVer
-							
+
 							if 'version' in val['_info']:
 								ver = val['_info']['version']
 							if 'fancy_name' in val['_info']:
 								name = val['_info']['fancy_name']
-							print('| {0} | {1} |'.format(name.ljust(longestName,' '),ver.ljust(longestVer,' ')))
+							print('| {0} | {1} |'.format(name.ljust(longestName, ' '), ver.ljust(longestVer, ' ')))
 				else:
-					print(";".join( sorted(pdlist.keys()) ))
+					print(";".join(sorted(pdlist.keys())))
 				setattr(args, self.dest, values)
 				parser.exit()
 		return customArgsAction
 
-	def assembleConfigHelps(self,pdlist,type,main):
+	def assembleConfigHelps(self, pdlist, type, main):
 		class customArgsAction(argparse.Action):
 			def __call__(self, parser, args, values, option_string=None):
 				main.quietMode = True
@@ -443,15 +456,15 @@ class CrossCompileScript:
 				main.prepareBuilding(64)
 				main.build_mingw(64)
 				main.initBuildFolders()
-				for k,v in pdlist.items():
+				for k, v in pdlist.items():
 					if '_disabled' not in v:
 						if '_info' in v:
 							beforePath = os.getcwd()
-							path = main.get_thing_path(k,v,type)
+							path = main.get_thing_path(k, v, type)
 							main.cchdir(path)
-							if os.path.isfile(os.path.join(path,"configure")):
+							if os.path.isfile(os.path.join(path, "configure")):
 								os.system("./configure --help")
-							if os.path.isfile(os.path.join(path,"waf")):
+							if os.path.isfile(os.path.join(path, "waf")):
 								os.system("./waf --help")
 							main.cchdir(beforePath)
 							print("-------------------")
@@ -462,10 +475,12 @@ class CrossCompileScript:
 	def commandLineEntrace(self):
 		class epiFormatter(argparse.RawDescriptionHelpFormatter):
 			w = shutil.get_terminal_size((120, 10))[0]
+
 			def __init__(self, max_help_position=w, width=w, *args, **kwargs):
 				kwargs['max_help_position'] = max_help_position
 				kwargs['width'] = width
 				super(epiFormatter, self).__init__(*args, **kwargs)
+
 			def _split_lines(self, text, width):
 				return text.splitlines()
 
@@ -482,55 +497,52 @@ class CrossCompileScript:
 
 		subparsers = parser.add_subparsers(help='Sub commands')
 
-		list_p = subparsers.add_parser('list', help= 'Type: \'' + parser.prog + ' list --help\' for more help')
+		list_p = subparsers.add_parser('list', help='Type: \'' + parser.prog + ' list --help\' for more help')
 		list_p.set_defaults(which='list_p')
 
 		list_p.add_argument('-md', '--markdown', help='Print list in markdown format', action='store_true')
 		list_p.add_argument('-cv', '--csv', help='Print list as CSV-like string', action='store_true')
 		list_p_group1 = list_p.add_mutually_exclusive_group(required=True)
-		list_p_group1.add_argument('-p', '--products',    nargs=0, help='List all products',     action=self.listify_pdeps(self.packages["prods"],"P"))
+		list_p_group1.add_argument('-p', '--products', nargs=0, help='List all products', action=self.listify_pdeps(self.packages["prods"], "P"))
 		list_p_group1.add_argument('-d', '--dependencies', nargs=0, help='List all dependencies', action=self.listify_pdeps(self.packages["deps"], "D"))
 
-
-		chelps_p = subparsers.add_parser('chelps', help= 'Type: \'' + parser.prog + ' chelps --help\' for more help')
+		chelps_p = subparsers.add_parser('chelps', help='Type: \'' + parser.prog + ' chelps --help\' for more help')
 		list_p.set_defaults(which='chelps_p')
 		chelps_p_group1 = chelps_p.add_mutually_exclusive_group(required=True)
-		chelps_p_group1.add_argument('-p', '--products',    nargs=0, help='Write all product config helps to confighelps.txt',     action=self.assembleConfigHelps(self.packages["prods"],"P",self))
-		chelps_p_group1.add_argument('-d', '--dependencies', nargs=0, help='Write all dependency config helps to confighelps.txt',  action=self.assembleConfigHelps(self.packages["deps"], "D",self))
-		
-		info_p = subparsers.add_parser('info', help= 'Type: \'' + parser.prog + ' info --help\' for more help')
+		chelps_p_group1.add_argument('-p', '--products', nargs=0, help='Write all product config helps to confighelps.txt', action=self.assembleConfigHelps(self.packages["prods"], "P", self))
+		chelps_p_group1.add_argument('-d', '--dependencies', nargs=0, help='Write all dependency config helps to confighelps.txt', action=self.assembleConfigHelps(self.packages["deps"], "D", self))
+
+		info_p = subparsers.add_parser('info', help='Type: \'' + parser.prog + ' info --help\' for more help')
 		info_p.set_defaults(which='info_p')
-		
-		info_p_group1 = info_p.add_mutually_exclusive_group( required = True )
+
+		info_p_group1 = info_p.add_mutually_exclusive_group(required=True)
 		info_p_group1.add_argument('-r', '--required-by', help='List all packages this dependency is required by')
-		
 
+		group2 = parser.add_mutually_exclusive_group(required=False)
+		group2.add_argument('-p', '--build-product', dest='PRODUCT', help='Build the specificed product package(s)')
+		group2.add_argument('-d', '--build-dependency', dest='DEPENDENCY', help='Build the specificed dependency package(s)')
+		group2.add_argument('-a', '--build-all', help='Build all products (according to order)', action='store_true')
+		parser.add_argument('-q', '--quiet', help='Only show info lines', action='store_true')
+		parser.add_argument('-f', '--force', help='Force rebuild, deletes already files', action='store_true')
+		parser.add_argument('-g', '--debug', help='Show debug information', action='store_true')
+		parser.add_argument('-s', '--skip-depends', help='Skip dependencies when building', action='store_true')
 
-		group2 = parser.add_mutually_exclusive_group( required = False )
-		group2.add_argument( '-p',  '--build-product',         dest='PRODUCT',         help='Build the specificed product package(s)'                         )
-		group2.add_argument( '-d',  '--build-dependency',      dest='DEPENDENCY',      help='Build the specificed dependency package(s)'                      )
-		group2.add_argument( '-a',  '--build-all',                                     help='Build all products (according to order)'   , action='store_true' )
-		parser.add_argument( '-q',  '--quiet',                                         help='Only show info lines'                      , action='store_true' )
-		parser.add_argument( '-f',  '--force',                                         help='Force rebuild, deletes already files'      , action='store_true' )
-		parser.add_argument( '-g',  '--debug',                                         help='Show debug information'                    , action='store_true' )
-		parser.add_argument( '-s',  '--skip-depends',                                  help='Skip dependencies when building'           , action='store_true' )
-
-		if len(sys.argv)==1:
+		if len(sys.argv) == 1:
 			self.defaultEntrace()
 		else:
-			def errorOut(p,t,m=None):
-				if m == None:
+			def errorOut(p, t, m=None):
+				if m is None:
 					fullStr = Colors.LIGHTRED_EX + 'Error:\n ' + Colors.CYAN + '\'{0}\'' + Colors.LIGHTRED_EX + ' is not a valid {2}\n Type: ' + Colors.CYAN + '\'{1} list --products/--dependencies\'' + Colors.LIGHTRED_EX + ' for a full list'
-					print( fullStr.format ( p, os.path.basename(__file__), "Product" if t == "PRODUCT" else "Dependency" ) + Colors.RESET )
+					print(fullStr.format(p, os.path.basename(__file__), "Product" if t == "PRODUCT" else "Dependency") + Colors.RESET)
 				else:
 					print(m)
 				exit(1)
 			args = parser.parse_args()
-			
+
 			if args.which == "info_p":
 				self.listRequiredBy(args.required_by)
 				return
-			
+
 			forceRebuild = False
 			if args.debug:
 				self.debugMode = True
@@ -540,7 +552,6 @@ class CrossCompileScript:
 				self.init_quietMode()
 			if args.force:
 				forceRebuild = True
-			thingToBuild = None
 			buildType = None
 
 			finalPkgList = []
@@ -548,10 +559,10 @@ class CrossCompileScript:
 			if args.PRODUCT or args.DEPENDENCY:
 				strPkgs = args.DEPENDENCY
 				buildType = "DEPENDENCY"
-				if args.PRODUCT != None:
+				if args.PRODUCT is not None:
 					strPkgs = args.PRODUCT
 					buildType = "PRODUCT"
-				pkgList = re.split(r'(?<!\\),', strPkgs)
+				pkgList = re.split(r'(?<!\\), ', strPkgs)
 				for p in pkgList:
 					if buildType == "PRODUCT":
 						if p not in self.packages["prods"]:
@@ -559,17 +570,17 @@ class CrossCompileScript:
 					if buildType == "DEPENDENCY":
 						if p not in self.packages["deps"]:
 							self.errorExit("Dependency package '%s' does not exist." % (p))
-					
-					finalPkgList.append(p.replace("\\,",","))
+
+					finalPkgList.append(p.replace("\\,", ","))
 
 			elif args.build_all:
 				self.defaultEntrace()
 				return
 
 			self.logger.info('Starting custom build process for: {0}'.format(",".join(finalPkgList)))
-			
+
 			skipDeps = False
-			
+
 			if args.skip_depends:
 				skipDeps = True
 
@@ -579,24 +590,25 @@ class CrossCompileScript:
 					main.build_mingw(b)
 					main.initBuildFolders()
 					if buildType == "PRODUCT":
-						self.build_thing(thing,self.packages["prods"][thing],buildType,forceRebuild,skipDeps)
+						self.build_thing(thing, self.packages["prods"][thing], buildType, forceRebuild, skipDeps)
 					else:
-						self.build_thing(thing,self.packages["deps"][thing],buildType,forceRebuild,skipDeps)
+						self.build_thing(thing, self.packages["deps"][thing], buildType, forceRebuild, skipDeps)
 					main.finishBuilding()
-					
-	def listRequiredBy(self,o):
-		ptype = None
-		if o in self.packages["prods"]:
-			ptype = "prods"
-		elif o in self.packages["deps"]:
-			ptype = "deps"
-		else:
+
+	def listRequiredBy(self, o):
+		# ptype = None
+		# if o in self.packages["prods"]:
+		# 	ptype = "prods"
+		# elif o in self.packages["deps"]:
+		# 	ptype = "deps"
+		# else:
+		if o not in self.packages["prods"] and o not in self.packages["deps"]:
 			self.logger.error("'%s' is not an existing package." % (o))
 			sys.exit(1)
-			
+
 		prods_requiring_it = []
 		deps_requiring_it = []
-		
+
 		for p in self.packages["deps"]:
 			pkg = self.packages["deps"][p]
 			if "depends_on" in pkg:
@@ -607,7 +619,7 @@ class CrossCompileScript:
 			if "depends_on" in pkg:
 				if o in pkg["depends_on"]:
 					prods_requiring_it.append(p)
-					
+
 		if len(prods_requiring_it) > 0 or len(deps_requiring_it) > 0:
 			self.logger.info("Packages requiring '%s':" % (o))
 			if len(deps_requiring_it) > 0:
@@ -616,7 +628,7 @@ class CrossCompileScript:
 				self.logger.info("\tProducts    : %s" % (",".join(prods_requiring_it)))
 		else:
 			self.logger.warning("There are no packages that require '%s'." % (o))
-		
+
 		sys.exit(0)
 
 	def defaultEntrace(self):
@@ -625,85 +637,86 @@ class CrossCompileScript:
 			self.build_mingw(b)
 			self.initBuildFolders()
 			for p in self.product_order:
-				self.build_thing(p,self.packages["prods"][p],"PRODUCT")
+				self.build_thing(p, self.packages["prods"][p], "PRODUCT")
 			self.finishBuilding()
 
 	def finishBuilding(self):
 		self.cchdir("..")
 
-	def prepareBuilding(self,b):
+	def prepareBuilding(self, b):
 		self.logger.info('Starting build script')
 		if not os.path.isdir(self.fullWorkDir):
 			self.logger.info("Creating workdir: %s" % (self.fullWorkDir))
 			os.makedirs(self.fullWorkDir, exist_ok=True)
 		self.cchdir(self.fullWorkDir)
 
-		self.bitnessDir         = "x86_64" if b is 64 else "i686" # e.g x86_64
-		self.bitnessDir2        = "x86_64" if b is 64 else "x86" # just for vpx...
-		self.bitnessDir3        = "mingw64" if b is 64 else "mingw" # just for openssl...
-		self.winBitnessDir      = "win64" if b is 64 else "win32" # e.g win64
-		self.targetHost         = "{0}-w64-mingw32".format ( self.bitnessDir ) # e.g x86_64-w64-mingw32
-		self.targetPrefix       = "{0}/{1}/{2}-w64-mingw32/{3}".format( self.fullWorkDir, self.mingwDir, self.bitnessDir, self.targetHost ) # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
-		self.inTreePrefix       = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir) ) # workdir/x86_64
-		self.offtreePrefix      = "{0}".format( os.path.join(self.fullWorkDir,self.bitnessDir + "_offtree") ) # workdir/x86_64_offtree
-		self.targetSubPrefix    = "{0}/{1}/{2}-w64-mingw32".format( self.fullWorkDir, self.mingwDir, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64
-		self.mingwBinpath       = "{0}/{1}/{2}-w64-mingw32/bin".format( self.fullWorkDir, self.mingwDir, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin
-		self.mingwBinpath2      = "{0}/{1}/{2}-w64-mingw32/{2}-w64-mingw32/bin".format( self.fullWorkDir, self.mingwDir, self.bitnessDir ) # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
-		self.fullCrossPrefix    = "{0}/{1}-w64-mingw32-".format( self.mingwBinpath, self.bitnessDir ) # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
-		self.bareCrossPrefix    = "{0}-w64-mingw32-".format( self.bitnessDir ) # e.g x86_64-w64-mingw32-
-		self.makePrefixOptions  = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format( cross_prefix_bare=self.bareCrossPrefix, target_prefix=self.targetPrefix )
-		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefix, target_prefix=self.targetPrefix,bitness=self.bitnessDir )
-		self.pkgConfigPath      = "{0}/lib/pkgconfig".format( self.targetPrefix ) #e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
-		self.fullProductDir     = os.path.join(self.fullWorkDir,self.bitnessDir + "_products")
-		self.currentBitness     = b
-		self.mesonEnvFile       = os.path.join(self.targetSubPrefix, "meson_environment.txt")
-		self.cpuCount           = self.config["toolchain"]["cpu_count"]
-		self.originalCflags     = self.config["toolchain"]["original_cflags"]
-		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else "" 
+		self.bitnessDir = "x86_64" if b == 64 else "i686"  # e.g x86_64
+		self.bitnessDir2 = "x86_64" if b == 64 else "x86"  # just for vpx...
+		self.bitnessDir3 = "mingw64" if b == 64 else "mingw"  # just for openssl...
+		self.winBitnessDir = "win64" if b == 64 else "win32"  # e.g win64
+		self.targetHost = "{0}-w64-mingw32".format(self.bitnessDir)  # e.g x86_64-w64-mingw32
+		self.targetPrefix = "{0}/{1}/{2}-w64-mingw32/{3}".format(self.fullWorkDir, self.mingwDir, self.bitnessDir, self.targetHost)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+		self.inTreePrefix = "{0}".format(os.path.join(self.fullWorkDir, self.bitnessDir))  # workdir/x86_64
+		self.offtreePrefix = "{0}".format(os.path.join(self.fullWorkDir, self.bitnessDir + "_offtree"))  # workdir/x86_64_offtree
+		self.targetSubPrefix = "{0}/{1}/{2}-w64-mingw32".format(self.fullWorkDir, self.mingwDir, self.bitnessDir)  # e.g workdir/xcompilers/mingw-w64-x86_64
+		self.mingwBinpath = "{0}/{1}/{2}-w64-mingw32/bin".format(self.fullWorkDir, self.mingwDir, self.bitnessDir)  # e.g workdir/xcompilers/mingw-w64-x86_64/bin
+		self.mingwBinpath2 = "{0}/{1}/{2}-w64-mingw32/{2}-w64-mingw32/bin".format(self.fullWorkDir, self.mingwDir, self.bitnessDir)  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
+		self.fullCrossPrefix = "{0}/{1}-w64-mingw32-".format(self.mingwBinpath, self.bitnessDir)  # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+		self.bareCrossPrefix = "{0}-w64-mingw32-".format(self.bitnessDir)  # e.g x86_64-w64-mingw32-
+		self.makePrefixOptions = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format(cross_prefix_bare=self.bareCrossPrefix, target_prefix=self.targetPrefix)
+		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefix, target_prefix=self.targetPrefix, bitness=self.bitnessDir)
+		self.pkgConfigPath = "{0}/lib/pkgconfig".format(self.targetPrefix)  # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
+		self.fullProductDir = os.path.join(self.fullWorkDir, self.bitnessDir + "_products")
+		self.currentBitness = b
+		self.mesonEnvFile = os.path.join(self.targetSubPrefix, "meson_environment.txt")
+		self.cpuCount = self.config["toolchain"]["cpu_count"]
+		self.originalCflags = self.config["toolchain"]["original_cflags"]
+		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else ""
 
 		if self.debugMode:
-			print('self.bitnessDir = \n'         + self.bitnessDir + '\n\n')
-			print('self.bitnessDir2 = \n'        + self.bitnessDir2 + '\n\n')
-			print('self.winBitnessDir = \n'      + self.winBitnessDir + '\n\n')
-			print('self.targetHost = \n'      + self.targetHost + '\n\n')
-			print('self.targetPrefix = \n'      + self.targetPrefix + '\n\n')
-			print('self.mingwBinpath = \n'       + self.mingwBinpath + '\n\n')
-			print('self.fullCrossPrefix = \n'    + self.fullCrossPrefix + '\n\n')
-			print('self.bareCrossPrefix = \n'    + self.bareCrossPrefix + '\n\n')
-			print('self.makePrefixOptions = \n'  + self.makePrefixOptions + '\n\n')
+			print('self.bitnessDir = \n' + self.bitnessDir + '\n\n')
+			print('self.bitnessDir2 = \n' + self.bitnessDir2 + '\n\n')
+			print('self.winBitnessDir = \n' + self.winBitnessDir + '\n\n')
+			print('self.targetHost = \n' + self.targetHost + '\n\n')
+			print('self.targetPrefix = \n' + self.targetPrefix + '\n\n')
+			print('self.mingwBinpath = \n' + self.mingwBinpath + '\n\n')
+			print('self.fullCrossPrefix = \n' + self.fullCrossPrefix + '\n\n')
+			print('self.bareCrossPrefix = \n' + self.bareCrossPrefix + '\n\n')
+			print('self.makePrefixOptions = \n' + self.makePrefixOptions + '\n\n')
 			print('self.cmakePrefixOptions = \n' + self.cmakePrefixOptions + '\n\n')
-			print('self.pkgConfigPath = \n'      + self.pkgConfigPath + '\n\n')
-			print('self.fullProductDir = \n'     + self.fullProductDir + '\n\n')
-			print('self.currentBitness = \n'     + str(self.currentBitness) + '\n\n')
-			print('PATH = \n'                    + os.environ["PATH"] + '\n\n')
+			print('self.pkgConfigPath = \n' + self.pkgConfigPath + '\n\n')
+			print('self.fullProductDir = \n' + self.fullProductDir + '\n\n')
+			print('self.currentBitness = \n' + str(self.currentBitness) + '\n\n')
+			print('PATH = \n' + os.environ["PATH"] + '\n\n')
 
-		os.environ["PATH"]           = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
-		#os.environ["PATH"]           = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.targetPrefix,'bin'), self.originalPATH ) #todo properly test this..
+		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
+		# os.environ["PATH"] = "{0}:{1}:{2}".format (self.mingwBinpath, os.path.join(self.targetPrefix, 'bin'), self.originalPATH)  # TODO: properly test this..
 		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
-		os.environ["COLOR"] = "ON" # Force coloring on (for CMake primarily)
-		os.environ["CLICOLOR_FORCE"] = "ON" # Force coloring on (for CMake primarily)
+		os.environ["COLOR"] = "ON"  # Force coloring on (for CMake primarily)
+		os.environ["CLICOLOR_FORCE"] = "ON"  # Force coloring on (for CMake primarily)
 	#:
+
 	def initBuildFolders(self):
 		if not os.path.isdir(self.bitnessDir):
-			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir ))
+			self.logger.info("Creating bitdir: {0}".format(self.bitnessDir))
 			os.makedirs(self.bitnessDir, exist_ok=True)
 
 		if not os.path.isdir(self.bitnessDir + "_products"):
-			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir + "_products" ))
+			self.logger.info("Creating bitdir: {0}".format(self.bitnessDir + "_products"))
 			os.makedirs(self.bitnessDir + "_products", exist_ok=True)
 
 		if not os.path.isdir(self.bitnessDir + "_offtree"):
-			self.logger.info("Creating bitdir: {0}".format( self.bitnessDir + "_offtree" ))
+			self.logger.info("Creating bitdir: {0}".format(self.bitnessDir + "_offtree"))
 			os.makedirs(self.bitnessDir + "_offtree", exist_ok=True)
-			
-	def bool_key(self,d,k):
+
+	def bool_key(self, d, k):
 		if k in d:
 			if d[k]:
 				return True
 		return False
 
-	def build_mingw(self,bitness):
+	def build_mingw(self, bitness):
 		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessDir + "-w64-mingw32-gcc")
 
 		if os.path.isfile(gcc_bin):
@@ -717,35 +730,32 @@ class CrossCompileScript:
 				exit(1)
 
 		elif not os.path.isdir(self.mingwDir):
-			self.logger.info("Building MinGW-w64 in folder '{0}'".format( self.mingwDir ))
+			self.logger.info("Building MinGW-w64 in folder '{0}'".format(self.mingwDir))
 
 			# os.makedirs(self.mingwDir, exist_ok=True)
 
 			os.unsetenv("CFLAGS")
 
 			# self.cchdir(self.mingwDir)
-			
 
-			module_path = self.config["script"]["mingw_toolchain_path"].replace("/",".").rstrip(".py")
-			
-			if not os.path.isfile(os.path.join("..",self.config["script"]["mingw_toolchain_path"])):
-				self.errorExit("Specified MinGW build script path does not exist: '%s'" % (toolchain_script))
+			module_path = self.config["script"]["mingw_toolchain_path"].replace("/", ".").rstrip(".py")
+
+			if not os.path.isfile(os.path.join("..", self.config["script"]["mingw_toolchain_path"])):
+				self.errorExit("Specified MinGW build script path does not exist: '%s'" % (module_path))
 
 			def toolchainBuildStatus(data):
 				self.logger.info(data)
-				
-			import importlib
 
 			mod = importlib.import_module(module_path)
-			
+
 			# from mingw_toolchain_script.mingw_toolchain_script import MinGW64ToolChainBuilder
 
 			toolchainBuilder = mod.MinGW64ToolChainBuilder()
 
 			toolchainBuilder.workDir = self.mingwDir
-			if self.config["toolchain"]["mingw_commit"] != None:
+			if self.config["toolchain"]["mingw_commit"] is not None:
 				toolchainBuilder.setMinGWcheckout(self.config["toolchain"]["mingw_commit"])
-			if self.config["toolchain"]["mingw_custom_cflags"] != None:
+			if self.config["toolchain"]["mingw_custom_cflags"] is not None:
 				toolchainBuilder.setCustomCflags(self.config["toolchain"]["mingw_custom_cflags"])
 			toolchainBuilder.setDebugBuild(self.config["toolchain"]["mingw_debug_build"])
 			toolchainBuilder.onStatusUpdate += toolchainBuildStatus
@@ -757,20 +767,20 @@ class CrossCompileScript:
 			sys.exit(1)
 	#:
 
-	def downloadHeader(self,url):
-		destination = os.path.join(self.targetPrefix,"include")
+	def downloadHeader(self, url):
+		destination = os.path.join(self.targetPrefix, "include")
 		fileName = os.path.basename(urlparse(url).path)
 
-		if not os.path.isfile(os.path.join(destination,fileName)):
+		if not os.path.isfile(os.path.join(destination, fileName)):
 			fname = self.download_file(url)
-			self.logger.debug("Moving Header File: '{0}' to '{1}'".format( fname, destination ))
+			self.logger.debug("Moving Header File: '{0}' to '{1}'".format(fname, destination))
 			shutil.move(fname, destination)
 		else:
-			self.logger.debug("Header File: '{0}' already downloaded".format( fileName ))
+			self.logger.debug("Header File: '{0}' already downloaded".format(fileName))
 
-	def download_file(self,url=None, outputFileName=None, outputPath=None, bytes=False):
+	def download_file(self, url=None, outputFileName=None, outputPath=None, bytesMode=False):
 		def fmt_size(num, suffix="B"):
-				for unit in ["","Ki","Mi","Gi","Ti","Pi","Ei","Zi"]:
+				for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
 					if abs(num) < 1024.0:
 						return "%3.1f%s%s" % (num, unit, suffix)
 					num /= 1024.0
@@ -779,32 +789,32 @@ class CrossCompileScript:
 		if not url:
 			raise Exception("No URL specified.")
 
-		if outputPath is None: # Default to current dir.
+		if outputPath is None:  # Default to current dir.
 			outputPath = os.getcwd()
 		else:
 			if not os.path.isdir(outputPath):
 				raise Exception('Specified path "{0}" does not exist'.format(outputPath))
 
-		fileName = os.path.basename(url) # Get URL filename
+		fileName = os.path.basename(url)  # Get URL filename
 		userAgent = self.userAgent
 
 		if 'sourceforge.net' in url.lower():
-			userAgent = 'wget/1.18' # sourceforce <3 wget
+			userAgent = 'wget/1.18'  # sourceforce <3 wget
 
 		if url.lower().startswith("ftp://"):
 			self.logger.info("Requesting : {0}".format(url))
-			if outputFileName != None:
+			if outputFileName is not None:
 				fileName = outputFileName
-			fullOutputPath = os.path.join(outputPath,fileName)
+			fullOutputPath = os.path.join(outputPath, fileName)
 			urllib.request.urlretrieve(url, fullOutputPath)
 			return fullOutputPath
 
 		if url.lower().startswith("file://"):
-			url = url.replace("file://","")
+			url = url.replace("file://", "")
 			self.logger.info("Copying : {0}".format(url))
-			if outputFileName != None:
+			if outputFileName is not None:
 				fileName = outputFileName
-			fullOutputPath = os.path.join(outputPath,fileName)
+			fullOutputPath = os.path.join(outputPath, fileName)
 			try:
 				shutil.copyfile(url, fullOutputPath)
 			except Exception as e:
@@ -812,14 +822,14 @@ class CrossCompileScript:
 				exit(1)
 			return fullOutputPath
 
-		req = requests.get(url, stream=True, headers = { "User-Agent": userAgent } )
+		req = requests.get(url, stream=True, headers={"User-Agent": userAgent})
 
 		if req.status_code != 200:
 			req.raise_for_status()
 
 		if "content-disposition" in req.headers:
 			reSponse = re.findall("filename=(.+)", req.headers["content-disposition"])
-			if reSponse == None:
+			if reSponse is None:
 				fileName = os.path.basename(url)
 			else:
 				fileName = reSponse[0]
@@ -833,7 +843,7 @@ class CrossCompileScript:
 			if req.headers["Content-Encoding"] == "gzip":
 				compressed = True
 
-		self.logger.info("Requesting : {0} - {1}".format(url, fmt_size(size) if size!=None else "?" ))
+		self.logger.info("Requesting : {0} - {1}".format(url, fmt_size(size) if size is not None else "?"))
 
 		# terms = shutil.get_terminal_size((100,100))
 		# filler = 0
@@ -841,13 +851,13 @@ class CrossCompileScript:
 		# 	filler = int(terms[0]/4)
 
 		widgetsNoSize = [
-			progressbar.FormatCustomText("Downloading: {:25.25}".format(os.path.basename(fileName)))," ",
+			progressbar.FormatCustomText("Downloading: {:25.25}".format(os.path.basename(fileName))), " ",
 			progressbar.AnimatedMarker(markers='|/-\\'), " ",
 			progressbar.DataSize()
 			# " "*filler
 		]
 		widgets = [
-			progressbar.FormatCustomText("Downloading: {:25.25}".format(os.path.basename(fileName)))," ",
+			progressbar.FormatCustomText("Downloading: {:25.25}".format(os.path.basename(fileName))), " ",
 			progressbar.Percentage(), " ",
 			progressbar.Bar(fill=chr(9617), marker=chr(9608), left="[", right="]"), " ",
 			progressbar.DataSize(), "/", progressbar.DataSize(variable="max_value"), " |",
@@ -856,27 +866,27 @@ class CrossCompileScript:
 			# " "*filler
 		]
 		pbar = None
-		if size == None:
-			pbar = progressbar.ProgressBar(widgets=widgetsNoSize,maxval=progressbar.UnknownLength)
+		if size is None:
+			pbar = progressbar.ProgressBar(widgets=widgetsNoSize, maxval=progressbar.UnknownLength)
 		else:
-			pbar = progressbar.ProgressBar(widgets=widgets,maxval=size)
+			pbar = progressbar.ProgressBar(widgets=widgets, maxval=size)
 
-		if outputFileName != None:
+		if outputFileName is not None:
 			fileName = outputFileName
-		fullOutputPath = os.path.join(outputPath,fileName)
+		fullOutputPath = os.path.join(outputPath, fileName)
 
 		updateSize = 0
 
 		if isinstance(pbar.max_value, int):
 			updateSize = pbar.max_value if pbar.max_value < 1024 else 1024
 
-		if bytes == True:
+		if bytesMode is True:
 			output = b""
 			bytesrecv = 0
 			pbar.start()
 			for buffer in req.iter_content(chunk_size=1024):
 				if buffer:
-					 output += buffer
+					output += buffer
 				if compressed:
 					pbar.update(updateSize)
 				else:
@@ -901,7 +911,7 @@ class CrossCompileScript:
 
 				return fullOutputPath
 	#:
-	
+
 	def create_meson_environment_file(self):
 		if not os.path.isfile(self.mesonEnvFile):
 			self.logger.info("Creating Meson Environment file at: '%s'" % (self.mesonEnvFile))
@@ -914,7 +924,7 @@ class CrossCompileScript:
 				f.write("strip = '{0}strip'\n".format(self.fullCrossPrefix))
 				f.write("windres = '{0}windres'\n".format(self.fullCrossPrefix))
 				f.write("ranlib = '{0}ranlib'\n".format(self.fullCrossPrefix))
-				f.write("pkgconfig = 'pkg-config'\n".format(self.fullCrossPrefix)) # ??
+				f.write("pkgconfig = 'pkg-config'\n".format(self.fullCrossPrefix))
 				f.write("dlltool = '{0}dlltool'\n".format(self.fullCrossPrefix))
 				f.write("gendef = '{0}/gendef'\n".format(self.mingwBinpath))
 				f.write("cmake = 'cmake'\n")
@@ -939,9 +949,10 @@ class CrossCompileScript:
 				f.write("sys_root = '{0}'\n".format(self.targetSubPrefix))
 				f.close()
 
-	def download_file_old(self,link, targetName = None):
+	def download_file_old(self, link, targetName=None):
 		_MAX_REDIRECTS = 5
 		cj = http.cookiejar.CookieJar()
+
 		class RHandler(urllib.request.HTTPRedirectHandler):
 			def http_error_301(self, req, fp, code, msg, headers):
 				result = urllib.request.HTTPRedirectHandler.http_error_301(
@@ -955,8 +966,8 @@ class CrossCompileScript:
 				result.status = code
 				return result
 
-		def sizeof_fmt(num, suffix='B'): # sizeof_fmt is courtesy of https://stackoverflow.com/a/1094933
-			for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+		def sizeof_fmt(num, suffix='B'):  # sizeof_fmt is courtesy of https://stackoverflow.com/a/1094933
+			for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
 				if abs(num) < 1024.0:
 					return "%3.1f%s%s" % (num, unit, suffix)
 				num /= 1024.0
@@ -966,35 +977,34 @@ class CrossCompileScript:
 		_CHUNKSIZE = 10240
 
 		if not link.lower().startswith("https") and not link.lower().startswith("file"):
-			self.logger.warning("WARNING: Using non-SSL http is not advised..") # gotta get peoples attention somehow eh?
+			self.logger.warning("WARNING: Using non-SSL http is not advised..")  # gotta get peoples attention somehow eh?
 
 		fname = None
 
-		if targetName == None:
+		if targetName is None:
 			fname = os.path.basename(urlparse(link).path)
 		else:
 			fname = targetName
 
-		#print("Downloading {0} to {1} ".format( link, fname) )
+		# print("Downloading {0} to {1} ".format(link, fname))
 
 		ua = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
 		if 'sourceforge.net' in link.lower():
-			ua = 'wget/1.18' # sourceforge gives direct dls to wget agents.
+			ua = 'wget/1.18'  # sourceforge gives direct dls to wget agents.
 
-		f = open(fname,'ab')
-		hdrs = [ # act like chrome
-				('Connection'                , 'keep-alive'),
-				('Pragma'                    , 'no-cache'),
-				('Cache-Control'             , 'no-cache'),
-				('Upgrade-Insecure-Requests' , '1'),
-				('User-Agent'                , ua),
-				('Accept'                    , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
-				# ('Accept-Encoding'           , 'gzip'),
-				('Accept-Language'           , 'en-US,en;q=0.8'),
+		f = open(fname, 'ab')
+		hdrs = [  # act like chrome
+			('Connection', 'keep-alive'),
+			('Pragma', 'no-cache'),
+			('Cache-Control', 'no-cache'),
+			('Upgrade-Insecure-Requests', '1'),
+			('User-Agent', ua),
+			('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
+			# ('Accept-Encoding', 'gzip'),
+			('Accept-Language', 'en-US,en;q=0.8'),
 		]
 
-		opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj)) #),RHandler()
-
+		opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))  # ),RHandler()
 
 		opener.addheaders = hdrs
 
@@ -1006,7 +1016,7 @@ class CrossCompileScript:
 			response = opener.open(request)
 
 			olink = link
-			for i in range(0, _MAX_REDIRECTS): # i have no idea of this is something I should be doing.
+			for i in range(0, _MAX_REDIRECTS):  # i have no idea of this is something I should be doing.
 				if olink == response.geturl():
 					break
 				else:
@@ -1015,7 +1025,7 @@ class CrossCompileScript:
 
 					olink = response.geturl()
 
-		except Exception as e:
+		except Exception:
 			print("Error downloading: " + link)
 			traceback.print_exc()
 			f.close()
@@ -1026,19 +1036,19 @@ class CrossCompileScript:
 		length = re.search(r'Content-Length: ([0-9]+)', headers, re.IGNORECASE)
 
 		fileSize = None
-		if length == None:
-			pass #tbd
+		if length is None:
+			pass  # tbd
 		else:
 			fileSize = int(length.groups()[0])
 
-		#fileSizeDigits = int(math.log10(fileSize))+1
+		# fileSizeDigits = int(math.log10(fileSize))+1
 
 		downloadedBytes = 0
 
 		start = time.clock()
 
 		fancyFileSize = None
-		if fileSize != None:
+		if fileSize is not None:
 			fancyFileSize = sizeof_fmt(fileSize)
 			fancyFileSize = fancyFileSize.ljust(len(fancyFileSize))
 
@@ -1053,19 +1063,19 @@ class CrossCompileScript:
 			if isGzipped:
 				if len(chunk):
 					try:
-						chunk = zlib.decompress(chunk, 15+32)
+						chunk = zlib.decompress(chunk, 15 + 32)
 					except Exception as e:
 						print(e)
 						exit()
 
 			f.write(chunk)
-			if fileSize != None:
+			if fileSize is not None:
 				done = int(50 * downloadedBytes / fileSize)
-				fancySpeed = sizeof_fmt((downloadedBytes//(time.clock() - start))/8,"B/s").rjust(5, ' ')
+				fancySpeed = sizeof_fmt((downloadedBytes // (time.clock() - start)) / 8, "B/s").rjust(5, ' ')
 				fancyDownloadedBytes = sizeof_fmt(downloadedBytes).rjust(len(fancyFileSize), ' ')
-				print("[{0}] - {1}/{2} ({3})".format( '|' * done + '-' * (50-done), fancyDownloadedBytes,fancyFileSize,fancySpeed), end= "\r")
+				print("[{0}] - {1}/{2} ({3})".format('|' * done + '-' * (50 - done), fancyDownloadedBytes, fancyFileSize, fancySpeed), end="\r")
 			else:
-				print("{0}".format( sizeof_fmt(downloadedBytes) ), end="\r")
+				print("{0}".format(sizeof_fmt(downloadedBytes)), end="\r")
 
 			if not len(chunk):
 				break
@@ -1074,88 +1084,88 @@ class CrossCompileScript:
 		response.close()
 
 		f.close()
-		#print("File fully downloaded to:",fname)
+		# print("File fully downloaded to:",fname)
 
 		return os.path.basename(link)
 	#:
 
-	def download_file_v2(url=None, outputFileName=None, outputPath=None, bytes=False ):
-		if not url:
-			raise Exception('No url')
-		if outputPath is None:
-			outputPath = os.getcwd()
-		else:
-			if not os.path.isdir(outputPath):
-				raise Exception('Path "" does not exist'.format(outputPath))
-		fileName =  url.split('/')[-1] #base fallback name
-		print("Connecting to: " + url)
-		req = requests.get(url, stream=True, headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'})
-		if req.status_code != 404:
-			if 'content-disposition' in req.headers:
-				fileName = req.headers['content-disposition']
-			size = None
-			if 'Content-Length' in req.headers:
-				size = int(req.headers['Content-Length'])
+	# def download_file_v2(self, url=None, outputFileName=None, outputPath=None, bytes=False):
+	# 	if not url:
+	# 		raise Exception('No url')
+	# 	if outputPath is None:
+	# 		outputPath = os.getcwd()
+	# 	else:
+	# 		if not os.path.isdir(outputPath):
+	# 			raise Exception('Path "" does not exist'.format(outputPath))
+	# 	fileName = url.split('/')[-1]  # base fallback name
+	# 	print("Connecting to: " + url)
+	# 	req = requests.get(url, stream=True, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'})
+	# 	if req.status_code != 404:
+	# 		if 'content-disposition' in req.headers:
+	# 			fileName = req.headers['content-disposition']
+	# 		size = None
+	# 		if 'Content-Length' in req.headers:
+	# 			size = int(req.headers['Content-Length'])
 
-			if 'Content-Encoding' in req.headers:
-				if req.headers['Content-Encoding'] == "gzip":
-					size = None
+	# 		if 'Content-Encoding' in req.headers:
+	# 			if req.headers['Content-Encoding'] == "gzip":
+	# 				size = None
 
-			print("Downloading: '{0}' {1}".format(url, fmt_size(size) if size!=None else "?" ))
-			widgetsNoSize = [
-				progressbar.Percentage(), " ",
-				progressbar.Bar(fill=chr(9617), marker=chr(9608), left="[", right="]"), " ",
-				progressbar.DataSize(),
-			]
-			widgets = [
-				progressbar.Percentage(), " ",
-				progressbar.Bar(fill=chr(9617), marker=chr(9608), left="[", right="]"), " ",
-				progressbar.DataSize(), "/", progressbar.DataSize(variable="max_value"), " |",
-				progressbar.AdaptiveTransferSpeed(), " | ",
-				progressbar.ETA(),
-			]
-			pbar = None
-			if size == None:
-				pbar = progressbar.ProgressBar(widgets=widgetsNoSize,maxval=progressbar.UnknownLength)
-			else:
-				pbar = progressbar.ProgressBar(widgets=widgets,maxval=size)
-			if outputFileName != None:
-				fileName = outputFileName
-			fullOutputPath = os.path.join(outputPath,fileName)
+	# 		print("Downloading: '{0}' {1}".format(url, fmt_size(size) if size!=None else "?"))
+	# 		widgetsNoSize = [
+	# 			progressbar.Percentage(), " ",
+	# 			progressbar.Bar(fill=chr(9617), marker=chr(9608), left="[", right="]"), " ",
+	# 			progressbar.DataSize(),
+	# 		]
+	# 		widgets = [
+	# 			progressbar.Percentage(), " ",
+	# 			progressbar.Bar(fill=chr(9617), marker=chr(9608), left="[", right="]"), " ",
+	# 			progressbar.DataSize(), "/", progressbar.DataSize(variable="max_value"), " |",
+	# 			progressbar.AdaptiveTransferSpeed(), " | ",
+	# 			progressbar.ETA(),
+	# 		]
+	# 		pbar = None
+	# 		if size is None:
+	# 			pbar = progressbar.ProgressBar(widgets=widgetsNoSize,maxval=progressbar.UnknownLength)
+	# 		else:
+	# 			pbar = progressbar.ProgressBar(widgets=widgets,maxval=size)
+	# 		if outputFileName is not None:
+	# 			fileName = outputFileName
+	# 		fullOutputPath = os.path.join(outputPath,fileName)
 
-			if bytes == True:
-				output = b''
-				bytesrecv = 0
-				pbar.start()
-				for buffer in req.iter_content(chunk_size=1024):
-					if buffer:
-						 output += buffer
-					pbar.update(bytesrecv)
-					bytesrecv += len(buffer)
-				pbar.finish()
-				return output
-			else:
-				with open(fullOutputPath, "wb") as file:
-					bytesrecv = 0
-					pbar.start()
-					for buffer in req.iter_content(chunk_size=1024):
-						if buffer:
-							file.write(buffer)
-							file.flush()
-						pbar.update(bytesrecv)
-						bytesrecv += len(buffer)
-					pbar.finish()
+	# 		if bytes is True:
+	# 			output = b''
+	# 			bytesrecv = 0
+	# 			pbar.start()
+	# 			for buffer in req.iter_content(chunk_size=1024):
+	# 				if buffer:
+	# 					 output += buffer
+	# 				pbar.update(bytesrecv)
+	# 				bytesrecv += len(buffer)
+	# 			pbar.finish()
+	# 			return output
+	# 		else:
+	# 			with open(fullOutputPath, "wb") as file:
+	# 				bytesrecv = 0
+	# 				pbar.start()
+	# 				for buffer in req.iter_content(chunk_size=1024):
+	# 					if buffer:
+	# 						file.write(buffer)
+	# 						file.flush()
+	# 					pbar.update(bytesrecv)
+	# 					bytesrecv += len(buffer)
+	# 				pbar.finish()
 
-					return fullOutputPath
-	#:
+	# 				return fullOutputPath
+	# #:
 
-	def run_process(self,command,ignoreErrors = False, exitOnError = True):
+	def run_process(self, command, ignoreErrors=False, exitOnError=True):
 		isSvn = False
 		if not isinstance(command, str):
-			command = " ".join(command) # could fail I guess
+			command = " ".join(command)  # could fail I guess
 		if command.lower().startswith("svn"):
 			isSvn = True
-		self.logger.debug("Running '{0}' in '{1}'".format(command,os.getcwd()))
+		self.logger.debug("Running '{0}' in '{1}'".format(command, os.getcwd()))
 		process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
 		while True:
 			nextline = process.stdout.readline()
@@ -1163,16 +1173,16 @@ class CrossCompileScript:
 				break
 			if isSvn:
 				if not nextline.decode('utf-8').startswith('A    '):
-					if self.quietMode == True:
-						self.buildLogFile.write(nextline.decode('utf-8','replace'))
+					if self.quietMode is True:
+						self.buildLogFile.write(nextline.decode('utf-8', 'replace'))
 					else:
-						sys.stdout.write(nextline.decode('utf-8','replace'))
+						sys.stdout.write(nextline.decode('utf-8', 'replace'))
 						sys.stdout.flush()
 			else:
-				if self.quietMode == True:
-					self.buildLogFile.write(nextline.decode('utf-8','replace'))
+				if self.quietMode is True:
+					self.buildLogFile.write(nextline.decode('utf-8', 'replace'))
 				else:
-					sys.stdout.write(nextline.decode('utf-8','replace'))
+					sys.stdout.write(nextline.decode('utf-8', 'replace'))
 					sys.stdout.flush()
 
 		return_code = process.returncode
@@ -1183,22 +1193,22 @@ class CrossCompileScript:
 		else:
 			if ignoreErrors:
 				return output
-			self.logger.error("Error [{0}] running process: '{1}' in '{2}'".format(return_code,command,os.getcwd()))
+			self.logger.error("Error [{0}] running process: '{1}' in '{2}'".format(return_code, command, os.getcwd()))
 			self.logger.error("You can try deleting the product/dependency folder: '{0}' and re-run the script".format(os.getcwd()))
 			if self.quietMode:
 				self.logger.error("Please check the raw_build.log file")
 			if exitOnError:
 				exit(1)
 
-		#p = subprocess.Popen(command, stdout=subprocess.PIPE,stderr=subprocess.STDOUT, universal_newlines = True, shell = True)
-		#for line in iter(p.stdout.readline, b''):
-		#	sys.stdout.write(line)
-		#	sys.stdout.flush()
-		#p.close()
+		# p = subprocess.Popen(command, stdout=subprocess.PIPE,stderr=subprocess.STDOUT, universal_newlines = True, shell = True)
+		# for line in iter(p.stdout.readline, b''):
+		# 	sys.stdout.write(line)
+		# 	sys.stdout.flush()
+		# p.close()
 
-	def get_process_result(self,command):
+	def get_process_result(self, command):
 		if not isinstance(command, str):
-			command = " ".join(command) # could fail I guess
+			command = " ".join(command)  # could fail I guess
 		process = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
 		out = process.stdout.readline().rstrip("\n").rstrip("\r")
 		process.stdout.close()
@@ -1206,19 +1216,19 @@ class CrossCompileScript:
 		if (return_code == 0):
 			return out
 		else:
-			self.logger.error("Error [%d] creating process '%s'" % (return_code,command))
+			self.logger.error("Error [%d] creating process '%s'" % (return_code, command))
 			exit()
 
-	def sanitize_filename(self,f):
+	def sanitize_filename(self, f):
 		return re.sub(r'[/\\:*?"<>|]', '', f)
 
-	def md5(self,*args):
+	def md5(self, *args):
 		msg = ''.join(args).encode("utf-8")
 		m = hashlib.md5()
 		m.update(msg)
 		return m.hexdigest()
 
-	def hash_file(self,fname,type = "sha256"):
+	def hash_file(self, fname, type="sha256"):
 		hash = None
 		if type == "sha256":
 			hash = hashlib.sha256()
@@ -1233,35 +1243,36 @@ class CrossCompileScript:
 				hash.update(chunk)
 		return hash.hexdigest()
 
-	def touch(self,f):
+	def touch(self, f):
 		pathlib.Path(f).touch()
 
-	def chmodpux(self,file):
+	def chmodpux(self, file):
 		st = os.stat(file)
-		os.chmod(file, st.st_mode | stat.S_IXUSR) #S_IEXEC would be just +x
+		os.chmod(file, st.st_mode | stat.S_IXUSR)  # S_IEXEC would be just +x
 	#:
 
-	def mercurial_clone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None):
-		if virtFolderName == None:
+	def mercurial_clone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None):
+		if virtFolderName is None:
 			virtFolderName = self.sanitize_filename(os.path.basename(url))
-			if not virtFolderName.endswith(".hg"): virtFolderName += ".hg"
-			virtFolderName = virtFolderName.replace(".hg","_hg")
+			if not virtFolderName.endswith(".hg"):
+				virtFolderName += ".hg"
+			virtFolderName = virtFolderName.replace(".hg", "_hg")
 		else:
 			virtFolderName = self.sanitize_filename(virtFolderName)
 
 		realFolderName = virtFolderName
-		if renameTo != None:
+		if renameTo is not None:
 			realFolderName = renameTo
 
 		branchString = ""
-		if desiredBranch != None:
-			branchString = " {0}".format( desiredBranch )
+		if desiredBranch is not None:
+			branchString = " {0}".format(desiredBranch)
 
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
 			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
 			self.run_process('hg pull -u')
-			self.run_process('hg update -C{0}'.format(" default" if desiredBranch == None else branchString))
+			self.run_process('hg update -C{0}'.format(" default" if desiredBranch is None else branchString))
 			hgVersionNew = subprocess.check_output('hg --debug id -i', shell=True)
 			if hgVersion != hgVersionNew:
 				self.logger.debug("HG clone has code changes, updating")
@@ -1270,58 +1281,60 @@ class CrossCompileScript:
 				self.logger.debug("HG clone already up to date")
 			self.cchdir("..")
 		else:
-			self.logger.info("HG cloning '%s' to '%s'" % (url,realFolderName))
-			self.run_process('hg clone {0} {1}'.format(url,realFolderName + ".tmp" ))
-			if desiredBranch != None:
+			self.logger.info("HG cloning '%s' to '%s'" % (url, realFolderName))
+			self.run_process('hg clone {0} {1}'.format(url, realFolderName + ".tmp"))
+			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
-				self.logger.debug("HG updating to:{0}".format(" master" if desiredBranch == None else branchString))
-				self.run_process('hg up{0} -v'.format("" if desiredBranch == None else branchString))
+				self.logger.debug("HG updating to:{0}".format(" master" if desiredBranch is None else branchString))
+				self.run_process('hg up{0} -v'.format("" if desiredBranch is None else branchString))
 				self.cchdir("..")
 			self.run_process('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
-			self.logger.info("Finished HG cloning '%s' to '%s'" % (url,realFolderName))
+			self.logger.info("Finished HG cloning '%s' to '%s'" % (url, realFolderName))
 
 		return realFolderName
 	#:
-	def git_clone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None,recursive=False,doNotUpdate=False,desiredPR=None):
-		if virtFolderName == None:
+
+	def git_clone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None, recursive=False, doNotUpdate=False, desiredPR=None):
+		if virtFolderName is None:
 			virtFolderName = self.sanitize_filename(os.path.basename(url))
-			if not virtFolderName.endswith(".git"): virtFolderName += ".git"
-			virtFolderName = virtFolderName.replace(".git","_git")
+			if not virtFolderName.endswith(".git"):
+				virtFolderName += ".git"
+			virtFolderName = virtFolderName.replace(".git", "_git")
 		else:
 			virtFolderName = self.sanitize_filename(virtFolderName)
 
 		realFolderName = virtFolderName
-		if renameTo != None:
+		if renameTo is not None:
 			realFolderName = renameTo
 
 		branchString = ""
-		if desiredBranch != None:
-			branchString = " {0}".format( desiredBranch )
+		if desiredBranch is not None:
+			branchString = " {0}".format(desiredBranch)
 
 		properBranchString = "master"
-		if desiredBranch != None:
-			properBranchString  = desiredBranch
+		if desiredBranch is not None:
+			properBranchString = desiredBranch
 
 		if os.path.isdir(realFolderName):
-			if desiredPR != None:
+			if desiredPR is not None:
 				self.logger.warning("####################")
 				self.logger.info("Git repositiories with set PR will not auto-update, please delete the repo and retry to do so.")
 				self.logger.warning("####################")
-			elif doNotUpdate == True:
+			elif doNotUpdate is True:
 				self.logger.info("####################")
-				self.logger.info("do_not_git_update == true")
+				self.logger.info("do_not_git_update is True")
 				self.logger.info("####################")
 			else:
 				self.cchdir(realFolderName)
 
 				self.run_process('git remote update')
 
-				UPSTREAM = '@{u}' # or branchName i guess
-				if desiredBranch != None:
+				UPSTREAM = '@{u}'  # or branchName i guess
+				if desiredBranch is not None:
 					UPSTREAM = properBranchString
-				LOCAL    = subprocess.check_output('git rev-parse @',shell=True).decode("utf-8")
-				REMOTE   = subprocess.check_output('git rev-parse "{0}"'.format(UPSTREAM),shell=True).decode("utf-8")
-				BASE     = subprocess.check_output('git merge-base @ "{0}"'.format(UPSTREAM),shell=True).decode("utf-8")
+				LOCAL = subprocess.check_output('git rev-parse @', shell=True).decode("utf-8")
+				REMOTE = subprocess.check_output('git rev-parse "{0}"'.format(UPSTREAM), shell=True).decode("utf-8")
+				BASE = subprocess.check_output('git merge-base @ "{0}"'.format(UPSTREAM), shell=True).decode("utf-8")
 
 				self.run_process('git checkout -f')
 				self.run_process('git checkout {0}'.format(properBranchString))
@@ -1340,15 +1353,15 @@ class CrossCompileScript:
 					self.logger.debug("REMOTE: " + REMOTE)
 					self.logger.debug("BASE:   " + BASE)
 					self.logger.debug("####################")
-					if desiredBranch != None:
-						#bsSplit = properBranchString.split("/")
-						#if len(bsSplit) == 2:
-						#	self.run_process('git pull origin {1}'.format(bsSplit[0],bsSplit[1]))
-						#else:
+					if desiredBranch is not None:
+						# bsSplit = properBranchString.split("/")
+						# if len(bsSplit) == 2:
+						# 	self.run_process('git pull origin {1}'.format(bsSplit[0],bsSplit[1]))
+						# else:
 						self.run_process('git pull origin {0}'.format(properBranchString))
 					else:
 						self.run_process('git pull'.format(properBranchString))
-					self.run_process('git clean -ffdx') #https://gist.github.com/nicktoumpelis/11214362
+					self.run_process('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
 					self.run_process('git submodule foreach --recursive git clean -ffdx')
 					self.run_process('git reset --hard')
 					self.run_process('git submodule foreach --recursive git reset --hard')
@@ -1372,86 +1385,86 @@ class CrossCompileScript:
 			recur = ""
 			if recursive:
 				recur = " --recursive"
-			self.logger.info("GIT cloning '%s' to '%s'" % (url,os.getcwd() +"/"+ realFolderName))
-			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur,url,realFolderName + ".tmp" ))
-			if desiredBranch != None:
+			self.logger.info("GIT cloning '%s' to '%s'" % (url, os.getcwd() + "/" + realFolderName))
+			self.run_process('git clone{0} --progress "{1}" "{2}"'.format(recur, url, realFolderName + ".tmp"))
+			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
-				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch == None else branchString))
-				self.run_process('git checkout{0}'.format(" master" if desiredBranch == None else branchString))
+				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch is None else branchString))
+				self.run_process('git checkout{0}'.format(" master" if desiredBranch is None else branchString))
 				self.cchdir("..")
-			if desiredPR != None:
+			if desiredPR is not None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.info("GIT Fetching PR: {0}".format(desiredPR))
 				self.run_process('git fetch origin refs/pull/{0}/head'.format(desiredPR))
 				self.cchdir("..")
 			self.run_process('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
-			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url,realFolderName))
+			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url, realFolderName))
 
 		return realFolderName
 	#:
-	def svn_clone(self, url, dir, desiredBranch = None): # "branch".. "clone"..
-		dir = self.sanitize_filename(dir)
-		if not dir.endswith("_svn"): dir += "_svn"
 
+	def svn_clone(self, url, dir, desiredBranch=None):  # "branch".. "clone"..
+		dir = self.sanitize_filename(dir)
+		if not dir.endswith("_svn"):
+			dir += "_svn"
 		if not os.path.isdir(dir):
 			self.logger.info("SVN checking out to %s" % (dir))
-			if desiredBranch == None:
-				self.run_process('svn co "%s" "%s.tmp" --non-interactive --trust-server-cert' % (url,dir))
+			if desiredBranch is None:
+				self.run_process('svn co "%s" "%s.tmp" --non-interactive --trust-server-cert' % (url, dir))
 			else:
-				self.run_process('svn co -r "%s" "%s" "%s.tmp" --non-interactive --trust-server-cert' % (desiredBranch,url,dir))
+				self.run_process('svn co -r "%s" "%s" "%s.tmp" --non-interactive --trust-server-cert' % (desiredBranch, url, dir))
 			shutil.move('%s.tmp' % dir, dir)
 		else:
 			pass
-			#svn up?
 		return dir
 	#:
-	def verify_hash(self,file,hash):
-		if hash["type"] not in ["sha256","sha512","md5","blake2b"]:
-			raise Exception("Unsupported hash type: " + hash["type"])
-		newHash = self.hash_file(file,hash["type"])
-		if hash["sum"] == newHash:
-			return (True,hash["sum"],newHash)
-		return (False,hash["sum"],newHash)
 
-	def download_unpack_file(self,data,folderName = None,workDir = None):
+	def verify_hash(self, file, hash):
+		if hash["type"] not in ["sha256", "sha512", "md5", "blake2b"]:
+			raise Exception("Unsupported hash type: " + hash["type"])
+		newHash = self.hash_file(file, hash["type"])
+		if hash["sum"] == newHash:
+			return (True, hash["sum"], newHash)
+		return (False, hash["sum"], newHash)
+
+	def download_unpack_file(self, packageData, packageName, folderName=None, workDir=None):
 		customFolder = False
-		if folderName == None:
-			folderName = os.path.basename(os.path.splitext(urlparse(self.get_primary_package_url(data)).path)[0]).rstrip(".tar")
+		if folderName is None:
+			folderName = os.path.basename(os.path.splitext(urlparse(self.get_primary_package_url(packageData, packageName)).path)[0]).rstrip(".tar")
 		else:
 			customFolder = True
 		folderToCheck = folderName
-		
-		if "rename_folder" in data and data["rename_folder"] != "" and data["rename_folder"] != None:
-			folderToCheck = data["rename_folder"]
-		
-		if workDir != None:
+
+		if "rename_folder" in packageData and packageData["rename_folder"] != "" and packageData["rename_folder"] is not None:
+			folderToCheck = packageData["rename_folder"]
+
+		if workDir is not None:
 			folderToCheck = workDir
-			
-		check_file = os.path.join(folderToCheck,"unpacked.successfully")
+
+		check_file = os.path.join(folderToCheck, "unpacked.successfully")
 		if not os.path.isfile(check_file):
-			dl_loc = self.get_best_mirror(data)
+			dl_loc = self.get_best_mirror(packageData, packageName)
 			url = dl_loc["url"]
 			fileName = os.path.basename(urlparse(url).path)
-			self.logger.info("Downloading {0} ({1})".format( fileName, url ))
+			self.logger.info("Downloading {0} ({1})".format(fileName, url))
 
-			self.download_file(url,fileName)
-
+			self.download_file(url, fileName)
 
 			if "hashes" in dl_loc:
 				if len(dl_loc["hashes"]) >= 1:
 					for hash in dl_loc["hashes"]:
 						self.logger.info("Comparing hashes..")
-						hashReturn = self.verify_hash(fileName,hash)
-						if hashReturn[0] == True:
-							self.logger.info("Hashes matched: {0}...{1} (local) == {2}...{3} (remote)".format(hashReturn[1][0:5],hashReturn[1][-5:],hashReturn[2][0:5],hashReturn[2][-5:]))
+						hashReturn = self.verify_hash(fileName, hash)
+						if hashReturn[0] is True:
+							self.logger.info("Hashes matched: {0}...{1} (local) == {2}...{3} (remote)".format(hashReturn[1][0:5], hashReturn[1][-5:], hashReturn[2][0:5], hashReturn[2][-5:]))
 						else:
-							self.logger.error("File hashes didn't match: %s(local) != %s(remote)" % (hashReturn[1],hashReturn[2]))
+							self.logger.error("File hashes didn't match: %s(local) != %s(remote)" % (hashReturn[1], hashReturn[2]))
 							raise Exception("File download error: Hash mismatch")
 							exit(1)
 
-			self.logger.info("Unpacking {0}".format( fileName ))
+			self.logger.info("Unpacking {0}".format(fileName))
 
-			tars = (".gz",".bz2",".xz",".bz",".tgz") # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
+			tars = (".gz", ".bz2", ".xz", ".bz", ".tgz")  # i really need a better system for this.. but in reality, those are probably the only formats we will ever encounter.
 
 			customFolderTarArg = ""
 
@@ -1460,28 +1473,28 @@ class CrossCompileScript:
 				os.makedirs(folderName)
 
 			if fileName.endswith(tars):
-				self.run_process('tar -xf "{0}"{1}'.format( fileName, customFolderTarArg ))
+				self.run_process('tar -xf "{0}"{1}'.format(fileName, customFolderTarArg))
 			else:
-				self.run_process('unzip "{0}"'.format( fileName ))
+				self.run_process('unzip "{0}"'.format(fileName))
 
-			self.touch(os.path.join(folderName,"unpacked.successfully"))
+			self.touch(os.path.join(folderName, "unpacked.successfully"))
 
 			os.remove(fileName)
 
 			return folderName
 
 		else:
-			self.logger.debug("{0} already downloaded".format( folderName ))
+			self.logger.debug("{0} already downloaded".format(folderName))
 			return folderName
 	#:
 
-	def check_mirrors(self,dl_locations):
+	def check_mirrors(self, dl_locations):
 		for loc in dl_locations:
 			userAgent = self.userAgent
 			if 'sourceforge.net' in loc["url"].lower():
-				userAgent = 'wget/1.18' # sourceforce <3 wget
+				userAgent = 'wget/1.20.3'  # sourceforce allows direct downloads when using wget, so we pretend we are wget
 			try:
-				req = requests.request("GET", loc["url"], stream=True, allow_redirects=True, headers = { "User-Agent": self.userAgent } )
+				req = requests.request("GET", loc["url"], stream=True, allow_redirects=True, headers={"User-Agent": userAgent})
 			except requests.exceptions.RequestException as e:
 				self.logger.debug(e)
 			else:
@@ -1490,273 +1503,273 @@ class CrossCompileScript:
 				else:
 					self.logger.debug(loc["url"] + " unable to reach: HTTP" + str(req.status_code))
 
-		return dl_locations[0] # return the first if none could be found.
+		return dl_locations[0]  # return the first if none could be found.
 
-	def get_best_mirror(self,data): #returns the best online mirror of a file, and its hash.
+	def get_best_mirror(self, packageName, data):  # returns the best online mirror of a file, and its hash.
 		if "url" in data:
 			self.logger.warning("Package has the old URL format, please update it.")
-			return { "url" : data["url"], "hashes" : [] }
+			return {"url": data["url"], "hashes": []}
 		elif "download_locations" not in data:
-			raise Exception("download_locations not specificed for package: " + name)
+			raise Exception("download_locations not specificed for package: " + packageName)
 		else:
 			if not len(data["download_locations"]) >= 1:
-				raise Exception("download_locations is empty for package: " + name)
+				raise Exception("download_locations is empty for package: " + packageName)
 			if "url" not in data["download_locations"][0]:
-				raise Exception("download_location #1 of package '%s' has no url specified" % (name))
+				raise Exception("download_location #1 of package '%s' has no url specified" % (packageName))
 
 			return self.check_mirrors(data["download_locations"])
 
-	def get_primary_package_url(self,data): # returns the URL of the first download_locations entry from a package, unlike get_best_mirror this one ignores the old url format
-		if "url" in data:
+	def get_primary_package_url(self, packageData, packageName):  # returns the URL of the first download_locations entry from a package, unlike get_best_mirror this one ignores the old url format
+		if "url" in packageData:
 			self.logger.debug("Package has the old URL format, please update it.")
-			return data["url"]
-		elif "download_locations" not in data:
-			raise Exception("download_locations not specificed")
+			return packageData["url"]
+		elif "download_locations" not in packageData:
+			raise Exception("download_locations in package '%s' not specificed" % (packageName))
 		else:
-			if not len(data["download_locations"]) >= 1:
+			if not len(packageData["download_locations"]) >= 1:
 				raise Exception("download_locations is empty for package")
-			if "url" not in data["download_locations"][0]:
+			if "url" not in packageData["download_locations"][0]:
 				raise Exception("download_location #1 of package has no url specified")
-			return data["download_locations"][0]["url"] #TODO: do not assume correct format
+			return packageData["download_locations"][0]["url"]  # TODO: do not assume correct format
 	#:
 
-	def get_thing_path(self,name,data,type): # type = PRODUCT or DEPENDENCY
+	def get_thing_path(self, packageName, packageData, type):  # type = PRODUCT or DEPENDENCY
 		outPath = os.getcwd()
 		workDir = None
 		renameFolder = None
-		if 'rename_folder' in data:
-			if data['rename_folder'] != None:
-				renameFolder = data['rename_folder']
+		if 'rename_folder' in packageData:
+			if packageData['rename_folder'] is not None:
+				renameFolder = packageData['rename_folder']
 		if type == "P":
-			outPath = os.path.join(outPath,self.bitnessDir + "_products")
+			outPath = os.path.join(outPath, self.bitnessDir + "_products")
 			self.cchdir(self.bitnessDir + "_products")
 		else:
-			outPath = os.path.join(outPath,self.bitnessDir)
+			outPath = os.path.join(outPath, self.bitnessDir)
 			self.cchdir(self.bitnessDir)
 
-		if data["repo_type"] == "git":
-			branch     = self.getValueOrNone(data,'branch')
-			recursive  = self.getValueOrNone(data,'recursive_git')
-			folderName = self.getValueOrNone(data,'folder_name')
+		if packageData["repo_type"] == "git":
+			branch = self.getValueOrNone(packageData, 'branch')
+			recursive = self.getValueOrNone(packageData, 'recursive_git')
+			folderName = self.getValueOrNone(packageData, 'folder_name')
 			doNotUpdate = False
-			if 'do_not_git_update' in data:
-				if data['do_not_git_update'] == True:
-					doNotUpdate=True
-			workDir    = self.git_clone(self.get_primary_package_url(data),folderName,renameFolder,branch,recursive,doNotUpdate)
-		if data["repo_type"] == "svn":
-			workDir = self.svn_clone(self.get_primary_package_url(data),data["folder_name"],renameFolder)
-		if data['repo_type'] == 'mercurial':
-			branch = self.getValueOrNone(data,'branch')
-			workDir = self.mercurial_clone(self.get_primary_package_url(data),self.getValueOrNone(data,'folder_name'),renameFolder,branch)
-		if data["repo_type"] == "archive":
-			if "folder_name" in data:
-				workDir = self.download_unpack_file(data,data["folder_name"],workDir)
+			if 'do_not_git_update' in packageData:
+				if packageData['do_not_git_update'] is True:
+					doNotUpdate = True
+			workDir = self.git_clone(self.get_primary_package_url(packageData, packageName), folderName, renameFolder, branch, recursive, doNotUpdate)
+		if packageData["repo_type"] == "svn":
+			workDir = self.svn_clone(self.get_primary_package_url(packageData, packageName), packageData["folder_name"], renameFolder)
+		if packageData['repo_type'] == 'mercurial':
+			branch = self.getValueOrNone(packageData, 'branch')
+			workDir = self.mercurial_clone(self.get_primary_package_url(packageData, packageName), self.getValueOrNone(packageData, 'folder_name'), renameFolder, branch)
+		if packageData["repo_type"] == "archive":
+			if "folder_name" in packageData:
+				workDir = self.download_unpack_file(packageData, packageName, packageData["folder_name"], workDir)
 			else:
-				workDir = self.download_unpack_file(data,None,workDir)
+				workDir = self.download_unpack_file(packageData, packageName, None, workDir)
 
-		if workDir == None:
-			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
+		if workDir is None:
+			print("Unexpected error when building {0}, please report this:".format(packageName), sys.exc_info()[0])
 			raise
 
-		if 'rename_folder' in data: # this should be moved inside the download functions, TODO.. but lazy
-			if data['rename_folder'] != None:
-				if not os.path.isdir(data['rename_folder']):
-					shutil.move(workDir, data['rename_folder'])
-				workDir = data['rename_folder']
+		if 'rename_folder' in packageData:  # this should be moved inside the download functions, TODO.. but lazy
+			if packageData['rename_folder'] is not None:
+				if not os.path.isdir(packageData['rename_folder']):
+					shutil.move(workDir, packageData['rename_folder'])
+				workDir = packageData['rename_folder']
 		self.cchdir("..")
-		return os.path.join(outPath,workDir)
+		return os.path.join(outPath, workDir)
 
-	def build_thing(self,name,data,type,force_rebuild = False, skipDepends = False): # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
-		#we are in workdir
-		if '_already_built' in data:
-			if data['_already_built'] == True:
+	def build_thing(self, packageName, packageData, type, force_rebuild=False, skipDepends=False):  # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
+		# we are in workdir
+		if '_already_built' in packageData:
+			if packageData['_already_built'] is True:
 				return
-		if 'skip_deps' in data:
-			if data['skip_deps'] == True:
+		if 'skip_deps' in packageData:
+			if packageData['skip_deps'] is True:
 				skipDepends = True
-		if "depends_on" in data and skipDepends == False: #dependception
-			if len(data["depends_on"])>0:
-				self.logger.info("Building dependencies of '%s'" % (name))
-				for libraryName in data["depends_on"]:
+		if "depends_on" in packageData and skipDepends is False:  # dependception
+			if len(packageData["depends_on"]) > 0:
+				self.logger.info("Building dependencies of '%s'" % (packageName))
+				for libraryName in packageData["depends_on"]:
 					if libraryName not in self.packages["deps"]:
-						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format( libraryName, name)) #sys.exc_info()[0]
+						raise MissingDependency("The dependency '{0}' of '{1}' does not exist in dependency config.".format(libraryName, packageName))  # sys.exc_info()[0]
 					else:
-						self.build_thing(libraryName,self.packages["deps"][libraryName],"DEPENDENCY")
-		
-		if 'is_dep_inheriter' in data:
-			if data['is_dep_inheriter'] == True:
+						self.build_thing(libraryName, self.packages["deps"][libraryName], "DEPENDENCY")
+
+		if 'is_dep_inheriter' in packageData:
+			if packageData['is_dep_inheriter'] is True:
 				if type == "PRODUCT":
-					self.packages["prods"][name]["_already_built"] = True
+					self.packages["prods"][packageName]["_already_built"] = True
 				else:
-					self.packages["deps"][name]["_already_built"] = True
-				
+					self.packages["deps"][packageName]["_already_built"] = True
+
 				return
-				
+
 		if self.debugMode:
-			print("### Environment variables: ###")
+			print("### Environment variables:  ###")
 			for tk in os.environ:
 				print("\t" + tk + " : " + os.environ[tk])
 			print("##############################")
 
-		self.logger.info("Building {0} '{1}'".format(type.lower(),name))
+		self.logger.info("Building {0} '{1}'".format(type.lower(), packageName))
 		self.defaultCFLAGS()
 
-		if 'warnings' in data:
-			if len(data['warnings']) > 0:
-				for w in data['warnings']:
+		if 'warnings' in packageData:
+			if len(packageData['warnings']) > 0:
+				for w in packageData['warnings']:
 					self.logger.warning(w)
 
 		workDir = None
 		renameFolder = None
-		if 'rename_folder' in data:
-			if data['rename_folder'] != None:
-				renameFolder = data['rename_folder']
+		if 'rename_folder' in packageData:
+			if packageData['rename_folder'] is not None:
+				renameFolder = packageData['rename_folder']
 
 		if type == "PRODUCT":
-			self.cchdir(self.bitnessDir + "_products") #descend into x86_64_products
+			self.cchdir(self.bitnessDir + "_products")  # descend into x86_64_products
 		else:
-			self.cchdir(self.bitnessDir) #descend into x86_64
+			self.cchdir(self.bitnessDir)  # descend into x86_64
 
-		if data["repo_type"] == "git":
-			branch     = self.getValueOrNone(data,'branch')
-			recursive  = self.getValueOrNone(data,'recursive_git')
-			folderName = self.getValueOrNone(data,'folder_name')
+		if packageData["repo_type"] == "git":
+			branch = self.getValueOrNone(packageData, 'branch')
+			recursive = self.getValueOrNone(packageData, 'recursive_git')
+			folderName = self.getValueOrNone(packageData, 'folder_name')
 			doNotUpdate = False
-			if 'do_not_git_update' in data:
-				if data['do_not_git_update'] == True:
-					doNotUpdate=True
+			if 'do_not_git_update' in packageData:
+				if packageData['do_not_git_update'] is True:
+					doNotUpdate is True
 			desiredPRVal = None
-			if 'desired_pr_id' in data:
-				if data['desired_pr_id'] != None:
-					desiredPRVal = data['desired_pr_id']
-			workDir = self.git_clone(self.get_primary_package_url(data),folderName,renameFolder,branch,recursive,doNotUpdate,desiredPR=desiredPRVal)
-		elif data["repo_type"] == "svn":
-			workDir = self.svn_clone(self.get_primary_package_url(data),data["folder_name"],renameFolder)
-		elif data['repo_type'] == 'mercurial':
-			branch = self.getValueOrNone(data,'branch')
-			workDir = self.mercurial_clone(self.get_primary_package_url(data),self.getValueOrNone(data,'folder_name'),renameFolder,branch)
-		elif data["repo_type"] == "archive":
-			if "folder_name" in data:
-				workDir = self.download_unpack_file(data,data["folder_name"],workDir)
+			if 'desired_pr_id' in packageData:
+				if packageData['desired_pr_id'] is not None:
+					desiredPRVal = packageData['desired_pr_id']
+			workDir = self.git_clone(self.get_primary_package_url(packageData, packageName), folderName, renameFolder, branch, recursive, doNotUpdate, desiredPR=desiredPRVal)
+		elif packageData["repo_type"] == "svn":
+			workDir = self.svn_clone(self.get_primary_package_url(packageData, packageName), packageData["folder_name"], renameFolder)
+		elif packageData['repo_type'] == 'mercurial':
+			branch = self.getValueOrNone(packageData, 'branch')
+			workDir = self.mercurial_clone(self.get_primary_package_url(packageData, packageName), self.getValueOrNone(packageData, 'folder_name'), renameFolder, branch)
+		elif packageData["repo_type"] == "archive":
+			if "folder_name" in packageData:
+				workDir = self.download_unpack_file(packageData, packageName, packageData["folder_name"], workDir)
 			else:
-				workDir = self.download_unpack_file(data,None,workDir)
-		elif data["repo_type"] == "none":
-			if "folder_name" in data:
-				workDir = data["folder_name"]
+				workDir = self.download_unpack_file(packageData, packageName, None, workDir)
+		elif packageData["repo_type"] == "none":
+			if "folder_name" in packageData:
+				workDir = packageData["folder_name"]
 				os.makedirs(workDir, exist_ok=True)
 			else:
 				print("Error: When using repo_type 'none' you have to set folder_name as well.")
 				exit(1)
 
-		if workDir == None:
-			print("Unexpected error when building {0}, please report this:".format(name), sys.exc_info()[0])
+		if workDir is None:
+			print("Unexpected error when building {0}, please report this:".format(packageName), sys.exc_info()[0])
 			raise
 
-		if 'rename_folder' in data: # this should be moved inside the download functions, TODO.. but lazy
-			if data['rename_folder'] != None:
-				if not os.path.isdir(data['rename_folder']):
-					shutil.move(workDir, data['rename_folder'])
-				workDir = data['rename_folder']
+		if 'rename_folder' in packageData:  # this should be moved inside the download functions, TODO.. but lazy
+			if packageData['rename_folder'] is not None:
+				if not os.path.isdir(packageData['rename_folder']):
+					shutil.move(workDir, packageData['rename_folder'])
+				workDir = packageData['rename_folder']
 
-		if 'download_header' in data:
-			if data['download_header'] != None:
-				for h in data['download_header']:
+		if 'download_header' in packageData:
+			if packageData['download_header'] is not None:
+				for h in packageData['download_header']:
 					self.downloadHeader(h)
 
-		self.cchdir(workDir) #descend into x86_64/[DEPENDENCY_OR_PRODUCT_FOLDER]
-		if 'debug_downloadonly' in data:
+		self.cchdir(workDir)  # descend into x86_64/[DEPENDENCY_OR_PRODUCT_FOLDER]
+		if 'debug_downloadonly' in packageData:
 			self.cchdir("..")
 			exit()
 
-		oldPath = self.getKeyOrBlankString(os.environ,"PATH")
+		oldPath = self.getKeyOrBlankString(os.environ, "PATH")
 		currentFullDir = os.getcwd()
 
 		if not self.anyFileStartsWith('already_configured'):
-			if 'run_pre_patch' in data:
-				if data['run_pre_patch'] != None:
-					for cmd in data['run_pre_patch']:
+			if 'run_pre_patch' in packageData:
+				if packageData['run_pre_patch'] is not None:
+					for cmd in packageData['run_pre_patch']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.debug("Running pre-patch-command: '{0}'".format( cmd ))
+						self.logger.debug("Running pre-patch-command: '{0}'".format(cmd))
 						self.run_process(cmd)
-						
+
 		if force_rebuild:
 			if os.path.isdir(".git"):
-				self.run_process('git clean -ffdx') #https://gist.github.com/nicktoumpelis/11214362
+				self.run_process('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
 				self.run_process('git submodule foreach --recursive git clean -ffdx')
 				self.run_process('git reset --hard')
 				self.run_process('git submodule foreach --recursive git reset --hard')
 				self.run_process('git submodule update --init --recursive')
 
-		if 'source_subfolder' in data:
-			if data['source_subfolder'] != None:
-				if not os.path.isdir(data['source_subfolder']):
-					os.makedirs(data['source_subfolder'], exist_ok=True)
-				self.cchdir(data['source_subfolder'])
+		if 'source_subfolder' in packageData:
+			if packageData['source_subfolder'] is not None:
+				if not os.path.isdir(packageData['source_subfolder']):
+					os.makedirs(packageData['source_subfolder'], exist_ok=True)
+				self.cchdir(packageData['source_subfolder'])
 
 		if force_rebuild:
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
 
-		if 'debug_confighelp_and_exit' in data:
-			if data['debug_confighelp_and_exit'] == True:
+		if 'debug_confighelp_and_exit' in packageData:
+			if packageData['debug_confighelp_and_exit'] is True:
 				self.bootstrap_configure()
 				self.run_process("./configure --help")
 				exit()
 
-		if 'cflag_addition' in data:
-			if data['cflag_addition'] != None:
-				self.logger.debug("Adding '{0}' to CFLAGS".format( data['cflag_addition'] ))
-				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + data['cflag_addition']
-				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + data['cflag_addition']
+		if 'cflag_addition' in packageData:
+			if packageData['cflag_addition'] is not None:
+				self.logger.debug("Adding '{0}' to CFLAGS".format(packageData['cflag_addition']))
+				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + packageData['cflag_addition']
+				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + packageData['cflag_addition']
 
-		if 'custom_cflag' in data:
-			if data['custom_cflag'] != None:
-				self.logger.debug("Setting CFLAGS to '{0}'".format( data['custom_cflag'] ))
-				os.environ["CFLAGS"] = data['custom_cflag']
-				os.environ["CXXFLAGS"] = data['custom_cflag']
+		if 'custom_cflag' in packageData:
+			if packageData['custom_cflag'] is not None:
+				self.logger.debug("Setting CFLAGS to '{0}'".format(packageData['custom_cflag']))
+				os.environ["CFLAGS"] = packageData['custom_cflag']
+				os.environ["CXXFLAGS"] = packageData['custom_cflag']
 
-		if 'custom_path' in data:
-			if data['custom_path'] != None:
-				self.logger.debug("Setting PATH to '{0}'".format( self.replaceVariables(data['custom_path']) ))
-				os.environ["PATH"] = self.replaceVariables(data['custom_path'])
+		if 'custom_path' in packageData:
+			if packageData['custom_path'] is not None:
+				self.logger.debug("Setting PATH to '{0}'".format(self.replaceVariables(packageData['custom_path'])))
+				os.environ["PATH"] = self.replaceVariables(packageData['custom_path'])
 
-		if 'flipped_path' in data:
-			if data['flipped_path'] == True:
+		if 'flipped_path' in packageData:
+			if packageData['flipped_path'] is True:
 				bef = os.environ["PATH"]
-				os.environ["PATH"] = "{0}:{1}:{2}".format ( self.mingwBinpath, os.path.join(self.targetPrefix,'bin'), self.originalPATH ) #todo properly test this..
-				self.logger.debug("Flipping path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
+				os.environ["PATH"] = "{0}:{1}:{2}".format(self.mingwBinpath, os.path.join(self.targetPrefix, 'bin'), self.originalPATH)  # todo properly test this..
+				self.logger.debug("Flipping path to: '{0}' from '{1}'".format(bef, os.environ["PATH"]))
 
-		if 'env_exports' in data:
-			if data['env_exports'] != None:
-				for key,val in data['env_exports'].items():
+		if 'env_exports' in packageData:
+			if packageData['env_exports'] is not None:
+				for key, val in packageData['env_exports'].items():
 					val = self.replaceVariables(val)
 					prevEnv = ''
 					if key in os.environ:
 						prevEnv = os.environ[key]
-					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format( key, prevEnv, val ))
+					self.logger.debug("Environment variable '{0}' has been set from {1} to '{2}'".format(key, prevEnv, val))
 					os.environ[key] = val
 
-		if 'copy_over' in data and data['copy_over'] != None:
-			for f in data['copy_over']:
+		if 'copy_over' in packageData and packageData['copy_over'] is not None:
+			for f in packageData['copy_over']:
 				f_formatted = self.replaceVariables(f)
 				f_formatted = pathlib.Path(f_formatted)
 				if not f_formatted.is_file():
-					self.errorExit("Copy-over file '%s' (Unformatted: '%s') does not exist." % (f_formatted,f))
-				dst = os.path.join(currentFullDir,f_formatted.name)
-				self.logger.info("Copying file over from '%s' to '%s'" % (f_formatted,dst))
+					self.errorExit("Copy-over file '%s' (Unformatted: '%s') does not exist." % (f_formatted, f))
+				dst = os.path.join(currentFullDir, f_formatted.name)
+				self.logger.info("Copying file over from '%s' to '%s'" % (f_formatted, dst))
 				shutil.copyfile(f_formatted, dst)
 
-		if 'patches' in data:
-			if data['patches'] != None:
-				for p in data['patches']:
-					self.apply_patch(p[0],p[1],False,self.getValueByIntOrNone(p,2))
+		if 'patches' in packageData:
+			if packageData['patches'] is not None:
+				for p in packageData['patches']:
+					self.apply_patch(p[0], p[1], False, self.getValueByIntOrNone(p, 2))
 
 		if not self.anyFileStartsWith('already_ran_make'):
-			if 'run_post_patch' in data:
-				if data['run_post_patch'] != None:
-					for cmd in data['run_post_patch']:
+			if 'run_post_patch' in packageData:
+				if packageData['run_post_patch'] is not None:
+					for cmd in packageData['run_post_patch']:
 						ignoreFail = False
-						if isinstance(cmd,tuple):
+						if isinstance(cmd, tuple):
 							cmd = cmd[0]
 							ignoreFail = cmd[1]
 						if cmd.startswith("!SWITCHDIRBACK"):
@@ -1766,112 +1779,112 @@ class CrossCompileScript:
 							self.cchdir(_dir)
 						else:
 							cmd = self.replaceVariables(cmd)
-							self.logger.info("Running post-patch-command: '{0}'".format( cmd ))
+							self.logger.info("Running post-patch-command: '{0}'".format(cmd))
 							# self.run_process(cmd)
-							self.run_process(cmd,ignoreFail)
+							self.run_process(cmd, ignoreFail)
 
 		conf_system = "autoconf"
 		build_system = "make"
-		
+
 		# conf_system_specifics = {
-			# "gnumake_based_systems" : [ "cmake", "autoconf" ],
-			# "ninja_based_systems" : [ "meson" ]
+		# 	"gnumake_based_systems" : [ "cmake", "autoconf" ],
+		# 	"ninja_based_systems" : [ "meson" ]
 		# }
-		
-		if 'build_system' in data:                 # Kinda redundant, but ill keep it for now, maybe add an alias system for this.
-			if data['build_system'] == "ninja":    #
-				build_system = "ninja"             #
-			if data['build_system'] == "waf":      #
-				build_system = "waf"               #
-			if data['build_system'] == "rake":     #
-				build_system = "rake"              #
-		if 'conf_system' in data:                  #
-			if data['conf_system'] == "cmake":     #
-				conf_system = "cmake"              #
-			elif data['conf_system'] == "meson":   #
-				conf_system = "meson"              #
-			elif data['conf_system'] == "waf":     #
-				conf_system = "waf"                #
-			
+
+		if 'build_system' in packageData:  # Kinda redundant, but ill keep it for now, maybe add an alias system for this.
+			if packageData['build_system'] == "ninja":
+				build_system = "ninja"
+			if packageData['build_system'] == "waf":
+				build_system = "waf"
+			if packageData['build_system'] == "rake":
+				build_system = "rake"
+		if 'conf_system' in packageData:
+			if packageData['conf_system'] == "cmake":
+				conf_system = "cmake"
+			elif packageData['conf_system'] == "meson":
+				conf_system = "meson"
+			elif packageData['conf_system'] == "waf":
+				conf_system = "waf"
+
 		needs_conf = True
-			
-		if 'needs_configure' in data:
-			if data['needs_configure'] == False:
+
+		if 'needs_configure' in packageData:
+			if packageData['needs_configure'] is False:
 				needs_conf = False
-		
+
 		if needs_conf:
 			if conf_system == "cmake":
-				self.cmake_source(name,data)
+				self.cmake_source(packageName, packageData)
 			elif conf_system == "meson":
 				self.create_meson_environment_file()
-				self.meson_source(name,data)
+				self.meson_source(packageName, packageData)
 			else:
-				self.configure_source(name,data,conf_system)
+				self.configure_source(packageName, packageData, conf_system)
 
-		if 'patches_post_configure' in data:
-			if data['patches_post_configure'] != None:
-				for p in data['patches_post_configure']:
-					self.apply_patch(p[0],p[1],True)
+		if 'patches_post_configure' in packageData:
+			if packageData['patches_post_configure'] is not None:
+				for p in packageData['patches_post_configure']:
+					self.apply_patch(p[0], p[1], True)
 
-		if 'make_subdir' in data:
-			if data['make_subdir'] != None:
-				if not os.path.isdir(data['make_subdir']):
-					os.makedirs(data['make_subdir'], exist_ok=True)
-				self.cchdir(data['make_subdir'])
+		if 'make_subdir' in packageData:
+			if packageData['make_subdir'] is not None:
+				if not os.path.isdir(packageData['make_subdir']):
+					os.makedirs(packageData['make_subdir'], exist_ok=True)
+				self.cchdir(packageData['make_subdir'])
 
-		if 'needs_make' in data:
-			if data['needs_make'] == True:
-				self.build_source(name,data,build_system)
+		if 'needs_make' in packageData:
+			if packageData['needs_make'] is True:
+				self.build_source(packageName, packageData, build_system)
 		else:
-			self.build_source(name,data,build_system)
-		
-		if 'needs_make_install' in data:
-			if data['needs_make_install'] == True:
-				self.install_source(name,data,build_system)
+			self.build_source(packageName, packageData, build_system)
+
+		if 'needs_make_install' in packageData:
+			if packageData['needs_make_install'] is True:
+				self.install_source(packageName, packageData, build_system)
 		else:
-			self.install_source(name,data,build_system)
+			self.install_source(packageName, packageData, build_system)
 
-
-		if 'env_exports' in data:
-			if data['env_exports'] != None:
-				for key,val in data['env_exports'].items():
-					self.logger.debug("Environment variable '{0}' has been UNSET!".format( key, val ))
+		if 'env_exports' in packageData:
+			if packageData['env_exports'] is not None:
+				for key, val in packageData['env_exports'].items():
+					self.logger.debug("Environment variable '{0}' has been UNSET!".format(key, val))
 					del os.environ[key]
 
-		if 'flipped_path' in data:
-			if data['flipped_path'] == True:
-				bef = os.environ["PATH"]
-				os.environ["PATH"] = "{0}:{1}".format ( self.mingwBinpath, self.originalPATH )
-				self.logger.debug("Resetting flipped path to: '{0}' from '{1}'".format(bef,os.environ["PATH"]))
+		if 'flipped_path' in packageData:
+			if packageData['flipped_path'] is True:
+				_path = os.environ["PATH"]
+				os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
+				self.logger.debug("Resetting flipped path to: '{0}' from '{1}'".format(_path, os.environ["PATH"]))
 
-		if 'source_subfolder' in data:
-			if data['source_subfolder'] != None:
-				if not os.path.isdir(data['source_subfolder']):
-					os.makedirs(data['source_subfolder'], exist_ok=True)
+		if 'source_subfolder' in packageData:
+			if packageData['source_subfolder'] is not None:
+				if not os.path.isdir(packageData['source_subfolder']):
+					os.makedirs(packageData['source_subfolder'], exist_ok=True)
 				self.cchdir(currentFullDir)
 
-		if 'make_subdir' in data:
-			if data['make_subdir'] != None:
+		if 'make_subdir' in packageData:
+			if packageData['make_subdir'] is not None:
 				self.cchdir(currentFullDir)
 
-		self.cchdir("..") #asecond into x86_64
+		self.cchdir("..")  # asecond into x86_64
 		if type == "PRODUCT":
-			self.packages["prods"][name]["_already_built"] = True
+			self.packages["prods"][packageName]["_already_built"] = True
 		else:
-			self.packages["deps"][name]["_already_built"] = True
+			self.packages["deps"][packageName]["_already_built"] = True
 
-		self.logger.info("Building {0} '{1}': Done!".format(type.lower(),name))
-		if 'debug_exitafter' in data:
+		self.logger.info("Building {0} '{1}': Done!".format(type.lower(), packageName))
+		if 'debug_exitafter' in packageData:
 			exit()
 
-		if 'custom_path' in data:
-			if data['custom_path'] != None:
-				self.logger.debug("Re-setting PATH to '{0}'".format( oldPath ))
+		if 'custom_path' in packageData:
+			if packageData['custom_path'] is not None:
+				self.logger.debug("Re-setting PATH to '{0}'".format(oldPath))
 				os.environ["PATH"] = oldPath
 
 		self.defaultCFLAGS()
-		self.cchdir("..") #asecond into workdir
+		self.cchdir("..")  # asecond into workdir
 	#:
+
 	def bootstrap_configure(self):
 		if not os.path.isfile("configure"):
 			if os.path.isfile("bootstrap.sh"):
@@ -1887,18 +1900,18 @@ class CrossCompileScript:
 			elif os.path.isfile("configure.ac"):
 				self.run_process('autoreconf -fiv')
 
-	def configure_source(self,name,data,conf_system):
-		touch_name = "already_configured_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
-		
+	def configure_source(self, name, data, conf_system):
+		touch_name = "already_configured_%s" % (self.md5(name, self.getKeyOrBlankString(data, "configure_options")))
+
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
 			self.removeConfigPatchDoneFiles()
 
 			doBootStrap = True
 			if 'do_not_bootstrap' in data:
-				if data['do_not_bootstrap'] == True:
+				if data['do_not_bootstrap'] is True:
 					doBootStrap = False
-			
+
 			if doBootStrap:
 				if conf_system == "waf":
 					if not os.path.isfile("waf"):
@@ -1910,48 +1923,48 @@ class CrossCompileScript:
 			configOpts = ''
 			if 'configure_options' in data:
 				configOpts = self.replaceVariables(data["configure_options"])
-			self.logger.info("Configuring '{0}' with: {1}".format(name, configOpts ),extra={'type': conf_system})
+			self.logger.info("Configuring '{0}' with: {1}".format(name, configOpts), extra={'type': conf_system})
 
 			confCmd = './configure'
 			if conf_system == "waf":
 				confCmd = './waf --color=yes configure'
 			elif 'configure_path' in data:
-				if data['configure_path'] != None:
+				if data['configure_path'] is not None:
 					confCmd = data['configure_path']
 
 			self.run_process('{0} {1}'.format(confCmd, configOpts))
 
 			if 'run_post_configure' in data:
-				if data['run_post_configure'] != None:
+				if data['run_post_configure'] is not None:
 					for cmd in data['run_post_configure']:
 						cmd = self.replaceVariables(cmd)
-						self.logger.info("Running post-configure-command: '{0}'".format( cmd ))
+						self.logger.info("Running post-configure-command: '{0}'".format(cmd))
 						self.run_process(cmd)
 
 			doClean = True
 			if 'clean_post_configure' in data:
-				if data['clean_post_configure'] == False:
+				if data['clean_post_configure'] is False:
 					doClean = False
 
 			if doClean:
 				mCleanCmd = 'make clean'
 				if conf_system == "waf":
 					mCleanCmd = './waf --color=yes clean'
-				self.run_process('{0} -j {1}'.format( mCleanCmd, self.cpuCount ),True)
+				self.run_process('{0} -j {1}'.format(mCleanCmd, self.cpuCount), True)
 
 			self.touch(touch_name)
 
-	def apply_patch( self, url, type = "-p1", postConf = False, folderToPatchIn = None):
-	
+	def apply_patch(self, url, type="-p1", postConf=False, folderToPatchIn=None):
+
 		originalFolder = os.getcwd()
-		if folderToPatchIn != None:
+		if folderToPatchIn is not None:
 			self.cchdir(folderToPatchIn)
-			self.logger.info("Moving to patch folder: {0}" .format( os.getcwd() ))
-			
-		self.logger.debug("Applying patch '{0}' in '{1}'" .format( url, os.getcwd() ))
-			
+			self.logger.info("Moving to patch folder: {0}" .format(os.getcwd()))
+
+		self.logger.debug("Applying patch '{0}' in '{1}'" .format(url, os.getcwd()))
+
 		patch_touch_name = "patch_%s.done" % (self.md5(url))
-		
+
 		ignoreErr = False
 		exitOn = True
 		ignore = ""
@@ -1961,43 +1974,43 @@ class CrossCompileScript:
 			ignore = "-N "
 			ignoreErr = True
 			exitOn = False
-		
+
 		if os.path.isfile(patch_touch_name):
-			self.logger.debug("Patch '{0}' already applied".format( url ))
+			self.logger.debug("Patch '{0}' already applied".format(url))
 			self.cchdir(originalFolder)
 			return
 
 		pUrl = urlparse(url)
 		if pUrl.scheme != '':
 			fileName = os.path.basename(pUrl.path)
-			self.logger.info("Downloading patch '{0}' to: {1}".format( url, fileName ))
-			self.download_file(url,fileName)
+			self.logger.info("Downloading patch '{0}' to: {1}".format(url, fileName))
+			self.download_file(url, fileName)
 		else:
-			local_patch_path = os.path.join(self.fullPatchDir,url)
+			local_patch_path = os.path.join(self.fullPatchDir, url)
 			fileName = os.path.basename(pathlib.Path(local_patch_path).name)
 			if os.path.isfile(local_patch_path):
-				copyPath = os.path.join(os.getcwd(),fileName)
-				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path,copyPath))
-				shutil.copyfile(local_patch_path,copyPath)
+				copyPath = os.path.join(os.getcwd(), fileName)
+				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path, copyPath))
+				shutil.copyfile(local_patch_path, copyPath)
 			else:
 				fileName = os.path.basename(urlparse(url).path)
 				url = "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches" + url
-				self.download_file(url,fileName)
+				self.download_file(url, fileName)
 
-		self.logger.info("Patching source using: '{0}'".format( fileName ))
-		self.run_process('patch {2}{0} < "{1}"'.format(type, fileName, ignore ),ignoreErr,exitOn)
-		
+		self.logger.info("Patching source using: '{0}'".format(fileName))
+		self.run_process('patch {2}{0} < "{1}"'.format(type, fileName, ignore), ignoreErr, exitOn)
+
 		if not postConf:
 			self.removeAlreadyFiles()
-			
+
 		self.touch(patch_touch_name)
-			
-		if folderToPatchIn != None:
+
+		if folderToPatchIn is not None:
 			self.cchdir(originalFolder)
 	#:
-	
-	def meson_source(self,name,data):
-		touch_name = "already_ran_meson_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options	")))
+
+	def meson_source(self, name, data):
+		touch_name = "already_ran_meson_%s" % (self.md5(name, self.getKeyOrBlankString(data, "configure_options	")))
 
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
@@ -2005,14 +2018,14 @@ class CrossCompileScript:
 			makeOpts = ''
 			if 'configure_options' in data:
 				makeOpts = self.replaceVariables(data["configure_options"])
-			self.logger.info("Meson'ing '{0}' with: {1}".format( name, makeOpts ))
+			self.logger.info("Meson'ing '{0}' with: {1}".format(name, makeOpts))
 
-			self.run_process('meson {0}'.format( makeOpts ))
+			self.run_process('meson {0}'.format(makeOpts))
 
 			self.touch(touch_name)
 
-	def cmake_source(self,name,data):
-		touch_name = "already_ran_cmake_%s" % (self.md5(name,self.getKeyOrBlankString(data,"configure_options")))
+	def cmake_source(self, name, data):
+		touch_name = "already_ran_cmake_%s" % (self.md5(name, self.getKeyOrBlankString(data, "configure_options")))
 
 		if not os.path.isfile(touch_name):
 			self.removeAlreadyFiles()
@@ -2020,68 +2033,68 @@ class CrossCompileScript:
 			makeOpts = ''
 			if 'configure_options' in data:
 				makeOpts = self.replaceVariables(data["configure_options"])
-			self.logger.info("C-Making '{0}' with: {1}".format( name, makeOpts ))
+			self.logger.info("C-Making '{0}' with: {1}".format(name, makeOpts))
 
-			self.run_process('cmake {0}'.format( makeOpts ))
+			self.run_process('cmake {0}'.format(makeOpts))
 
-			self.run_process("make clean",True)
+			self.run_process("make clean", True)
 
 			self.touch(touch_name)
 
-	def build_source(self,name,data,build_system):
+	def build_source(self, name, data, build_system):
 		_origDir = os.getcwd()
-		touch_name = "already_ran_make_%s" % (self.md5(name,self.getKeyOrBlankString(data,"build_options")))
+		touch_name = "already_ran_make_%s" % (self.md5(name, self.getKeyOrBlankString(data, "build_options")))
 		if not os.path.isfile(touch_name):
 			mkCmd = 'make'
-			
+
 			if build_system == "waf":
 				mkCmd = './waf --color=yes'
 			if build_system == "rake":
 				mkCmd = 'rake'
 			if build_system == "ninja":
 				mkCmd = 'ninja'
-			
+
 			if build_system == "make":
 				if os.path.isfile("configure"):
-					self.run_process('{0} clean -j {1}'.format( mkCmd, self.cpuCount ),True)
+					self.run_process('{0} clean {1}'.format(mkCmd, self.cpuCount), True)
 
 			makeOpts = ''
 			if 'build_options' in data:
 				makeOpts = self.replaceVariables(data["build_options"])
-				
+
 			if self.debugMode:
-				print("### Environment variables: ###")
+				print("### Environment variables:  ###")
 				for tk in os.environ:
 					print("\t" + tk + " : " + os.environ[tk])
 				print("##############################")
 
-			self.logger.info("Building '{0}' with: {1} in {2}".format(name, makeOpts, os.getcwd()),extra={'type': build_system})
+			self.logger.info("Building '{0}' with: {1} in {2}".format(name, makeOpts, os.getcwd()), extra={'type': build_system})
 
 			cpcnt = '-j {0}'.format(self.cpuCount)
 
 			if 'cpu_count' in data:
-				if data['cpu_count'] != None:
+				if data['cpu_count'] is None:
 					cpcnt = ""
 
 			if 'ignore_build_fail_and_run' in data:
-				if len(data['ignore_build_fail_and_run']) > 0: #todo check if its a list too
+				if len(data['ignore_build_fail_and_run']) > 0:  # todo check if its a list too
 					try:
 						if build_system == "waf":
 							mkCmd = './waf --color=yes build'
-						self.run_process('{0} {2} {1}'.format( mkCmd, cpcnt, makeOpts ))
-					except Exception as e:
+						self.run_process('{0} {2} {1}'.format(mkCmd, cpcnt, makeOpts))
+					except Exception:  # todo, except specific exception
 						self.logger.info("Ignoring failed make process...")
 						for cmd in data['ignore_build_fail_and_run']:
 							cmd = self.replaceVariables(cmd)
-							self.logger.info("Running post-failed-make-command: '{0}'".format( cmd ))
+							self.logger.info("Running post-failed-make-command: '{0}'".format(cmd))
 							self.run_process(cmd)
 			else:
 				if build_system == "waf":
 					mkCmd = './waf --color=yes build'
-				self.run_process('{0} {2} {1}'.format( mkCmd, cpcnt, makeOpts ))
+				self.run_process('{0} {2} {1}'.format(mkCmd, cpcnt, makeOpts))
 
 			if 'run_post_build' in data:
-				if data['run_post_build'] != None:
+				if data['run_post_build'] is not None:
 					for cmd in data['run_post_build']:
 						if cmd.startswith("!SWITCHDIRBACK"):
 							self.cchdir(_origDir)
@@ -2090,45 +2103,44 @@ class CrossCompileScript:
 							self.cchdir(_dir)
 						else:
 							cmd = self.replaceVariables(cmd)
-							self.logger.info("Running post-build-command: '{0}'".format( cmd ))
+							self.logger.info("Running post-build-command: '{0}'".format(cmd))
 							self.run_process(cmd)
 
 			self.touch(touch_name)
 
-	def install_source(self,name,data,build_system):
+	def install_source(self, name, data, build_system):
 		_origDir = os.getcwd()
-		touch_name = "already_ran_install_%s" % (self.md5(name,self.getKeyOrBlankString(data,"install_options")))
+		touch_name = "already_ran_install_%s" % (self.md5(name, self.getKeyOrBlankString(data, "install_options")))
 		if not os.path.isfile(touch_name):
 			cpcnt = '-j {0}'.format(self.cpuCount)
 
 			if 'cpu_count' in data:
-				if data['cpu_count'] != None:
+				if data['cpu_count'] is not None:
 					cpcnt = ""
 
-			makeInstallOpts  = ''
+			makeInstallOpts = ''
 			if 'install_options' in data:
-				if data['install_options'] != None:
+				if data['install_options'] is not None:
 					makeInstallOpts = self.replaceVariables(data["install_options"])
 			installTarget = "install"
 			if 'install_target' in data:
-				if data['install_target'] != None:
+				if data['install_target'] is not None:
 					installTarget = data['install_target']
 
-
-			self.logger.info("Installing '{0}' with: {1}".format(name, makeInstallOpts ),extra={'type': build_system})
+			self.logger.info("Installing '{0}' with: {1}".format(name, makeInstallOpts), extra={'type': build_system})
 
 			mkCmd = "make"
 			if build_system == "waf":
 				mkCmd = "./waf"
 			if build_system == "rake":
-				mkCmd = "rake"	
+				mkCmd = "rake"
 			if build_system == "ninja":
 				mkCmd = "ninja"
 
-			self.run_process('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt ))
+			self.run_process('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpcnt))
 
 			if 'run_post_install' in data:
-				if data['run_post_install'] != None:
+				if data['run_post_install'] is not None:
 					for cmd in data['run_post_install']:
 						if cmd.startswith("!SWITCHDIRBACK"):
 							self.cchdir(_origDir)
@@ -2137,20 +2149,20 @@ class CrossCompileScript:
 							self.cchdir(_dir)
 						else:
 							cmd = self.replaceVariables(cmd)
-							self.logger.info("Running post-install-command: '{0}'".format( cmd ))
+							self.logger.info("Running post-install-command: '{0}'".format(cmd))
 							self.run_process(cmd)
 
 			self.touch(touch_name)
 	#:
 
 	def defaultCFLAGS(self):
-		self.logger.debug("Reset CFLAGS/CXXFLAGS to: {0}".format( self.originalCflags ) )
+		self.logger.debug("Reset CFLAGS/CXXFLAGS to: {0}".format(self.originalCflags))
 		os.environ["CFLAGS"] = self.originalCflags
 		os.environ["CXXFLAGS"] = self.originalCflags
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
-	def anyFileStartsWith(self,wild):
+	def anyFileStartsWith(self, wild):
 		for file in os.listdir('.'):
 			if file.startswith(wild):
 				return True
@@ -2167,21 +2179,21 @@ class CrossCompileScript:
 		for af in glob.glob("./*.patch.done_past_conf"):
 			os.remove(af)
 	#:
-	def generateCflagString(self, prefix = ""):
+
+	def generateCflagString(self, prefix=""):
 		cfs = os.environ["CFLAGS"]
 		cfs = cfs.split(' ')
 		out = ''
 		if len(cfs) >= 1:
 			for c in cfs:
-				out+=prefix + c + ' '
+				out += prefix + c + ' '
 			out.rstrip(' ')
 			return out
 		return ''
 
-	def replaceVariables(self,cmd):
-
-		m = re.search(r'\!VAR\((.*)\)VAR!',cmd)
-		if m != None:
+	def replaceVariables(self, cmd):
+		m = re.search(r'\!VAR\((.*)\)VAR!', cmd)
+		if m is not None:
 			varName = m.groups()[0]
 			if varName in self.packages["vars"]:
 				cmdReplacer = self.packages["vars"][varName]
@@ -2189,76 +2201,78 @@ class CrossCompileScript:
 				cmd = mr
 
 		cmd = cmd.format(
-			cmake_prefix_options       = self.cmakePrefixOptions,
-			make_prefix_options        = self.makePrefixOptions,
-			pkg_config_path            = self.pkgConfigPath,
-			mingw_binpath              = self.mingwBinpath,
-			mingw_binpath2             = self.mingwBinpath2,
-			cross_prefix_bare          = self.bareCrossPrefix,
-			cross_prefix_full          = self.fullCrossPrefix,
-			target_prefix              = self.targetPrefix,
-			project_root               = self.fullCurrentPath,
-			inTreePrefix               = self.inTreePrefix,
-			offtree_prefix             = self.offtreePrefix,
-			target_host                = self.targetHost,
-			target_sub_prefix          = self.targetSubPrefix,
-			bit_name                   = self.bitnessDir,
-			bit_name2                  = self.bitnessDir2,
-			bit_name3                  = self.bitnessDir3,
-			bit_name_win               = self.winBitnessDir,
-			bit_num                    = self.currentBitness,
-			product_prefix             = self.fullProductDir,
-			target_prefix_sed_escaped = self.targetPrefix.replace("/","\\/"),
-			make_cpu_count             = "-j {0}".format(self.cpuCount),
-			original_cflags            = self.originalCflags,
-			cflag_string               = self.generateCflagString('--extra-cflags='),
-			current_path               = os.getcwd(),
-			current_envpath            = self.getKeyOrBlankString(os.environ,"PATH"),
-			meson_env_file             = self.mesonEnvFile
+			cmake_prefix_options=self.cmakePrefixOptions,
+			make_prefix_options=self.makePrefixOptions,
+			pkg_config_path=self.pkgConfigPath,
+			mingw_binpath=self.mingwBinpath,
+			mingw_binpath2=self.mingwBinpath2,
+			cross_prefix_bare=self.bareCrossPrefix,
+			cross_prefix_full=self.fullCrossPrefix,
+			target_prefix=self.targetPrefix,
+			project_root=self.fullCurrentPath,
+			inTreePrefix=self.inTreePrefix,
+			offtree_prefix=self.offtreePrefix,
+			target_host=self.targetHost,
+			target_sub_prefix=self.targetSubPrefix,
+			bit_name=self.bitnessDir,
+			bit_name2=self.bitnessDir2,
+			bit_name3=self.bitnessDir3,
+			bit_name_win=self.winBitnessDir,
+			bit_num=self.currentBitness,
+			product_prefix=self.fullProductDir,
+			target_prefix_sed_escaped=self.targetPrefix.replace("/", "\\/"),
+			make_cpu_count="-j {0}".format(self.cpuCount),
+			original_cflags=self.originalCflags,
+			cflag_string=self.generateCflagString('--extra-cflags='),
+			current_path=os.getcwd(),
+			current_envpath=self.getKeyOrBlankString(os.environ, "PATH"),
+			meson_env_file=self.mesonEnvFile
 		)
 		# needed actual commands sometimes, so I made this custom command support, comparable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
 
-		m = re.search(r'\!CMD\((.*)\)CMD!',cmd)
-		if m != None:
-			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n","").replace("\r","")
+		m = re.search(r'\!CMD\((.*)\)CMD!', cmd)
+		if m is not None:
+			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n", "").replace("\r", "")
 			mr = re.sub(r"\!CMD\((.*)\)CMD!", r"{0}".format(cmdReplacer), cmd, flags=re.DOTALL)
 			cmd = mr
 		return cmd
 	#:
-	def getValueOrNone(self,db,k):
+
+	def getValueOrNone(self, db, k):
 		if k in db:
-			if db[k] == None:
+			if db[k] is None:
 				return None
 			else:
 				return db[k]
 		else:
 			return None
 
-	def getValueByIntOrNone(self,db,key):
+	def getValueByIntOrNone(self, db, key):
 		if key >= 0 and key < len(db):
 			return db[key]
 		else:
 			return None
 
-
-	def reReplaceInFile(self,infile,oldString,newString,outfile):
+	def reReplaceInFile(self, infile, oldString, newString, outfile):
 		with open(infile, 'rw') as f:
 			for line in f:
 				line = re.sub(oldString, newString, line)
 
-	def getKeyOrBlankString(self,db,k):
+	def getKeyOrBlankString(self, db, k):
 		if k in db:
-			if db[k] == None:
+			if db[k] is None:
 				return ""
 			else:
 				return db[k]
 		else:
 			return ""
 	#:
-	def cchdir(self,dir):
+
+	def cchdir(self, dir):
 		if self.debugMode:
-			print("Changing dir from {0} to {1}".format(os.getcwd(),dir))
+			print("Changing dir from {0} to {1}".format(os.getcwd(), dir))
 		os.chdir(dir)
+
 
 if __name__ == "__main__":
 	main = CrossCompileScript()
