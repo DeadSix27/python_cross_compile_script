@@ -457,7 +457,7 @@ class CrossCompileScript:
 					if '_disabled' not in v:
 						if '_info' in v:
 							beforePath = os.getcwd()
-							path = main.get_thing_path(k, v, type)
+							path = main.getPackagePath(k, v, type)
 							main.cchdir(path)
 							if os.path.isfile(os.path.join(path, "configure")):
 								os.system("./configure --help")
@@ -1502,7 +1502,7 @@ class CrossCompileScript:
 
 		return dlLocations[0]  # return the first if none could be found.
 
-	def getBestMirror(self, packageName, packageData):  # returns the first online mirror of a package, and its hash
+	def getBestMirror(self, packageData, packageName):  # returns the first online mirror of a package, and its hash
 		if "url" in packageData:
 			if packageData["repo_type"] == "archive":
 				self.logger.warning("Package has the old URL format, please update it.")
@@ -1532,7 +1532,7 @@ class CrossCompileScript:
 			return packageData["download_locations"][0]["url"]  # TODO: do not assume correct format
 	#:
 
-	def getThingPath(self, packageName, packageData, type):  # type = PRODUCT or DEPENDENCY
+	def getPackagePath(self, packageName, packageData, type):  # type = PRODUCT or DEPENDENCY
 		outPath = os.getcwd()
 		workDir = None
 		renameFolder = None
