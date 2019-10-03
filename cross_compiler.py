@@ -559,7 +559,7 @@ class CrossCompileScript:
 				if args.PRODUCT is not None:
 					strPkgs = args.PRODUCT
 					buildType = "PRODUCT"
-				pkgList = re.split(r'(?<!\\), ', strPkgs)
+				pkgList = re.split(r'(?<!\\),', strPkgs)
 				for p in pkgList:
 					if buildType == "PRODUCT":
 						if p not in self.packages["prods"]:
