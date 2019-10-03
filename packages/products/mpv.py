@@ -6,9 +6,9 @@
 	'env_exports' : {
 		'DEST_OS' : 'win32',
 		'TARGET'  : '{target_host}',
+		'PKG_CONFIG' : 'pkg-config',
 	},
 	'run_post_patch' : [
-		'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"',
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.h', # Dirty work-around for xavs2, no idea how else to fix this.
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" video/out/vo_lavc.c',  #
 		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" audio/out/ao_lavc.c',  #
@@ -16,7 +16,7 @@
 	],
 	'configure_options' :
 		'--enable-libmpv-shared '
-		'--disable-debug-build '
+		'--enable-static-build '
 		'--prefix={product_prefix}/mpv_git.installed '
 		'--enable-sdl2 '
 		'--enable-rubberband '

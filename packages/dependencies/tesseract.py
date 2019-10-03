@@ -18,7 +18,6 @@
 	'custom_cflag' : '-O3',
 	'patches' : [
 		('tesseract/lzma_workaround.diff', '-p1', '..'),
-		('tesseract/0001-get-rid-of-the-install-error.patch', '-p1', '..'),
 	],
 	'run_post_install' : [
 		'sed -i.bak \'s/set(LIB_Ws2_32 Ws2_32)/set(LIB_Ws2_32 ws2_32)/\' ../CMakeLists.txt',
