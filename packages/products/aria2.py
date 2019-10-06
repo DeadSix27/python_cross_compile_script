@@ -16,7 +16,8 @@
 		( 'aria2/aria2_timegm_workaround.patch', '-p1' ),
 	],
 	'run_post_patch' : [
-		'autoreconf -fiv'
+		('autoreconf -fiv', True),
+		'autoreconf -fiv',
 	],
 	'run_post_install': [
 		'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
