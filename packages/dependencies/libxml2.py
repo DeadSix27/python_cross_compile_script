@@ -1,11 +1,11 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'http://xmlsoft.org/sources/libxml2-2.9.9-rc2.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '3102fa5a9f45378bb656b6f8e8402ff2ec1a7391815df156066d4683fe06abe8' }, ], },
-		{ 'url' : 'https://fossies.org/linux/www/libxml2-2.9.9-rc2.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '3102fa5a9f45378bb656b6f8e8402ff2ec1a7391815df156066d4683fe06abe8' }, ], },
+		{ 'url' : 'http://xmlsoft.org/sources/libxml2-2.9.10-rc1.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '913d85bf02ab22f07c76805522e013b7dfda7585dfe5addc465440880ef8cae5' }, ], },
+		{ 'url' : 'https://fossies.org/linux/www/libxml2-2.9.10-rc1.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '913d85bf02ab22f07c76805522e013b7dfda7585dfe5addc465440880ef8cae5' }, ], },
 	],
-	'folder_name' : 'libxml2-2.9.9',
-	'rename_folder' : 'libxml2-2.9.9-rc2',
+	'folder_name' : 'libxml2-2.9.10',
+	'rename_folder' : 'libxml2-2.9.10-rc1',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --without-python --enable-tests=no --enable-programs=no',
 	# 'patches' : [ #todo remake this patch
 		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', '-p1'),
