@@ -26,5 +26,5 @@
 	'depends_on' : [
 		'libsndfile',
 	],
-	'_info' : { 'version' : '1.8.1', 'fancy_name' : 'librubberband' },
+	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'rubberband' },
 }
