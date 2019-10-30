@@ -12,8 +12,6 @@
 		'LD': '{cross_prefix_bare}ld',
 		'STRIP': '{cross_prefix_bare}strip',
 		'CXX': '{cross_prefix_bare}g++',
-		# 'PKG_CONFIG': 'pkg-config --static',
-		'SNDFILE_LIBS': '-lsndfile -lopus -lFLAC -lvorbis -lvorbisenc -logg -lspeex',
 	},
 	'configure_options' : '--host={target_host} --prefix={target_prefix}',
 	'build_options' : '{make_prefix_options}',
