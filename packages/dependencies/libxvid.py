@@ -16,6 +16,6 @@
 		'rm -v {target_prefix}/lib/xvidcore.dll.a',
 		'mv -v {target_prefix}/lib/xvidcore.a {target_prefix}/lib/libxvidcore.a',
 	],
-	'update_check' : { 'url' : 'https://fossies.org/linux/misc/xvidcore', 'type' : 'httpregex', 'regex' : r'>\/linux\/misc\/xvidcore-(?P<version_num>[\d.]+)\.tar\.gz<\/A>' },
+	# 'update_check' : { 'url' : 'https://fossies.org/search?q=folder_search&q1=xvidcore&rd=%2Ffresh%2F&sd=0&ud=%2F&ap=no&ca=no&dp=0&si=0&sn=1&ml=30&dml=3', 'type' : 'httpregex', 'regex' : r'.*\/xvidcore-(?P<version_num>[\d.]+)\.tar\.gz.*' },
 	'_info' : { 'version' : '1.3.5', 'fancy_name' : 'xvidcore' },
 }
