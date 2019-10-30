@@ -6,5 +6,6 @@
 	'needs_make_install' : False,
 	'needs_configure' : False,
 	'recursive_git' : True,
+	'update_check' : { 'type' : 'git', },
 	'_info' : { 'version' : None, 'fancy_name' : 'SPIRV Tools' },
 }
