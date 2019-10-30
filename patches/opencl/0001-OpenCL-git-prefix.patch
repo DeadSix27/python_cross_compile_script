@@ -1,7 +1,17 @@
-diff -Nur OpenCL-ICD-Loader_git/CMakeLists.txt OpenCL-ICD-Loader_git.patched/CMakeLists.txt
---- OpenCL-ICD-Loader_git/CMakeLists.txt	2019-05-09 14:26:49.812915015 +0200
-+++ OpenCL-ICD-Loader_git.patched/CMakeLists.txt	2019-05-09 14:34:46.187661566 +0200
-@@ -58,7 +58,7 @@
+From af4f2cd8823fe6723e1a97772b99ced59cd250b5 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Wed, 30 Oct 2019 14:22:44 +0100
+Subject: [PATCH] opencl mingw prefix fix
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4bafa86..7574ae2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -75,7 +75,7 @@ endif ()
  set (OPENCL_ICD_LOADER_HEADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc CACHE PATH "Path to OpenCL Headers")
  
  add_library (OpenCL ${OPENCL_ICD_LOADER_SOURCES})
@@ -10,3 +20,6 @@ diff -Nur OpenCL-ICD-Loader_git/CMakeLists.txt OpenCL-ICD-Loader_git.patched/CMa
  
  if (WIN32)
      target_link_libraries (OpenCL cfgmgr32.lib)
+-- 
+2.22.0.windows.1
+

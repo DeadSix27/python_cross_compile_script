@@ -1,12 +1,21 @@
-diff --git a/icd_windows_hkr.h b/icd_windows_hkr.patched.h
-index b10d15a..c3a4540 100644
+From ba1bbeca2977e6f98dce816040c70870ce7e60df Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Wed, 30 Oct 2019 14:11:21 +0100
+Subject: [PATCH] mingw fix
+
+---
+ loader/windows/icd_windows_hkr.h | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/loader/windows/icd_windows_hkr.h b/loader/windows/icd_windows_hkr.h
+index e0db713..bcd8aee 100644
 --- a/loader/windows/icd_windows_hkr.h
-+++ b/loader/windows/icd_windows_hkr.patched.h
-@@ -36,5 +36,23 @@
-  */
++++ b/loader/windows/icd_windows_hkr.h
+@@ -18,5 +18,23 @@
  
  #include <stdbool.h>
-+#include <guiddef.h>
+ #include "icd_windows.h"
++#include <guiddef.h> 
  
  bool khrIcdOsVendorsEnumerateHKR(void);
 +
@@ -15,14 +24,18 @@ index b10d15a..c3a4540 100644
 +typedef GUID  DEVPROPGUID, *PDEVPROPGUID;
 +typedef unsigned long int DEVPROPID,   *PDEVPROPID;
 +
-+typedef struct _DEVPROPKEY {
++typedef struct _DEVPROPKEY_2 {
 +    DEVPROPGUID fmtid;
 +    DEVPROPID   pid;
-+} DEVPROPKEY, *PDEVPROPKEY;
++} DEVPROPKEY_2, *PDEVPROPKEY_2;
 +
 +#define CM_GETIDLIST_FILTER_PRESENT             (0x00000100)
 +#define CM_GETIDLIST_FILTER_CLASS               (0x00000200)
 +
-+#define DEFINE_DEVPROPKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) extern const DEVPROPKEY DECLSPEC_SELECTANY name = { { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }, pid }
++#define DEFINE_DEVPROPKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) extern const DEVPROPKEY_2 DECLSPEC_SELECTANY name = { { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }, pid }
 +
 +DEFINE_DEVPROPKEY(DEVPKEY_Device_ClassGuid,              0xa45c254e, 0xdf1c, 0x4efd, 0x80, 0x20, 0x67, 0xd1, 0x46, 0xa8, 0x50, 0xe0, 10);    // DEVPROP_TYPE_GUID
+\ No newline at end of file
+-- 
+2.22.0.windows.1
+
