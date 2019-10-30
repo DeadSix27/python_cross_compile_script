@@ -1,4 +1,5 @@
 {
+	'ffmpeg_nonfree': '--enable-nonfree --enable-libfdk-aac --enable-decklink',
 	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} '
 		'--target-os=mingw32 '

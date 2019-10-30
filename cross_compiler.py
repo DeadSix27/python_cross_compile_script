@@ -2204,13 +2204,16 @@ class CrossCompileScript:
 		return ''
 
 	def replaceVariables(self, cmd):
-		m = re.search(r'\!VAR\((.*)\)VAR!', cmd)
-		if m is not None:
-			varName = m.groups()[0]
-			if varName in self.packages["vars"]:
-				cmdReplacer = self.packages["vars"][varName]
-				mr = re.sub(r"\!VAR\((.*)\)VAR!", r"{0}".format(cmdReplacer), cmd, flags=re.DOTALL)
-				cmd = mr
+		raw_cmd = cmd
+		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", cmd) # TODO: assignment expression
+		if varList:
+			for varName in varList:
+				if varName in self.packages["vars"]:
+					variableContent = self.packages["vars"][varName]
+					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), cmd, flags=re.DOTALL)
+				else:
+					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), cmd, flags=re.DOTALL)
+					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{raw_cmd}', it has been stripped.")
 
 		cmd = cmd.format(
 			cmake_prefix_options=self.cmakePrefixOptions,
