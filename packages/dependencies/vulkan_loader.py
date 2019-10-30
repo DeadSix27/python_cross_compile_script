@@ -13,6 +13,6 @@
 	'patches' : [
 		('vulkan/0001-fix-cross-compiling.patch', '-p1', '..'),
 	],
-	'depends_on' : [ 'vulkan-d3dheaders', 'vulkan_headers' ],
+	'depends_on' : [ 'vulkan_headers' ], # 'vulkan-d3dheaders',
 	'_info' : { 'version' : None, 'fancy_name' : 'Vulkan Loader' },
 }
