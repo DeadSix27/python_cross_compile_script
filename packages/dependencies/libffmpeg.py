@@ -2,7 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 	'rename_folder' : 'libffmpeg_git',
-	'configure_options' : '!VAR(ffmpeg_base_config)VAR! --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs --enable-amf',
+	'configure_options' : '!VAR(ffmpeg_base_config)VAR! !VAR(ffmpeg_nonfree)VAR! --enable-libbluray --enable-opencl --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
 	'depends_on' : [ 'ffmpeg_depends' ],
 	'run_post_install' : [
 		'sed -i.bak \'s/-luser32 -ldl/-luser32 -lpsapi -ldl/\' "{pkg_config_path}/libavcodec.pc"',
