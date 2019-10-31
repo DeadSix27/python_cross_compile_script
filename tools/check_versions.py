@@ -43,6 +43,7 @@ SOURCEFORGE_APIKEY = None
 # 	SOURCEFORGE_APIKEY = open("sourceforge.apikey","r").read()
 # 	print("Loaded sourceforge api key: " + SOURCEFORGE_APIKEY)
 
+CWD = Path(os.getcwd()).resolve()
 
 def loadPackages(packages_folder):
 		def bool_key(d, k):
@@ -466,16 +467,13 @@ for name, pkg in {**pkgs["deps"], **pkgs["prods"]}.items():
 
 if len(pkgsWithoutUpdateCheck) > 0:
 	print("\nPackages without update check:\n%s" % (",".join(pkgsWithoutUpdateCheck)))
-
-if os.path.isfile(os.path.join("..", "mingw_toolchain_script", "mingw_toolchain_script.py")):
+	
+mingw_script = CWD.parent.joinpath("mingw_toolchain_script/mingw_toolchain_script.py")
+if os.path.isfile(mingw_script):
 	print("\nChecking toolchain versions:")
-
-	# mingw stuff
-	sys.path.append('..')
-
 	SOURCES = None
-
-	from mingw_toolchain_script.mingw_toolchain_script import SOURCES
+	sys.path.append(str(mingw_script.parent))
+	from mingw_toolchain_script import SOURCES
 
 	for name, pkg in SOURCES.items():
 		if specificPkgs is not None:
