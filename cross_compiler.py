@@ -2210,9 +2210,9 @@ class CrossCompileScript:
 			for varName in varList:
 				if varName in self.packages["vars"]:
 					variableContent = self.packages["vars"][varName]
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), cmd, flags=re.DOTALL)
+					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", f"{variableContent}", cmd, flags=re.DOTALL)
 				else:
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), cmd, flags=re.DOTALL)
+					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", "", cmd, flags=re.DOTALL)
 					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{raw_cmd}', it has been stripped.")
 
 		cmd = cmd.format(
