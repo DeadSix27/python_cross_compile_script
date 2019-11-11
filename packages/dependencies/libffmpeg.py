@@ -3,7 +3,7 @@
 	'url' : 'git://git.ffmpeg.org/ffmpeg.git',
 	'rename_folder' : 'libffmpeg_git',
 	'configure_options' : '!VAR(ffmpeg_base_config)VAR! !VAR(ffmpeg_nonfree)VAR! --enable-libbluray --prefix={target_prefix} --disable-shared --enable-static --disable-doc --disable-programs',
-	'depends_on' : [ 'ffmpeg_depends' ],
+	'depends_on' : [ 'ffmpeg_depends', 'ffmpeg_depends_nonfree', ],
 	'run_post_install' : [
 		'sed -i.bak \'s/-luser32 -ldl/-luser32 -lpsapi -ldl/\' "{pkg_config_path}/libavcodec.pc"',
 		'sed -i.bak \'s/-lbz2 -ldl/-lbz2 -lpsapi -ldl/\' "{pkg_config_path}/libavfilter.pc"',
