@@ -19,9 +19,17 @@
 	'patches' : [
 		('tesseract/lzma_workaround.diff', '-p1', '..'),
 	],
-	'run_post_install' : [
-		'sed -i.bak \'s/set(LIB_Ws2_32 Ws2_32)/set(LIB_Ws2_32 ws2_32)/\' ../CMakeLists.txt',
-		'sed -i.bak \'s/Libs: -L${{libdir}} -ltesseract50*$/Requires: lept\\nRequires.private: lept\\nLibs: -L${{libdir}} -ltesseract50 -lstdc++ -lws2_32/\' "{pkg_config_path}/tesseract.pc"',
-	],
+	'regex_replace': {
+		'post_install': [
+			{
+				0: r'^(?:[\s]+)?Libs:(?:[\s]+)?-L\${{libdir}}(?:[\s]+)?(-ltesseract[0-9]{{2}})(?:[^\n]+)?$',
+				1: r'Requires: lept\nRequires.private: lept\nLibs: -L${{libdir}} \1 -lstdc++ -lws2_32',
+				'in_file': '{pkg_config_path}/tesseract.pc'
+			}
+		]
+	},
+	# 'run_post_install' : [
+		# 'sed -i.bak \'s/set(LIB_Ws2_32 Ws2_32)/set(LIB_Ws2_32 ws2_32)/\' ../CMakeLists.txt',
+	# ],
 	'_info' : { 'version' : None, 'fancy_name' : 'tesseract' },
 }
