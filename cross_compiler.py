@@ -34,7 +34,6 @@ import hashlib
 import importlib
 import logging
 import os.path
-import pathlib
 import re
 import shutil
 import stat
@@ -45,6 +44,7 @@ import urllib.parse
 import urllib.request
 from multiprocessing import cpu_count
 from urllib.parse import urlparse
+from pathlib import Path
 
 import progressbar  # Run pip3 install progressbar2
 import requests  # Run pip3 install requests
@@ -135,9 +135,9 @@ class CrossCompileScript:
 					return True
 			return False
 
-		depsFolder = pathlib.Path(os.path.join(packages_folder, "dependencies"))
-		prodFolder = pathlib.Path(os.path.join(packages_folder, "products"))
-		varsPath = pathlib.Path(os.path.join(packages_folder, "variables.py"))
+		depsFolder = Path(os.path.join(packages_folder, "dependencies"))
+		prodFolder = Path(os.path.join(packages_folder, "products"))
+		varsPath = Path(os.path.join(packages_folder, "variables.py"))
 
 		if not os.path.isdir(packages_folder):
 			self.errorExit("Packages folder '%s' does not exist." % (packages_folder))
@@ -151,14 +151,14 @@ class CrossCompileScript:
 
 		for path, subdirs, files in os.walk(depsFolder):
 			for name in files:
-				p = pathlib.Path(os.path.join(path, name))
+				p = Path(os.path.join(path, name))
 				if p.suffix == ".py":
 					if not isPathDisabled(p):
 						tmpPkglist["deps"].append(p)
 
 		for path, subdirs, files in os.walk(prodFolder):
 			for name in files:
-				p = pathlib.Path(os.path.join(path, name))
+				p = Path(os.path.join(path, name))
 				if p.suffix == ".py":
 					if not isPathDisabled(p):
 						tmpPkglist["prods"].append(p)
@@ -180,7 +180,7 @@ class CrossCompileScript:
 
 		for d in tmpPkglist["deps"]:
 			with open(d, "r", encoding="utf-8") as f:
-				p = pathlib.Path(d)
+				p = Path(d)
 				packageName = p.stem.lower()
 				try:
 					o = ast.literal_eval(f.read())
@@ -200,7 +200,7 @@ class CrossCompileScript:
 
 		for d in tmpPkglist["prods"]:
 			with open(d, "r", encoding="utf-8") as f:
-				p = pathlib.Path(d)
+				p = Path(d)
 				packageName = p.stem.lower()
 				try:
 					o = ast.literal_eval(f.read())
@@ -256,7 +256,7 @@ class CrossCompileScript:
 			}
 		}
 
-		config_file = pathlib.Path(__file__).stem + ".yaml"
+		config_file = Path(__file__).stem + ".yaml"
 
 		if not os.path.isfile(config_file):
 			self.writeDefaultConfig(config_file)
@@ -1241,7 +1241,7 @@ class CrossCompileScript:
 		return hash.hexdigest()
 
 	def touch(self, f):
-		pathlib.Path(f).touch()
+		Path(f).touch()
 
 	def chmodPux(self, file):
 		st = os.stat(file)
@@ -1751,7 +1751,7 @@ class CrossCompileScript:
 		if 'copy_over' in packageData and packageData['copy_over'] is not None:
 			for f in packageData['copy_over']:
 				f_formatted = self.replaceVariables(f)
-				f_formatted = pathlib.Path(f_formatted)
+				f_formatted = Path(f_formatted)
 				if not f_formatted.is_file():
 					self.errorExit("Copy-over file '%s' (Unformatted: '%s') does not exist." % (f_formatted, f))
 				dst = os.path.join(currentFullDir, f_formatted.name)
@@ -1764,8 +1764,7 @@ class CrossCompileScript:
 					self.applyPatch(p[0], p[1], False, self.getValueByIntOrNone(p, 2))
 
 		if not self.anyFileStartsWith('already_ran_make'):
-			if 'run_post_patch' in packageData:
-				if packageData['run_post_patch'] is not None:
+			if 'run_post_patch' in packageData and packageData['run_post_patch']:
 					for cmd in packageData['run_post_patch']:
 						ignoreFail = False
 						if isinstance(cmd, tuple):
@@ -1781,6 +1780,12 @@ class CrossCompileScript:
 							self.logger.info("Running post-patch-command: '{0}'".format(cmd))
 							# self.run_process(cmd)
 							self.runProcess(cmd, ignoreFail)
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_patch'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						self.handleRegexReplace(r, packageName)
 
 		conf_system = "autoconf"
 		build_system = "make"
@@ -1819,11 +1824,6 @@ class CrossCompileScript:
 				self.mesonSource(packageName, packageData)
 			else:
 				self.configureSource(packageName, packageData, conf_system)
-
-		if 'patches_post_configure' in packageData:
-			if packageData['patches_post_configure'] is not None:
-				for p in packageData['patches_post_configure']:
-					self.applyPatch(p[0], p[1], True)
 
 		if 'make_subdir' in packageData:
 			if packageData['make_subdir'] is not None:
@@ -1883,6 +1883,41 @@ class CrossCompileScript:
 		self.defaultCFLAGS()
 		self.cchdir("..")  # asecond into workdir
 	#:
+	
+	def handleRegexReplace(self, rp, packageName):
+		if "in_file" not in rp:
+			self.errorExit(F'The regex_replace command in the package {packageName}:\n{rp}\nMisses the in_file parameter.')
+		if 0 not in rp:
+			self.errorExit(F'A regex_replace command in the package {packageName}\nrequires at least the "0" key to be a RegExpression, if 1 is not defined matching lines will be removed.')
+		in_file = Path(self.replaceVariables(rp["in_file"]))
+
+		self.logger.info(F"Running regex command on package {packageName}")
+
+		repls = [ self.replaceVariables(rp[0]), ]
+		if 1 in rp:
+			repls.append(self.replaceVariables(rp[1]))
+
+		if "out_file" not in rp:
+			out_file = in_file
+			in_file = shutil.move(in_file, in_file.parent.joinpath(in_file.name + ".backup"))
+		else:
+			out_file = self.replaceVariables(rp["out_file"])
+		
+		if out_file == in_file:
+			self.errorExit(F'A regex_replace command in the package {packageName}\nrequires the in_file and out_file to be different files, leave out out_file if you want to update & backup the old file-')
+
+		with open(in_file, "r") as f, open(out_file, "w") as nf:
+			for line in f:
+				if re.match(repls[0],line) and len(repls) > 1:
+					self.logger.debug(F"RegEx replacing line in {in_file}\n{line}\nwith:")
+					line = re.sub(repls[0], repls[1], line)
+					self.logger.debug(F"{line}")
+					nf.write(line)
+				elif re.match(repls[0],line):
+					self.logger.debug(F"RegEx removing line\n{line}:")
+				else:
+					nf.write(line)
+				
 
 	def bootstrapConfigure(self):
 		if not os.path.isfile("configure"):
@@ -1940,7 +1975,13 @@ class CrossCompileScript:
 				if packageData['configure_path'] is not None:
 					confCmd = packageData['configure_path']
 
-			self.runProcess('{0} {1}'.format(confCmd, configOpts))
+			self.runProcess(F'{confCmd} {configOpts}')
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_configure'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						self.handleRegexReplace(r, packageName)
 
 			if 'run_post_configure' in packageData:
 				if packageData['run_post_configure'] is not None:
@@ -1959,6 +2000,13 @@ class CrossCompileScript:
 				if conf_system == "waf":
 					mCleanCmd = './waf --color=yes clean'
 				self.runProcess('{0} {1}'.format(mCleanCmd, cpuCountStr), True)
+
+
+			if 'patches_post_configure' in packageData:
+				if packageData['patches_post_configure'] is not None:
+					for p in packageData['patches_post_configure']:
+						self.applyPatch(p[0], p[1], True)
+
 
 			self.touch(touchName)
 
@@ -1994,7 +2042,7 @@ class CrossCompileScript:
 			self.downloadFile(url, fileName)
 		else:
 			local_patch_path = os.path.join(self.fullPatchDir, url)
-			fileName = os.path.basename(pathlib.Path(local_patch_path).name)
+			fileName = os.path.basename(Path(local_patch_path).name)
 			if os.path.isfile(local_patch_path):
 				copyPath = os.path.join(os.getcwd(), fileName)
 				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path, copyPath))
@@ -2029,6 +2077,12 @@ class CrossCompileScript:
 
 			self.runProcess('meson {0}'.format(makeOpts))
 
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_configure'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						self.handleRegexReplace(r, packageName)
+
 			self.touch(touchName)
 
 	def cmakeSource(self, packageName, packageData):
@@ -2045,6 +2099,12 @@ class CrossCompileScript:
 			self.runProcess('cmake {0}'.format(makeOpts))
 
 			self.runProcess("make clean", True)
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_configure'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						self.handleRegexReplace(r, packageName)
 
 			self.touch(touchName)
 
@@ -2072,7 +2132,7 @@ class CrossCompileScript:
 
 			if buildSystem == "make":
 				if os.path.isfile("configure"):
-					self.runProcess('{0} clean {1}'.format(mkCmd, cpuCountStr), True)
+					self.runProcess(F'{mkCmd} clean {cpuCountStr}', True)
 
 			makeOpts = ''
 			if 'build_options' in packageData:
@@ -2084,24 +2144,30 @@ class CrossCompileScript:
 					print("\t" + tk + " : " + os.environ[tk])
 				print("##############################")
 
-			self.logger.info("Building '{0}' with: {1} in {2}".format(packageName, makeOpts, os.getcwd()), extra={'type': buildSystem})
+			self.logger.info(F"Building '{packageName}' with: {makeOpts} in {os.getcwd()}", extra={'type': buildSystem})
 
 			if 'ignore_build_fail_and_run' in packageData:
 				if len(packageData['ignore_build_fail_and_run']) > 0:  # todo check if its a list too
 					try:
 						if buildSystem == "waf":
 							mkCmd = './waf --color=yes build'
-						self.runProcess('{0} {2} {1}'.format(mkCmd, cpuCountStr, makeOpts))
+						self.runProcess(F'{mkCmd} {cpuCountStr} {makeOpts}')
 					except Exception:  # todo, except specific exception
 						self.logger.info("Ignoring failed make process...")
 						for cmd in packageData['ignore_build_fail_and_run']:
 							cmd = self.replaceVariables(cmd)
-							self.logger.info("Running post-failed-make-command: '{0}'".format(cmd))
+							self.logger.info(F"Running post-failed-make-command: '{cmd}'")
 							self.runProcess(cmd)
 			else:
 				if buildSystem == "waf":
 					mkCmd = './waf --color=yes build'
-				self.runProcess('{0} {2} {1}'.format(mkCmd, cpuCountStr, makeOpts))
+				self.runProcess(F'{mkCmd} {cpuCountStr} {makeOpts}')
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_build'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						self.handleRegexReplace(r, packageName)
 
 			if 'run_post_build' in packageData:
 				if packageData['run_post_build'] is not None:
@@ -2149,7 +2215,13 @@ class CrossCompileScript:
 			if buildSystem == "ninja":
 				mkCmd = "ninja"
 
-			self.runProcess('{0} {1} {2} {3}'.format(mkCmd, installTarget, makeInstallOpts, cpuCountStr))
+			self.runProcess(F'{mkCmd} {installTarget} {makeInstallOpts} {cpuCountStr}')
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_install'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						self.handleRegexReplace(r, packageName)
 
 			if 'run_post_install' in packageData:
 				if packageData['run_post_install'] is not None:
@@ -2210,9 +2282,9 @@ class CrossCompileScript:
 			for varName in varList:
 				if varName in self.packages["vars"]:
 					variableContent = self.packages["vars"][varName]
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", f"{variableContent}", cmd, flags=re.DOTALL)
+					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), cmd, flags=re.DOTALL)
 				else:
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", "", cmd, flags=re.DOTALL)
+					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), cmd, flags=re.DOTALL)
 					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{raw_cmd}', it has been stripped.")
 
 		cmd = cmd.format(
@@ -2243,12 +2315,11 @@ class CrossCompileScript:
 			current_envpath=self.getKeyOrBlankString(os.environ, "PATH"),
 			meson_env_file=self.mesonEnvFile
 		)
-		# needed actual commands sometimes, so I made this custom command support, comparable to "``" in bash, very very shady.. needs testing, but seems to work just flawlessly.
 
 		m = re.search(r'\!CMD\((.*)\)CMD!', cmd)
 		if m is not None:
 			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n", "").replace("\r", "")
-			mr = re.sub(r"\!CMD\((.*)\)CMD!", r"{0}".format(cmdReplacer), cmd, flags=re.DOTALL)
+			mr = re.sub(r"\!CMD\((.*)\)CMD!", F"{cmdReplacer}", cmd, flags=re.DOTALL)
 			cmd = mr
 		return cmd
 	#:
@@ -2285,10 +2356,13 @@ class CrossCompileScript:
 
 	def cchdir(self, dir):
 		if self.debugMode:
-			print("Changing dir from {0} to {1}".format(os.getcwd(), dir))
+			print(F"Changing dir from {os.getcwd()} to {dir}")
 		os.chdir(dir)
 
 
 if __name__ == "__main__":
+	PY_REQUIRE = (3, 6)
+	if sys.version_info < PY_REQUIRE:
+		sys.exit("You need at least Python %s.%s or later for this script.\n" % PY_REQUIRE)
 	main = CrossCompileScript()
 	main.commandLineEntrace()

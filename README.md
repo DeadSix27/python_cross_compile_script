@@ -32,7 +32,7 @@ For more see: `./cross_compiler.py --help`
 
 ## **System requirements:**
 
-* Python 3.4+ (Tested only on 3.6.x)
+* Python 3.6+
   * Required python packages: requests, progressbar2
 * GNU/Linux (Tested on ArchLinux & Ubuntu 17+)
 * 20+GB is recommended, but sizes vary depending on the packages
