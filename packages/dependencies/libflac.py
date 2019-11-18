@@ -7,7 +7,6 @@
 	'custom_cflag' : '-O3 -D_FORTIFY_SOURCE=0',
 	'patches': [
 		('flac/0001-mingw-fix.patch', '-p1', '..'),
-		('https://github.com/DeadSix27/flac/commit/d8f189ac0e5d0f051e5d844bc21c253ce505e18e.patch', '-p1', '..'),
 	],
 	'depends_on' : [
 		'libogg',
