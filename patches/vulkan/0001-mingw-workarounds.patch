@@ -1,0 +1,115 @@
+From 5d66d0a95b6d292d098103ccc5d8c0f996d8f258 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Tue, 26 Nov 2019 10:07:46 +0100
+Subject: [PATCH] mingw workarounds
+
+---
+ loader/CMakeLists.txt | 12 ++++++------
+ loader/loader.c       |  4 ++++
+ loader/loader.rc      |  4 ++++
+ loader/vulkan.pc.in   |  4 ++--
+ 4 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
+index 13a36a297..c1535c9d2 100644
+--- a/loader/CMakeLists.txt
++++ b/loader/CMakeLists.txt
+@@ -61,7 +61,7 @@ endif()
+ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+ 
+-if(WIN32)
++if(MSVC)
+     # Use static MSVCRT libraries
+     foreach(configuration
+             in
+@@ -128,7 +128,7 @@ set(ASM_FAILURE_MSG "The build will fall back on building with C code\n")
+ set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG}Note that this may be unsafe, as the C code requires tail-call optimizations to remove")
+ set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} the stack frame for certain calls. If the compiler does not do this, then unknown device")
+ set(ASM_FAILURE_MSG "${ASM_FAILURE_MSG} extensions will suffer from a corrupted stack.")
+-if(WIN32)
++if(MSVC)
+     enable_language(ASM_MASM)
+     if(CMAKE_ASM_MASM_COMPILER_WORKS)
+         if(NOT CMAKE_CL_64)
+@@ -177,7 +177,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
+     endif()
+ endif()
+ 
+-if(WIN32)
++if(MSVC)
+     add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c dxgi_loader.c)
+     target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
+     target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
+@@ -222,14 +222,14 @@ else()
+         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
+     endif()
+ 
+-    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
++    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} dxgi_loader.c)
+     add_dependencies(vulkan loader_asm_gen_files)
+     set_target_properties(vulkan
+                           PROPERTIES SOVERSION
+                                      "1"
+                                      VERSION
+                                      "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+-    target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
++    target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m cfgmgr32)
+     target_link_libraries(vulkan Vulkan::Headers)
+ 
+     if(APPLE)
+@@ -287,7 +287,7 @@ else()
+         if(PKG_CONFIG_FOUND)
+             set(VK_API_VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+             foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
+-                set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
++                set(PRIVATE_LIBS "${PRIVATE_LIBS} -lshlwapi -lcfgmgr32")
+             endforeach()
+             configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
+             install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+diff --git a/loader/loader.c b/loader/loader.c
+index c61649dba..4a9e530da 100644
+--- a/loader/loader.c
++++ b/loader/loader.c
+@@ -671,6 +671,10 @@ out:
+ //
+ // *reg_data contains a string list of filenames as pointer.
+ // When done using the returned string list, the caller should free the pointer.
++#ifdef __MINGW32__
++#define CM_GETIDLIST_FILTER_PRESENT            (0x00000100)
++#define CM_GETIDLIST_FILTER_CLASS              (0x00000200)
++#endif
+ VkResult loaderGetDeviceRegistryFiles(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size,
+                                       LPCSTR value_name) {
+     static const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
+diff --git a/loader/loader.rc b/loader/loader.rc
+index f70512628..10b110c11 100755
+--- a/loader/loader.rc
++++ b/loader/loader.rc
+@@ -43,7 +43,11 @@
+ ///////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////
+ 
++#ifdef __MINGW64__
++#include <winresrc.h>
++#else // MSVC
+ #include "winres.h"
++#endif
+ 
+ #define VER_FILE_VERSION            VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_BUILDNO
+ 
+diff --git a/loader/vulkan.pc.in b/loader/vulkan.pc.in
+index 2ce5aea43..a45ce436f 100644
+--- a/loader/vulkan.pc.in
++++ b/loader/vulkan.pc.in
+@@ -1,5 +1,5 @@
+-prefix=@CMAKE_INSTALL_PREFIX@
+-exec_prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=${prefix}
++libdir=${exec_prefix}/lib
+ libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+ includedir=${prefix}/include
+ 
+-- 
+2.17.1
+
