@@ -6,7 +6,7 @@
 		'bzip2', 'expat', 'zlib', 'xz', 'lzo'
 	],
 	'run_post_install' : [
-		'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma -lbcrypt/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
+		'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma -lbcrypt -lz/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
 	],
 	'_info' : { 'version' : None, 'fancy_name' : 'libarchive' },
 }
