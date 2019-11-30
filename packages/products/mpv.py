@@ -7,13 +7,8 @@
 		'DEST_OS' : 'win32',
 		'TARGET'  : '{target_host}',
 		'PKG_CONFIG' : 'pkg-config',
+		'LDFLAGS': '-Wl,-Bdynamic -lvulkan-1' # See near 'regex_replace'
 	},
-	'run_post_patch' : [
-		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.h', # Dirty work-around for xavs2, no idea how else to fix this.
-		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" video/out/vo_lavc.c',  #
-		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" audio/out/ao_lavc.c',  #
-		'sed -i.bak "s/encoder_encode/mpv_encoder_encode/" common/encode_lavc.c', #
-	],
 	'configure_options' :
 		'--enable-libmpv-shared '
 		'--enable-static-build '
@@ -21,17 +16,17 @@
 		'--enable-sdl2 '
 		'--enable-rubberband '
 		'--enable-lcms2 '
-		#'--enable-openal '
 		'--enable-dvdnav '
 		'--enable-libbluray '
 		'--enable-cdda '
-		#'--enable-egl-angle-lib ' # not maintained anymore apparently, crashes for me anyway.
 		'--enable-libass '
 		'--enable-lua '
 		'--enable-vapoursynth '
 		'--enable-uchardet '
 		'--disable-xv '
 		'--disable-pulse '
+		'--enable-vulkan '
+		'--enable-libplacebo '
 		'--disable-alsa '
 		'--disable-jack '
 		'--disable-x11 '
@@ -51,10 +46,10 @@
 		'vapoursynth_libs',
 		'sdl2',
 		'luajit',
+		'librubberband',
 		'lcms2',
 		'libdvdnav',
 		'libbluray',
-		#'openal',
 		'libass',
 		'libcdio-paranoia',
 		'libjpeg-turbo',
@@ -68,9 +63,23 @@
 	'packages' : {
 		'arch' : [ 'rst2pdf' ],
 	},
-	'run_post_configure' : (
-		'sed -i.bak -r "s/(--prefix=)([^ ]+)//g;s/--color=yes//g" build/config.h',
-	),
+	# Dirty hack, so far I've found no way to get -Wl,-Bdynamic into the .pc file or mpv itself without the use of LDFLAGS...
+	'regex_replace': {
+		'post_patch': [
+			{
+				0: r'Libs: -L\${{libdir}} -lvulkan',
+				1: r'Libs: -L${{libdir}}',
+				'in_file': '{pkg_config_path}/vulkan.pc'
+			},
+		],
+		'post_install': [
+			{
+				0: r'Libs: -L\${{libdir}}',
+				1: r'Libs: -L${{libdir}} -lvulkan',
+				'in_file': '{pkg_config_path}/vulkan.pc'
+			}
+		]
+	},
 	'run_post_install' : (
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.com',
 		'{cross_prefix_bare}strip -v {product_prefix}/mpv_git.installed/bin/mpv.exe',

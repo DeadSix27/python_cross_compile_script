@@ -1,17 +1,17 @@
-From 5d66d0a95b6d292d098103ccc5d8c0f996d8f258 Mon Sep 17 00:00:00 2001
+From 5c7bc4ee11cee18fbbe188c39bf8a65b98d8dfef Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Tue, 26 Nov 2019 10:07:46 +0100
-Subject: [PATCH] mingw workarounds
+Date: Sat, 30 Nov 2019 19:38:26 +0100
+Subject: [PATCH] mingw-workarounds
 
 ---
- loader/CMakeLists.txt | 12 ++++++------
+ loader/CMakeLists.txt | 23 ++++++++++++-----------
  loader/loader.c       |  4 ++++
  loader/loader.rc      |  4 ++++
  loader/vulkan.pc.in   |  4 ++--
- 4 files changed, 16 insertions(+), 8 deletions(-)
+ 4 files changed, 22 insertions(+), 13 deletions(-)
 
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index 13a36a297..c1535c9d2 100644
+index 13a36a297..528945397 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
 @@ -61,7 +61,7 @@ endif()
@@ -41,7 +41,7 @@ index 13a36a297..c1535c9d2 100644
      add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c dxgi_loader.c)
      target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
      target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-@@ -222,14 +222,14 @@ else()
+@@ -222,13 +222,13 @@ else()
          set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
      endif()
  
@@ -49,24 +49,31 @@ index 13a36a297..c1535c9d2 100644
 +    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} dxgi_loader.c)
      add_dependencies(vulkan loader_asm_gen_files)
      set_target_properties(vulkan
-                           PROPERTIES SOVERSION
-                                      "1"
-                                      VERSION
-                                      "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
--    target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
-+    target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m cfgmgr32)
+-                          PROPERTIES SOVERSION
+-                                     "1"
+-                                     VERSION
+-                                     "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
++                         PROPERTIES SOVERSION
++                                    "1"
++                                    VERSION
++                                    "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}" PREFIX "" OUTPUT_NAME vulkan-1)
+     target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
      target_link_libraries(vulkan Vulkan::Headers)
  
-     if(APPLE)
-@@ -287,7 +287,7 @@ else()
+@@ -286,9 +286,10 @@ else()
+         include(FindPkgConfig QUIET)
          if(PKG_CONFIG_FOUND)
              set(VK_API_VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
-             foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
+-            foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
 -                set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
-+                set(PRIVATE_LIBS "${PRIVATE_LIBS} -lshlwapi -lcfgmgr32")
-             endforeach()
+-            endforeach()
++			set(PRIVATE_LIBS "${PRIVATE_LIBS} -lcfgmgr32 -lpthread -lm -lshlwapi")
++            # foreach(LIB ${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES} ${PLATFORM_LIBS})
++            #    set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
++            # endforeach()
              configure_file("vulkan.pc.in" "vulkan.pc" @ONLY)
              install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+         endif()
 diff --git a/loader/loader.c b/loader/loader.c
 index c61649dba..4a9e530da 100644
 --- a/loader/loader.c
