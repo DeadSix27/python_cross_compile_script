@@ -4,6 +4,6 @@
 	'run_post_patch' : [
 		'autoreconf -fiv',
 	],
-	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	'configure_options' : '{autconf_prefix_options}',
 	'_info' : { 'version' : None, 'fancy_name' : 'libilbc' },
 }

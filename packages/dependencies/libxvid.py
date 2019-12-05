@@ -7,7 +7,7 @@
 	'folder_name' : 'xvidcore',
 	'rename_folder' : 'xvidcore-1.3.5',
 	'source_subfolder' : 'build/generic',
-	'configure_options' : '--host={target_host} --prefix={target_prefix}',
+	'configure_options' : '{autconf_prefix_options}',
 	# 'cpu_count' : '1',
 	'run_post_configure' : [
 		'sed -i.bak "s/-mno-cygwin//" platform.inc',

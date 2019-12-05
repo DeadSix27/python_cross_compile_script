@@ -8,6 +8,6 @@
 		( 'mfx/mfx-0001-mingwcompat-disable-va.patch', '-p1' ),
 	],
 	'url' : 'https://github.com/lu-zero/mfx_dispatch.git',
-	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --without-libva_drm --without-libva_x11',
+	'configure_options' : '{autconf_prefix_options} --without-libva_drm --without-libva_x11',
 	'_info' : { 'version' : None, 'fancy_name' : 'intel_quicksync_mfx' },
 }

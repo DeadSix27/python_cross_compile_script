@@ -17,6 +17,6 @@
 		#'sed -i.bak "s/-mwindows/-ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid/" "{target_prefix}/bin/sdl2-config"', # update this one too for good measure, FFmpeg can use either, not sure which one it defaults to...
 		'cp -fv "{target_prefix}/bin/sdl2-config" "{cross_prefix_full}sdl2-config"', # this is the only mingw dir in the PATH so use it for now [though FFmpeg doesn't use it?]
 	],
-	'configure_options' : '--prefix={target_prefix} --host={target_host} --disable-shared --enable-static',
+	'configure_options' : '{autconf_prefix_options}',
 	'_info' : { 'version' : None, 'fancy_name' : 'SDL2' },
 }

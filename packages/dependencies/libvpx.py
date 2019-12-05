@@ -4,9 +4,9 @@
 	'configure_options' :
 		'--target={bit_name2}-{bit_name_win}-gcc '
 		'--prefix={target_prefix} --disable-shared '
-		'--enable-static --enable-webm-io --enable-vp9 '
-		'--enable-vp8 --enable-runtime-cpu-detect '
-		'--enable-vp9-highbitdepth --enable-vp9-postproc --enable-coefficient-range-checking '
+		'--enable-static --enable-webm-io --enable-libyuv --enable-vp9 '
+		'--enable-vp8 --enable-runtime-cpu-detect --enable-postproc '
+		'--enable-vp9-highbitdepth --enable-vp9-postproc --enable-coefficient-range-checking --enable-postproc-visualizer '
 		'--enable-error-concealment --enable-better-hw-compatibility '
 		'--enable-multi-res-encoding --enable-vp9-temporal-denoising '
 		'--disable-tools --disable-docs --disable-examples --disable-install-docs --disable-unit-tests --disable-decode-perf-tests --disable-encode-perf-tests --as=yasm'

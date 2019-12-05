@@ -7,7 +7,7 @@
 	'patches' : [
 		('flite/flite_64.diff', '-p0'),
 	],
-	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static',
+	'configure_options' : '{autconf_prefix_options}',
 	'cpu_count' : '1',
 	'needs_make_install' : False,
 	'run_post_patch' : [

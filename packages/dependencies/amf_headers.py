@@ -2,6 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/DeadSix27/AMF',
 	'rename_folder' : 'amd_media_framework_headers',
+	'depth_git': 1,
 	'needs_configure' : False,
 	'needs_make' : False,
 	'needs_make_install' : False,

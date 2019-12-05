@@ -13,6 +13,6 @@
 		'automake',
 	],
 	'update_check' : { 'url' : 'https://github.com/libexpat/libexpat/releases', 'type' : 'githubreleases', 'name_or_tag' : 'name' },
-	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --without-docbook',
+	'configure_options' : '{autconf_prefix_options} --without-docbook',
 	'_info' : { 'version' : '2.2.9', 'fancy_name' : 'expat' },
 }
