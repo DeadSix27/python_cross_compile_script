@@ -1,103 +1,111 @@
 {
-	'ffmpeg_nonfree': '--enable-nonfree --enable-libfdk-aac --enable-decklink',
-	'ffmpeg_base_config' : # the base for all ffmpeg configurations.
+	'ffmpeg_min_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} '
 		'--target-os=mingw32 '
 		'--cross-prefix={cross_prefix_bare} '
 		'--pkg-config=pkg-config '
+		'--pkg-config-flags=--static '
 		'--disable-w32threads '
 		'--enable-cross-compile '
-		'--enable-pic '
-		'--enable-libsoxr '
-		'--enable-libass '
-		'--enable-iconv '
-		'--enable-libtwolame '
-		'--enable-libzvbi '
-		'--enable-libcaca '
-		'--enable-libmodplug '
-		'--enable-cuvid '
-		'--enable-libmp3lame '
-		'--enable-version3 '
-		'--enable-zlib '
-		'--enable-librtmp '
-		'--enable-libvorbis '
-		'--enable-libtheora '
-		'--enable-libspeex '
-		'--enable-libgsm '
-		'--enable-libopus '
-		'--enable-bzlib '
-		'--enable-libopencore-amrnb '
-		'--enable-libopencore-amrwb '
-		'--enable-libvo-amrwbenc '
-		'--enable-libvpx '
-		'--enable-libilbc '
-		'--enable-libwavpack '
-		'--enable-libwebp '
-		'--enable-dxva2 '
-		'--enable-avisynth '
-		'--enable-vapoursynth ' #maybe works?
-		'--enable-gray '
-		'--enable-libmysofa '
-		'--enable-libflite '
-		'--enable-lzma '
-		'--enable-libsnappy '
-		'--enable-libzimg '
-		'--enable-libx264 '
-		'--enable-libx265 '
-		'--enable-libaom '
-		'--enable-libdav1d '
-		'--enable-libopenh264 '
-		'--enable-frei0r '
-		'--enable-filter=frei0r '
-		'--enable-librubberband '
-		'--enable-libvidstab '
-		'--enable-libxavs '
-		'--enable-libxvid '
-		'--enable-libgme '
+		'--target-exec=wine '
 		'--enable-runtime-cpudetect '
-		'--enable-libfribidi '
-		'--enable-gnutls ' # nongpl: openssl,libtls(libressl)
-		'--enable-gmp '
+		'--enable-gpl '
+		'--enable-version3 '
+		'--extra-version=DeadSix27/python_cross_compile_script '
+
+		# Misc.
+		'--enable-pic '
+		'--enable-bzlib '
+		'--enable-zlib '
+		'--enable-lzma '
 		'--enable-fontconfig '
 		'--enable-libfontconfig '
 		'--enable-libfreetype '
+		'--enable-libfribidi '
 		'--enable-libbluray '
 		'--enable-libcdio '
-		'--disable-schannel '
-		'--disable-gcrypt '
-		#'--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.
-		'--enable-ladspa '
+		'--enable-avisynth '
+		'--enable-vapoursynth ' #maybe works?
+		'--enable-librtmp '
+		'--enable-libcaca '
+		'--enable-iconv '
 		'--enable-libxml2 '
-		'--enable-libdavs2 '
+		'--enable-gmp '
+		'--enable-gnutls ' # nongpl: openssl,libtls(libressl)
+
+		# Video/Picture Libs
+		'--enable-libzimg '
+		'--enable-libx264 '
+		'--enable-libopenh264 '
+		'--enable-libx265 '
 		'--enable-libkvazaar '
-		'--enable-libopenmpt '
-		'--enable-libxavs '
-		'--enable-libxavs2 '
-		'--enable-libsrt '
-		'--enable-liblensfun '
+		'--enable-libvpx '
+		'--enable-libdav1d '
+		'--enable-libaom '
+		'--enable-libxvid '
+
+		# Audio Libs
+		'--enable-libopus '
+		'--enable-libmp3lame '
+		'--enable-libvorbis '
+		'--enable-libtheora '
+		'--enable-libspeex '
+		'--enable-libsoxr '
+		'--enable-librubberband '
+
+		# Subtitle/OCR Libs:
+		'--enable-libass '
 		'--enable-libtesseract '
-		#'--enable-libvmaf '
-		
-		# HW Dec/Enc
-		'--enable-libmfx '
-		'--enable-amf '
+		'--enable-liblensfun '
+
+		# Image libs
+		'--enable-libwebp '
+
+		# HW Decoders
 		'--enable-ffnvcodec '
 		'--enable-cuvid '
-		#'--enable-cuda-sdk ' --enable-nonfree
 		'--enable-opengl '
 		'--enable-d3d11va '
 		'--enable-nvenc '
 		'--enable-nvdec '
 		'--enable-dxva2 '
-		
-		'--enable-gpl '
-		
-		'--extra-version=DeadSix27/python_cross_compile_script '
-		#'--enable-avresample ' # deprecated.
-		'--pkg-config-flags="--static" '
-		'--extra-libs="-lpsapi" '
-		#'--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
-		'--extra-cflags="-DLIBTWOLAME_STATIC" '
-		'--extra-cflags="-DMODPLUG_STATIC" '
+		'--enable-libmfx '
+		'--enable-amf '
 	,
+
+	'ffmpeg_nonfree': '--enable-nonfree --enable-libfdk-aac --enable-decklink', # --enable-cuda-sdk # nonfree stuff
+
+	#'ffmpeg_base_config' : # the obscure extra stuff TODO: turn into ffmpeg_extra_config
+	#	'--enable-libtwolame '
+	#	'--enable-libzvbi '
+	#	'--enable-libgsm '
+	#	'--enable-libopencore-amrnb '
+	#	'--enable-libopencore-amrwb '
+	#	'--enable-libvo-amrwbenc '
+	#	'--enable-libilbc '
+	#	'--enable-libwavpack '
+	#	'--enable-dxva2 '
+	#	'--enable-gray '
+	#	'--enable-libmysofa '
+	#	'--enable-libflite '
+	#	'--enable-libsnappy '
+	#	'--enable-frei0r '
+	#	'--enable-filter=frei0r '
+	#	'--enable-libvidstab '
+	#	'--enable-libgme '
+	#	'--disable-schannel '
+	#	'--disable-gcrypt '
+	#	# '--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.
+	#	'--enable-ladspa '
+	#	'--enable-libdavs2 '
+	#	'--enable-libopenmpt '
+	#	'--enable-libxavs '
+	#	'--enable-libxavs2 '
+	#	'--enable-libsrt '
+	#	# '--enable-libvmaf '
+	#	'--extra-libs="-lpsapi" '
+	#	# '--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
+	#	'--extra-cflags="-DLIBTWOLAME_STATIC" '
+	#	'--extra-cflags="-DMODPLUG_STATIC" '
+	#,
 }

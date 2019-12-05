@@ -15,7 +15,7 @@
 		# --disable-libvpx --disable-libx265 --disable-libaom --enable-libsvthevc --enable-libsvtvp9 
 		
 	],
-	'configure_options' : '!VAR(ffmpeg_base_config)VAR! --disable-libaom --enable-libsvtav1 --enable-libbluray --prefix={product_prefix}/ffmpeg_svtav1_test.installed --disable-shared --enable-static --enable-opencl --enable-nonfree --enable-libfdk-aac --enable-decklink',
-	'depends_on' : [ 'ffmpeg_depends', 'decklink_headers', 'fdk_aac', 'opencl_icd', 'svt_av1'],
+	'configure_options' : '!VAR(ffmpeg_min_config)VAR! !VAR(ffmpeg_nonfree)VAR! --disable-libaom --enable-libsvtav1 --prefix={output_prefix}/ffmpeg_svtav1_test.installed --disable-shared --enable-static',
+	'depends_on' : [ 'ffmpeg_depends_min', 'ffmpeg_depends_non_free', 'svt_av1'],
 	'_info' : { 'version' : None, 'fancy_name' : 'ffmpeg static with SVT-AV1' },
 }
