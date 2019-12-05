@@ -44,7 +44,7 @@ Packages required, tested on:
 
 (This list is possibly incomplete and differs from OS to OS)
 
-global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg cmake gettext-autopoint
+global      - texinfo yasm git make automake gcc gcc-c++ pax cvs svn flex bison patch libtoolize nasm hg ninja cmake gettext-autopoint
 mkvtoolnix  - libxslt docbook-util rake docbook-style-xsl
 gnutls      - gperf
 angle       - gyp
