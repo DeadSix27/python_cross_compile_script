@@ -87,8 +87,10 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type' : 'archive',
-	'version'   : '9.2.0',
-	'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
+	# 'version'   : '9.2.0',
+	# 'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
+	'version'   : '9-20191130',
+	'url' : 'https://gcc.gnu.org/pub/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches' : [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0140-gcc-7-Enable-std-experimental-filesystem.patch', 'p1' ), #Unable to get this to work.
@@ -114,14 +116,14 @@ BUILDS['binutils'] = {
 		'configure '
 		' --prefix="{prefix}"'
 		' --build="{host}"'
+		' --with-sysroot={prefix}'
 		' --disable-shared'
 		' --enable-static'
-		' --with-sysroot={prefix}'
 		' --target="{target}"'
 		' --disable-multilib'
 		' --disable-nls'
-		#' --disable-win32-registry'
-		#' --without-included-gettext'
+		' --disable-win32-registry'
+		' --without-included-gettext'
 		' --enable-plugins'
 		' --enable-threads'
 		' --enable-lto'
@@ -133,11 +135,10 @@ BUILDS['mingw-w64-headers'] = {
 		' --build="{host}"'
 		' --host="{target}"'
 		' --prefix="{prefix}"'
+		' --enable-sdk=all'
 		' --enable-secure-api'
 		' --enable-idl'
-		' --enable-sdk=all'
-		' --enable-idl'
-		#' --with-default-win32-winnt=0x600'
+		' --with-default-win32-winnt=0x600'
 	,
 	'softLinks' : [
 		( '{prefix}', './{target}', './mingw' ),
@@ -151,17 +152,26 @@ BUILDS['gcc-1'] = {
 		' --build="{host}"'
 		' --prefix="{prefix}"'
 		' --target="{target}"'
+		' --with-sysroot={prefix}'
 		' --disable-shared'
 		' --enable-static'
 		' --disable-multilib'
-		' --disable-win32-registry'
 		' --enable-languages=c,c++'
 		' --disable-nls'
-		' --enable-libstdcxx-time=yes'
+		' --disable-win32-registry'
+		' --with-arch=x86-64'
+		' --with-tune=generic'
 		' --enable-threads=posix'
-		' --enable-fully-dynamic-string'
-		#' --without-included-gettext'
+		' --without-included-gettext'
 		' --enable-lto'
+		' --enable-checking=release'
+      	# ' --enable-default-pie'
+      	# ' --enable-default-ssp'
+		# ' --enable-libssp'
+		# ' --enable-libstdcxx-filesystem-ts=yes'
+		# ' --enable-fully-dynamic-string'
+		# ' --enable-libstdcxx-time=yes'
+		# ' --enable-cloog-backend=isl'
 	,
 	'lineMake'	: 'all-gcc',
 	'lineInstall' : 'install-strip-gcc',
@@ -188,9 +198,9 @@ BUILDS['mingw-w64-winpthreads'] = {
 		'mingw-w64-libraries/winpthreads/configure'
 		' --build="{host}"'
 		' --host="{target}"'
+		' --prefix="{prefix}"'
 		' --disable-shared'
 		' --enable-static'
-		' --prefix="{prefix}"'
 	,
 	'lineInstall' : 'install-strip',
 	'cpu_count' : 1,
@@ -217,10 +227,12 @@ BUILDS['mingw-w64-gendef'] = {
 # BUILDS['mingw-w64-widl'] = { # See line 49
 # 	'lineConfig' :
 # 		'mingw-w64-tools/widl/configure'
-# 		' --build="{host}"'
+# 		' --with-widl-includedir="{prefix}/include"'
+		# ' --build="{host}"'
 # 		' --prefix="{prefix}"'
 # 		' --target="{target}"'
 # 	,
+# 	'lineInstall' : 'install-strip',
 # }
 
 BUILDS['gmp'] = {
