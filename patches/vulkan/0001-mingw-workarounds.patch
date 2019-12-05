@@ -1,17 +1,17 @@
-From 5c7bc4ee11cee18fbbe188c39bf8a65b98d8dfef Mon Sep 17 00:00:00 2001
+From 403f4cef122da6444186d4e1363fe5b96add09dd Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Sat, 30 Nov 2019 19:38:26 +0100
+Date: Mon, 2 Dec 2019 01:59:29 +0100
 Subject: [PATCH] mingw-workarounds
 
 ---
- loader/CMakeLists.txt | 23 ++++++++++++-----------
+ loader/CMakeLists.txt | 25 +++++++++++++------------
  loader/loader.c       |  4 ++++
  loader/loader.rc      |  4 ++++
  loader/vulkan.pc.in   |  4 ++--
- 4 files changed, 22 insertions(+), 13 deletions(-)
+ 4 files changed, 23 insertions(+), 14 deletions(-)
 
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index 13a36a297..528945397 100644
+index 13a36a297..10ebc0f2c 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
 @@ -61,7 +61,7 @@ endif()
@@ -41,7 +41,7 @@ index 13a36a297..528945397 100644
      add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c dxgi_loader.c)
      target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
      target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-@@ -222,13 +222,13 @@ else()
+@@ -222,14 +222,14 @@ else()
          set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
      endif()
  
@@ -53,13 +53,15 @@ index 13a36a297..528945397 100644
 -                                     "1"
 -                                     VERSION
 -                                     "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
+-    target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
 +                         PROPERTIES SOVERSION
 +                                    "1"
 +                                    VERSION
 +                                    "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}" PREFIX "" OUTPUT_NAME vulkan-1)
-     target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m)
++    target_link_libraries(vulkan ${CMAKE_DL_LIBS} pthread m cfgmgr32)
      target_link_libraries(vulkan Vulkan::Headers)
  
+     if(APPLE)
 @@ -286,9 +286,10 @@ else()
          include(FindPkgConfig QUIET)
          if(PKG_CONFIG_FOUND)
