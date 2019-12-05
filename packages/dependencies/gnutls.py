@@ -4,7 +4,6 @@
 		{ 'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.10.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'b1f3ca67673b05b746a961acf2243eaae0ffe658b6a6494265c648e7c7812293' }, ], },
 		{ 'url' : 'https://fossies.org/linux/misc/gnutls-3.6.10.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'b1f3ca67673b05b746a961acf2243eaae0ffe658b6a6494265c648e7c7812293' }, ], },
 	],
-	'folder_name' : 'gnutls-3.6.7',
 	'configure_options' :
 		'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
 		'--disable-srp-authentication '
@@ -16,8 +15,6 @@
 		'--disable-guile '
 		'--disable-doc '
 		'--enable-local-libopts '
-		# '--disable-guile '
-		# '--disable-libdane '
 		'--disable-tools '
 		'--disable-tests '
 		'--with-zlib '
@@ -28,25 +25,28 @@
 		'--without-tpm '
 		'--without-p11-kit'
 	,
-	# 'configure_options' :
-		# '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --with-included-unistring '
-		# '--disable-rpath --disable-nls --disable-guile --disable-doc --disable-tests --enable-local-libopts --with-included-libtasn1 --with-libregex-libs="-lgnurx" --without-p11-kit --disable-silent-rules '
-		# 'CPPFLAGS="-DWINVER=0x0501 -DAI_ADDRCONFIG=0x0400 -DIPV6_V6ONLY=27" LIBS="-lws2_32" ac_cv_prog_AR="{cross_prefix_full}ar"'
-	# ,
-	'run_post_install' : [
-		'sed -i.bak \'s/-lgnutls *$/-lgnutls -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -lintl -liconv/\' "{pkg_config_path}/gnutls.pc"', #TODO -lintl
-	],
-	'patches' : [
-		('gnutls/rename-inet_pton_for_srt.diff', '-p1'),
+	'regex_replace': {
+		'post_install': [
+			{
+				0: r'^(Libs: -L\${{libdir}} -lgnutls)([\n\r\s]+)?$',
+				1: r'\1 -lintl -lcrypt32 -liconv\2', # iconv is required by gettext, but gettext has no .pc file, so...
+				#1: r'\1 -lws2_32 -lz -lgmp\2',
+				'in_file': '{pkg_config_path}/gnutls.pc'
+			},
+		],
+	},
+	# 'patches' : [
+		#('gnutls/rename-inet_pton_for_srt.diff', '-p1'),
 		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/gnutls/0001-gnutls-3.5.11-arpainet_pkgconfig.patch', '-p1'),
 		# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-3.2.7-rpath.patch','-p1'),
 		# ('https://raw.githubusercontent.com/Martchus/PKGBUILDs/master/gnutls/mingw-w64/gnutls-fix-external-libtasn1-detection.patch','-p1'),
-	],
+	# ],
 	'depends_on' : [
-		'gmp',
+		'gettext',
+		'iconv',
 		'libnettle',
+		'zlib',
 	],
-	# 'env_exports' : {
 	'update_check' : { 'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.6', 'type' : 'ftpindex', 'regex' : r'gnutls-(?P<version_num>[\d.]+)\.tar\.xz' },
 	'_info' : { 'version' : '3.6.10', 'fancy_name' : 'gnutls' },
 }
