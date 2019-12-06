@@ -36,5 +36,6 @@
 		'nv-codec-headers',
 		'intel_quicksync_mfx',
 		'amf_headers',
+		'opencl_icd',
 	],
 }

@@ -72,6 +72,7 @@
 		'--enable-dxva2 '
 		'--enable-libmfx '
 		'--enable-amf '
+		'--enable-opencl'
 	,
 
 	'ffmpeg_nonfree': '--enable-nonfree --enable-libfdk-aac --enable-decklink', # --enable-cuda-sdk # nonfree stuff
