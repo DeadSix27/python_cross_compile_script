@@ -5,8 +5,14 @@
 	'depends_on' : [
 		'bzip2', 'expat', 'zlib', 'xz', 'lzo'
 	],
-	'run_post_install' : [
-		'sed -i.bak \'s/Libs: -L${{libdir}} -larchive/Libs: -L${{libdir}} -larchive -llzma -lbcrypt -lz/\' "{pkg_config_path}/libarchive.pc"', # libarchive complaints without this.
-	],
+	'regex_replace': {
+		'post_install': [
+			{
+				0: r'^Libs: -L\${{libdir}} -larchive([^\n]+)?',
+				1: r'Libs: -L${{libdir}} -larchive -lnettle -lxml2 -llzma -lbcrypt -lbz2 -lz -liconv -lws2_32\1',
+				'in_file': '{pkg_config_path}/libarchive.pc'
+			}
+		]
+	},
 	'_info' : { 'version' : None, 'fancy_name' : 'libarchive' },
 }
