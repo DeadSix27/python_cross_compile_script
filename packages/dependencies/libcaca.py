@@ -13,6 +13,6 @@
 	'run_post_install' : [
 		"sed -i.bak 's/-lcaca *$/-lcaca -lz/' \"{pkg_config_path}/caca.pc\"",
 	],
-	'configure_options' : '{autconf_prefix_options} --libdir={target_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
+	'configure_options' : '{autoconf_prefix_options} --libdir={target_prefix}/lib --disable-cxx --disable-csharp --disable-java --disable-python --disable-ruby --disable-imlib2 --disable-doc --disable-examples',
 	'_info' : { 'version' : None, 'fancy_name' : 'libcaca' },
 }

@@ -4,7 +4,7 @@
 		{ 'url' : 'https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634' }, ], },
 		{ 'url' : 'https://fossies.org/linux/misc/tiff-4.1.0.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634' }, ], },
 	],
-	'configure_options' : '{autconf_prefix_options}',
+	'configure_options' : '{autoconf_prefix_options}',
 	'depends_on' : [
 		'zlib','libjpeg-turbo','libwebp'
 	],

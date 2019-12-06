@@ -743,7 +743,7 @@ class CrossCompileScript:
 				'cmake_prefix_options': self.cmakePrefixOptions,
 				'cmake_prefix_options_old': self.cmakePrefixOptionsOld,
 				'make_prefix_options': self.makePrefixOptions,
-				'autcconf_prefix_options': self.autoConfPrefixOptions,
+				'autoconf_prefix_options': self.autoConfPrefixOptions,
 				'pkg_config_path': self.pkgConfigPath,
 				'mingw_binpath': self.mingwBinpath,
 				'mingw_binpath2': self.mingwBinpath2,

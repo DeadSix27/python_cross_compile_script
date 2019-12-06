@@ -7,7 +7,7 @@
 	],
 	'folder_name' : 'freetype-with-harfbuzz',
 	'rename_folder' : 'freetype-with-harfbuzz',
-	'configure_options' : '{autconf_prefix_options} --build=x86_64-linux-gnu --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
+	'configure_options' : '{autoconf_prefix_options} --build=x86_64-linux-gnu --with-zlib={target_prefix} --without-png --with-harfbuzz=yes',
 	'run_post_install' : [
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lfreetype.*/Libs: -L${{libdir}} -lfreetype -lbz2 -lharfbuzz/\' "{pkg_config_path}/freetype2.pc"',
 	],

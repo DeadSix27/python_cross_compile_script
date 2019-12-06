@@ -1,7 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/libssh2/libssh2.git',
-	'configure_options' : '{autconf_prefix_options} --disable-examples-build ',
+	'configure_options' : '{autoconf_prefix_options} --disable-examples-build ',
 	'depends_on' : [
 		'zlib', #'libressl'
 	],

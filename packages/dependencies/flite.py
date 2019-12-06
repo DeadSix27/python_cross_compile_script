@@ -7,7 +7,7 @@
 	'patches' : [
 		('flite/flite_64.diff', '-p0'),
 	],
-	'configure_options' : '{autconf_prefix_options}',
+	'configure_options' : '{autoconf_prefix_options}',
 	'cpu_count' : '1',
 	'needs_make_install' : False,
 	'run_post_patch' : [

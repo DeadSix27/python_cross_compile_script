@@ -14,7 +14,7 @@
 		'CXX': '{cross_prefix_bare}g++',
 		'PKG_CONFIG': 'pkg-config --static'
 	},
-	'configure_options' : '{autconf_prefix_options}',
+	'configure_options' : '{autoconf_prefix_options}',
 	'build_options' : '{make_prefix_options}',
 	'needs_make_install' : False,
 	'run_post_build' : [

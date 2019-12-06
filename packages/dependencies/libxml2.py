@@ -6,7 +6,7 @@
 	],
 	'folder_name' : 'libxml2-2.9.10',
 	'rename_folder' : 'libxml2-2.9.10-rc1',
-	'configure_options' : '{autconf_prefix_options} --without-python --enable-tests=no --enable-programs=no',
+	'configure_options' : '{autoconf_prefix_options} --without-python --enable-tests=no --enable-programs=no',
 	# 'patches' : [ #todo remake this patch
 		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/libxml2/0001-libxml2-2.9.4-add_prog_test_toggle.patch', '-p1'),
 	# ],

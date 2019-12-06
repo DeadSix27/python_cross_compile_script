@@ -6,7 +6,7 @@
 	'patches' : [
 		( 'libfile/file-win32.patch', '-p1' ),
 	],
-	'configure_options' : '{autconf_prefix_options} --enable-fsect-man5',
+	'configure_options' : '{autoconf_prefix_options} --enable-fsect-man5',
 	'depends_on' : [ 'mingw-libgnurx' ],  # ,'libfile_local' ],
 	'env_exports' : { 'TARGET_CFLAGS' : '{original_cflags}' },
 	'run_post_patch' : [
