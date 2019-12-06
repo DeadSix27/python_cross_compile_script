@@ -29,8 +29,7 @@
 		'post_install': [
 			{
 				0: r'^(Libs: -L\${{libdir}} -lgnutls)([\n\r\s]+)?$',
-				1: r'\1 -lintl -lcrypt32 -liconv\2', # iconv is required by gettext, but gettext has no .pc file, so...
-				#1: r'\1 -lws2_32 -lz -lgmp\2',
+				1: r'\1 -lnettle -lhogweed -lgmp -lcrypt32 -lws2_32 -lintl -liconv\2', # iconv is required by gettext, but gettext has no .pc file, so...
 				'in_file': '{pkg_config_path}/gnutls.pc'
 			},
 		],

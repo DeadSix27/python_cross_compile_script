@@ -1,7 +1,6 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/Haivision/srt.git',
-	#'branch' : '16d77ad6b4249c3ba3b812d26c4cbb356300f908',
 	'source_subfolder' : '_build',
 	'conf_system' : 'cmake',
 	'depends_on' : [ 'gettext', 'gnutls' ],
