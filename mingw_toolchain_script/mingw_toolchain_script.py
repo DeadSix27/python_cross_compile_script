@@ -145,6 +145,7 @@ BUILDS['mingw-w64-headers'] = {
 		( '{prefix}/{target}', '../include', './include' ),
 	],
 	'lineInstall' : 'install-strip',
+	'lineInstallDebug' : 'install',
 }
 BUILDS['gcc-1'] = {
 	'lineConfig' :
@@ -175,6 +176,7 @@ BUILDS['gcc-1'] = {
 	,
 	'lineMake'	: 'all-gcc',
 	'lineInstall' : 'install-strip-gcc',
+	'lineInstallDebug' : 'install-gcc',
 }
 BUILDS['mingw-w64-crt'] = {
 	'lineConfig' :
@@ -191,6 +193,7 @@ BUILDS['mingw-w64-crt'] = {
 		( '{prefix}/{target}', 'ln -s "../lib" "./lib"', True ),
 	],
 	'lineInstall' : 'install-strip',
+	'lineInstallDebug' : 'install',
 }
 
 BUILDS['mingw-w64-winpthreads'] = {
@@ -203,6 +206,7 @@ BUILDS['mingw-w64-winpthreads'] = {
 		' --enable-static'
 	,
 	'lineInstall' : 'install-strip',
+	'lineInstallDebug' : 'install',
 	'cpu_count' : 1,
 }
 
@@ -210,6 +214,7 @@ BUILDS['gcc-2'] = {
 	'lineConfig' : 'dummy',
 	'noConfigure' : True,
 	'lineInstall' : 'install-strip',
+	'lineInstallDebug' : 'install',
 
 }
 BUILDS['mingw-w64-gendef'] = {
@@ -220,6 +225,7 @@ BUILDS['mingw-w64-gendef'] = {
 		' --target="{target}"'
 	,
 	'lineInstall' : 'install-strip',
+	'lineInstallDebug' : 'install',
 	'customCommands' : [
 		( '{prefix}', 'cp -f "./bin/gendef" "./bin/{target}-gendef"' ),
 	],
@@ -233,6 +239,7 @@ BUILDS['mingw-w64-gendef'] = {
 # 		' --target="{target}"'
 # 	,
 # 	'lineInstall' : 'install-strip',
+#   'lineInstallDebug' : 'install',
 # }
 
 BUILDS['gmp'] = {
@@ -762,7 +769,14 @@ class MinGW64ToolChainBuilder:
 
 			self.cchdir(pBuildFolder)
 
-			confOpts = formatProgVars(p["lineConfig"])
+			confOpts = ""
+			if not self.debugBuild:
+				confOpts = formatProgVars(p["lineConfig"])
+			elif self.debugBuild:
+				if "lineConfigDebug" not in p:
+					self.log(F"Debug-build is enabled but package {pn} has no debug-config line set, using default.")
+				else:
+					confOpts = p["lineConfigDebug"]
 
 			confOptsHash = "already_built_" + pn + "_" + self.md5(confOpts)
 			cpuCount = _CPU_COUNT
@@ -777,9 +791,9 @@ class MinGW64ToolChainBuilder:
 			else:
 				if self.debugBuild:
 					if _DEBUG:
-						self.log("Setting C(XX)FLAGS to: -ggdb -O0")
-					os.environ["CFLAGS"] = "-ggdb -O0"
-					os.environ["CXXFLAGS"] = "-ggdb -O0"
+						self.log("Setting C(XX)FLAGS to: -ggdb")
+					os.environ["CFLAGS"] = "-ggdb"
+					os.environ["CXXFLAGS"] = "-ggdb"
 				else:
 					if _DEBUG:
 						self.log("Setting C(XX)FLAGS to: -O3")
@@ -812,12 +826,19 @@ class MinGW64ToolChainBuilder:
 				if "debug_exit_after_make" in p:
 					if p["debug_exit_after_make"] == True:
 						exit()
+
 				noInstall = False
 				if "noInstall" in p:
 					if p["noInstall"] == True:
 						noInstall = True
 				if not noInstall:
 					isntOpt = self.dictGetSafeString(p,"lineInstall", "install")
+					if self.debugBuild:
+						if "lineInstall" not in p:
+							self.log(F"Debug-build is enabled but package {pn} has no lineInstallDebug set, using default.")
+						else:
+							isntOpt = p["lineInstallDebug"]
+
 					self.log("Installing '%s' with: <%s> in <%s>" % (pn,"make %s -j%d V=1" % (isntOpt,cpuCount), os.getcwd()))
 					self.run_process("make %s -j%d V=1" % (isntOpt,cpuCount))
 
