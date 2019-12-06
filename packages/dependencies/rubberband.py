@@ -25,7 +25,7 @@
 		'sed -i.bak \'s/-lrubberband *$/-lrubberband -lfftw3 -lsamplerate -lstdc++/\' "{pkg_config_path}/rubberband.pc"',
 	],
 	'depends_on' : [
-		'libsndfile', 'vamp_plugin',
+		'libsamplerate', 'libsndfile', 'vamp_plugin', 'fftw',
 	],
-	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'librubberband' },
+	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'rubberband' },
 }

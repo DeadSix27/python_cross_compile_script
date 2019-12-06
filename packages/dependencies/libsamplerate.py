@@ -4,7 +4,7 @@
 	'configure_options' : '{autoconf_prefix_options} --disable-alsa',
 	'depends_on' : [
 		'libflac',
-		'fftw3',
+		'fftw',
 		'libopus',
 	],
 	'_info' : { 'version' : None, 'fancy_name' : 'libsamplerate' },

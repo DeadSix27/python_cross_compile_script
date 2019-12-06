@@ -19,6 +19,5 @@
 		],
 	},
 
-
 	'_info' : { 'version' : None, 'fancy_name' : 'libsndfile' },
 }

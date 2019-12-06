@@ -42,7 +42,7 @@
 		'vapoursynth_libs',
 		# 'sdl2',
 		'luajit',
-		'librubberband',
+		'rubberband',
 		'lcms2',
 		'libdvdnav',
 		'libbluray',

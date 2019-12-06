@@ -13,7 +13,7 @@
 		'if [ -d "{target_prefix}/include/gsm.disabled" ] ; then mv {target_prefix}/include/gsm.disabled {target_prefix}/include/gsm ; fi',
 	],
 	'depends_on' : [
-		'libvorbis','gettext',
+		'libvorbis', 'gettext', 'libsndfile', 'libpng',
 	],
 	'_info' : { 'version' : None, 'fancy_name' : 'SoX' },
 }
