@@ -254,6 +254,7 @@ class CrossCompileScript:
 				'mingw_debug_build': False,
 				'mingw_dir': 'toolchain',
 				'mingw_custom_cflags': None,
+  				'output_path': '_output',
 				'work_dir': 'workdir',
 				'original_cflags': '-O3',
 			}
@@ -773,10 +774,8 @@ class CrossCompileScript:
 		)
 
 		self.config = self.formatConfig(self.config)
-
-		self.fullOutputDir = Path(self.config["toolchain"]["output_path"])
-
-		self.formatDict['output_prefix'] = self.fullOutputDir
+		self.fullOutputDir = Path(self.replaceToolChainVars(self.config["toolchain"]["output_path"]))
+		self.formatDict['output_prefix'] = str(self.fullOutputDir)
 
 		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
 		# os.environ["PATH"] = "{0}:{1}:{2}".format (self.mingwBinpath, os.path.join(self.targetPrefix, 'bin'), self.originalPATH)  # TODO: properly test this..
@@ -2024,6 +2023,7 @@ class CrossCompileScript:
 	#:
 	
 	def handleRegexReplace(self, rp, packageName):
+		cwd = Path(os.getcwd())
 		if "in_file" not in rp:
 			self.errorExit(F'The regex_replace command in the package {packageName}:\n{rp}\nMisses the in_file parameter.')
 		if 0 not in rp:
@@ -2031,29 +2031,36 @@ class CrossCompileScript:
 
 		in_files = rp["in_file"]
 		if isinstance(in_files, (list, tuple)):
-			in_files = (Path(self.replaceVariables(x)) for x in in_files)
+			in_files = (cwd.joinpath(self.replaceVariables(x)) for x in in_files)
 		else:
-			in_files = (Path(self.replaceVariables(in_files)), )
+			in_files = (cwd.joinpath(self.replaceVariables(in_files)), )
 
 		repls = [ self.replaceVariables(rp[0]), ]
 		if 1 in rp:
 			repls.append(self.replaceVariables(rp[1]))
 
-		self.logger.info(F"Running regex replace commands on package: '{packageName}'")
+		self.logger.info(F"Running regex replace commands on package: '{packageName}' [{os.getcwd()}]")
 
 		for _current_infile in in_files:
 			if "out_file" not in rp:
 				out_files = (_current_infile, )
-				shutil.move(_current_infile, _current_infile.parent.joinpath(_current_infile.name + ".backup"))
+				shutil.copy(_current_infile, _current_infile.parent.joinpath(_current_infile.name + ".backup"))
 			else:
 				if isinstance(rp["out_file"], (list, tuple)):
-					out_files = (Path(self.replaceVariables(x)) for x in rp["out_file"])
+					out_files = (cwd.joinpath(self.replaceVariables(x)) for x in rp["out_file"])
 				else:
-					out_files = (Path(self.replaceVariables(rp["out_file"])),)
+					out_files = (cwd.joinpath(self.replaceVariables(rp["out_file"])),)
 			
 			for _current_outfile in out_files:
+
+				if not _current_infile.exists():
+					self.logger.warning(F"[Regex-Command] In-File '{_current_infile}' does not exist in '{os.getcwd()}'")
+
 				if _current_outfile == _current_infile:
-					shutil.copy(_current_infile, _current_infile.parent.joinpath(_current_infile.name + ".backup"))
+					_backup = _current_infile.parent.joinpath(_current_infile.name + ".backup")
+					if not _backup.parent.exists():
+						self.logger.warning(F"[Regex-Command] Out-File parent '{_backup.parent}' does not exist.")
+					shutil.copy(_current_infile, _backup)
 					_tmp_file = _current_infile.parent.joinpath(_current_infile.name + ".tmp")
 					shutil.move(_current_infile, _tmp_file)
 					_current_infile = _tmp_file
@@ -2061,13 +2068,13 @@ class CrossCompileScript:
 
 				with open(_current_infile, "r") as f, open(_current_outfile, "w") as nf:
 					for line in f:
-						if re.match(repls[0],line) and len(repls) > 1:
+						if re.search(repls[0], line) and len(repls) > 1:
 							self.logger.debug(F"RegEx replacing line")
 							self.logger.debug(F"in {_current_outfile}\n{line}\nwith:")
 							line = re.sub(repls[0], repls[1], line)
 							self.logger.debug(F"{line}")
 							nf.write(line)
-						elif re.match(repls[0],line):
+						elif re.search(repls[0],line):
 							self.logger.info(F"RegEx removing line\n{line}:")
 						else:
 							nf.write(line)
