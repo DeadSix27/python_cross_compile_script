@@ -241,7 +241,7 @@ class CrossCompileScript:
 				'quiet': False,
 				'log_date_format': '%H:%M:%S',
 				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
-				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
+				'product_order': ['mpv', 'ffmpeg'],
 				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0',
 				'mingw_toolchain_path': 'mingw_toolchain_script/mingw_toolchain_script.py',
 				'packages_folder': 'packages',
