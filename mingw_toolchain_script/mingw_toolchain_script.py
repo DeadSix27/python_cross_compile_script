@@ -771,11 +771,11 @@ class MinGW64ToolChainBuilder:
 
 			self.cchdir(pBuildFolder)
 
-			confOpts = "configure"
-			if not self.debugBuild and "lineConfig" in p:
+			confOpts = ""
+			if self.debugBuild and "lineConfigDebug" in p:
+				confOpts = formatProgVars(p["lineConfigDebug"])
+			elif "lineConfig" in p:
 				confOpts = formatProgVars(p["lineConfig"])
-			elif self.debugBuild and "lineConfigDebug" in p:
-				confOpts = p["lineConfigDebug"]
 
 			confOptsHash = "already_built_" + pn + "_" + self.md5(confOpts)
 			cpuCount = _CPU_COUNT
@@ -806,7 +806,7 @@ class MinGW64ToolChainBuilder:
 					if p["noConfigure"] == True:
 						noConfig = True
 				if not noConfig:
-					self.log(F'Configuring "{pn}" with: <{pSourceFolder.rstrip("/")}/{confOpts}> in <{os.getcwd()}> with\n<{confOpts}>')
+					self.log(F'Configuring "{pn}" with: <{pSourceFolder.rstrip("/")}/{confOpts}> in <{os.getcwd()}>')
 					self.run_process(F'{pSourceFolder.rstrip("/")}/{confOpts}')
 
 				if "debug_exit_after_config" in p:
