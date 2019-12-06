@@ -1359,7 +1359,7 @@ class CrossCompileScript:
 		os.chmod(file, st.st_mode | stat.S_IXUSR)  # S_IEXEC would be just +x
 	#:
 
-	def mercurialClone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None):
+	def mercurialClone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None, forceRebuild=False):
 		if virtFolderName is None:
 			virtFolderName = self.sanitizeFilename(os.path.basename(url))
 			if not virtFolderName.endswith(".hg"):
@@ -1375,6 +1375,12 @@ class CrossCompileScript:
 		branchString = ""
 		if desiredBranch is not None:
 			branchString = " {0}".format(desiredBranch)
+
+		# we have to do it the hard way because "hg purge" is an extension that is not on by default
+		# and making users enable stuff like that is too much
+		if os.path.isdir(realFolderName) and forceRebuild:
+			self.logger.info("Deleting old HG clone")
+			shutil.rmtree(realFolderName)
 
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
@@ -1716,7 +1722,6 @@ class CrossCompileScript:
 					self.packages["prods"][packageName]["_already_built"] = True
 				else:
 					self.packages["deps"][packageName]["_already_built"] = True
-
 				return
 
 		if self.debugMode:
@@ -1762,7 +1767,7 @@ class CrossCompileScript:
 			workDir = self.svnClone(self.getPrimaryPackageUrl(packageData, packageName), packageData["folder_name"], renameFolder)
 		elif packageData['repo_type'] == 'mercurial':
 			branch = self.getValueOrNone(packageData, 'branch')
-			workDir = self.mercurialClone(self.getPrimaryPackageUrl(packageData, packageName), self.getValueOrNone(packageData, 'folder_name'), renameFolder, branch)
+			workDir = self.mercurialClone(self.getPrimaryPackageUrl(packageData, packageName), self.getValueOrNone(packageData, 'folder_name'), renameFolder, branch, forceRebuild)
 		elif packageData["repo_type"] == "archive":
 			if "folder_name" in packageData:
 				workDir = self.downloadUnpackFile(packageData, packageName, packageData["folder_name"], workDir)
