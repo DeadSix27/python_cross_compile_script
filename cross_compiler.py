@@ -247,7 +247,7 @@ class CrossCompileScript:
 				'packages_folder': 'packages',
 			},
 			'toolchain': {
-				'output_path': '{bitness}-output',
+				'output_path': '{work_dir}/{bit_name_win}_output',
 				'bitness': [64, ],
 				'cpu_count': cpu_count(),
 				'mingw_commit': None,
@@ -291,27 +291,12 @@ class CrossCompileScript:
 
 	def init(self):
 		self.product_order = self.config["script"]["product_order"]
-		self.fullCurrentPath = os.getcwd()
-		self.fullPatchDir = os.path.join(self.fullCurrentPath, "patches")
-		self.fullWorkDir = os.path.join(self.fullCurrentPath, self.config["toolchain"]["work_dir"])
+		self.projectRoot = Path(os.getcwd())
+		self.fullPatchDir = self.projectRoot.joinpath("patches")
+		self.fullWorkDir = self.projectRoot.joinpath(self.config["toolchain"]["work_dir"])
 		self.mingwDir = self.config["toolchain"]["mingw_dir"]
-		self.fullProductDir: Path = None
 		self.targetBitness = self.config["toolchain"]["bitness"]
 		self.originalPATH = os.environ["PATH"]
-		self.targetHostStr = None
-		self.targetPrefix = None
-		self.mingwBinpath = None
-		self.mingwBinpath2 = None
-		self.fullCrossPrefixStr = None
-		self.makePrefixOptions = None
-		self.bitnessDirStr = None
-		self.bitnessDir2 = None
-		self.winBitnessDir = None
-		self.pkgConfigPath = None
-		self.shortCrossPrefixStr = None
-		self.cpuCount = None
-		self.originalCflags = None
-		self.buildLogFile = None
 		self.quietMode = self.config["script"]["quiet"]
 		self.debugMode = self.config["script"]["debug"]
 		self.userAgent = self.config["script"]["user_agent"]
@@ -687,34 +672,34 @@ class CrossCompileScript:
 
 	def prepareBuilding(self, bitness):
 		self.logger.info('Starting build script')
-		if not os.path.isdir(self.fullWorkDir):
+		if not self.fullWorkDir.exists():
 			self.logger.info("Creating workdir: %s" % (self.fullWorkDir))
-			os.makedirs(self.fullWorkDir, exist_ok=True)
+			self.fullWorkDir.mkdir()
 		self.cchdir(self.fullWorkDir)
 
 		self.currentBitness = bitness
-		self.bitnessDirStr = "x86_64" if bitness == 64 else "i686"  # e.g x86_64
-		self.bitnessDirPath = Path("x86_64" if bitness == 64 else "i686")  # e.g x86_64
-		self.bitnessDir2 = "x86_64" if bitness == 64 else "x86"  # just for vpx...
-		self.bitnessDir3 = "mingw64" if bitness == 64 else "mingw"  # just for openssl...
-		self.winBitnessDir = "win64" if bitness == 64 else "win32"  # e.g win64
-		self.targetHostStr = F"{self.bitnessDirStr}-w64-mingw32"  # e.g x86_64-w64-mingw32
+		self.bitnessStr = "x86_64" if bitness == 64 else "i686"  # e.g x86_64
+		self.bitnessPath = self.fullWorkDir.joinpath("x86_64" if bitness == 64 else "i686")  # e.g x86_64
+		self.bitnessStr2 = "x86_64" if bitness == 64 else "x86"  # just for vpx...
+		self.bitnessStr3 = "mingw64" if bitness == 64 else "mingw"  # just for openssl...
+		self.bitnessStrWin = "win64" if bitness == 64 else "win32"  # e.g win64
+		self.targetHostStr = F"{self.bitnessStr}-w64-mingw32"  # e.g x86_64-w64-mingw32
 
-		self.targetPrefix = Path(self.fullWorkDir, self.mingwDir, self.bitnessDirStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+		self.targetPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
 
-		self.inTreePrefix = Path(self.fullWorkDir, self.bitnessDirStr) # workdir/x86_64
+		self.inTreePrefix = self.fullWorkDir.joinpath(self.bitnessStr) # workdir/x86_64
 
-		self.offtreePrefix = Path(self.fullWorkDir, self.bitnessDirStr + "_offtree")  # workdir/x86_64_offtree
+		self.offtreePrefix = self.fullWorkDir.joinpath(self.bitnessStr + "_offtree")  # workdir/x86_64_offtree
 
-		self.targetSubPrefix = Path(self.fullWorkDir, self.mingwDir, self.bitnessDirStr + "-w64-mingw32")  # e.g workdir/xcompilers/mingw-w64-x86_64
+		self.targetSubPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32")  # e.g workdir/xcompilers/mingw-w64-x86_64
 
-		self.mingwBinpath = Path(self.fullWorkDir, self.mingwDir, self.bitnessDirStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/mingw-w64-x86_64/bin
+		self.mingwBinpath = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/mingw-w64-x86_64/bin
 
-		self.mingwBinpath2 = Path(self.fullWorkDir, self.mingwDir, self.bitnessDirStr + "-w64-mingw32", self.bitnessDirStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
+		self.mingwBinpath2 = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
 
-		self.fullCrossPrefixStr = F"{self.mingwBinpath}/{self.bitnessDirStr}-w64-mingw32-" # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+		self.fullCrossPrefixStr = F"{self.mingwBinpath}/{self.bitnessStr}-w64-mingw32-" # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 
-		self.shortCrossPrefixStr = F"{self.bitnessDirStr}-w64-mingw32-"  # e.g x86_64-w64-mingw32-
+		self.shortCrossPrefixStr = F"{self.bitnessStr}-w64-mingw32-"  # e.g x86_64-w64-mingw32-
 
 		self.autoConfPrefixOptions = F'--with-sysroot="{self.targetSubPrefix}" --host={self.targetHostStr} --prefix={self.targetPrefix} --disable-shared --enable-static'
 
@@ -728,15 +713,15 @@ class CrossCompileScript:
 
 		self.pkgConfigPath = "{0}/lib/pkgconfig".format(self.targetPrefix)  # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 
-		self.mesonEnvFile = os.path.join(self.fullWorkDir, "meson_environment.txt")
-		self.cmakeToolchainFile = os.path.join(self.fullWorkDir, "mingw_toolchain.cmake")
+		self.mesonEnvFile = self.fullWorkDir.joinpath("meson_environment.txt")
+		self.cmakeToolchainFile = self.fullWorkDir.joinpath("mingw_toolchain.cmake")
 		self.cmakePrefixOptions = F'-DCMAKE_TOOLCHAIN_FILE="{self.cmakeToolchainFile}" -G\"Ninja\"'
-		self.cmakePrefixOptionsOld = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefixStr, target_prefix=self.targetPrefix, bitness=self.bitnessDirStr)
+		self.cmakePrefixOptionsOld = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefixStr, target_prefix=self.targetPrefix, bitness=self.bitnessStr)
 		self.cpuCount = self.config["toolchain"]["cpu_count"]
 		self.originalCflags = self.config["toolchain"]["original_cflags"]
 		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else ""
 
-		self.fullProductDir = Path(self.fullWorkDir, self.bitnessDirStr + "_products")
+		self.fullProductDir = self.fullWorkDir.joinpath(self.bitnessStr + "_products")
 
 		self.formatDict = defaultdict(lambda: "")
 		self.formatDict.update(
@@ -751,16 +736,16 @@ class CrossCompileScript:
 				'cross_prefix_bare': self.shortCrossPrefixStr,
 				'cross_prefix_full': self.fullCrossPrefixStr,
 				'target_prefix': self.targetPrefix,
-				'project_root': self.fullCurrentPath,
+				'project_root': self.projectRoot,
 				'work_dir': self.fullWorkDir,
 				'inTreePrefix': self.inTreePrefix,
 				'offtree_prefix': self.offtreePrefix,
 				'target_host': self.targetHostStr,
 				'target_sub_prefix': self.targetSubPrefix,
-				'bit_name': self.bitnessDirStr,
-				'bit_name2': self.bitnessDir2,
-				'bit_name3': self.bitnessDir3,
-				'bit_name_win': self.winBitnessDir,
+				'bit_name': self.bitnessStr,
+				'bit_name2': self.bitnessStr2,
+				'bit_name3': self.bitnessStr3,
+				'bit_name_win': self.bitnessStrWin,
 				'bit_num': self.currentBitness,
 				'product_prefix': self.fullProductDir,
 				'target_prefix_sed_escaped': str(self.targetPrefix).replace("/", "\\/"),
@@ -774,7 +759,7 @@ class CrossCompileScript:
 		)
 
 		self.config = self.formatConfig(self.config)
-		self.fullOutputDir = Path(self.replaceToolChainVars(self.config["toolchain"]["output_path"]))
+		self.fullOutputDir = self.projectRoot.joinpath(self.replaceToolChainVars(self.config["toolchain"]["output_path"]))
 		self.formatDict['output_prefix'] = str(self.fullOutputDir)
 
 		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
@@ -786,9 +771,9 @@ class CrossCompileScript:
 	#:
 
 	def initBuildFolders(self):
-		if not self.bitnessDirPath.exists():
-			self.logger.info(F"Creating bitdir: {self.bitnessDirPath}")
-			self.bitnessDirPath.mkdir(exist_ok=True)
+		if not self.bitnessPath.exists():
+			self.logger.info(F"Creating bitdir: {self.bitnessPath}")
+			self.bitnessPath.mkdir(exist_ok=True)
 
 		if not self.fullProductDir.exists():
 			self.logger.info(F"Creating product path: {self.fullProductDir}")
@@ -813,7 +798,7 @@ class CrossCompileScript:
 		return False
 
 	def buildMingw(self, bitness):
-		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessDirStr + "-w64-mingw32-gcc")
+		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessStr + "-w64-mingw32-gcc")
 
 		if os.path.isfile(gcc_bin):
 			gccOutput = subprocess.check_output(gcc_bin + " -v", shell=True, stderr=subprocess.STDOUT).decode("utf-8")
@@ -864,7 +849,7 @@ class CrossCompileScript:
 	#:
 
 	def downloadHeader(self, url):
-		destination = os.path.join(self.targetPrefix, "include")
+		destination = self.targetPrefix.joinpath("include")
 		fileName = os.path.basename(urlparse(url).path)
 
 		if not os.path.isfile(os.path.join(destination, fileName)):
@@ -1013,7 +998,7 @@ class CrossCompileScript:
 			self.logger.info("Creating CMake Toolchain file at: '%s'" % (self.cmakeToolchainFile))
 			tcFile = [
 				F'set(CMAKE_SYSTEM_NAME Windows)',
-				F'set(CMAKE_SYSTEM_PROCESSOR {self.bitnessDirStr})',
+				F'set(CMAKE_SYSTEM_PROCESSOR {self.bitnessStr})',
 				F'set(CMAKE_SYSROOT {self.targetSubPrefix})',
 				#F'set(CMAKE_STAGING_PREFIX /home/devel/stage)',
 				F'set(CMAKE_RANLIB {self.shortCrossPrefixStr}ranlib)',
@@ -1054,14 +1039,14 @@ class CrossCompileScript:
 				"",
 				"[host_machine]",
 				"system = 'windows'",
-				F"cpu_family = '{self.bitnessDirStr}'",
-				F"cpu = '{self.bitnessDirStr}'",
+				F"cpu_family = '{self.bitnessStr}'",
+				F"cpu = '{self.bitnessStr}'",
 				"endian = 'little'",
 				"",
 				"[target_machine]",
 				"system = 'windows'",
-				F"cpu_family = '{self.bitnessDirStr}'",
-				F"cpu = '{self.bitnessDirStr}'",
+				F"cpu_family = '{self.bitnessStr}'",
+				F"cpu = '{self.bitnessStr}'",
 				"endian = 'little'",
 				"",
 				"[properties]",
@@ -1672,8 +1657,8 @@ class CrossCompileScript:
 			outPath = self.fullProductDir
 			self.cchdir(self.fullProductDir)
 		else:
-			outPath = os.path.join(outPath, self.bitnessDirPath)
-			self.cchdir(self.bitnessDirPath)
+			outPath = os.path.join(outPath, self.bitnessPath)
+			self.cchdir(self.bitnessPath)
 
 		if packageData["repo_type"] == "git":
 			branch = self.getValueOrNone(packageData, 'branch')
@@ -1757,7 +1742,7 @@ class CrossCompileScript:
 		if type == "PRODUCT":
 			self.cchdir(self.fullProductDir)  # descend into x86_64_products
 		else:
-			self.cchdir(self.bitnessDirPath)  # descend into x86_64
+			self.cchdir(self.bitnessPath)  # descend into x86_64
 
 		if packageData["repo_type"] == "git":
 			branch = self.getValueOrNone(packageData, 'branch')
