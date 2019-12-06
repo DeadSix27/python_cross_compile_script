@@ -1,4 +1,4 @@
-# My stuff
+.vscode/
 workdir/
 cross_compiler.yaml
 tools/_deps_split
