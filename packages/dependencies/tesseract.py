@@ -27,7 +27,7 @@
 		'post_install': [
 			{
 				0: r'^(?:[\s]+)?Libs:(?:[\s]+)?-L\${{libdir}}(?:[\s]+)?(-ltesseract[0-9]{{2}})(?:[^\n]+)?$',
-				1: r'Requires: lept\nRequires.private: lept\nLibs: -L${{libdir}} \1 -lstdc++ -lws2_32',
+				1: r'Requires: lept libarchive\nRequires.private: lept libarchive\nLibs: -L${{libdir}} \1 -lstdc++ -lws2_32',
 				'in_file': '{pkg_config_path}/tesseract.pc'
 			}
 		]

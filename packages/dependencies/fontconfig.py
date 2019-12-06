@@ -13,8 +13,24 @@
 		'autoreconf -fiv',
 	],
 	# 'run_post_install' : [
-		# 'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv -lintl/\' "{pkg_config_path}/fontconfig.pc"',
+	# 	'sed -i.bak \'s/-L${{libdir}} -lfontconfig[^l]*$/-L${{libdir}} -lfontconfig -lfreetype -lharfbuzz -lxml2 -liconv -lintl/\' "{pkg_config_path}/fontconfig.pc"',
 	# ],
+
+	'regex_replace': {
+		'post_install': [
+			{
+				0: r'Requires:  freetype2',
+				1: r'Requires: harfbuzz libxml-2.0 freetype2',
+				'in_file': '{pkg_config_path}/fontconfig.pc'
+			},
+			{
+				0: r'Libs: -L\${{libdir}} -lfontconfig',
+				1: r'Libs: -L${{libdir}} -lfontconfig -liconv -lintl ',
+				'in_file': '{pkg_config_path}/fontconfig.pc'
+			}
+		]
+	},
+
 	'depends_on' : [
 		'expat', 'iconv', 'libxml2', 'freetype', 'json-c',
 	],
