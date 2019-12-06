@@ -28,7 +28,7 @@
 		'libtheora',
 		'libspeex',
 		'libsoxr',
-		'librubberband',
+		'rubberband',
 		'libass',
 		'tesseract',
 		'lensfun',

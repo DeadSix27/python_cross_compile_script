@@ -43,6 +43,7 @@
 		'--enable-libdav1d '
 		'--enable-libaom '
 		'--enable-libxvid '
+		'--enable-gray '
 
 		# Audio Libs
 		'--enable-libopus '
@@ -75,37 +76,38 @@
 
 	'ffmpeg_nonfree': '--enable-nonfree --enable-libfdk-aac --enable-decklink', # --enable-cuda-sdk # nonfree stuff
 
-	#'ffmpeg_base_config' : # the obscure extra stuff TODO: turn into ffmpeg_extra_config
-	#	'--enable-libtwolame '
-	#	'--enable-libzvbi '
-	#	'--enable-libgsm '
-	#	'--enable-libopencore-amrnb '
-	#	'--enable-libopencore-amrwb '
-	#	'--enable-libvo-amrwbenc '
-	#	'--enable-libilbc '
-	#	'--enable-libwavpack '
-	#	'--enable-dxva2 '
-	#	'--enable-gray '
-	#	'--enable-libmysofa '
-	#	'--enable-libflite '
-	#	'--enable-libsnappy '
-	#	'--enable-frei0r '
-	#	'--enable-filter=frei0r '
-	#	'--enable-libvidstab '
-	#	'--enable-libgme '
-	#	'--disable-schannel '
-	#	'--disable-gcrypt '
-	#	# '--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.
-	#	'--enable-ladspa '
-	#	'--enable-libdavs2 '
-	#	'--enable-libopenmpt '
-	#	'--enable-libxavs '
-	#	'--enable-libxavs2 '
-	#	'--enable-libsrt '
-	#	# '--enable-libvmaf '
-	#	'--extra-libs="-lpsapi" '
-	#	# '--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
-	#	'--extra-cflags="-DLIBTWOLAME_STATIC" '
-	#	'--extra-cflags="-DMODPLUG_STATIC" '
-	#,
+	'ffmpeg_extra_config' :
+		'--enable-libtwolame '
+		'--enable-libzvbi '
+		'--enable-libgsm '
+		'--enable-libopencore-amrnb '
+		'--enable-libopencore-amrwb '
+		'--enable-libvo-amrwbenc '
+		'--enable-libsnappy '
+		'--enable-frei0r '
+		'--enable-filter=frei0r '
+		'--enable-libsrt '
+		'--enable-libbs2b '
+		'--enable-libwavpack '
+		'--enable-libilbc '
+		'--enable-libgme '
+		'--enable-libflite '
+		#'--enable-sdl '
+		'--enable-libdavs2 '
+		'--enable-libxavs '
+		'--enable-libxavs2 '
+		'--enable-libopenmpt '
+		'--enable-libmysofa '
+		'--enable-libvidstab '
+		'--enable-libmodplug '
+		#'--disable-schannel '
+		#'--disable-gcrypt '
+		#'--enable-ladspa '
+		# '--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.
+		# '--enable-libvmaf '
+		# '--extra-libs="-lpsapi" '
+		# '--extra-libs="-liconv" ' # -lschannel #-lsecurity -lz -lcrypt32 -lintl -liconv -lpng -loleaut32 -lstdc++ -lspeexdsp -lpsapi
+		# '--extra-cflags="-DLIBTWOLAME_STATIC" '
+		# '--extra-cflags="-DMODPLUG_STATIC" '
+	,
 }
