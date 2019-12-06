@@ -35,6 +35,7 @@ SOURCES = OrderedDict() # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type' : 'git',
+	'git_shallow': True,
 	'url' : 'https://git.code.sf.net/p/mingw-w64/mingw-w64', # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
 	'run_after_patches' : [
 		( 'autoreconf -fiv', ),
@@ -525,7 +526,7 @@ class MinGW64ToolChainBuilder:
 			if exitOnError:
 				exit(1)
 	#:
-	def gitClone(self,url,virtFolderName=None,renameTo=None,desiredBranch=None,recursive=False,shallow=False):
+	def gitClone(self, packageName, url, virtFolderName=None, renameTo=None, desiredBranch=None, recursive=False, shallow=False):
 		if virtFolderName == None:
 			virtFolderName = self.sanitize_filename(os.path.basename(url))
 			if not virtFolderName.endswith(".git"): virtFolderName += ".git"
@@ -546,6 +547,7 @@ class MinGW64ToolChainBuilder:
 			properBranchString  = desiredBranch
 
 		if os.path.isdir(realFolderName):
+			self.log("Git repo '%s' already cloned, updating.." % (packageName, url))
 			self.cchdir(realFolderName)
 
 			self.run_process('git remote update')
@@ -578,6 +580,7 @@ class MinGW64ToolChainBuilder:
 				self.run_process('git submodule update --init --recursive')
 			self.cchdir("..")
 		else:
+			self.log(F"{'C' if not shallow else 'Shallow-c'}loning Git repository '{packageName}' from '{url}'")
 			self.run_process('git clone{0}{1} --progress "{2}" "{3}"'.format
 				(
 					" --recursive" if recursive == True else "",
@@ -646,8 +649,7 @@ class MinGW64ToolChainBuilder:
 					if "git_shallow" in p:
 						if p["git_shallow"] == True:
 							shallowClone = True
-					self.log("Cloning git repo '%s' from '%s'" % (pn,pUrl))
-					productPath = self.gitClone(pUrl,desiredBranch=branch,shallow=shallowClone)
+					productPath = self.gitClone(pn, pUrl, desiredBranch=branch, shallow=shallowClone)
 
 				elif p["type"] == "archive":
 					pUrl = p["url"].format(version=p["version"])
@@ -769,14 +771,11 @@ class MinGW64ToolChainBuilder:
 
 			self.cchdir(pBuildFolder)
 
-			confOpts = ""
-			if not self.debugBuild:
+			confOpts = "configure"
+			if not self.debugBuild and "lineConfig" in p:
 				confOpts = formatProgVars(p["lineConfig"])
-			elif self.debugBuild:
-				if "lineConfigDebug" not in p:
-					self.log(F"Debug-build is enabled but package {pn} has no debug-config line set, using default.")
-				else:
-					confOpts = p["lineConfigDebug"]
+			elif self.debugBuild and "lineConfigDebug" in p:
+				confOpts = p["lineConfigDebug"]
 
 			confOptsHash = "already_built_" + pn + "_" + self.md5(confOpts)
 			cpuCount = _CPU_COUNT
@@ -807,8 +806,8 @@ class MinGW64ToolChainBuilder:
 					if p["noConfigure"] == True:
 						noConfig = True
 				if not noConfig:
-					self.log("Configuring '%s' with: <%s/%s> in <%s>" % (pn,pSourceFolder, confOpts, os.getcwd()))
-					self.run_process("%s/%s" % (pSourceFolder.rstrip("/"), confOpts))#configure
+					self.log(F'Configuring "{pn}" with: <{pSourceFolder.rstrip("/")}/{confOpts}> in <{os.getcwd()}> with\n<{confOpts}>')
+					self.run_process(F'{pSourceFolder.rstrip("/")}/{confOpts}')
 
 				if "debug_exit_after_config" in p:
 					if p["debug_exit_after_config"] == True:
