@@ -8,6 +8,7 @@
 		'-DSHADERC_SKIP_INSTALL=ON '
 		'-DSHADERC_SKIP_TESTS=ON '
 		'-DSHADERC_ENABLE_SPVC=ON '
+	,
 	'source_subfolder' : '_build',
 	'conf_system' : 'cmake',
 	'needs_make_install' : False,
