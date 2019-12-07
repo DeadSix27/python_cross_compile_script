@@ -1,5 +1,6 @@
 {
 	'repo_type' : 'git',
+	'depth_git': 0,
 	'url' : 'https://bitbucket.org/mpyne/game-music-emu.git',
 	'branch' : '97527b20a40e6a8ddc272e0c503fea254a0b8eb2',
 	'conf_system' : 'cmake',
