@@ -14,7 +14,7 @@
 	'env_exports' : {
 		'CROSS' : '{cross_prefix_bare}',
 	},
-	'custom_cflag' : '-fno-asynchronous-unwind-tables',
+	'cflag_addition' : '-fno-asynchronous-unwind-tables',
 	'patches' : [
 		( 'vpx/vpx_160_semaphore.patch', '-p1' ),
 	],

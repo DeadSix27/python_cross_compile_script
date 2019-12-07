@@ -797,6 +797,10 @@ class CrossCompileScript:
 				return True
 		return False
 
+	def reStrip(self, pat, txt):
+		x = re.sub(pat, '', txt)
+		return re.sub(r'[ ]+', ' ', x).strip()
+
 	def buildMingw(self, bitness):
 		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessStr + "-w64-mingw32-gcc")
 
@@ -1838,15 +1842,23 @@ class CrossCompileScript:
 
 		if 'cflag_addition' in packageData:
 			if packageData['cflag_addition'] is not None:
-				self.logger.debug("Adding '{0}' to CFLAGS".format(packageData['cflag_addition']))
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + packageData['cflag_addition']
 				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + packageData['cflag_addition']
+				self.logger.info(F'Added to C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
 
 		if 'custom_cflag' in packageData:
 			if packageData['custom_cflag'] is not None:
-				self.logger.debug("Setting CFLAGS to '{0}'".format(packageData['custom_cflag']))
 				os.environ["CFLAGS"] = packageData['custom_cflag']
 				os.environ["CXXFLAGS"] = packageData['custom_cflag']
+				self.logger.info(F'Set custom C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
+		
+		if 'strip_cflags' in packageData:
+			if isinstance(packageData["strip_cflags"], (list, tuple)) and len(packageData["strip_cflags"]):
+				for _pattern in packageData["strip_cflags"]:
+					os.environ["CFLAGS"] = self.reStrip(_pattern, os.environ["CFLAGS"])
+					os.environ["CXXFLAGS"] = self.reStrip(_pattern, os.environ["CXXFLAGS"])
+					self.logger.info(F'Stripped C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
+
 
 		if 'custom_path' in packageData:
 			if packageData['custom_path'] is not None:
