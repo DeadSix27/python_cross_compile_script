@@ -1504,9 +1504,9 @@ class CrossCompileScript:
 			if recursive:
 				addArgs.append("--recursive")
 
-			if depth >= 1:
+			if depth and depth >= 1:
 				addArgs.append(F"--depth {depth}")
-			elif depth < 0:
+			elif not depth or depth < 0:
 				depth = 1
 				addArgs.append(F"--depth 1")
 
@@ -1677,7 +1677,7 @@ class CrossCompileScript:
 		if packageData["repo_type"] == "git":
 			branch = self.getValueOrNone(packageData, 'branch')
 			recursive = self.getValueOrNone(packageData, 'recursive_git')
-			git_depth = self.getValueOrNone(packageData, 'depth_git')
+			git_depth = packageData.get('depth_git', -1)
 			folderName = self.getValueOrNone(packageData, 'folder_name')
 			doNotUpdate = False
 			if 'do_not_git_update' in packageData:
@@ -1760,7 +1760,7 @@ class CrossCompileScript:
 		if packageData["repo_type"] == "git":
 			branch = self.getValueOrNone(packageData, 'branch')
 			recursive = self.getValueOrNone(packageData, 'recursive_git')
-			git_depth = self.getValueOrNone(packageData, 'depth_git')
+			git_depth = packageData.get('depth_git', -1)
 			folderName = self.getValueOrNone(packageData, 'folder_name')
 			doNotUpdate = False
 			if 'do_not_git_update' in packageData:
