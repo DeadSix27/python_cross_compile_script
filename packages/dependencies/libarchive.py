@@ -42,12 +42,12 @@
 		'post_install': [
 			{
 				0: r'^Libs: -L\${{libdir}} -larchive([^\n]+)?',
-				1: r'Libs: -L${{libdir}} -larchive -lnettle -lxml2 -llzma -lbcrypt -lbz2 -lz -liconv -lcharset -lws2_32\1',
+				1: r'Libs: -L${{libdir}} -larchive -lnettle -lxml2 -llzma -lbcrypt -lbz2 -lz -liconv -lcharset -llzo2 -lws2_32\1',
 				'in_file': '{pkg_config_path}/libarchive.pc'
 			},
 			{
 				0: r'Libs.private:  [^\n]+',
-				1: r'Libs.private: -lnettle -lxml2 -llzma -lbcrypt -lbz2 -lz -liconv -lcharset -lws2_32',
+				1: r'Libs.private: -lnettle -lxml2 -llzma -lbcrypt -lbz2 -lz -liconv -lcharset -llzo2 -lws2_32',
 				'in_file': '{pkg_config_path}/libarchive.pc'
 			}
 		]
