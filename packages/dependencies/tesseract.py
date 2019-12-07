@@ -11,7 +11,7 @@
 					r'    if\(LibArchive_FOUND\)\n'
 				,
 				1:
-					r'    set(LibArchive_LIBRARIES "-larchive -lnettle -lxml2 -llzma -lbcrypt -lbz2 -lz -liconv -lws2_32")\n'
+					r'    set(LibArchive_LIBRARIES "!CMD(pkg-config libarchive --libs-only-l)CMD!")\n'
 					r'    message(STATUS "LibArchive Libs: ${{LibArchive_LIBRARIES}}")\n'
     				r'    if(LibArchive_FOUND)\n'
 				,
