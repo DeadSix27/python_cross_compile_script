@@ -1506,7 +1506,7 @@ class CrossCompileScript:
 
 			if depth and depth >= 1:
 				addArgs.append(F"--depth {depth}")
-			elif not depth or depth < 0:
+			elif depth is None or depth < 0:
 				depth = 1
 				addArgs.append(F"--depth 1")
 
