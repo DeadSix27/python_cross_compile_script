@@ -10,7 +10,7 @@
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=0 -DCMAKE_BUILD_TYPE=Release '
 		'-DBUILD_TESTS=OFF '
 		'-DENABLE_THREADS=ON '
-		'-DENABLE_FLOAT=ON '
+		'-DENABLE_FLOAT=OFF '
 		'-DENABLE_LONG_DOUBLE=OFF '
 		'-DENABLE_QUAD_PRECISION=OFF '
 		'-DENABLE_SSE=ON '
@@ -18,6 +18,15 @@
 		'-DENABLE_AVX=ON '
 		'-DENABLE_AVX2=ON '
 	,
+	'regex_replace': {
+		'post_patch': [
+			{
+				0: r'fftw\${{PREC_SUFFIX}}\.pc',
+				1: r'fftw3${{PREC_SUFFIX}}.pc',
+				'in_file': '../CMakeLists.txt'
+			},
+		],
+	},
 	'update_check' : { 'url' : 'ftp://ftp.fftw.org/pub/fftw/', 'type' : 'ftpindex', 'regex' : r'fftw-(?P<version_num>[\d.]+)\.tar\.gz' },
 	'_info' : { 'version' : '3.3.8', 'fancy_name' : 'fftw' },
 }
