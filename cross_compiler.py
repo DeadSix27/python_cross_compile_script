@@ -1505,8 +1505,11 @@ class CrossCompileScript:
 				addArgs.append("--recursive")
 			if depth and depth >= 0:
 				addArgs.append(F"--depth {depth}")
+			else:
+				depth = 1
+				addArgs.append(F"--depth 1")
 
-			self.logger.info("GIT cloning '%s' to '%s'" % (url, os.getcwd() + "/" + realFolderName))
+			self.logger.info(F"Git {'Shallow C' if depth == 1 else 'C'}loning '{url}' to '{os.getcwd() + '/' + realFolderName}'")
 			self.runProcess('git clone {0} --progress "{1}" "{2}"'.format(" ".join(addArgs), url, realFolderName + ".tmp"))
 			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
