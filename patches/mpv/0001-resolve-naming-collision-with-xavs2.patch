@@ -1,0 +1,88 @@
+From b5a550054de1546f96142467821091f19317ffa7 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Sat, 7 Dec 2019 15:40:17 +0100
+Subject: [PATCH] resolve naming collision with xavs2
+
+---
+ audio/out/ao_lavc.c  | 4 ++--
+ common/encode_lavc.c | 2 +-
+ common/encode_lavc.h | 4 ++--
+ video/out/vo_lavc.c  | 4 ++--
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/audio/out/ao_lavc.c b/audio/out/ao_lavc.c
+index 0973d9f529..02a152b02f 100644
+--- a/audio/out/ao_lavc.c
++++ b/audio/out/ao_lavc.c
+@@ -237,10 +237,10 @@ static void encode(struct ao *ao, double apts, void **data)
+         ac->lastpts = frame_pts;
+ 
+         frame->quality = encoder->global_quality;
+-        encoder_encode(ac->enc, frame);
++        encoder_encode_mpv(ac->enc, frame);
+         av_frame_free(&frame);
+     } else {
+-        encoder_encode(ac->enc, NULL);
++        encoder_encode_mpv(ac->enc, NULL);
+     }
+ }
+ 
+diff --git a/common/encode_lavc.c b/common/encode_lavc.c
+index 2b9bdb4a66..f163701ad2 100644
+--- a/common/encode_lavc.c
++++ b/common/encode_lavc.c
+@@ -926,7 +926,7 @@ fail:
+     return false;
+ }
+ 
+-bool encoder_encode(struct encoder_context *p, AVFrame *frame)
++bool encoder_encode_mpv(struct encoder_context *p, AVFrame *frame)
+ {
+     int status = avcodec_send_frame(p->encoder, frame);
+     if (status < 0) {
+diff --git a/common/encode_lavc.h b/common/encode_lavc.h
+index 97c2cf01f1..264dcd90d3 100644
+--- a/common/encode_lavc.h
++++ b/common/encode_lavc.h
+@@ -102,14 +102,14 @@ struct encoder_context *encoder_context_alloc(struct encode_lavc_context *ctx,
+ // After setting your codec parameters on p->encoder, you call this to "open"
+ // the encoder. This also initializes p->mux_stream. Returns false on failure.
+ // on_ready is called as soon as the muxer has been initialized. Then you are
+-// allowed to write packets with encoder_encode().
++// allowed to write packets with encoder_encode_mpv().
+ // Warning: the on_ready callback is called asynchronously, so you need to
+ // make sure to properly synchronize everything.
+ bool encoder_init_codec_and_muxer(struct encoder_context *p,
+                                   void (*on_ready)(void *ctx), void *ctx);
+ 
+ // Encode the frame and write the packet. frame is ref'ed as need.
+-bool encoder_encode(struct encoder_context *p, AVFrame *frame);
++bool encoder_encode_mpv(struct encoder_context *p, AVFrame *frame);
+ 
+ double encoder_get_offset(struct encoder_context *p);
+ 
+diff --git a/video/out/vo_lavc.c b/video/out/vo_lavc.c
+index e817b530e0..41ad46bbcf 100644
+--- a/video/out/vo_lavc.c
++++ b/video/out/vo_lavc.c
+@@ -57,7 +57,7 @@ static void uninit(struct vo *vo)
+     struct encoder_context *enc = vc->enc;
+ 
+     if (!vc->shutdown)
+-        encoder_encode(enc, NULL); // finish encoding
++        encoder_encode_mpv(enc, NULL); // finish encoding
+ }
+ 
+ static void on_ready(void *ptr)
+@@ -223,7 +223,7 @@ static void draw_frame(struct vo *vo, struct vo_frame *voframe)
+     frame->pts = rint(outpts * av_q2d(av_inv_q(avc->time_base)));
+     frame->pict_type = 0; // keep this at unknown/undefined
+     frame->quality = avc->global_quality;
+-    encoder_encode(enc, frame);
++    encoder_encode_mpv(enc, frame);
+     av_frame_free(&frame);
+ }
+ 
+-- 
+2.24.0.windows.2
+
