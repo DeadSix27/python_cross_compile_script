@@ -2445,29 +2445,29 @@ class CrossCompileScript:
 			return out
 		return ''
 
-	def replaceToolChainVars(self, cmd):
-		return cmd.format_map(self.formatDict)
+	def replaceToolChainVars(self, inStr):
+		return inStr.format_map(self.formatDict)
 
-	def replaceVariables(self, cmd):
-		raw_cmd = cmd
-		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", cmd)  # TODO: assignment expression
+	def replaceVariables(self, inStr):
+		rawInStr = inStr
+		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", inStr)  # TODO: assignment expression
 		if varList:
 			for varName in varList:
 				if varName in self.packages["vars"]:
 					variableContent = self.packages["vars"][varName]
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), cmd, flags=re.DOTALL)
+					inStr = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), inStr, flags=re.DOTALL)
 				else:
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), cmd, flags=re.DOTALL)
-					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{raw_cmd}', it has been stripped.")
+					inStr = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), inStr, flags=re.DOTALL)
+					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{rawInStr}', it has been stripped.")
 
-		cmd = self.replaceToolChainVars(cmd)
+		inStr = self.replaceToolChainVars(inStr)
 
-		m = re.search(r'\!CMD\((.*)\)CMD!', cmd)
-		if m is not None:
-			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n", "").replace("\r", "")
-			mr = re.sub(r"\!CMD\((.*)\)CMD!", F"{cmdReplacer}", cmd, flags=re.DOTALL)
-			cmd = mr
-		return cmd
+		cmdList = re.findall(r"!CMD\((?P<full_cmd>[^\)\(]+)\)CMD!", inStr)  # TODO: assignment expression TODO: handle escaped brackets inside cmd syntax
+		if cmdList:
+			for cmd in cmdList:
+				cmdReplacer = subprocess.check_output(cmd, shell=True).decode("utf-8").replace("\n", "").replace("\r", "").strip()
+				inStr = re.sub(r"!CMD\(([^\)\(]+)\)CMD!", F"{cmdReplacer}", inStr, flags=re.DOTALL)
+		return inStr
 	#:
 
 	def getValueOrNone(self, db, k):
