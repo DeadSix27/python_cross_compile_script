@@ -7,5 +7,16 @@
 	'patches': [
 		('modplug/0001-modplug-mingw-workaround.patch', '-p1', '..'), # to avoid setting -DLIBMODPLUG_STATIC
 	],
+	'regex_replace': {
+		'post_patch': [
+			{
+				# Will they ever realise that WIN32 is True on MinGW as well where we need pkg-config files and so on?
+				# Use MSVC or a combination of MINGW/WINDOWS/WIN32
+				0: r'if \(NOT WIN32\)',
+				1: r'if (NOT MSVC)',
+				'in_file': '../CMakeLists.txt'
+			},
+		],
+	},
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'libmodplug' },
 }
