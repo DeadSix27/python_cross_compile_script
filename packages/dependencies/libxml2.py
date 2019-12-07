@@ -17,7 +17,7 @@
 		'sed -i.bak \'s/Libs: -L${{libdir}} -lxml2/Libs: -L${{libdir}} -lxml2 -lz -llzma -liconv -lws2_32/\' "{pkg_config_path}/libxml-2.0.pc"', # libarchive complaints without this.
 	],
 	'depends_on' : [
-		'xz', 'iconv'
+		'xz', 'iconv', 'zlib',
 	],
 	'update_check' : { 'url' : 'http://xmlsoft.org/sources/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'libxml2-(?P<version_num>[\d.]+)-rc(?P<rc_num>[0-9]).tar.gz' },
 	'_info' : { 'version' : '2.9.10.1', 'fancy_name' : 'libxml2' },
