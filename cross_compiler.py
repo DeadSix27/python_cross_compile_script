@@ -687,7 +687,7 @@ class CrossCompileScript:
 
 		self.targetPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
 
-		self.inTreePrefix = self.fullWorkDir.joinpath(self.bitnessStr) # workdir/x86_64
+		self.inTreePrefix = self.fullWorkDir.joinpath(self.bitnessStr)  # workdir/x86_64
 
 		self.offtreePrefix = self.fullWorkDir.joinpath(self.bitnessStr + "_offtree")  # workdir/x86_64_offtree
 
@@ -697,7 +697,7 @@ class CrossCompileScript:
 
 		self.mingwBinpath2 = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
 
-		self.fullCrossPrefixStr = F"{self.mingwBinpath}/{self.bitnessStr}-w64-mingw32-" # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+		self.fullCrossPrefixStr = F"{self.mingwBinpath}/{self.bitnessStr}-w64-mingw32-"  # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
 
 		self.shortCrossPrefixStr = F"{self.bitnessStr}-w64-mingw32-"  # e.g x86_64-w64-mingw32-
 
@@ -709,7 +709,7 @@ class CrossCompileScript:
 			F"RANLIB={self.shortCrossPrefixStr}ranlib " \
 			F"LD={self.shortCrossPrefixStr}ld " \
 			F"STRIP={self.shortCrossPrefixStr}strip " \
-			F'CXX={self.shortCrossPrefixStr}g++' #--sysroot="{self.targetSubPrefix}"'
+			F'CXX={self.shortCrossPrefixStr}g++'  # --sysroot="{self.targetSubPrefix}"'
 
 		self.pkgConfigPath = "{0}/lib/pkgconfig".format(self.targetPrefix)  # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
 
@@ -1851,14 +1851,13 @@ class CrossCompileScript:
 				os.environ["CFLAGS"] = packageData['custom_cflag']
 				os.environ["CXXFLAGS"] = packageData['custom_cflag']
 				self.logger.info(F'Set custom C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
-		
+
 		if 'strip_cflags' in packageData:
 			if isinstance(packageData["strip_cflags"], (list, tuple)) and len(packageData["strip_cflags"]):
 				for _pattern in packageData["strip_cflags"]:
 					os.environ["CFLAGS"] = self.reStrip(_pattern, os.environ["CFLAGS"])
 					os.environ["CXXFLAGS"] = self.reStrip(_pattern, os.environ["CXXFLAGS"])
 					self.logger.info(F'Stripped C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
-
 
 		if 'custom_path' in packageData:
 			if packageData['custom_path'] is not None:
@@ -2024,7 +2023,7 @@ class CrossCompileScript:
 		self.defaultCFLAGS()
 		self.cchdir("..")  # asecond into workdir
 	#:
-	
+
 	def handleRegexReplace(self, rp, packageName):
 		cwd = Path(os.getcwd())
 		if "in_file" not in rp:
@@ -2038,7 +2037,7 @@ class CrossCompileScript:
 		else:
 			in_files = (cwd.joinpath(self.replaceVariables(in_files)), )
 
-		repls = [ self.replaceVariables(rp[0]), ]
+		repls = [self.replaceVariables(rp[0]), ]
 		if 1 in rp:
 			repls.append(self.replaceVariables(rp[1]))
 
@@ -2053,7 +2052,7 @@ class CrossCompileScript:
 					out_files = (cwd.joinpath(self.replaceVariables(x)) for x in rp["out_file"])
 				else:
 					out_files = (cwd.joinpath(self.replaceVariables(rp["out_file"])),)
-			
+
 			for _current_outfile in out_files:
 
 				if not _current_infile.exists():
@@ -2077,11 +2076,10 @@ class CrossCompileScript:
 							line = re.sub(repls[0], repls[1], line)
 							self.logger.debug(F"\n{line}")
 							nf.write(line)
-						elif re.search(repls[0],line):
+						elif re.search(repls[0], line):
 							self.logger.info(F"RegEx removing line\n{line}:")
 						else:
 							nf.write(line)
-					
 
 	def bootstrapConfigure(self):
 		if not os.path.isfile("configure"):
@@ -2168,12 +2166,10 @@ class CrossCompileScript:
 					mCleanCmd = './waf --color=yes clean'
 				self.runProcess('{0} {1}'.format(mCleanCmd, cpuCountStr), True)
 
-
 			if 'patches_post_configure' in packageData:
 				if packageData['patches_post_configure'] is not None:
 					for p in packageData['patches_post_configure']:
 						self.applyPatch(p[0], p[1], True)
-
 
 			self.touch(touchName)
 
@@ -2451,7 +2447,7 @@ class CrossCompileScript:
 
 	def replaceVariables(self, cmd):
 		raw_cmd = cmd
-		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", cmd) # TODO: assignment expression
+		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", cmd)  # TODO: assignment expression
 		if varList:
 			for varName in varList:
 				if varName in self.packages["vars"]:
