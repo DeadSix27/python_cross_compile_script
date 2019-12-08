@@ -1,6 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/xiph/opus.git',
+	'depth_git': 0,
 	'strip_cflags': ['-ffast-math', ],
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
