@@ -1,0 +1,46 @@
+From bebb37f9e3fa4360b2c1ba723dcc806d8d5db436 Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Fri, 6 Dec 2019 16:36:41 +0100
+Subject: [PATCH] mingw-workaround
+
+---
+ src/kvazaar.h | 26 +-------------------------
+ 1 file changed, 1 insertion(+), 25 deletions(-)
+
+diff --git a/src/kvazaar.h b/src/kvazaar.h
+index 444cedb0..52be7341 100644
+--- a/src/kvazaar.h
++++ b/src/kvazaar.h
+@@ -33,31 +33,7 @@
+ extern "C" {
+ #endif
+ 
+-#if defined(KVZ_DLL_EXPORTS)
+-  #if !defined(PIC)
+-    // Building static kvazaar library.
+-    #define KVZ_PUBLIC
+-  #elif defined(_WIN32) || defined(__CYGWIN__)
+-    // Building kvazaar DLL on Windows.
+-    #define KVZ_PUBLIC __declspec(dllexport)
+-  #elif defined(__GNUC__)
+-    // Building kvazaar shared library with GCC.
+-    #define KVZ_PUBLIC __attribute__ ((visibility ("default")))
+-  #else
+-    #define KVZ_PUBLIC
+-  #endif
+-#else
+-  #if defined(KVZ_STATIC_LIB)
+-    // Using static kvazaar library.
+-    #define KVZ_PUBLIC
+-  #elif defined(_WIN32) || defined(__CYGWIN__)
+-    // Using kvazaar DLL on Windows.
+-    #define KVZ_PUBLIC __declspec(dllimport)
+-  #else
+-    // Using kvazaar shared library and not on Windows.
+-    #define KVZ_PUBLIC
+-  #endif
+-#endif
++#define KVZ_PUBLIC
+ 
+ /**
+  * Maximum length of a GoP structure.

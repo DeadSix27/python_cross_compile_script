@@ -42,9 +42,10 @@ import sys
 import traceback
 import urllib.parse
 import urllib.request
+from collections import defaultdict
 from multiprocessing import cpu_count
-from urllib.parse import urlparse
 from pathlib import Path
+from urllib.parse import urlparse
 
 import progressbar  # Run pip3 install progressbar2
 import requests  # Run pip3 install requests
@@ -122,6 +123,7 @@ class CrossCompileScript:
 		fmt = MyLogFormatter(self.config["script"]["log_format"], self.config["script"]["log_date_format"])
 		hdlr.setFormatter(fmt)
 		self.packages = self.loadPackages(self.config["script"]["packages_folder"])
+		self.lastError = None
 		self.init()
 
 	def errorExit(self, msg):
@@ -224,11 +226,11 @@ class CrossCompileScript:
 	def confDiff(self, default, users):  # very basic config comparison
 		for category in default:
 			if category not in users:
-				return (False, "User config is missing '%s' category, please delete your config to regenerate a new one or add it manually." % (category))
+				return (False, F"User config is missing '{category}' category, please delete your config to regenerate a new one OR add it manually.")
 			elif category != "version":
 				for option in default[category]:
 					if option not in users[category]:
-						return (False, "User config is missing '%s' option in '%s' category, please delete your config to regenerate a new one or add it manually." % (option, category))
+						return (False, F"User config is missing '{option}' option in '{category}' category, please delete your config to regenerate a new one OR add it manually.")
 		return (True, 'Config Ok')
 
 	def loadConfig(self):
@@ -239,18 +241,20 @@ class CrossCompileScript:
 				'quiet': False,
 				'log_date_format': '%H:%M:%S',
 				'log_format': '[%(asctime)s][%(levelname)s]%(type)s %(message)s',
-				'product_order': ['mpv', 'ffmpeg_static', 'ffmpeg_shared'],
-				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0',
+				'product_order': ['mpv', 'ffmpeg'],
+				'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0',
 				'mingw_toolchain_path': 'mingw_toolchain_script/mingw_toolchain_script.py',
 				'packages_folder': 'packages',
 			},
 			'toolchain': {
+				'output_path': '{work_dir}/{bit_name_win}_output',
 				'bitness': [64, ],
 				'cpu_count': cpu_count(),
 				'mingw_commit': None,
 				'mingw_debug_build': False,
 				'mingw_dir': 'toolchain',
 				'mingw_custom_cflags': None,
+  				'output_path': '_output',
 				'work_dir': 'workdir',
 				'original_cflags': '-O3',
 			}
@@ -287,27 +291,12 @@ class CrossCompileScript:
 
 	def init(self):
 		self.product_order = self.config["script"]["product_order"]
-		self.fullCurrentPath = os.getcwd()
-		self.fullPatchDir = os.path.join(self.fullCurrentPath, "patches")
-		self.fullWorkDir = os.path.join(self.fullCurrentPath, self.config["toolchain"]["work_dir"])
+		self.projectRoot = Path(os.getcwd())
+		self.fullPatchDir = self.projectRoot.joinpath("patches")
+		self.fullWorkDir = self.projectRoot.joinpath(self.config["toolchain"]["work_dir"])
 		self.mingwDir = self.config["toolchain"]["mingw_dir"]
-		self.fullProductDir = None
 		self.targetBitness = self.config["toolchain"]["bitness"]
 		self.originalPATH = os.environ["PATH"]
-		self.targetHost = None
-		self.targetPrefix = None
-		self.mingwBinpath = None
-		self.mingwBinpath2 = None
-		self.fullCrossPrefix = None
-		self.makePrefixOptions = None
-		self.bitnessDir = None
-		self.bitnessDir2 = None
-		self.winBitnessDir = None
-		self.pkgConfigPath = None
-		self.bareCrossPrefix = None
-		self.cpuCount = None
-		self.originalCflags = None
-		self.buildLogFile = None
 		self.quietMode = self.config["script"]["quiet"]
 		self.debugMode = self.config["script"]["debug"]
 		self.userAgent = self.config["script"]["user_agent"]
@@ -513,7 +502,8 @@ class CrossCompileScript:
 		info_p.set_defaults(which='info_p')
 
 		info_p_group1 = info_p.add_mutually_exclusive_group(required=True)
-		info_p_group1.add_argument('-r', '--required-by', help='List all packages this dependency is required by')
+		info_p_group1.add_argument('-r', '--required-by', help='List all packages this dependency is required by', default=None)
+		info_p_group1.add_argument('-d', '--depends-on', help='List all packages this package depends on (recursively)', default=None)
 
 		group2 = parser.add_mutually_exclusive_group(required=False)
 		group2.add_argument('-p', '--build-product', dest='PRODUCT', help='Build the specificed product package(s)')
@@ -537,7 +527,10 @@ class CrossCompileScript:
 			args = parser.parse_args()
 
 			if args.which == "info_p":
-				self.listRequiredBy(args.required_by)
+				if args.required_by:
+					self.listRequiredBy(args.required_by)
+				if args.depends_on:
+					self.listDependsOn(args.depends_on)
 				return
 
 			forceRebuild = False
@@ -592,6 +585,27 @@ class CrossCompileScript:
 						self.buildThing(thing, self.packages["deps"][thing], buildType, forceRebuild, skipDeps)
 					main.finishBuilding()
 
+	def listDependsOn(self, pkgName):
+		if pkgName not in self.packages["prods"] and pkgName not in self.packages["deps"]:
+			self.logger.error("'%s' is not an existing package." % (pkgName))
+			sys.exit(1)
+
+		deps = {}
+
+		def getDeps(x):
+			oobj = {}
+			if "depends_on" in self.packages["deps"][x]:
+				for x in self.packages["deps"][x]["depends_on"]:
+					oobj[x] = None
+					if "depends_on" in self.packages["deps"][x]:
+						oobj[x] = {}
+						for _newPkgName in self.packages["deps"][x]["depends_on"]:
+							oobj[x][_newPkgName] = getDeps(_newPkgName)
+			return oobj
+
+		import pprint
+		pprint.pprint(getDeps(pkgName))
+
 	def listRequiredBy(self, o):
 		# ptype = None
 		# if o in self.packages["prods"]:
@@ -640,51 +654,113 @@ class CrossCompileScript:
 	def finishBuilding(self):
 		self.cchdir("..")
 
-	def prepareBuilding(self, b):
+	def formatConfig(self, c: dict):
+		def fmt(d):
+			if isinstance(d, dict):
+				return {self.replaceToolChainVars(k): fmt(v) for k, v in d.items()}
+			elif isinstance(d, list):
+				return [fmt(o) for o in d]
+			else:
+				if isinstance(d, str):
+					return self.replaceToolChainVars(d)
+				else:
+					return d
+		try:
+			return fmt(c)
+		except KeyError as e:
+			self.errorExit(F"Failed to parse config file, the variable {e} does not exist.")
+
+	def prepareBuilding(self, bitness):
 		self.logger.info('Starting build script')
-		if not os.path.isdir(self.fullWorkDir):
+		if not self.fullWorkDir.exists():
 			self.logger.info("Creating workdir: %s" % (self.fullWorkDir))
-			os.makedirs(self.fullWorkDir, exist_ok=True)
+			self.fullWorkDir.mkdir()
 		self.cchdir(self.fullWorkDir)
 
-		self.bitnessDir = "x86_64" if b == 64 else "i686"  # e.g x86_64
-		self.bitnessDir2 = "x86_64" if b == 64 else "x86"  # just for vpx...
-		self.bitnessDir3 = "mingw64" if b == 64 else "mingw"  # just for openssl...
-		self.winBitnessDir = "win64" if b == 64 else "win32"  # e.g win64
-		self.targetHost = "{0}-w64-mingw32".format(self.bitnessDir)  # e.g x86_64-w64-mingw32
-		self.targetPrefix = "{0}/{1}/{2}-w64-mingw32/{3}".format(self.fullWorkDir, self.mingwDir, self.bitnessDir, self.targetHost)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
-		self.inTreePrefix = "{0}".format(os.path.join(self.fullWorkDir, self.bitnessDir))  # workdir/x86_64
-		self.offtreePrefix = "{0}".format(os.path.join(self.fullWorkDir, self.bitnessDir + "_offtree"))  # workdir/x86_64_offtree
-		self.targetSubPrefix = "{0}/{1}/{2}-w64-mingw32".format(self.fullWorkDir, self.mingwDir, self.bitnessDir)  # e.g workdir/xcompilers/mingw-w64-x86_64
-		self.mingwBinpath = "{0}/{1}/{2}-w64-mingw32/bin".format(self.fullWorkDir, self.mingwDir, self.bitnessDir)  # e.g workdir/xcompilers/mingw-w64-x86_64/bin
-		self.mingwBinpath2 = "{0}/{1}/{2}-w64-mingw32/{2}-w64-mingw32/bin".format(self.fullWorkDir, self.mingwDir, self.bitnessDir)  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
-		self.fullCrossPrefix = "{0}/{1}-w64-mingw32-".format(self.mingwBinpath, self.bitnessDir)  # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
-		self.bareCrossPrefix = "{0}-w64-mingw32-".format(self.bitnessDir)  # e.g x86_64-w64-mingw32-
-		self.makePrefixOptions = "CC={cross_prefix_bare}gcc AR={cross_prefix_bare}ar PREFIX={target_prefix} RANLIB={cross_prefix_bare}ranlib LD={cross_prefix_bare}ld STRIP={cross_prefix_bare}strip CXX={cross_prefix_bare}g++".format(cross_prefix_bare=self.bareCrossPrefix, target_prefix=self.targetPrefix)
-		self.cmakePrefixOptions = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefix, target_prefix=self.targetPrefix, bitness=self.bitnessDir)
+		self.currentBitness = bitness
+		self.bitnessStr = "x86_64" if bitness == 64 else "i686"  # e.g x86_64
+		self.bitnessPath = self.fullWorkDir.joinpath("x86_64" if bitness == 64 else "i686")  # e.g x86_64
+		self.bitnessStr2 = "x86_64" if bitness == 64 else "x86"  # just for vpx...
+		self.bitnessStr3 = "mingw64" if bitness == 64 else "mingw"  # just for openssl...
+		self.bitnessStrWin = "win64" if bitness == 64 else "win32"  # e.g win64
+		self.targetHostStr = F"{self.bitnessStr}-w64-mingw32"  # e.g x86_64-w64-mingw32
+
+		self.targetPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
+
+		self.inTreePrefix = self.fullWorkDir.joinpath(self.bitnessStr)  # workdir/x86_64
+
+		self.offtreePrefix = self.fullWorkDir.joinpath(self.bitnessStr + "_offtree")  # workdir/x86_64_offtree
+
+		self.targetSubPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32")  # e.g workdir/xcompilers/mingw-w64-x86_64
+
+		self.mingwBinpath = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/mingw-w64-x86_64/bin
+
+		self.mingwBinpath2 = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
+
+		self.fullCrossPrefixStr = F"{self.mingwBinpath}/{self.bitnessStr}-w64-mingw32-"  # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
+
+		self.shortCrossPrefixStr = F"{self.bitnessStr}-w64-mingw32-"  # e.g x86_64-w64-mingw32-
+
+		self.autoConfPrefixOptions = F'--with-sysroot="{self.targetSubPrefix}" --host={self.targetHostStr} --prefix={self.targetPrefix} --disable-shared --enable-static'
+
+		self.makePrefixOptions = F'CC={self.shortCrossPrefixStr}gcc ' \
+			F"AR={self.shortCrossPrefixStr}ar " \
+			F"PREFIX={self.targetPrefix} " \
+			F"RANLIB={self.shortCrossPrefixStr}ranlib " \
+			F"LD={self.shortCrossPrefixStr}ld " \
+			F"STRIP={self.shortCrossPrefixStr}strip " \
+			F'CXX={self.shortCrossPrefixStr}g++'  # --sysroot="{self.targetSubPrefix}"'
+
 		self.pkgConfigPath = "{0}/lib/pkgconfig".format(self.targetPrefix)  # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
-		self.fullProductDir = os.path.join(self.fullWorkDir, self.bitnessDir + "_products")
-		self.currentBitness = b
-		self.mesonEnvFile = os.path.join(self.targetSubPrefix, "meson_environment.txt")
+
+		self.mesonEnvFile = self.fullWorkDir.joinpath("meson_environment.txt")
+		self.cmakeToolchainFile = self.fullWorkDir.joinpath("mingw_toolchain.cmake")
+		self.cmakePrefixOptions = F'-DCMAKE_TOOLCHAIN_FILE="{self.cmakeToolchainFile}" -G\"Ninja\"'
+		self.cmakePrefixOptionsOld = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefixStr, target_prefix=self.targetPrefix, bitness=self.bitnessStr)
 		self.cpuCount = self.config["toolchain"]["cpu_count"]
 		self.originalCflags = self.config["toolchain"]["original_cflags"]
 		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else ""
 
-		if self.debugMode:
-			print('self.bitnessDir = \n' + self.bitnessDir + '\n\n')
-			print('self.bitnessDir2 = \n' + self.bitnessDir2 + '\n\n')
-			print('self.winBitnessDir = \n' + self.winBitnessDir + '\n\n')
-			print('self.targetHost = \n' + self.targetHost + '\n\n')
-			print('self.targetPrefix = \n' + self.targetPrefix + '\n\n')
-			print('self.mingwBinpath = \n' + self.mingwBinpath + '\n\n')
-			print('self.fullCrossPrefix = \n' + self.fullCrossPrefix + '\n\n')
-			print('self.bareCrossPrefix = \n' + self.bareCrossPrefix + '\n\n')
-			print('self.makePrefixOptions = \n' + self.makePrefixOptions + '\n\n')
-			print('self.cmakePrefixOptions = \n' + self.cmakePrefixOptions + '\n\n')
-			print('self.pkgConfigPath = \n' + self.pkgConfigPath + '\n\n')
-			print('self.fullProductDir = \n' + self.fullProductDir + '\n\n')
-			print('self.currentBitness = \n' + str(self.currentBitness) + '\n\n')
-			print('PATH = \n' + os.environ["PATH"] + '\n\n')
+		self.fullProductDir = self.fullWorkDir.joinpath(self.bitnessStr + "_products")
+
+		self.formatDict = defaultdict(lambda: "")
+		self.formatDict.update(
+			{
+				'cmake_prefix_options': self.cmakePrefixOptions,
+				'cmake_prefix_options_old': self.cmakePrefixOptionsOld,
+				'make_prefix_options': self.makePrefixOptions,
+				'autoconf_prefix_options': self.autoConfPrefixOptions,
+				'pkg_config_path': self.pkgConfigPath,
+				'mingw_binpath': self.mingwBinpath,
+				'mingw_binpath2': self.mingwBinpath2,
+				'cross_prefix_bare': self.shortCrossPrefixStr,
+				'cross_prefix_full': self.fullCrossPrefixStr,
+				'target_prefix': self.targetPrefix,
+				'project_root': self.projectRoot,
+				'work_dir': self.fullWorkDir,
+				'inTreePrefix': self.inTreePrefix,
+				'offtree_prefix': self.offtreePrefix,
+				'target_host': self.targetHostStr,
+				'target_sub_prefix': self.targetSubPrefix,
+				'bit_name': self.bitnessStr,
+				'bit_name2': self.bitnessStr2,
+				'bit_name3': self.bitnessStr3,
+				'bit_name_win': self.bitnessStrWin,
+				'bit_num': self.currentBitness,
+				'product_prefix': self.fullProductDir,
+				'target_prefix_sed_escaped': str(self.targetPrefix).replace("/", "\\/"),
+				'make_cpu_count': "-j {0}".format(self.cpuCount),
+				'original_cflags': self.originalCflags,
+				'cflag_string': self.generateCflagString('--extra-cflags='),
+				'current_path': os.getcwd(),
+				'current_envpath': self.getKeyOrBlankString(os.environ, "PATH"),
+				'meson_env_file': self.mesonEnvFile
+			}
+		)
+
+		self.config = self.formatConfig(self.config)
+		self.fullOutputDir = self.projectRoot.joinpath(self.replaceToolChainVars(self.config["toolchain"]["output_path"]))
+		self.formatDict['output_prefix'] = str(self.fullOutputDir)
 
 		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
 		# os.environ["PATH"] = "{0}:{1}:{2}".format (self.mingwBinpath, os.path.join(self.targetPrefix, 'bin'), self.originalPATH)  # TODO: properly test this..
@@ -695,17 +771,25 @@ class CrossCompileScript:
 	#:
 
 	def initBuildFolders(self):
-		if not os.path.isdir(self.bitnessDir):
-			self.logger.info("Creating bitdir: {0}".format(self.bitnessDir))
-			os.makedirs(self.bitnessDir, exist_ok=True)
+		if not self.bitnessPath.exists():
+			self.logger.info(F"Creating bitdir: {self.bitnessPath}")
+			self.bitnessPath.mkdir(exist_ok=True)
 
-		if not os.path.isdir(self.bitnessDir + "_products"):
-			self.logger.info("Creating bitdir: {0}".format(self.bitnessDir + "_products"))
-			os.makedirs(self.bitnessDir + "_products", exist_ok=True)
+		if not self.fullProductDir.exists():
+			self.logger.info(F"Creating product path: {self.fullProductDir}")
+			self.fullProductDir.mkdir(exist_ok=True)
 
-		if not os.path.isdir(self.bitnessDir + "_offtree"):
-			self.logger.info("Creating bitdir: {0}".format(self.bitnessDir + "_offtree"))
-			os.makedirs(self.bitnessDir + "_offtree", exist_ok=True)
+		if not self.fullOutputDir.exists():
+			self.logger.info(F"Creating output path: {self.fullOutputDir}")
+			self.fullOutputDir.mkdir(exist_ok=True)
+
+		if not self.offtreePrefix.exists():
+			self.logger.info(F"Creating bitdir: {self.offtreePrefix}")
+			self.offtreePrefix.mkdir(exist_ok=True)
+
+		# create toolchain files for meson and cmake
+		self.createMesonEnvFile()
+		self.createCmakeToolchainFile()
 
 	def boolKey(self, d, k):
 		if k in d:
@@ -713,8 +797,12 @@ class CrossCompileScript:
 				return True
 		return False
 
+	def reStrip(self, pat, txt):
+		x = re.sub(pat, '', txt)
+		return re.sub(r'[ ]+', ' ', x).strip()
+
 	def buildMingw(self, bitness):
-		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessDir + "-w64-mingw32-gcc")
+		gcc_bin = os.path.join(self.mingwBinpath, self.bitnessStr + "-w64-mingw32-gcc")
 
 		if os.path.isfile(gcc_bin):
 			gccOutput = subprocess.check_output(gcc_bin + " -v", shell=True, stderr=subprocess.STDOUT).decode("utf-8")
@@ -765,7 +853,7 @@ class CrossCompileScript:
 	#:
 
 	def downloadHeader(self, url):
-		destination = os.path.join(self.targetPrefix, "include")
+		destination = self.targetPrefix.joinpath("include")
 		fileName = os.path.basename(urlparse(url).path)
 
 		if not os.path.isfile(os.path.join(destination, fileName)):
@@ -909,42 +997,69 @@ class CrossCompileScript:
 				return fullOutputPath
 	#:
 
+	def createCmakeToolchainFile(self):
+		if not os.path.isfile(self.cmakeToolchainFile):
+			self.logger.info("Creating CMake Toolchain file at: '%s'" % (self.cmakeToolchainFile))
+			tcFile = [
+				F'set(CMAKE_SYSTEM_NAME Windows)',
+				F'set(CMAKE_SYSTEM_PROCESSOR {self.bitnessStr})',
+				F'set(CMAKE_SYSROOT {self.targetSubPrefix})',
+				#F'set(CMAKE_STAGING_PREFIX /home/devel/stage)',
+				F'set(CMAKE_RANLIB {self.shortCrossPrefixStr}ranlib)',
+				F'set(CMAKE_C_COMPILER {self.shortCrossPrefixStr}gcc)',
+				F'set(CMAKE_CXX_COMPILER {self.shortCrossPrefixStr}g++)',
+				F'set(CMAKE_RC_COMPILER {self.shortCrossPrefixStr}windres)',
+				F'set(CMAKE_FIND_ROOT_PATH {self.targetPrefix})',
+				F'set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)',
+				F'set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)',
+				F'set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)',
+				F'set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)',
+
+				# for shaderc
+				F'set(MINGW_COMPILER_PREFIX {self.shortCrossPrefixStr})',
+				F'set(MINGW_SYSROOT {self.targetSubPrefix})'
+			]
+			with open(self.cmakeToolchainFile, 'w') as f:
+				f.write("\n".join(tcFile))
+
 	def createMesonEnvFile(self):
 		if not os.path.isfile(self.mesonEnvFile):
 			self.logger.info("Creating Meson Environment file at: '%s'" % (self.mesonEnvFile))
+			meFile = (
+				"[binaries]\n",
+				F"c = '{self.shortCrossPrefixStr}gcc'",
+				F"cpp = '{self.shortCrossPrefixStr}g++'",
+				F"ld = '{self.shortCrossPrefixStr}ld'",
+				F"ar = '{self.shortCrossPrefixStr}ar'",
+				F"strip = '{self.shortCrossPrefixStr}strip'",
+				F"windres = '{self.shortCrossPrefixStr}windres'",
+				F"ranlib = '{self.shortCrossPrefixStr}ranlib'",
+				"pkgconfig = 'pkg-config'",
+				F"dlltool = '{self.shortCrossPrefixStr}dlltool'",
+				F"gendef = '{self.mingwBinpath}/gendef'",
+				"cmake = 'cmake'",
+				"#needs_exe_wrapper = false",
+				"#exe_wrapper = 'wine' # A command used to run generated executables.",
+				"",
+				"[host_machine]",
+				"system = 'windows'",
+				F"cpu_family = '{self.bitnessStr}'",
+				F"cpu = '{self.bitnessStr}'",
+				"endian = 'little'",
+				"",
+				"[target_machine]",
+				"system = 'windows'",
+				F"cpu_family = '{self.bitnessStr}'",
+				F"cpu = '{self.bitnessStr}'",
+				"endian = 'little'",
+				"",
+				"[properties]",
+				"c_link_args = ['-static', '-static-libgcc']",
+				"# sys_root = Directory that contains 'bin', 'lib', etc for the toolchain and system libraries",
+				F"sys_root = '{self.targetSubPrefix}'"
+			)
 			with open(self.mesonEnvFile, 'w') as f:
-				f.write("[binaries]\n")
-				f.write("c = '{0}gcc'\n".format(self.fullCrossPrefix))
-				f.write("cpp = '{0}g++'\n".format(self.fullCrossPrefix))
-				f.write("ld = '{0}ld'\n".format(self.fullCrossPrefix))
-				f.write("ar = '{0}ar'\n".format(self.fullCrossPrefix))
-				f.write("strip = '{0}strip'\n".format(self.fullCrossPrefix))
-				f.write("windres = '{0}windres'\n".format(self.fullCrossPrefix))
-				f.write("ranlib = '{0}ranlib'\n".format(self.fullCrossPrefix))
-				f.write("pkgconfig = 'pkg-config'\n".format(self.fullCrossPrefix))
-				f.write("dlltool = '{0}dlltool'\n".format(self.fullCrossPrefix))
-				f.write("gendef = '{0}/gendef'\n".format(self.mingwBinpath))
-				f.write("cmake = 'cmake'\n")
-				f.write("#needs_exe_wrapper = false\n")
-				f.write("#exe_wrapper = 'wine' # A command used to run generated executables.\n")
-				f.write("\n")
-				f.write("[host_machine]\n")
-				f.write("system = 'windows'\n")
-				f.write("cpu_family = '{0}'\n".format(self.bitnessDir))
-				f.write("cpu = '{0}'\n".format(self.bitnessDir))
-				f.write("endian = 'little'\n")
-				f.write("\n")
-				f.write("[target_machine]\n")
-				f.write("system = 'windows'\n")
-				f.write("cpu_family = '{0}'\n".format(self.bitnessDir))
-				f.write("cpu = '{0}'\n".format(self.bitnessDir))
-				f.write("endian = 'little'\n")
-				f.write("\n")
-				f.write("[properties]\n")
-				f.write("c_link_args = ['-static', '-static-libgcc']\n")
-				f.write("# sys_root = Directory that contains 'bin', 'lib', etc for the toolchain and system libraries\n")
-				f.write("sys_root = '{0}'\n".format(self.targetSubPrefix))
-				f.close()
+				f.write("\n".join(meFile))
 
 	# def downloadFileOld(self, link, targetName=None):
 	# 	_MAX_REDIRECTS = 5
@@ -1248,7 +1363,7 @@ class CrossCompileScript:
 		os.chmod(file, st.st_mode | stat.S_IXUSR)  # S_IEXEC would be just +x
 	#:
 
-	def mercurialClone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None):
+	def mercurialClone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None, forceRebuild=False):
 		if virtFolderName is None:
 			virtFolderName = self.sanitizeFilename(os.path.basename(url))
 			if not virtFolderName.endswith(".hg"):
@@ -1264,6 +1379,12 @@ class CrossCompileScript:
 		branchString = ""
 		if desiredBranch is not None:
 			branchString = " {0}".format(desiredBranch)
+
+		# we have to do it the hard way because "hg purge" is an extension that is not on by default
+		# and making users enable stuff like that is too much
+		if os.path.isdir(realFolderName) and forceRebuild:
+			self.logger.info("Deleting old HG clone")
+			shutil.rmtree(realFolderName)
 
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
@@ -1291,7 +1412,7 @@ class CrossCompileScript:
 		return realFolderName
 	#:
 
-	def gitClone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None, recursive=False, doNotUpdate=False, desiredPR=None):
+	def gitClone(self, url, virtFolderName=None, renameTo=None, desiredBranch=None, recursive=False, doNotUpdate=False, desiredPR=None, depth=-1):
 		if virtFolderName is None:
 			virtFolderName = self.sanitizeFilename(os.path.basename(url))
 			if not virtFolderName.endswith(".git"):
@@ -1379,11 +1500,18 @@ class CrossCompileScript:
 					self.logger.debug("####################")
 				self.cchdir("..")
 		else:
-			recur = ""
+			addArgs = []
 			if recursive:
-				recur = " --recursive"
-			self.logger.info("GIT cloning '%s' to '%s'" % (url, os.getcwd() + "/" + realFolderName))
-			self.runProcess('git clone{0} --progress "{1}" "{2}"'.format(recur, url, realFolderName + ".tmp"))
+				addArgs.append("--recursive")
+
+			if depth and depth >= 1:
+				addArgs.append(F"--depth {depth}")
+			elif depth is None or depth < 0:
+				depth = 1
+				addArgs.append(F"--depth 1")
+
+			self.logger.info(F"Git {'Shallow C' if depth >= 1 else 'C'}loning '{url}' to '{os.getcwd() + '/' + realFolderName}'")
+			self.runProcess('git clone {0} --progress "{1}" "{2}"'.format(" ".join(addArgs), url, realFolderName + ".tmp"))
 			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch is None else branchString))
@@ -1540,21 +1668,22 @@ class CrossCompileScript:
 			if packageData['rename_folder'] is not None:
 				renameFolder = packageData['rename_folder']
 		if type == "P":
-			outPath = os.path.join(outPath, self.bitnessDir + "_products")
-			self.cchdir(self.bitnessDir + "_products")
+			outPath = self.fullProductDir
+			self.cchdir(self.fullProductDir)
 		else:
-			outPath = os.path.join(outPath, self.bitnessDir)
-			self.cchdir(self.bitnessDir)
+			outPath = os.path.join(outPath, self.bitnessPath)
+			self.cchdir(self.bitnessPath)
 
 		if packageData["repo_type"] == "git":
 			branch = self.getValueOrNone(packageData, 'branch')
 			recursive = self.getValueOrNone(packageData, 'recursive_git')
+			git_depth = packageData.get('depth_git', -1)
 			folderName = self.getValueOrNone(packageData, 'folder_name')
 			doNotUpdate = False
 			if 'do_not_git_update' in packageData:
 				if packageData['do_not_git_update'] is True:
 					doNotUpdate = True
-			workDir = self.gitClone(self.getPrimaryPackageUrl(packageData, packageName), folderName, renameFolder, branch, recursive, doNotUpdate)
+			workDir = self.gitClone(self.getPrimaryPackageUrl(packageData, packageName), folderName, renameFolder, branch, recursive, doNotUpdate, None, git_depth)
 		if packageData["repo_type"] == "svn":
 			workDir = self.svnClone(self.getPrimaryPackageUrl(packageData, packageName), packageData["folder_name"], renameFolder)
 		if packageData['repo_type'] == 'mercurial':
@@ -1601,7 +1730,6 @@ class CrossCompileScript:
 					self.packages["prods"][packageName]["_already_built"] = True
 				else:
 					self.packages["deps"][packageName]["_already_built"] = True
-
 				return
 
 		if self.debugMode:
@@ -1625,13 +1753,14 @@ class CrossCompileScript:
 				renameFolder = packageData['rename_folder']
 
 		if type == "PRODUCT":
-			self.cchdir(self.bitnessDir + "_products")  # descend into x86_64_products
+			self.cchdir(self.fullProductDir)  # descend into x86_64_products
 		else:
-			self.cchdir(self.bitnessDir)  # descend into x86_64
+			self.cchdir(self.bitnessPath)  # descend into x86_64
 
 		if packageData["repo_type"] == "git":
 			branch = self.getValueOrNone(packageData, 'branch')
 			recursive = self.getValueOrNone(packageData, 'recursive_git')
+			git_depth = packageData.get('depth_git', -1)
 			folderName = self.getValueOrNone(packageData, 'folder_name')
 			doNotUpdate = False
 			if 'do_not_git_update' in packageData:
@@ -1641,12 +1770,12 @@ class CrossCompileScript:
 			if 'desired_pr_id' in packageData:
 				if packageData['desired_pr_id'] is not None:
 					desiredPRVal = packageData['desired_pr_id']
-			workDir = self.gitClone(self.getPrimaryPackageUrl(packageData, packageName), folderName, renameFolder, branch, recursive, doNotUpdate, desiredPR=desiredPRVal)
+			workDir = self.gitClone(self.getPrimaryPackageUrl(packageData, packageName), folderName, renameFolder, branch, recursive, doNotUpdate, desiredPRVal, git_depth)
 		elif packageData["repo_type"] == "svn":
 			workDir = self.svnClone(self.getPrimaryPackageUrl(packageData, packageName), packageData["folder_name"], renameFolder)
 		elif packageData['repo_type'] == 'mercurial':
 			branch = self.getValueOrNone(packageData, 'branch')
-			workDir = self.mercurialClone(self.getPrimaryPackageUrl(packageData, packageName), self.getValueOrNone(packageData, 'folder_name'), renameFolder, branch)
+			workDir = self.mercurialClone(self.getPrimaryPackageUrl(packageData, packageName), self.getValueOrNone(packageData, 'folder_name'), renameFolder, branch, forceRebuild)
 		elif packageData["repo_type"] == "archive":
 			if "folder_name" in packageData:
 				workDir = self.downloadUnpackFile(packageData, packageName, packageData["folder_name"], workDir)
@@ -1717,15 +1846,22 @@ class CrossCompileScript:
 
 		if 'cflag_addition' in packageData:
 			if packageData['cflag_addition'] is not None:
-				self.logger.debug("Adding '{0}' to CFLAGS".format(packageData['cflag_addition']))
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + packageData['cflag_addition']
 				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + packageData['cflag_addition']
+				self.logger.info(F'Added to C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
 
 		if 'custom_cflag' in packageData:
 			if packageData['custom_cflag'] is not None:
-				self.logger.debug("Setting CFLAGS to '{0}'".format(packageData['custom_cflag']))
 				os.environ["CFLAGS"] = packageData['custom_cflag']
 				os.environ["CXXFLAGS"] = packageData['custom_cflag']
+				self.logger.info(F'Set custom C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
+
+		if 'strip_cflags' in packageData:
+			if isinstance(packageData["strip_cflags"], (list, tuple)) and len(packageData["strip_cflags"]):
+				for _pattern in packageData["strip_cflags"]:
+					os.environ["CFLAGS"] = self.reStrip(_pattern, os.environ["CFLAGS"])
+					os.environ["CXXFLAGS"] = self.reStrip(_pattern, os.environ["CXXFLAGS"])
+					self.logger.info(F'Stripped C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
 
 		if 'custom_path' in packageData:
 			if packageData['custom_path'] is not None:
@@ -1764,6 +1900,16 @@ class CrossCompileScript:
 					self.applyPatch(p[0], p[1], False, self.getValueByIntOrNone(p, 2))
 
 		if not self.anyFileStartsWith('already_ran_make'):
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_patch'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						try:
+							self.handleRegexReplace(r, packageName)
+						except re.error as e:
+							self.errorExit(e)
+
 			if 'run_post_patch' in packageData and packageData['run_post_patch']:
 					for cmd in packageData['run_post_patch']:
 						ignoreFail = False
@@ -1781,14 +1927,8 @@ class CrossCompileScript:
 							# self.run_process(cmd)
 							self.runProcess(cmd, ignoreFail)
 
-			if 'regex_replace' in packageData and packageData['regex_replace']:
-				_pos = 'post_patch'
-				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
-					for r in packageData['regex_replace'][_pos]:
-						self.handleRegexReplace(r, packageName)
-
-		conf_system = "autoconf"
-		build_system = "make"
+		conf_system = None
+		build_system = None
 
 		# conf_system_specifics = {
 		# 	"gnumake_based_systems" : [ "cmake", "autoconf" ],
@@ -1805,10 +1945,15 @@ class CrossCompileScript:
 		if 'conf_system' in packageData:
 			if packageData['conf_system'] == "cmake":
 				conf_system = "cmake"
+				if not build_system:
+					build_system = "ninja"
 			elif packageData['conf_system'] == "meson":
 				conf_system = "meson"
 			elif packageData['conf_system'] == "waf":
 				conf_system = "waf"
+
+		conf_system = "autoconf" if not conf_system else conf_system
+		build_system = "make" if not build_system else build_system
 
 		needs_conf = True
 
@@ -1820,7 +1965,6 @@ class CrossCompileScript:
 			if conf_system == "cmake":
 				self.cmakeSource(packageName, packageData)
 			elif conf_system == "meson":
-				self.createMesonEnvFile()
 				self.mesonSource(packageName, packageData)
 			else:
 				self.configureSource(packageName, packageData, conf_system)
@@ -1883,41 +2027,63 @@ class CrossCompileScript:
 		self.defaultCFLAGS()
 		self.cchdir("..")  # asecond into workdir
 	#:
-	
+
 	def handleRegexReplace(self, rp, packageName):
+		cwd = Path(os.getcwd())
 		if "in_file" not in rp:
 			self.errorExit(F'The regex_replace command in the package {packageName}:\n{rp}\nMisses the in_file parameter.')
 		if 0 not in rp:
 			self.errorExit(F'A regex_replace command in the package {packageName}\nrequires at least the "0" key to be a RegExpression, if 1 is not defined matching lines will be removed.')
-		in_file = Path(self.replaceVariables(rp["in_file"]))
 
-		self.logger.info(F"Running regex command on package {packageName}")
+		in_files = rp["in_file"]
+		if isinstance(in_files, (list, tuple)):
+			in_files = (cwd.joinpath(self.replaceVariables(x)) for x in in_files)
+		else:
+			in_files = (cwd.joinpath(self.replaceVariables(in_files)), )
 
-		repls = [ self.replaceVariables(rp[0]), ]
+		repls = [self.replaceVariables(rp[0]), ]
 		if 1 in rp:
 			repls.append(self.replaceVariables(rp[1]))
 
-		if "out_file" not in rp:
-			out_file = in_file
-			in_file = shutil.move(in_file, in_file.parent.joinpath(in_file.name + ".backup"))
-		else:
-			out_file = self.replaceVariables(rp["out_file"])
-		
-		if out_file == in_file:
-			self.errorExit(F'A regex_replace command in the package {packageName}\nrequires the in_file and out_file to be different files, leave out out_file if you want to update & backup the old file-')
+		self.logger.info(F"Running regex replace commands on package: '{packageName}' [{os.getcwd()}]")
 
-		with open(in_file, "r") as f, open(out_file, "w") as nf:
-			for line in f:
-				if re.match(repls[0],line) and len(repls) > 1:
-					self.logger.debug(F"RegEx replacing line in {in_file}\n{line}\nwith:")
-					line = re.sub(repls[0], repls[1], line)
-					self.logger.debug(F"{line}")
-					nf.write(line)
-				elif re.match(repls[0],line):
-					self.logger.debug(F"RegEx removing line\n{line}:")
+		for _current_infile in in_files:
+			if "out_file" not in rp:
+				out_files = (_current_infile, )
+				shutil.copy(_current_infile, _current_infile.parent.joinpath(_current_infile.name + ".backup"))
+			else:
+				if isinstance(rp["out_file"], (list, tuple)):
+					out_files = (cwd.joinpath(self.replaceVariables(x)) for x in rp["out_file"])
 				else:
-					nf.write(line)
-				
+					out_files = (cwd.joinpath(self.replaceVariables(rp["out_file"])),)
+
+			for _current_outfile in out_files:
+
+				if not _current_infile.exists():
+					self.logger.warning(F"[Regex-Command] In-File '{_current_infile}' does not exist in '{os.getcwd()}'")
+
+				if _current_outfile == _current_infile:
+					_backup = _current_infile.parent.joinpath(_current_infile.name + ".backup")
+					if not _backup.parent.exists():
+						self.logger.warning(F"[Regex-Command] Out-File parent '{_backup.parent}' does not exist.")
+					shutil.copy(_current_infile, _backup)
+					_tmp_file = _current_infile.parent.joinpath(_current_infile.name + ".tmp")
+					shutil.move(_current_infile, _tmp_file)
+					_current_infile = _tmp_file
+				self.logger.info(F"[{packageName}] Running regex command on '{_current_outfile}'")
+
+				with open(_current_infile, "r") as f, open(_current_outfile, "w") as nf:
+					for line in f:
+						if re.search(repls[0], line) and len(repls) > 1:
+							self.logger.debug(F"RegEx replacing line")
+							self.logger.debug(F"in {_current_outfile}\n{line}\nwith:")
+							line = re.sub(repls[0], repls[1], line)
+							self.logger.debug(F"\n{line}")
+							nf.write(line)
+						elif re.search(repls[0], line):
+							self.logger.info(F"RegEx removing line\n{line}:")
+						else:
+							nf.write(line)
 
 	def bootstrapConfigure(self):
 		if not os.path.isfile("configure"):
@@ -1965,7 +2131,10 @@ class CrossCompileScript:
 
 			configOpts = ''
 			if 'configure_options' in packageData:
-				configOpts = self.replaceVariables(packageData["configure_options"])
+				try:
+					configOpts = self.replaceVariables(packageData["configure_options"])
+				except KeyError as e:
+					self.errorExit(F'Failed to parse configure line: "{packageData["configure_options"]}", the variable {e} is unvalid.')
 			self.logger.info("Configuring '{0}' with: {1}".format(packageName, configOpts), extra={'type': conf_system})
 
 			confCmd = './configure'
@@ -2001,12 +2170,10 @@ class CrossCompileScript:
 					mCleanCmd = './waf --color=yes clean'
 				self.runProcess('{0} {1}'.format(mCleanCmd, cpuCountStr), True)
 
-
 			if 'patches_post_configure' in packageData:
 				if packageData['patches_post_configure'] is not None:
 					for p in packageData['patches_post_configure']:
 						self.applyPatch(p[0], p[1], True)
-
 
 			self.touch(touchName)
 
@@ -2265,8 +2432,12 @@ class CrossCompileScript:
 	#:
 
 	def generateCflagString(self, prefix=""):
+		if "CFLAGS" not in os.environ:
+			return ""
 		cfs = os.environ["CFLAGS"]
 		cfs = cfs.split(' ')
+		if (len(cfs) == 1 and cfs[0] != "") or not len(cfs):
+			return ""
 		out = ''
 		if len(cfs) >= 1:
 			for c in cfs:
@@ -2275,53 +2446,29 @@ class CrossCompileScript:
 			return out
 		return ''
 
-	def replaceVariables(self, cmd):
-		raw_cmd = cmd
-		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", cmd) # TODO: assignment expression
+	def replaceToolChainVars(self, inStr):
+		return inStr.format_map(self.formatDict)
+
+	def replaceVariables(self, inStr):
+		rawInStr = inStr
+		varList = re.findall(r"!VAR\((?P<variable_name>[^\)\(]+)\)VAR!", inStr)  # TODO: assignment expression
 		if varList:
 			for varName in varList:
 				if varName in self.packages["vars"]:
 					variableContent = self.packages["vars"][varName]
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), cmd, flags=re.DOTALL)
+					inStr = re.sub(rf"(!VAR\({varName}\)VAR!)", r"{0}".format(variableContent), inStr, flags=re.DOTALL)
 				else:
-					cmd = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), cmd, flags=re.DOTALL)
-					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{raw_cmd}', it has been stripped.")
+					inStr = re.sub(rf"(!VAR\({varName}\)VAR!)", r"".format(variableContent), inStr, flags=re.DOTALL)
+					self.logger.warn(F"Unknown variable has been used: '{varName}'\n in: '{rawInStr}', it has been stripped.")
 
-		cmd = cmd.format(
-			cmake_prefix_options=self.cmakePrefixOptions,
-			make_prefix_options=self.makePrefixOptions,
-			pkg_config_path=self.pkgConfigPath,
-			mingw_binpath=self.mingwBinpath,
-			mingw_binpath2=self.mingwBinpath2,
-			cross_prefix_bare=self.bareCrossPrefix,
-			cross_prefix_full=self.fullCrossPrefix,
-			target_prefix=self.targetPrefix,
-			project_root=self.fullCurrentPath,
-			inTreePrefix=self.inTreePrefix,
-			offtree_prefix=self.offtreePrefix,
-			target_host=self.targetHost,
-			target_sub_prefix=self.targetSubPrefix,
-			bit_name=self.bitnessDir,
-			bit_name2=self.bitnessDir2,
-			bit_name3=self.bitnessDir3,
-			bit_name_win=self.winBitnessDir,
-			bit_num=self.currentBitness,
-			product_prefix=self.fullProductDir,
-			target_prefix_sed_escaped=self.targetPrefix.replace("/", "\\/"),
-			make_cpu_count="-j {0}".format(self.cpuCount),
-			original_cflags=self.originalCflags,
-			cflag_string=self.generateCflagString('--extra-cflags='),
-			current_path=os.getcwd(),
-			current_envpath=self.getKeyOrBlankString(os.environ, "PATH"),
-			meson_env_file=self.mesonEnvFile
-		)
+		inStr = self.replaceToolChainVars(inStr)
 
-		m = re.search(r'\!CMD\((.*)\)CMD!', cmd)
-		if m is not None:
-			cmdReplacer = subprocess.check_output(m.groups()[0], shell=True).decode("utf-8").replace("\n", "").replace("\r", "")
-			mr = re.sub(r"\!CMD\((.*)\)CMD!", F"{cmdReplacer}", cmd, flags=re.DOTALL)
-			cmd = mr
-		return cmd
+		cmdList = re.findall(r"!CMD\((?P<full_cmd>[^\)\(]+)\)CMD!", inStr)  # TODO: assignment expression TODO: handle escaped brackets inside cmd syntax
+		if cmdList:
+			for cmd in cmdList:
+				cmdReplacer = subprocess.check_output(cmd, shell=True).decode("utf-8").replace("\n", "").replace("\r", "").strip()
+				inStr = re.sub(r"!CMD\(([^\)\(]+)\)CMD!", F"{cmdReplacer}", inStr, flags=re.DOTALL)
+		return inStr
 	#:
 
 	def getValueOrNone(self, db, k):

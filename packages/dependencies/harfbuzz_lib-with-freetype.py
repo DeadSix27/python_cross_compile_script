@@ -9,7 +9,7 @@
 	],
 	'folder_name' : 'harfbuzz-with-freetype',
 	'rename_folder' : 'harfbuzz-with-freetype',
-	'configure_options' : '--host={target_host} --prefix={target_prefix} --with-freetype --with-fontconfig=no --disable-shared --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html',
+	'configure_options' : '{autoconf_prefix_options} --with-freetype --with-fontconfig=no --with-icu=no --with-glib=no --with-gobject=no --disable-gtk-doc-html',
 	'update_check' : { 'url' : 'https://www.freedesktop.org/software/harfbuzz/release/?C=M;O=D', 'type' : 'httpindex', 'regex' : r'harfbuzz-(?P<version_num>[\d.]+)\.tar\.bz2' },
 	'_info' : { 'version' : '2.6.4', 'fancy_name' : 'harfbuzz (with freetype2)' },
 }

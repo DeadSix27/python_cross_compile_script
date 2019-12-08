@@ -1,0 +1,50 @@
+From 32999120da05a63d75af8764f6b80ce00161dbdd Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Fri, 6 Dec 2019 19:48:43 +0100
+Subject: [PATCH] twolame-mingw-workaround
+
+---
+ libtwolame/twolame.h | 27 +--------------------------
+ 1 file changed, 1 insertion(+), 26 deletions(-)
+
+diff --git a/libtwolame/twolame.h b/libtwolame/twolame.h
+index 6b3ee9d..adf208b 100644
+--- a/libtwolame/twolame.h
++++ b/libtwolame/twolame.h
+@@ -41,32 +41,7 @@ extern "C" {
+ # undef TL_API
+ #endif
+ 
+-#ifdef _WIN32
+-# ifdef LIBTWOLAME_BUILD
+-#  ifdef DLL_EXPORT
+-#   define TL_API __declspec(dllexport)
+-#  else
+-#   define TL_API
+-#  endif
+-# else
+-#  ifdef LIBTWOLAME_STATIC
+-#   define TL_API
+-#  else
+-#   define TL_API __declspec(dllimport)
+-#  endif
+-# endif
+-#else
+-# ifdef GNUC
+-#  if GNUC >= 4
+-#   define TL_API attribute ((visibility("default")))
+-#  else
+-#   define TL_API
+-#  endif
+-# else
+-#  define TL_API
+-# endif
+-#endif
+-
++#define TL_API
+ 
+ #ifndef TRUE
+ #define TRUE    (1)
+-- 
+2.24.0.windows.2
+

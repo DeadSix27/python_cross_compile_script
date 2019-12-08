@@ -6,7 +6,7 @@
 	#	'LIBS' : '-static-libgcc -static-libstdc++ -lz -lole32',
 	#},
 	'configure_options':
-		' --host={target_host} --prefix={product_prefix}/aria2_git.installed'
+		' --host={target_host} --prefix={output_prefix}/aria2_git.installed'
 		' --without-included-gettext --disable-nls --disable-shared --enable-static' # --with-ca-bundle=ca-bundle.trust.crt
 		' --without-openssl --with-libexpat --with-libz --with-libgmp --with-wintls'
 		' --with-sqlite3 --with-libxml2 --without-gnutls --disable-silent-rules'
@@ -20,7 +20,7 @@
 		'autoreconf -fiv',
 	],
 	'run_post_install': [
-		'{cross_prefix_bare}strip -v {product_prefix}/aria2_git.installed/bin/aria2c.exe',
+		'{cross_prefix_bare}strip -v {output_prefix}/aria2_git.installed/bin/aria2c.exe',
 	],
 	'depends_on': [
 		'zlib', 'libxml2', 'expat', 'gmp', 'sqlite3', 'libssh2', 'cppunit', #'gnutls', # 'c-ares', 'libsqlite3', 'openssl_1_1'

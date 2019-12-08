@@ -12,8 +12,9 @@
 		'LD': '{cross_prefix_bare}ld',
 		'STRIP': '{cross_prefix_bare}strip',
 		'CXX': '{cross_prefix_bare}g++',
+		'PKG_CONFIG': 'pkg-config --static'
 	},
-	'configure_options' : '--host={target_host} --prefix={target_prefix}',
+	'configure_options' : '{autoconf_prefix_options}',
 	'build_options' : '{make_prefix_options}',
 	'needs_make_install' : False,
 	'run_post_build' : [
@@ -24,7 +25,7 @@
 		'sed -i.bak \'s/-lrubberband *$/-lrubberband -lfftw3 -lsamplerate -lstdc++/\' "{pkg_config_path}/rubberband.pc"',
 	],
 	'depends_on' : [
-		'libsndfile',
+		'libsamplerate', 'libsndfile', 'vamp_plugin', 'fftw',
 	],
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'rubberband' },
 }

@@ -17,12 +17,12 @@
 		'ubuntu' : [ 'xsltproc', 'docbook-utils', 'rake', 'docbook-xsl' ],
 	},
 	'run_post_install': (
-		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvmerge.exe',
+		'{cross_prefix_bare}strip -v {output_prefix}/mkvtoolnix_git.installed/bin/mkvmerge.exe',
 		# '{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvtoolnix-gui.exe',
-		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvextract.exe',
+		'{cross_prefix_bare}strip -v {output_prefix}/mkvtoolnix_git.installed/bin/mkvextract.exe',
 		# '{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo-gui.exe',
-		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvpropedit.exe',
-		'{cross_prefix_bare}strip -v {product_prefix}/mkvtoolnix_git.installed/bin/mkvinfo.exe',
+		'{cross_prefix_bare}strip -v {output_prefix}/mkvtoolnix_git.installed/bin/mkvpropedit.exe',
+		'{cross_prefix_bare}strip -v {output_prefix}/mkvtoolnix_git.installed/bin/mkvinfo.exe',
 	),
 	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'mkvtoolnix' },
 

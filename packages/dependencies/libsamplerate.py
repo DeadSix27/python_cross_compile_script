@@ -1,11 +1,9 @@
 {
 	'repo_type' : 'git',
-	#'branch' : '7dcc9bb727dae4e2010cdc6ef7cda101b05509a4',
 	'url' : 'https://github.com/erikd/libsamplerate.git',
-	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-alsa',
+	'conf_system' : 'cmake',
+	'source_subfolder' : '_build',
+	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DLIBSAMPLERATE_EXAMPLES=OFF -DLIBSAMPLERATE_TESTS=OFF -DBUILD_SHARED_LIBS=0 -DCMAKE_BUILD_TYPE=Release',
+	'depends_on' : ['libflac', 'fftw', 'libopus',],
 	'_info' : { 'version' : None, 'fancy_name' : 'libsamplerate' },
-	'depends_on' : [
-		'libflac',
-		'fftw3',
-	],
 }

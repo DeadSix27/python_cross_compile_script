@@ -4,7 +4,7 @@
 	'rename_folder' : 'vpx_git',
 	'configure_options' :
 		'--target={bit_name2}-{bit_name_win}-gcc '
-		'--prefix={product_prefix}/vpx_git.installed '
+		'--prefix={output_prefix}/vpx_git.installed '
 		'--disable-shared --enable-static --disable-webm-io --enable-vp9 '
 		'--enable-vp8 --enable-runtime-cpu-detect '
 		'--enable-vp9-highbitdepth --enable-vp9-postproc --enable-coefficient-range-checking '

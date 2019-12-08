@@ -1,0 +1,60 @@
+From f5ff7d57abd9960912d8f18f7f55104936e0cc9c Mon Sep 17 00:00:00 2001
+From: DeadSix27 <DeadSix27@users.noreply.github.com>
+Date: Fri, 6 Dec 2019 19:40:28 +0100
+Subject: [PATCH] modplug-mingw-workaround
+
+---
+ src/libmodplug/stdafx.h | 12 ------------
+ src/modplug.h           | 12 ------------
+ 2 files changed, 24 deletions(-)
+
+diff --git a/src/libmodplug/stdafx.h b/src/libmodplug/stdafx.h
+index d45d949..e328ba2 100644
+--- a/src/libmodplug/stdafx.h
++++ b/src/libmodplug/stdafx.h
+@@ -124,18 +124,6 @@ inline void ProcessPlugins(int n) {}
+ 
+ #endif /* _WIN32 */
+ 
+-#if defined(_WIN32) || defined(__CYGWIN__)
+-# if defined(MODPLUG_BUILD) && defined(DLL_EXPORT)	/* building libmodplug as a dll for windows */
+-#   define MODPLUG_EXPORT __declspec(dllexport)
+-# elif defined(MODPLUG_BUILD) || defined(MODPLUG_STATIC)	/* building or using static libmodplug for windows */
+-#   define MODPLUG_EXPORT
+-# else
+-#   define MODPLUG_EXPORT __declspec(dllimport)			/* using libmodplug dll for windows */
+-# endif
+-#elif defined(MODPLUG_BUILD) && defined(SYM_VISIBILITY)
+-#   define MODPLUG_EXPORT __attribute__((visibility("default")))
+-#else
+ #define MODPLUG_EXPORT
+-#endif
+ 
+ #endif
+diff --git a/src/modplug.h b/src/modplug.h
+index f7f78b7..d724abd 100644
+--- a/src/modplug.h
++++ b/src/modplug.h
+@@ -11,19 +11,7 @@
+ extern "C" {
+ #endif
+ 
+-#if defined(_WIN32) || defined(__CYGWIN__)
+-# if defined(MODPLUG_BUILD) && defined(DLL_EXPORT)	/* building libmodplug as a dll for windows */
+-#   define MODPLUG_EXPORT __declspec(dllexport)
+-# elif defined(MODPLUG_BUILD) || defined(MODPLUG_STATIC)	/* building or using static libmodplug for windows */
+-#   define MODPLUG_EXPORT
+-# else
+-#   define MODPLUG_EXPORT __declspec(dllimport)			/* using libmodplug dll for windows */
+-# endif
+-#elif defined(MODPLUG_BUILD) && defined(SYM_VISIBILITY)
+-#   define MODPLUG_EXPORT __attribute__((visibility("default")))
+-#else
+ #define MODPLUG_EXPORT
+-#endif
+ 
+ struct _ModPlugFile;
+ typedef struct _ModPlugFile ModPlugFile;
+-- 
+2.24.0.windows.2
+
