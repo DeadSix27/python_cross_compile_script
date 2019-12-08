@@ -2181,7 +2181,7 @@ class CrossCompileScript:
 		originalFolder = os.getcwd()
 		if folderToPatchIn is not None:
 			self.cchdir(folderToPatchIn)
-			self.logger.info("Moving to patch folder: {0}" .format(os.getcwd()))
+			self.logger.debug("Moving to patch folder: {0}" .format(os.getcwd()))
 
 		self.logger.debug("Applying patch '{0}' in '{1}'" .format(url, os.getcwd()))
 
