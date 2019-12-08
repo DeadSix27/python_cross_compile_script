@@ -5,7 +5,7 @@
 	'source_subfolder' : 'build',
 	'configure_options' :
 		'.. {cmake_prefix_options} '
-		'-DCMAKE_INSTALL_PREFIX={product_prefix}/aom_git.installed '
+		'-DCMAKE_INSTALL_PREFIX={output_prefix}/aom_git.installed '
 		'-DBUILD_SHARED_LIBS=0 '
 		'-DENABLE_DOCS=0 '
 		'-DENABLE_TESTS=0 '

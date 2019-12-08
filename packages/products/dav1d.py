@@ -5,8 +5,8 @@
 	'build_system' : 'ninja',
 	'source_subfolder' : 'build',
 	'configure_options' : ''
-		'--prefix={product_prefix}/dav1d.installed  '
-		'--libdir={product_prefix}/dav1d.installed/lib '
+		'--prefix={output_prefix}/dav1d.installed  '
+		'--libdir={output_prefix}/dav1d.installed/lib '
 		'--default-library=static '
 		'--buildtype=plain '
 		'--backend=ninja '

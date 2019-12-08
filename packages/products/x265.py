@@ -12,7 +12,7 @@
 		'-DEXTRA_LINK_FLAGS="-L{offtree_prefix}/libx265_10bit/lib;-L{offtree_prefix}/libx265_12bit/lib" '
 		'-DLINKED_10BIT=ON '
 		'-DLINKED_12BIT=ON '
-		'-DCMAKE_INSTALL_PREFIX={product_prefix}/x265_hg.installed'
+		'-DCMAKE_INSTALL_PREFIX={output_prefix}/x265_hg.installed'
 	,
 	'conf_system' : 'cmake',
 	'depends_on' : [ 'libxml2', 'libx265_multibit_10', 'libx265_multibit_12' ],
