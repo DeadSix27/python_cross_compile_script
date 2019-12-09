@@ -35,6 +35,8 @@ HEADERS = {
 	'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
 }
 
+CWD = Path.cwd()
+
 SOURCEFORGE_APIKEY = None
 
 # if not os.path.isfile("sourceforge.apikey"):
@@ -460,22 +462,20 @@ for name, pkg in {**pkgs["deps"], **pkgs["prods"]}.items():
 		origDir = os.getcwd()
 		os.chdir(clonePath)
 		run("git remote update")
-		cmtsBehind = re.search(r"## .* \[behind ([0-9]+)\]", run("git status -sb").split("\n")[0]).groups()[0]
-		print(F"{clonePath.name} is {cmtsBehind} commits behind")
+		cmtsBehind = re.search(r"## .* \[behind ([0-9]+)\]", run("git status -sb").split("\n")[0])
+		if cmtsBehind:
+			print(F"{clonePath.name} is {cmtsBehind.groups()[0]} commits behind")
 
 
 if len(pkgsWithoutUpdateCheck) > 0:
 	print("\nPackages without update check:\n%s" % (",".join(pkgsWithoutUpdateCheck)))
 
-if os.path.isfile(os.path.join("..", "mingw_toolchain_script", "mingw_toolchain_script.py")):
+
+if CWD.parent.joinpath("mingw_toolchain_script", "mingw_toolchain_script.py").exists():
 	print("\nChecking toolchain versions:")
-
-	# mingw stuff
-	sys.path.append('..')
-
+	sys.path.append(str(CWD.parent.joinpath("mingw_toolchain_script")))
 	SOURCES = None
-
-	from mingw_toolchain_script.mingw_toolchain_script import SOURCES
+	from mingw_toolchain_script import SOURCES
 
 	for name, pkg in SOURCES.items():
 		if specificPkgs is not None:
