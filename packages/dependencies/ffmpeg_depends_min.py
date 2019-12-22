@@ -20,7 +20,7 @@
 		'libvpx',
 		'libdav1d',
 		'libaom',
-		'libxvid',
+		'xvidcore',
 		'libopus',
 		'liblame',
 		'libogg',
