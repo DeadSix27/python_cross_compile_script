@@ -162,8 +162,12 @@ class CrossCompileScript:
 			for name in files:
 				p = Path(os.path.join(path, name))
 				if p.suffix == ".py":
+					self.logger.debug("Found Product '%s' ." % (p))
 					if not isPathDisabled(p):
 						tmpPkglist["prods"].append(p)
+						self.logger.debug("Loaded Product '%s' ." % (p))
+					else:
+						self.logger.debug("DID NOT Load Product '%s' due to isPathDisabled." % (p))
 
 		if len(tmpPkglist["deps"]) < 1:  # TODO simplify code
 			self.errorExit("There's no packages in the folder '%s'." % (depsFolder))
@@ -216,6 +220,7 @@ class CrossCompileScript:
 						self.logger.debug("Package '%s.py' has option '_disabled' set, not loading." % (packageName))
 					else:
 						packages["prods"][packageName] = o
+						self.logger.debug("Loaded Product '%s' ." % (p))
 
 				except SyntaxError:
 					self.errorExit("Loading '%s.py' failed:\n\n%s" % (packageName, traceback.format_exc()))
@@ -250,7 +255,7 @@ class CrossCompileScript:
 				'output_path': '{work_dir}/{bit_name_win}_output',
 				'bitness': [64, ],
 				'cpu_count': cpu_count(),
-				'mingw_commit': None,
+				'mingw_commit': None,  # 'tags/v7.0.0',
 				'mingw_debug_build': False,
 				'mingw_dir': 'toolchain',
 				'mingw_custom_cflags': None,
@@ -684,25 +689,15 @@ class CrossCompileScript:
 		self.bitnessStr3 = "mingw64" if bitness == 64 else "mingw"  # just for openssl...
 		self.bitnessStrWin = "win64" if bitness == 64 else "win32"  # e.g win64
 		self.targetHostStr = F"{self.bitnessStr}-w64-mingw32"  # e.g x86_64-w64-mingw32
-
 		self.targetPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
-
 		self.inTreePrefix = self.fullWorkDir.joinpath(self.bitnessStr)  # workdir/x86_64
-
 		self.offtreePrefix = self.fullWorkDir.joinpath(self.bitnessStr + "_offtree")  # workdir/x86_64_offtree
-
 		self.targetSubPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32")  # e.g workdir/xcompilers/mingw-w64-x86_64
-
 		self.mingwBinpath = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/mingw-w64-x86_64/bin
-
 		self.mingwBinpath2 = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.bitnessStr + "-w64-mingw32", "bin")  # e.g workdir/xcompilers/x86_64-w64-mingw32/x86_64-w64-mingw32/bin
-
 		self.fullCrossPrefixStr = F"{self.mingwBinpath}/{self.bitnessStr}-w64-mingw32-"  # e.g workdir/xcompilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-
-
 		self.shortCrossPrefixStr = F"{self.bitnessStr}-w64-mingw32-"  # e.g x86_64-w64-mingw32-
-
 		self.autoConfPrefixOptions = F'--with-sysroot="{self.targetSubPrefix}" --host={self.targetHostStr} --prefix={self.targetPrefix} --disable-shared --enable-static'
-
 		self.makePrefixOptions = F'CC={self.shortCrossPrefixStr}gcc ' \
 			F"AR={self.shortCrossPrefixStr}ar " \
 			F"PREFIX={self.targetPrefix} " \
@@ -710,9 +705,7 @@ class CrossCompileScript:
 			F"LD={self.shortCrossPrefixStr}ld " \
 			F"STRIP={self.shortCrossPrefixStr}strip " \
 			F'CXX={self.shortCrossPrefixStr}g++'  # --sysroot="{self.targetSubPrefix}"'
-
 		self.pkgConfigPath = "{0}/lib/pkgconfig".format(self.targetPrefix)  # e.g workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32/lib/pkgconfig
-
 		self.mesonEnvFile = self.fullWorkDir.joinpath("meson_environment.txt")
 		self.cmakeToolchainFile = self.fullWorkDir.joinpath("mingw_toolchain.cmake")
 		self.cmakePrefixOptions = F'-DCMAKE_TOOLCHAIN_FILE="{self.cmakeToolchainFile}" -G\"Ninja\"'
@@ -720,9 +713,7 @@ class CrossCompileScript:
 		self.cpuCount = self.config["toolchain"]["cpu_count"]
 		self.originalCflags = self.config["toolchain"]["original_cflags"]
 		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else ""
-
 		self.fullProductDir = self.fullWorkDir.joinpath(self.bitnessStr + "_products")
-
 		self.formatDict = defaultdict(lambda: "")
 		self.formatDict.update(
 			{
@@ -901,13 +892,14 @@ class CrossCompileScript:
 				fileName = outputFileName
 			fullOutputPath = os.path.join(outputPath, fileName)
 			try:
+				self.logger.debug('cp -f "{0}" "{1}" # copy file '.format(url, fullOutputPath))
 				shutil.copyfile(url, fullOutputPath)
 			except Exception as e:
 				print(e)
 				exit(1)
 			return fullOutputPath
 
-		req = requests.get(url, stream=True, headers={"User-Agent": userAgent})
+		req = requests.get(url, stream=True, headers={"User-Agent": userAgent}) # use ,verify=False to turn off certificate validation
 
 		if req.status_code != 200:
 			req.raise_for_status()
@@ -1385,13 +1377,15 @@ class CrossCompileScript:
 		# we have to do it the hard way because "hg purge" is an extension that is not on by default
 		# and making users enable stuff like that is too much
 		if os.path.isdir(realFolderName) and forceRebuild:
-			self.logger.info("Deleting old HG clone")
-			shutil.rmtree(realFolderName)
+			self.logger.info('Deleting old HG clone in folder"{0}"'.format(realFolderName))
+			shutil.rmtree(realFolderName,ignore_errors=False)
 
 		if os.path.isdir(realFolderName):
 			self.cchdir(realFolderName)
 			hgVersion = subprocess.check_output('hg --debug id -i', shell=True)
+			self.logger.debug('hg pull -u')
 			self.runProcess('hg pull -u')
+			self.logger.debug('hg update -C{0}'.format(" default" if desiredBranch is None else branchString))
 			self.runProcess('hg update -C{0}'.format(" default" if desiredBranch is None else branchString))
 			hgVersionNew = subprocess.check_output('hg --debug id -i', shell=True)
 			if hgVersion != hgVersionNew:
@@ -1402,12 +1396,15 @@ class CrossCompileScript:
 			self.cchdir("..")
 		else:
 			self.logger.info("HG cloning '%s' to '%s'" % (url, realFolderName))
+			self.logger.debug('hg clone {0} {1}'.format(url, realFolderName + ".tmp"))
 			self.runProcess('hg clone {0} {1}'.format(url, realFolderName + ".tmp"))
 			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.debug("HG updating to:{0}".format(" master" if desiredBranch is None else branchString))
+				self.logger.debug('hg up{0} -v'.format("" if desiredBranch is None else branchString))
 				self.runProcess('hg up{0} -v'.format("" if desiredBranch is None else branchString))
 				self.cchdir("..")
+			self.logger.debug('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.runProcess('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished HG cloning '%s' to '%s'" % (url, realFolderName))
 
@@ -1447,6 +1444,7 @@ class CrossCompileScript:
 			else:
 				self.cchdir(realFolderName)
 
+				self.logger.debug('git remote update')
 				self.runProcess('git remote update')
 
 				UPSTREAM = '@{u}'  # or branchName i guess
@@ -1456,7 +1454,9 @@ class CrossCompileScript:
 				REMOTE = subprocess.check_output('git rev-parse "{0}"'.format(UPSTREAM), shell=True).decode("utf-8")
 				BASE = subprocess.check_output('git merge-base @ "{0}"'.format(UPSTREAM), shell=True).decode("utf-8")
 
+				self.logger.debug('git checkout -f')
 				self.runProcess('git checkout -f')
+				self.logger.debug('git checkout {0}'.format(properBranchString))
 				self.runProcess('git checkout {0}'.format(properBranchString))
 
 				if LOCAL == REMOTE:
@@ -1478,14 +1478,21 @@ class CrossCompileScript:
 						# if len(bsSplit) == 2:
 						# 	self.run_process('git pull origin {1}'.format(bsSplit[0],bsSplit[1]))
 						# else:
+						self.logger.debug('git pull origin {0}'.format(properBranchString))
 						if 'Already up to date' in self.runProcess('git pull origin {0}'.format(properBranchString), silent=True):
 							return os.getcwd()
 					else:
+						self.logger.debug('git pull'.format(properBranchString))
 						self.runProcess('git pull'.format(properBranchString))
+					self.logger.debug('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
 					self.runProcess('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
+					self.logger.debug('git submodule foreach --recursive git clean -ffdx')
 					self.runProcess('git submodule foreach --recursive git clean -ffdx')
+					self.logger.debug('git reset --hard')
 					self.runProcess('git reset --hard')
+					self.logger.debug('git submodule foreach --recursive git reset --hard')
 					self.runProcess('git submodule foreach --recursive git reset --hard')
+					self.logger.debug('git submodule update --init --recursive')
 					self.runProcess('git submodule update --init --recursive')
 				elif REMOTE == BASE:
 					self.logger.debug("####################")
@@ -1514,17 +1521,21 @@ class CrossCompileScript:
 				addArgs.append(F"--depth 1")
 
 			self.logger.info(F"Git {'Shallow C' if depth >= 1 else 'C'}loning '{url}' to '{os.getcwd() + '/' + realFolderName}'")
+			self.logger.debug('git clone {0} --progress "{1}" "{2}"'.format(" ".join(addArgs), url, realFolderName + ".tmp"))
 			self.runProcess('git clone {0} --progress "{1}" "{2}"'.format(" ".join(addArgs), url, realFolderName + ".tmp"))
 			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.debug("GIT Checking out:{0}".format(" master" if desiredBranch is None else branchString))
+				self.logger.debug('git checkout{0}'.format(" master" if desiredBranch is None else branchString))
 				self.runProcess('git checkout{0}'.format(" master" if desiredBranch is None else branchString))
 				self.cchdir("..")
 			if desiredPR is not None:
 				self.cchdir(realFolderName + ".tmp")
 				self.logger.info("GIT Fetching PR: {0}".format(desiredPR))
+				self.logger.debug('git fetch origin refs/pull/{0}/head'.format(desiredPR))
 				self.runProcess('git fetch origin refs/pull/{0}/head'.format(desiredPR))
 				self.cchdir("..")
+			self.logger.debug('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.runProcess('mv "{0}" "{1}"'.format(realFolderName + ".tmp", realFolderName))
 			self.logger.info("Finished GIT cloning '%s' to '%s'" % (url, realFolderName))
 
@@ -1538,9 +1549,12 @@ class CrossCompileScript:
 		if not os.path.isdir(dir):
 			self.logger.info("SVN checking out to %s" % (dir))
 			if desiredBranch is None:
+				self.logger.debug('svn co "%s" "%s.tmp" --non-interactive --trust-server-cert' % (url, dir))
 				self.runProcess('svn co "%s" "%s.tmp" --non-interactive --trust-server-cert' % (url, dir))
 			else:
+				self.logger.debug('svn co -r "%s" "%s" "%s.tmp" --non-interactive --trust-server-cert' % (desiredBranch, url, dir))
 				self.runProcess('svn co -r "%s" "%s" "%s.tmp" --non-interactive --trust-server-cert' % (desiredBranch, url, dir))
+			self.logger.debug('mv -f "{0}.tmp" "{1}"'.format(dir,dir))
 			shutil.move('%s.tmp' % dir, dir)
 		else:
 			pass
@@ -1576,6 +1590,7 @@ class CrossCompileScript:
 			fileName = os.path.basename(urlparse(url).path)
 			self.logger.info("Downloading {0} ({1})".format(fileName, url))
 
+			self.logger.debug("Downloading {0} to ({1})".format(url, fileName))
 			self.downloadFile(url, fileName)
 
 			if "hashes" in dlLocation:
@@ -1597,12 +1612,22 @@ class CrossCompileScript:
 			customFolderTarArg = ""
 
 			if customFolder:
+				self.logger.debug('In downloadUnpackFile making folder "{0} ...'.format(folderName))
 				customFolderTarArg = ' -C "' + folderName + '" --strip-components 1'
-				os.makedirs(folderName)
+				# IF FOLDER EXISTS, DELETE IT BEFORE CREATING IT
+				#    rmdir(path) Remove (delete) the directory path. Only works when the directory is empty, otherwise, OSError is raised. 
+				#    In order to remove whole directory trees, shutil.rmtree() can be used.
+				if os.path.isdir(folderName):
+					self.logger.debug('In customFolder, deleting old existing folder "{0}"'.format(folderName))
+					self.logger.debug('rm -f "{0}"'.format(folderName))
+					shutil.rmtree(folderName,ignore_errors=False)
+				os.makedirs(folderName) # os.makedirs creates intermediate parent paths like "mkdir -p"
 
 			if fileName.endswith(tars):
+				self.logger.debug('tar -xf "{0}"{1}'.format(fileName, customFolderTarArg))
 				self.runProcess('tar -xf "{0}"{1}'.format(fileName, customFolderTarArg))
 			else:
+				self.logger.debug('unzip "{0}"'.format(fileName))
 				self.runProcess('unzip "{0}"'.format(fileName))
 
 			self.touch(os.path.join(folderName, "unpacked.successfully"))
@@ -1705,6 +1730,7 @@ class CrossCompileScript:
 		if 'rename_folder' in packageData:  # this should be moved inside the download functions, TODO.. but lazy
 			if packageData['rename_folder'] is not None:
 				if not os.path.isdir(packageData['rename_folder']):
+					self.logger.debug("mv -f '{0}' '{1}' # rename (move) folder".format(workDir, packageData['rename_folder']))
 					shutil.move(workDir, packageData['rename_folder'])
 				workDir = packageData['rename_folder']
 		self.cchdir("..")
@@ -1787,6 +1813,7 @@ class CrossCompileScript:
 		elif packageData["repo_type"] == "none":
 			if "folder_name" in packageData:
 				workDir = packageData["folder_name"]
+				self.logger.debug("mkdir -p '{0}'".format(workDir))
 				os.makedirs(workDir, exist_ok=True)
 			else:
 				print("Error: When using repo_type 'none' you have to set folder_name as well.")
@@ -1799,6 +1826,7 @@ class CrossCompileScript:
 		if 'rename_folder' in packageData:  # this should be moved inside the download functions, TODO.. but lazy
 			if packageData['rename_folder'] is not None:
 				if not os.path.isdir(packageData['rename_folder']):
+					self.logger.debug("mv -f '{0}' '{1}' # rename folder".format(workDir, packageData['rename_folder']))
 					shutil.move(workDir, packageData['rename_folder'])
 				workDir = packageData['rename_folder']
 
@@ -1819,16 +1847,23 @@ class CrossCompileScript:
 			if 'run_pre_patch' in packageData:
 				if packageData['run_pre_patch'] is not None:
 					for cmd in packageData['run_pre_patch']:
+						self.logger.debug("Running pre-patch-command pre replaceVariables (raw): '{0}'".format( cmd ))
 						cmd = self.replaceVariables(cmd)
 						self.logger.debug("Running pre-patch-command: '{0}'".format(cmd))
+						self.logger.debug(cmd)
 						self.runProcess(cmd)
 
 		if forceRebuild:
 			if os.path.isdir(".git"):
+				self.logger.debug('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
 				self.runProcess('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
+				self.logger.debug('git submodule foreach --recursive git clean -ffdx')
 				self.runProcess('git submodule foreach --recursive git clean -ffdx')
+				self.logger.debug('git reset --hard')
 				self.runProcess('git reset --hard')
+				self.logger.debug('git submodule foreach --recursive git reset --hard')
 				self.runProcess('git submodule foreach --recursive git reset --hard')
+				self.logger.debug('git submodule update --init --recursive')
 				self.runProcess('git submodule update --init --recursive')
 
 		if 'source_subfolder' in packageData:
@@ -1844,27 +1879,41 @@ class CrossCompileScript:
 		if 'debug_confighelp_and_exit' in packageData:
 			if packageData['debug_confighelp_and_exit'] is True:
 				self.bootstrapConfigure()
+				self.logger.debug("./configure --help")
 				self.runProcess("./configure --help")
 				exit()
 
 		if 'cflag_addition' in packageData:
 			if packageData['cflag_addition'] is not None:
+				#---
+				self.logger.debug("### Environment variables:  ###")
+				for val in os.environ:
+					self.logger.debug("\t" + val + " : " + os.environ[val])
+				self.logger.debug("###############################")
+				self.logger.debug("Adding '{0}' to CFLAGS".format( packageData['cflag_addition'] ))
+				self.logger.debug(F'os.environ CFLAGS   before cflag_addition = "{os.environ["CXXFLAGS"]}')
+				self.logger.debug(F'os.environ CXXFLAGS before cflag_addition = "{os.environ["CXXFLAGS"]}')
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + packageData['cflag_addition']
 				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + packageData['cflag_addition']
-				self.logger.info(F'Added to C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Added to CFLAGS, now: "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Added to CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"')
 
 		if 'custom_cflag' in packageData:
 			if packageData['custom_cflag'] is not None:
-				os.environ["CFLAGS"] = packageData['custom_cflag']
-				os.environ["CXXFLAGS"] = packageData['custom_cflag']
-				self.logger.info(F'Set custom C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
+				val = self.replaceVariables(packageData['custom_cflag'])
+				self.logger.debug("Setting CFLAGS/CXXFLAGS to '{0}'".format( val ))
+				os.environ["CFLAGS"] = val
+				os.environ["CXXFLAGS"] = val
+				self.logger.info(F'Set CFLAGS, now: "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Set CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"')
 
 		if 'strip_cflags' in packageData:
 			if isinstance(packageData["strip_cflags"], (list, tuple)) and len(packageData["strip_cflags"]):
 				for _pattern in packageData["strip_cflags"]:
 					os.environ["CFLAGS"] = self.reStrip(_pattern, os.environ["CFLAGS"])
 					os.environ["CXXFLAGS"] = self.reStrip(_pattern, os.environ["CXXFLAGS"])
-					self.logger.info(F'Stripped C(XX)FLAGS, they\'re are now: "{os.environ["CXXFLAGS"]}", "{os.environ["CFLAGS"]}"')
+					self.logger.info(F'Stripped CFLAGS, now: "{os.environ["CFLAGS"]}"')
+					self.logger.info(F'Stripped CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"')
 
 		if 'custom_path' in packageData:
 			if packageData['custom_path'] is not None:
@@ -1895,6 +1944,7 @@ class CrossCompileScript:
 					self.errorExit("Copy-over file '%s' (Unformatted: '%s') does not exist." % (f_formatted, f))
 				dst = os.path.join(currentFullDir, f_formatted.name)
 				self.logger.info("Copying file over from '%s' to '%s'" % (f_formatted, dst))
+				self.logger.debug('cp -f "{0}" "{1}" # copy file '.format(f_formatted, dst))
 				shutil.copyfile(f_formatted, dst)
 
 		if 'patches' in packageData:
@@ -1925,9 +1975,11 @@ class CrossCompileScript:
 							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
 							self.cchdir(_dir)
 						else:
+							self.logger.debug("Running post-patch-command pre replaceVariables (raw): '{0}'".format( cmd ))
 							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-patch-command: '{0}'".format(cmd))
 							# self.run_process(cmd)
+							self.logger.debug(cmd)
 							self.runProcess(cmd, ignoreFail)
 
 		conf_system = None
@@ -2053,6 +2105,7 @@ class CrossCompileScript:
 		for _current_infile in in_files:
 			if "out_file" not in rp:
 				out_files = (_current_infile, )
+				self.logger.debug('cp -f "{0}" "{1}" # copy file '.format(_current_infile, _current_infile.parent.joinpath(_current_infile.name + ".backup")))
 				shutil.copy(_current_infile, _current_infile.parent.joinpath(_current_infile.name + ".backup"))
 			else:
 				if isinstance(rp["out_file"], (list, tuple)):
@@ -2069,8 +2122,10 @@ class CrossCompileScript:
 					_backup = _current_infile.parent.joinpath(_current_infile.name + ".backup")
 					if not _backup.parent.exists():
 						self.logger.warning(F"[Regex-Command] Out-File parent '{_backup.parent}' does not exist.")
+					self.logger.debug('cp -f "{0}" "{1}" # copy file '.format(_current_infile, _backup))
 					shutil.copy(_current_infile, _backup)
 					_tmp_file = _current_infile.parent.joinpath(_current_infile.name + ".tmp")
+					self.logger.debug('mv -f "{0}" "{1}" # move file '.format(_current_infile, _tmp_file))
 					shutil.move(_current_infile, _tmp_file)
 					_current_infile = _tmp_file
 				self.logger.info(F"[{packageName}] Running regex command on '{_current_outfile}'")
@@ -2091,16 +2146,22 @@ class CrossCompileScript:
 	def bootstrapConfigure(self):
 		if not os.path.isfile("configure"):
 			if os.path.isfile("bootstrap.sh"):
+				self.logger.debug('./bootstrap.sh')
 				self.runProcess('./bootstrap.sh')
 			elif os.path.isfile("autogen.sh"):
+				self.logger.debug('./autogen.sh')
 				self.runProcess('./autogen.sh')
 			elif os.path.isfile("buildconf"):
+				self.logger.debug('./buildconf')
 				self.runProcess('./buildconf')
 			elif os.path.isfile("bootstrap"):
+				self.logger.debug('./bootstrap')
 				self.runProcess('./bootstrap')
 			elif os.path.isfile("bootstrap"):
+				self.logger.debug('./bootstrap')
 				self.runProcess('./bootstrap')
 			elif os.path.isfile("configure.ac"):
+				self.logger.debug('autoreconf -fiv')
 				self.runProcess('autoreconf -fiv')
 
 	def configureSource(self, packageName, packageData, conf_system):
@@ -2128,6 +2189,7 @@ class CrossCompileScript:
 				if conf_system == "waf":
 					if not os.path.isfile("waf"):
 						if os.path.isfile("bootstrap.py"):
+							self.logger.debug('./bootstrap.py')
 							self.runProcess('./bootstrap.py')
 				else:
 					self.bootstrapConfigure()
@@ -2147,6 +2209,7 @@ class CrossCompileScript:
 				if packageData['configure_path'] is not None:
 					confCmd = packageData['configure_path']
 
+			self.logger.debug(F'{confCmd} {configOpts}')
 			self.runProcess(F'{confCmd} {configOpts}')
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
@@ -2158,8 +2221,10 @@ class CrossCompileScript:
 			if 'run_post_configure' in packageData:
 				if packageData['run_post_configure'] is not None:
 					for cmd in packageData['run_post_configure']:
+						self.logger.debug("Running post-configure-command pre replaceVariables (raw): '{0}'".format( cmd ))
 						cmd = self.replaceVariables(cmd)
 						self.logger.info("Running post-configure-command: '{0}'".format(cmd))
+						self.logger.debug(cmd)
 						self.runProcess(cmd)
 
 			doClean = True
@@ -2171,6 +2236,7 @@ class CrossCompileScript:
 				mCleanCmd = 'make clean'
 				if conf_system == "waf":
 					mCleanCmd = './waf --color=yes clean'
+				self.logger.debug('{0} {1}'.format(mCleanCmd, cpuCountStr))
 				self.runProcess('{0} {1}'.format(mCleanCmd, cpuCountStr), True)
 
 			if 'patches_post_configure' in packageData:
@@ -2216,6 +2282,7 @@ class CrossCompileScript:
 			if os.path.isfile(local_patch_path):
 				copyPath = os.path.join(os.getcwd(), fileName)
 				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path, copyPath))
+				self.logger.debug('cp -f "{0}" "{1}" # copy file '.format(local_patch_path, copyPath))
 				shutil.copyfile(local_patch_path, copyPath)
 			else:
 				fileName = os.path.basename(urlparse(url).path)
@@ -2223,6 +2290,7 @@ class CrossCompileScript:
 				self.downloadFile(url, fileName)
 
 		self.logger.info("Patching source using: '{0}'".format(fileName))
+		self.logger.debug('patch {2}{0} < "{1}"'.format(type, fileName, ignore))
 		self.runProcess('patch {2}{0} < "{1}"'.format(type, fileName, ignore), ignoreErr, exitOn)
 
 		if not postConf:
@@ -2245,6 +2313,7 @@ class CrossCompileScript:
 				makeOpts = self.replaceVariables(packageData["configure_options"])
 			self.logger.info("Meson'ing '{0}' with: {1}".format(packageName, makeOpts))
 
+			self.logger.debug('meson {0}'.format(makeOpts))
 			self.runProcess('meson {0}'.format(makeOpts))
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
@@ -2266,8 +2335,10 @@ class CrossCompileScript:
 				makeOpts = self.replaceVariables(packageData["configure_options"])
 			self.logger.info("C-Making '{0}' with: {1}".format(packageName, makeOpts))
 
+			self.logger.debug('cmake {0}'.format(makeOpts))
 			self.runProcess('cmake {0}'.format(makeOpts))
 
+			self.logger.debug("make clean")
 			self.runProcess("make clean", True)
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
@@ -2302,6 +2373,7 @@ class CrossCompileScript:
 
 			if buildSystem == "make":
 				if os.path.isfile("configure"):
+					self.logger.debug(F'{mkCmd} clean {cpuCountStr}')
 					self.runProcess(F'{mkCmd} clean {cpuCountStr}', True)
 
 			makeOpts = ''
@@ -2314,13 +2386,14 @@ class CrossCompileScript:
 					print("\t" + tk + " : " + os.environ[tk])
 				print("##############################")
 
-			self.logger.info(F"Building '{packageName}' with: {makeOpts} in {os.getcwd()}", extra={'type': buildSystem})
+			self.logger.info(F"Building '{packageName}' with 'build_options': {makeOpts} in {os.getcwd()}", extra={'type': buildSystem})
 
 			if 'ignore_build_fail_and_run' in packageData:
 				if len(packageData['ignore_build_fail_and_run']) > 0:  # todo check if its a list too
 					try:
 						if buildSystem == "waf":
 							mkCmd = './waf --color=yes build'
+						self.logger.debug(F'{mkCmd} {cpuCountStr} {makeOpts}')
 						self.runProcess(F'{mkCmd} {cpuCountStr} {makeOpts}')
 					except Exception:  # todo, except specific exception
 						self.logger.info("Ignoring failed make process...")
@@ -2331,6 +2404,7 @@ class CrossCompileScript:
 			else:
 				if buildSystem == "waf":
 					mkCmd = './waf --color=yes build'
+				self.logger.debug(F'{mkCmd} {cpuCountStr} {makeOpts}')
 				self.runProcess(F'{mkCmd} {cpuCountStr} {makeOpts}')
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
@@ -2350,6 +2424,7 @@ class CrossCompileScript:
 						else:
 							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-build-command: '{0}'".format(cmd))
+							self.logger.debug(cmd)
 							self.runProcess(cmd)
 
 			self.touch(touchName)
@@ -2375,7 +2450,7 @@ class CrossCompileScript:
 				if packageData['install_target'] is not None:
 					installTarget = packageData['install_target']
 
-			self.logger.info("Installing '{0}' with: {1}".format(packageName, makeInstallOpts), extra={'type': buildSystem})
+			self.logger.info("Installing '{0}' with 'install_options': {1}".format(packageName, makeInstallOpts), extra={'type': buildSystem})
 
 			mkCmd = "make"
 			if buildSystem == "waf":
@@ -2385,6 +2460,7 @@ class CrossCompileScript:
 			if buildSystem == "ninja":
 				mkCmd = "ninja"
 
+			self.logger.debug(F'{mkCmd} {installTarget} {makeInstallOpts} {cpuCountStr}')
 			self.runProcess(F'{mkCmd} {installTarget} {makeInstallOpts} {cpuCountStr}')
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
@@ -2402,15 +2478,17 @@ class CrossCompileScript:
 							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
 							self.cchdir(_dir)
 						else:
+							self.logger.info("Running post-install-command pre replaceVariables (raw): '{0}'".format( cmd ))
 							cmd = self.replaceVariables(cmd)
 							self.logger.info("Running post-install-command: '{0}'".format(cmd))
+							self.logger.debug(cmd)
 							self.runProcess(cmd)
 
 			self.touch(touchName)
 	#:
 
 	def defaultCFLAGS(self):
-		self.logger.debug("Reset CFLAGS/CXXFLAGS to: {0}".format(self.originalCflags))
+		self.logger.debug("Reset CFLAGS/CXXFLAGS to: '{0}'".format(self.originalCflags))
 		os.environ["CFLAGS"] = self.originalCflags
 		os.environ["CXXFLAGS"] = self.originalCflags
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
@@ -2507,6 +2585,7 @@ class CrossCompileScript:
 	def cchdir(self, dir):
 		if self.debugMode:
 			print(F"Changing dir from {os.getcwd()} to {dir}")
+		self.logger.debug(F"cd {dir}")
 		os.chdir(dir)
 
 
