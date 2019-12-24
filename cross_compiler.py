@@ -262,6 +262,8 @@ class CrossCompileScript:
   				'output_path': '_output',
 				'work_dir': 'workdir',
 				'original_cflags': '-O3',
+				'original_stack_protector' : '-fstack-protector-all',
+				'original_fortify_source'  : '-D_FORTIFY_SOURCE=2',
 			}
 		}
 
@@ -687,6 +689,7 @@ class CrossCompileScript:
 		self.bitnessPath = self.fullWorkDir.joinpath("x86_64" if bitness == 64 else "i686")  # e.g x86_64
 		self.bitnessStr2 = "x86_64" if bitness == 64 else "x86"  # just for vpx...
 		self.bitnessStr3 = "mingw64" if bitness == 64 else "mingw"  # just for openssl...
+		self.targetOSStr = "mingw64" if bitness is 64 else "mingw32" # just for "--target-os=" 
 		self.bitnessStrWin = "win64" if bitness == 64 else "win32"  # e.g win64
 		self.targetHostStr = F"{self.bitnessStr}-w64-mingw32"  # e.g x86_64-w64-mingw32
 		self.targetPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
@@ -711,7 +714,9 @@ class CrossCompileScript:
 		self.cmakePrefixOptions = F'-DCMAKE_TOOLCHAIN_FILE="{self.cmakeToolchainFile}" -G\"Ninja\"'
 		self.cmakePrefixOptionsOld = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefixStr, target_prefix=self.targetPrefix, bitness=self.bitnessStr)
 		self.cpuCount = self.config["toolchain"]["cpu_count"]
-		self.originalCflags = self.config["toolchain"]["original_cflags"]
+		self.original_stack_protector = self.config["toolchain"]["original_stack_protector"]
+		self.original_fortify_source  = self.config["toolchain"]["original_fortify_source"]
+		self.originalCflags = "  " + self.config["toolchain"]["original_cflags"] + "  " + self.config["toolchain"]["original_stack_protector"] + "  " + self.config["toolchain"]["original_fortify_source"] + "  "
 		self.originbalLdLibPath = os.environ["LD_LIBRARY_PATH"] if "LD_LIBRARY_PATH" in os.environ else ""
 		self.fullProductDir = self.fullWorkDir.joinpath(self.bitnessStr + "_products")
 		self.formatDict = defaultdict(lambda: "")
@@ -746,6 +751,12 @@ class CrossCompileScript:
 				'current_path': os.getcwd(),
 				'current_envpath': self.getKeyOrBlankString(os.environ, "PATH"),
 				'meson_env_file': self.mesonEnvFile
+				# 2019.12 add extra handy variables
+				,'target_OS': self.targetOSStr
+				,'prefix' : "{prefix}" # dummy variable replaced with itself, use in editing vapoursynth .pc files
+				,'exec_prefix' : "{exec_prefix}" # dummy variable replaced with itself, use in editing vapoursynth .pc files
+				,'original_stack_protector' : self.original_stack_protector
+				,'original_fortify_source' : self.original_fortify_source
 			}
 		)
 
@@ -799,10 +810,10 @@ class CrossCompileScript:
 			gccOutput = subprocess.check_output(gcc_bin + " -v", shell=True, stderr=subprocess.STDOUT).decode("utf-8")
 			workingGcc = re.compile("^Target: .*-w64-mingw32$", re.MULTILINE).findall(gccOutput)
 			if len(workingGcc) > 0:
-				self.logger.info("MinGW-w64 install is working!")
+				self.logger.info("MinGW-w64 install is working! (target {0})".format(self.targetOSStr))
 				return
 			else:
-				raise Exception("GCC is not working properly, target is not mingw32.")
+				raise Exception("GCC is not working properly, target is not mingw32 (target {0}).".format(self.targetOSStr)) # added self.targetOSStr 
 				exit(1)
 
 		elif not os.path.isdir(self.mingwDir):
@@ -899,7 +910,7 @@ class CrossCompileScript:
 				exit(1)
 			return fullOutputPath
 
-		req = requests.get(url, stream=True, headers={"User-Agent": userAgent}) # use ,verify=False to turn off certificate validation
+		req = requests.get(url, stream=True, headers={"User-Agent": userAgent}) # , verify=False to turn off certificate validation
 
 		if req.status_code != 200:
 			req.raise_for_status()
@@ -1893,27 +1904,49 @@ class CrossCompileScript:
 				self.logger.debug("Adding '{0}' to CFLAGS".format( packageData['cflag_addition'] ))
 				self.logger.debug(F'os.environ CFLAGS   before cflag_addition = "{os.environ["CXXFLAGS"]}')
 				self.logger.debug(F'os.environ CXXFLAGS before cflag_addition = "{os.environ["CXXFLAGS"]}')
+				self.logger.debug(F'os.environ CPPFLAGS before cflag_addition = "{os.environ["CPPFLAGS"]}')
+				self.logger.debug(F'os.environ LDFLAGS  before cflag_addition = "{os.environ["LDFLAGS"]}')
 				os.environ["CFLAGS"] = os.environ["CFLAGS"] + " " + packageData['cflag_addition']
 				os.environ["CXXFLAGS"] = os.environ["CXXFLAGS"] + " " + packageData['cflag_addition']
-				self.logger.info(F'Added to CFLAGS, now: "{os.environ["CFLAGS"]}"')
-				self.logger.info(F'Added to CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"')
+				os.environ["CPPFLAGS"] = os.environ["LDFLAGS"] + " " + packageData['cflag_addition']
+				os.environ["LDFLAGS"] = os.environ["LDFLAGS"] + " " + packageData['cflag_addition']
+				self.logger.info(F'Added to CFLAGS, now: "{os.environ["CFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Added to CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Added to CPPFLAGS, now: "{os.environ["CPPFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Added to LDFLAGS, now: "{os.environ["LDFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
 
 		if 'custom_cflag' in packageData:
 			if packageData['custom_cflag'] is not None:
 				val = self.replaceVariables(packageData['custom_cflag'])
-				self.logger.debug("Setting CFLAGS/CXXFLAGS to '{0}'".format( val ))
+				self.logger.debug("Setting CFLAGS to '{0}'".format( val ))
 				os.environ["CFLAGS"] = val
 				os.environ["CXXFLAGS"] = val
-				self.logger.info(F'Set CFLAGS, now: "{os.environ["CFLAGS"]}"')
-				self.logger.info(F'Set CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"')
+				os.environ["CPPFLAGS"] = val
+				os.environ["LDFLAGS"] = val
+				self.logger.info(F'Set CFLAGS, now: "{os.environ["CFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Set CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Set CPPFLAGS, now: "{os.environ["CPPFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+				self.logger.info(F'Set LDFLAGS, now: "{os.environ["LDFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
+
+		# ADDED THIS CODE for custom_ldflag (and hope it ALWAYS gets executed AFTER custom_cflag etc
+		if 'custom_ldflag' in packageData:
+			if packageData['custom_ldflag'] is not None:
+				val = self.replaceVariables(packageData['custom_ldflag'])
+				self.logger.debug("Setting LDFLAGS to '{0}'".format( val ))
+				os.environ["LDFLAGS"] = val
+				self.logger.info(F'Set LDFLAGS, now: "{os.environ["LDFLAGS"]}"') # , "{os.environ["CFLAGS"]}"')
 
 		if 'strip_cflags' in packageData:
 			if isinstance(packageData["strip_cflags"], (list, tuple)) and len(packageData["strip_cflags"]):
 				for _pattern in packageData["strip_cflags"]:
 					os.environ["CFLAGS"] = self.reStrip(_pattern, os.environ["CFLAGS"])
 					os.environ["CXXFLAGS"] = self.reStrip(_pattern, os.environ["CXXFLAGS"])
+					os.environ["CPPFLAGS"] = self.reStrip(_pattern, os.environ["CPPFLAGS"])
+					os.environ["LDFLAGS"] = self.reStrip(_pattern, os.environ["LDFLAGS"])
 					self.logger.info(F'Stripped CFLAGS, now: "{os.environ["CFLAGS"]}"')
 					self.logger.info(F'Stripped CXXFLAGS, now: "{os.environ["CXXFLAGS"]}"')
+					self.logger.info(F'Stripped CPPFLAGS, now: "{os.environ["CPPFLAGS"]}"')
+					self.logger.info(F'Stripped LDFLAGS, now: "{os.environ["LDFLAGS"]}"')
 
 		if 'custom_path' in packageData:
 			if packageData['custom_path'] is not None:
@@ -2488,9 +2521,11 @@ class CrossCompileScript:
 	#:
 
 	def defaultCFLAGS(self):
-		self.logger.debug("Reset CFLAGS/CXXFLAGS to: '{0}'".format(self.originalCflags))
+		self.logger.debug("Reset CFLAGS/CXXFLAGS/CPPFLAGS/LDFLAGS to: '{0}'".format(self.originalCflags))
 		os.environ["CFLAGS"] = self.originalCflags
 		os.environ["CXXFLAGS"] = self.originalCflags
+		os.environ["CPPFLAGS"] = self.originalCflags
+		os.environ["LDFLAGS"] = self.originalCflags
 		os.environ["PKG_CONFIG_LIBDIR"] = ""
 	#:
 
