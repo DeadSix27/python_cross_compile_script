@@ -254,7 +254,6 @@ class CrossCompileScript:
 				'mingw_debug_build': False,
 				'mingw_dir': 'toolchain',
 				'mingw_custom_cflags': None,
-  				'output_path': '_output',
 				'work_dir': 'workdir',
 				'original_cflags': '-O3',
 			}
