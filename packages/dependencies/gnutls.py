@@ -1,8 +1,8 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.11.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'fbba12f3db9a55dbf027e14111755817ec44b57eabec3e8089aac8ac6f533cf8' }, ], },
-		{ 'url' : 'https://fossies.org/linux/misc/gnutls-3.6.11.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'fbba12f3db9a55dbf027e14111755817ec44b57eabec3e8089aac8ac6f533cf8' }, ], },
+		{ 'url' : 'https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.12.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'bfacf16e342949ffd977a9232556092c47164bd26e166736cf3459a870506c4b' }, ], },
+		{ 'url' : 'https://fossies.org/linux/misc/gnutls-3.6.12.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'bfacf16e342949ffd977a9232556092c47164bd26e166736cf3459a870506c4b' }, ], },
 	],
 	'configure_options' :
 		'--host={target_host} --prefix={target_prefix} --disable-shared --enable-static '
@@ -47,5 +47,5 @@
 		'zlib',
 	],
 	'update_check' : { 'url' : 'ftp://ftp.gnutls.org/gcrypt/gnutls/v3.6', 'type' : 'ftpindex', 'regex' : r'gnutls-(?P<version_num>[\d.]+)\.tar\.xz' },
-	'_info' : { 'version' : '3.6.11.1', 'fancy_name' : 'gnutls' },
+	'_info' : { 'version' : '3.6.12', 'fancy_name' : 'gnutls' },
 }
