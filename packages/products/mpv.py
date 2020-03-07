@@ -30,7 +30,7 @@
 		'--enable-libarchive '
 		'--enable-javascript '
 		'--disable-manpage-build '
-		'--enable-pdf-build '
+		'--disable-pdf-build '
 		'TARGET={target_host} '
 		'DEST_OS=win32 '
 	,
