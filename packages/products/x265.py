@@ -1,7 +1,8 @@
 {
-	'repo_type' : 'mercurial',
-	'url' : 'https://bitbucket.org/multicoreware/x265',
-	'rename_folder' : 'x265_hg',
+	'repo_type' : 'git',
+	'url' : 'https://bitbucket.org/multicoreware/x265_git',
+	'folder_name': 'x265_git',
+	'depth_git': 0,
 	'source_subfolder' : '_build',
 	'configure_options' : 
 		'../source {cmake_prefix_options} '
