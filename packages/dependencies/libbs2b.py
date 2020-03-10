@@ -24,7 +24,7 @@
 			},
 			{
 				0: r'bs2bconvert_LDFLAGS = \\',
-				1: r'bs2bconvert_LDFLAGS = -lsndfile -lopus -lFLAC -lssp -lvorbisenc -lvorbis -logg\n',
+				1: r'bs2bconvert_LDFLAGS = !CMD(pkg-config sndfile --libs-only-l)CMD!\n',
 				'in_file': 'src/Makefile.am'
 			},
 		],
