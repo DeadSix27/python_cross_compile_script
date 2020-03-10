@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 94e0b37eb..dee056ea3 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -499,7 +499,7 @@ endif ()
+ 
+ if (NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
+   # Generate the pkg-config file
+-  if (UNIX)
++  if (NOT MSVC)
+     file(READ "${PROJECT_SOURCE_DIR}/builds/unix/freetype2.in" FREETYPE2_PC_IN)
+ 
+     string(REPLACE ";" ", " PKG_CONFIG_REQUIRED_PRIVATE "${PKG_CONFIG_REQUIRED_PRIVATE}")
