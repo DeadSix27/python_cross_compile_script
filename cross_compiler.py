@@ -1029,6 +1029,7 @@ class CrossCompileScript:
 				F'set(CMAKE_C_COMPILER {self.shortCrossPrefixStr}gcc)',
 				F'set(CMAKE_CXX_COMPILER {self.shortCrossPrefixStr}g++)',
 				F'set(CMAKE_RC_COMPILER {self.shortCrossPrefixStr}windres)',
+				F'set(CMAKE_ASM_COMPILER {self.mingwBinpath}/{self.shortCrossPrefixStr}as)',
 				F'set(CMAKE_FIND_ROOT_PATH {self.targetPrefix})',
 				F'set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)',
 				F'set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)',
