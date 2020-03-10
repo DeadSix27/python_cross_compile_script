@@ -1,8 +1,8 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/google/shaderc.git',
-	# 'depth_git': False,
-	# 'branch': '3f24b6829b3e7da9c97b779402311ece81264ca8', # libshaderc_spvc/src/spvc.cc:71:33: error: returning reference to temporary [-Werror=return-local-addr]
+	'depth_git': 0,
+	'branch': 'f53792645f0696b8954cfdb3c213f96799dd89b2', 
 	'configure_options' :
 		'cmake .. {cmake_prefix_options} '
 		'-DCMAKE_BUILD_TYPE=Release '
