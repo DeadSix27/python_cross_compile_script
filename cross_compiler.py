@@ -2105,7 +2105,7 @@ class CrossCompileScript:
 							self.logger.debug(F"\n{line}")
 							nf.write(line)
 						elif re.search(repls[0], line):
-							self.logger.info(F"RegEx removing line\n{line}:")
+							self.logger.debug(F"RegEx removing line\n{line}:")
 						else:
 							nf.write(line)
 
