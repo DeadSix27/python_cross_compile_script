@@ -42,7 +42,7 @@ SOURCES = OrderedDict()  # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type': 'git',
-	'git_shallow': True,
+	'git_shallow': False,
 	'url': 'https://git.code.sf.net/p/mingw-w64/mingw-w64',  # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
 	'run_after_patches': [
 		('autoreconf -fiv', ),
@@ -82,7 +82,7 @@ SOURCES['isl'] = {
 }
 SOURCES['binutils'] = {
 	'type': 'archive',
-	'version': '2.33.1',
+	'version': '2.34',
 	# 'patches' : [
   		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-binutils-remove_provide_qualifiers_from_ctor_and_dtor_list.patch' , 'p1' ),
 	# ],
@@ -97,7 +97,7 @@ SOURCES['gcc'] = {
 	'type': 'archive',
 	# 'version'   : '9.2.0', # stable versions
 	# 'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
-	'version': '9-20200208', # pre-release versions
+	'version': '9.3.0-RC-20200305', # pre-release versions
 	'url': 'ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches': [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
