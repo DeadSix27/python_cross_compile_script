@@ -1,5 +1,5 @@
 {
-	'ffmpeg_min_config' : # the base for all ffmpeg configurations.
+	'ffmpeg_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} '
 		'--target-os=mingw32 '
 		'--cross-prefix={cross_prefix_bare} '
