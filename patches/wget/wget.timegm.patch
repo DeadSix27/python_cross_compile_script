@@ -1,19 +1,19 @@
-diff -Nur wget/gnulib/lib/timegm.c wget.patched/gnulib/lib/timegm.c
---- wget/gnulib/lib/timegm.c	2018-03-21 11:44:31.189352933 +0100
-+++ wget.patched/gnulib/lib/timegm.c	2018-03-21 11:48:51.277697217 +0100
-@@ -32,7 +32,7 @@
+diff -Nur wget_git_orig/gnulib/lib/mktime-internal.h wget_git/gnulib/lib/mktime-internal.h
+--- wget_git_orig/gnulib/lib/mktime-internal.h	2020-03-09 14:36:26.815211151 +0100
++++ wget_git/gnulib/lib/mktime-internal.h	2020-03-09 14:38:37.179099933 +0100
+@@ -47,7 +47,7 @@
+ # define __gmtime64_r __gmtime_r
+ # define __localtime64_r __localtime_r
+ # define __mktime64 mktime
+-# define __timegm64 timegm
++# define __timegm64 timegm_wget
  #endif
  
- time_t
--timegm (struct tm *tmp)
-+timegm_wget (struct tm *tmp)
- {
-   static mktime_offset_t gmtime_offset;
-   tmp->tm_isdst = 0;
-diff -Nur wget/gnulib/lib/time.in.h wget.patched/gnulib/lib/time.in.h
---- wget/gnulib/lib/time.in.h	2018-03-21 11:44:31.189352933 +0100
-+++ wget.patched/gnulib/lib/time.in.h	2018-03-21 11:49:43.683962446 +0100
-@@ -310,17 +310,17 @@
+ #ifndef _LIBC
+diff -Nur wget_git_orig/gnulib/lib/time.in.h wget_git/gnulib/lib/time.in.h
+--- wget_git_orig/gnulib/lib/time.in.h	2020-03-09 14:36:26.781878119 +0100
++++ wget_git/gnulib/lib/time.in.h	2020-03-09 14:38:09.022756428 +0100
+@@ -324,17 +324,17 @@
  #  if @REPLACE_TIMEGM@
  #   if !(defined __cplusplus && defined GNULIB_NAMESPACE)
  #    undef timegm
@@ -37,10 +37,10 @@ diff -Nur wget/gnulib/lib/time.in.h wget.patched/gnulib/lib/time.in.h
  # endif
  
  /* Encourage applications to avoid unsafe functions that can overrun
-diff -Nur wget/gnulib/lib/time_rz.c wget.patched/gnulib/lib/time_rz.c
---- wget/gnulib/lib/time_rz.c	2018-03-21 11:44:31.189352933 +0100
-+++ wget.patched/gnulib/lib/time_rz.c	2018-03-21 11:49:52.948703620 +0100
-@@ -306,7 +306,7 @@
+diff -Nur wget_git_orig/gnulib/lib/time_rz.c wget_git/gnulib/lib/time_rz.c
+--- wget_git_orig/gnulib/lib/time_rz.c	2020-03-09 14:36:26.785211421 +0100
++++ wget_git/gnulib/lib/time_rz.c	2020-03-09 14:37:44.117938145 +0100
+@@ -321,7 +321,7 @@
  mktime_z (timezone_t tz, struct tm *tm)
  {
    if (!tz)
@@ -49,10 +49,10 @@ diff -Nur wget/gnulib/lib/time_rz.c wget.patched/gnulib/lib/time_rz.c
    else
      {
        timezone_t old_tz = set_tz (tz);
-diff -Nur wget/src/http.c wget.patched/src/http.c
---- wget/src/http.c	2018-03-21 11:43:29.433759307 +0100
-+++ wget.patched/src/http.c	2018-03-21 11:49:57.430036290 +0100
-@@ -4896,7 +4896,7 @@
+diff -Nur wget_git_orig/src/http.c wget_git/src/http.c
+--- wget_git_orig/src/http.c	2020-03-09 14:36:26.998542830 +0100
++++ wget_git/src/http.c	2020-03-09 14:38:37.719651833 +0100
+@@ -4976,7 +4976,7 @@
  
        if (check_end (strptime (time_string, time_formats[i], &t)))
          {
