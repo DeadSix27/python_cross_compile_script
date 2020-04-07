@@ -33,6 +33,7 @@
 		'tesseract',
 		'lensfun',
 		'libwebp',
+		'avisynth_plus_headers',
 		'nv-codec-headers',
 		'intel_quicksync_mfx',
 		'amf_headers',
