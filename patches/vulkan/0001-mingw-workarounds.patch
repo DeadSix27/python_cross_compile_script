@@ -12,8 +12,6 @@ Subject: [PATCH] mingw-work_arounds
  mode change 100644 => 100755 loader/CMakeLists.txt
 
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-old mode 100644
-new mode 100755
 index 382664e82..01eefaec5
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
