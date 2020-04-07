@@ -21,7 +21,6 @@
 		'--enable-libbluray '
 		'--enable-cdda '
 		#'--enable-egl-angle-lib ' # not maintained anymore apparently, crashes for me anyway.
-		'--enable-libass '
 		'--enable-lua '
 		'--enable-vapoursynth '
 		'--enable-uchardet '
