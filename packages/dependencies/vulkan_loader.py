@@ -29,6 +29,12 @@
 				'in_file': '{pkg_config_path}/vulkan.pc',
 				'out_file': '{pkg_config_path}/vulkan.pc'
 			},
+			{
+				0: r'-lvulkan$',
+				1: r'-lvulkan-1',
+				'in_file': '{pkg_config_path}/vulkan.pc',
+				'out_file': '{pkg_config_path}/vulkan.pc'
+			},
 		]
 	},
 	'depends_on' : [ 'vulkan_headers' ], # 'vulkan-d3dheaders',
