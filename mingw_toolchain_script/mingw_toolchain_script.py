@@ -97,7 +97,7 @@ SOURCES['gcc'] = {
 	'type': 'archive',
 	# 'version'   : '9.2.0', # stable versions
 	# 'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
-	'version': '9.3.0-RC-20200305', # pre-release versions
+	'version': '9-20200328', # pre-release versions
 	'url': 'ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches': [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
