@@ -4,7 +4,7 @@
 	'source_subfolder': '_build',
 	'conf_system' : 'cmake',
 	'configure_options' : '.. {cmake_prefix_options} '
-		'-DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release'
+		'-DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release '
 		'-DWEBP_ENABLE_SIMD=ON '
 		'-DWEBP_NEAR_LOSSLESS=ON '
 		'-DWEBP_UNICODE=ON '
