@@ -1953,6 +1953,24 @@ class CrossCompileScript:
 						except re.error as e:
 							self.errorExit(e)
 
+
+			if 'run_post_regexreplace' in packageData and packageData['run_post_regexreplace']:
+					for cmd in packageData['run_post_regexreplace']:
+						ignoreFail = False
+						if isinstance(cmd, tuple):
+							cmd = cmd[0]
+							ignoreFail = cmd[1]
+						if cmd.startswith("!SWITCHDIRBACK"):
+							self.cchdir(currentFullDir)
+						elif cmd.startswith("!SWITCHDIR"):
+							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
+							self.cchdir(_dir)
+						else:
+							cmd = self.replaceVariables(cmd)
+							self.logger.info("Running post-patch-command: '{0}'".format(cmd))
+							# self.run_process(cmd)
+							self.runProcess(cmd, ignoreFail)
+
 		conf_system = None
 		build_system = None
 
