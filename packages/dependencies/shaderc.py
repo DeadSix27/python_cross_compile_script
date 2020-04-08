@@ -24,6 +24,16 @@
 		'!SWITCHDIR|../_build',
 		"sed -i 's/add_subdirectory(examples)/#add_subdirectory(examples)/g' ../CMakeLists.txt",
 	],
+
+	'regex_replace': {
+		'post_patch': [
+			{
+				0: r'#define snprintf sprintf_s',
+				'in_file': '../third_party/glslang/glslang/Include/Common.h'
+			},
+		],
+	},
+	
 	'run_post_build' : [
 		'cp -rv "../libshaderc/include/shaderc" "{target_prefix}/include/"',
 		'cp -rv "../libshaderc_util/include/libshaderc_util" "{target_prefix}/include/"',

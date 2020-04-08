@@ -1926,14 +1926,6 @@ class CrossCompileScript:
 
 		if not self.anyFileStartsWith('already_ran_make'):
 
-			if 'regex_replace' in packageData and packageData['regex_replace']:
-				_pos = 'post_patch'
-				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
-					for r in packageData['regex_replace'][_pos]:
-						try:
-							self.handleRegexReplace(r, packageName)
-						except re.error as e:
-							self.errorExit(e)
 
 			if 'run_post_patch' in packageData and packageData['run_post_patch']:
 					for cmd in packageData['run_post_patch']:
@@ -1951,6 +1943,15 @@ class CrossCompileScript:
 							self.logger.info("Running post-patch-command: '{0}'".format(cmd))
 							# self.run_process(cmd)
 							self.runProcess(cmd, ignoreFail)
+
+			if 'regex_replace' in packageData and packageData['regex_replace']:
+				_pos = 'post_patch'
+				if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+					for r in packageData['regex_replace'][_pos]:
+						try:
+							self.handleRegexReplace(r, packageName)
+						except re.error as e:
+							self.errorExit(e)
 
 		conf_system = None
 		build_system = None
