@@ -3,9 +3,9 @@
 	'url' : 'https://github.com/xiph/vorbis.git',
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
-	'patches' : [
-		('https://github.com/xiph/vorbis/pull/62.patch', '-p1', '..'), # temporary; I submitted that patch, I assume it'll get merged soon.
-	],
+	# 'patches' : [
+		# ('https://github.com/xiph/vorbis/pull/62.patch', '-p1', '..'), # temporary; I submitted that patch, I assume it'll get merged soon.
+	# ],
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=0 -DCMAKE_BUILD_TYPE=Release',
 	'regex_replace': {
 		'post_install': [
