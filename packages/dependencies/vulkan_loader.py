@@ -3,11 +3,10 @@
 	'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 	# 'branch': '85886d8517aae8e2834825255dc2989adaab62be',
 	'configure_options' : 
-		'.. {cmake_prefix_options} -DVULKAN_HEADERS_INSTALL_DIR={target_prefix} '
-		'-DCMAKE_BUILD_TYPE=Release '
+		'.. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix} '
+		'-DVULKAN_HEADERS_INSTALL_DIR={target_prefix} '
 		'-DBUILD_TESTS=OFF '
-		'-DCMAKE_INSTALL_PREFIX={target_prefix} '
-		'-DBUILD_TESTS=OFF ' #-DENABLE_STATIC_LOADER=ON 
+		'-DBUILD_STATIC_LOADER=ON '
 	,
 	# 'cpu_count': 1,
 	'conf_system' : 'cmake',
@@ -16,6 +15,12 @@
 		# ('vulkan/0001-fix-cross-compiling.patch', '-p1', '..'),
 		('vulkan/0001-mingw-workarounds.patch','-p1','..'),
 	],
+	# 'env_exports' : { 
+	# 	'CFLAGS'   : '-O3 -D_POSIX_C_SOURCE',
+	# 	'CXXFLAGS' : '-O3 -D_POSIX_C_SOURCE',
+	# 	'CPPFLAGS' : '-O3 -D_POSIX_C_SOURCE',
+	# 	'LDFLAGS'  : '-O3 -D_POSIX_C_SOURCE',
+	# },
 	'regex_replace': {
 		'post_install': [
 			{
