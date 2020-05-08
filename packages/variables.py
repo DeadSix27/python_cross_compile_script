@@ -32,6 +32,8 @@
 		'--enable-libxml2 '
 		'--enable-gmp '
 		'--enable-gnutls ' # nongpl: openssl,libtls(libressl)
+		# '--enable-libglslang '
+		# '--enable-vulkan '
 
 		# Video/Picture Libs
 		'--enable-libzimg '
