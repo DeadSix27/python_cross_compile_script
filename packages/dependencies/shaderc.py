@@ -2,7 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/google/shaderc.git',
 	'depth_git': 0,
-	'branch': 'f53792645f0696b8954cfdb3c213f96799dd89b2', 
+	# 'branch': 'f53792645f0696b8954cfdb3c213f96799dd89b2', 
 	'configure_options' :
 		'cmake .. {cmake_prefix_options} '
 		'-DCMAKE_BUILD_TYPE=Release '
