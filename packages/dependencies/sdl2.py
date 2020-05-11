@@ -1,8 +1,7 @@
 {
-	'repo_type' : 'mercurial',
+	# 'repo_type' : 'mercurial',
 	# 'url' : 'https://hg.libsdl.org/SDL',
 	# 'folder_name' : 'sdl2_hg',
-
 	'repo_type' : 'archive',
 	'download_locations' : [
 		{ 'url' : 'https://www.libsdl.org/release/SDL2-2.0.12.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '349268f695c02efbc9b9148a70b85e58cefbbf704abd3e91be654db7f1e2c863' }, ], },
