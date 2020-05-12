@@ -31,7 +31,7 @@
 		'rubberband',
 		'libass',
 		'tesseract',
-		'lensfun',
+		# 'lensfun',
 		'libwebp',
 		'avisynth_plus_headers',
 		'nv-codec-headers',

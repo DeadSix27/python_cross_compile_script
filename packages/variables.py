@@ -59,7 +59,7 @@
 		# Subtitle/OCR Libs:
 		'--enable-libass '
 		'--enable-libtesseract '
-		'--enable-liblensfun '
+		# '--enable-liblensfun '
 
 		# Image libs
 		'--enable-libwebp '
