@@ -34,7 +34,7 @@
 		'DEST_OS=win32 '
 	,
 	'depends_on' : [
-		'libffmpeg',
+		'libffmpeg_extra',
 		'zlib',
 		'iconv',
 		'python3_libs',
@@ -70,6 +70,26 @@
 				1: r'',
 				'in_file': 'version.sh',
 			},
+			{
+				0: r'bool encoder_encode',
+				1: r'bool mpv_encoder_encode',
+				'in_file': 'common/encode_lavc.c',
+			},
+			{
+				0: r'bool encoder_encode',
+				1: r'bool mpv_encoder_encode',
+				'in_file': 'common/encode_lavc.h',
+			},
+			{
+				0: r'encoder_encode',
+				1: r'mpv_encoder_encode',
+				'in_file': 'video/out/vo_lavc.c',
+			},
+			{
+				0: r'encoder_encode',
+				1: r'mpv_encoder_encode',
+				'in_file': 'audio/out/ao_lavc.c',
+			},
 		],
 		'post_install': [
 			{
@@ -80,9 +100,9 @@
 			}
 		]
 	},
-	'patches': [
-		('mpv/0001-resolve-naming-collision-with-xavs2.patch', '-p1'),
-	],
+	# 'patches': [
+	# 	('mpv/0001-resolve-naming-collision-with-xavs2.patch', '-p1'),
+	# ],
 	'run_post_install' : (
 		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv.com',
 		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv.exe',

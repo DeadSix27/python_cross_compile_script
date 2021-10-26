@@ -1,8 +1,10 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
+		{ 'url' : 'https://src.fedoraproject.org/repo/pkgs/gsm/gsm-1.0.19.tar.gz/sha512/f69b4bf2d918b118b5de90b8ab88fd026008ac7432f07b872b81fe52cdc781f605dca8eedcdaebc8beb974cef388496c618f92a41961c62057009964159f8392/gsm-1.0.19.tar.gz',
+			'hashes' : [ { 'type' : 'sha256', 'sum' : '4903652f68a8c04d0041f0d19b1eb713ddcd2aa011c5e595b3b8bca2755270f6' }, ],
+		},
 		{ 'url' : 'http://www.quut.com/gsm/gsm-1.0.19.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '4903652f68a8c04d0041f0d19b1eb713ddcd2aa011c5e595b3b8bca2755270f6' }, ], },
-		{ 'url' : 'https://ftp.openbsd.org/pub/OpenBSD/distfiles/gsm-1.0.19.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '4903652f68a8c04d0041f0d19b1eb713ddcd2aa011c5e595b3b8bca2755270f6' }, ], },
 	],
 	'folder_name' : 'gsm-1.0-pl18',
 	'patches' : [

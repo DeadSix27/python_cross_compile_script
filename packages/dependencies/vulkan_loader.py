@@ -6,6 +6,7 @@
 		'.. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix} '
 		'-DVULKAN_HEADERS_INSTALL_DIR={target_prefix} '
 		'-DBUILD_TESTS=OFF '
+		'-DUSE_MASM=OFF '
 		'-DBUILD_STATIC_LOADER=ON '
 	,
 	# 'cpu_count': 1,
@@ -13,7 +14,7 @@
 	'source_subfolder' : '_build',
 	'patches' : [
 		# ('vulkan/0001-fix-cross-compiling.patch', '-p1', '..'),
-		('vulkan/0001-mingw-workarounds.patch','-p1','..'),
+		# ('vulkan/0001-mingw-workarounds.patch','-p1','..'),
 	],
 	# 'env_exports' : { 
 	# 	'CFLAGS'   : '-O3 -D_POSIX_C_SOURCE',

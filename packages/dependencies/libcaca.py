@@ -1,6 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/cacalabs/libcaca.git',
+	'branch': 'main',
 	'run_post_configure' : [
 		'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/string.c"',
 		'sed -i.bak "s/int vsnprintf/int vnsprintf_disabled/" "caca/figfont.c"',

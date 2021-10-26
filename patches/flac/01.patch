@@ -1,0 +1,55 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 96e01aaf..b1b3c8c6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -103,7 +103,7 @@ endif()
+ include_directories("include")
+ 
+ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+-add_definitions(-DHAVE_CONFIG_H)
++add_definitions(-DHAVE_CONFIG_H -D_FORTIFY_SOURCE=0)
+ 
+ if(MSVC)
+     add_definitions(
+diff --git a/include/FLAC++/export.h b/include/FLAC++/export.h
+index d8dccf54..2858688d 100644
+--- a/include/FLAC++/export.h
++++ b/include/FLAC++/export.h
+@@ -59,7 +59,7 @@
+ #if defined(FLAC__NO_DLL)
+ #define FLACPP_API
+ 
+-#elif defined(_WIN32)
++#elif defined(_MSC_VER)
+ #ifdef FLACPP_API_EXPORTS
+ #define	FLACPP_API __declspec(dllexport)
+ #else
+diff --git a/include/FLAC/export.h b/include/FLAC/export.h
+index 3e3e7648..23a33842 100644
+--- a/include/FLAC/export.h
++++ b/include/FLAC/export.h
+@@ -59,7 +59,7 @@
+ #if defined(FLAC__NO_DLL)
+ #define FLAC_API
+ 
+-#elif defined(_WIN32)
++#elif defined(_MSC_VER)
+ #ifdef FLAC_API_EXPORTS
+ #define	FLAC_API __declspec(dllexport)
+ #else
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index bde3647b..28eb9757 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -8,11 +8,6 @@ add_subdirectory("libFLAC")
+ if(BUILD_CXXLIBS)
+     add_subdirectory("libFLAC++")
+ endif()
+-add_subdirectory("share/replaygain_analysis")
+-add_subdirectory("share/replaygain_synthesis")
+-add_subdirectory("share/getopt")
+-add_subdirectory("share/utf8")
+-add_subdirectory("share/grabbag")
+ 
+ if(BUILD_PROGRAMS)
+     add_subdirectory("flac")

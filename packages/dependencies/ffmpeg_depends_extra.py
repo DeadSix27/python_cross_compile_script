@@ -18,7 +18,7 @@
 		'davs2',
 		'xavs',
 		'xavs2',
-		'openmpt',
+		#'openmpt',
 		'libmysofa',
 		'vidstab',
 		'fftw',

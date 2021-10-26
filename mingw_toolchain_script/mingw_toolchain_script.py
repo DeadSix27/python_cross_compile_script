@@ -42,7 +42,7 @@ SOURCES = OrderedDict()  # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type': 'git',
-	'git_shallow': False,
+	'git_shallow': True,
 	'url': 'https://git.code.sf.net/p/mingw-w64/mingw-w64',  # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
 	'run_after_patches': [
 		('autoreconf -fiv', ),
@@ -58,19 +58,19 @@ SOURCES['mingw-w64'] = {
 }
 SOURCES['gmp'] = {
 	'type': 'archive',
-	'version': '6.2.0',
+	'version': '6.2.1',
 	'url': 'https://ftp.gnu.org/gnu/gmp/gmp-{version}.tar.xz',
 	'update_check': {'url': 'https://ftp.gnu.org/gnu/gmp/', 'type': 'httpindex', 'regex': r'gmp-(?P<version_num>[\d.]+)\.tar\.xz'},
 }
 SOURCES['mpfr'] = {
 	'type': 'archive',
-	'version': '4.0.2',
+	'version': '4.1.0',
 	'url': 'https://ftp.gnu.org/gnu/mpfr/mpfr-{version}.tar.xz',
 	'update_check': {'url': 'https://ftp.gnu.org/gnu/mpfr/', 'type': 'httpindex', 'regex': r'mpfr-(?P<version_num>[\d.]+)\.tar\.xz'},
 }
 SOURCES['mpc'] = {
 	'type': 'archive',
-	'version': '1.1.0',
+	'version': '1.2.1',
 	'url': 'https://ftp.gnu.org/gnu/mpc/mpc-{version}.tar.gz',
 	'update_check': {'url': 'https://ftp.gnu.org/gnu/mpc/', 'type': 'httpindex', 'regex': r'mpc-(?P<version_num>[\d.]+)\.tar\.gz'},
 }
@@ -82,7 +82,7 @@ SOURCES['isl'] = {
 }
 SOURCES['binutils'] = {
 	'type': 'archive',
-	'version': '2.34',
+	'version': '2.37',
 	# 'patches' : [
   		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-binutils-remove_provide_qualifiers_from_ctor_and_dtor_list.patch' , 'p1' ),
 	# ],
@@ -95,11 +95,10 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type': 'archive',
-	# 'version'   : '9.2.0', # stable versions
-	# 'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
-	# 'version': '9-20200328', # pre-release versions
-	'version': '11-20200510', #'10-20200502',
-	'url': 'ftp://ftp.fu-berlin.de/unix/languages/gcc/snapshots/{version}/gcc-{version}.tar.xz',
+	'version'   : '11.2.0',
+	'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
+	# 'version': '9-20191130',
+	# 'url': 'https://gcc.gnu.org/pub/gcc/snapshots/{version}/gcc-{version}.tar.xz',
 	'patches': [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
 		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0140-gcc-7-Enable-std-experimental-filesystem.patch', 'p1' ), #Unable to get this to work.

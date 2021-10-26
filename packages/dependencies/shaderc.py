@@ -2,7 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/google/shaderc.git',
 	'depth_git': 0,
-	# 'branch': 'f53792645f0696b8954cfdb3c213f96799dd89b2', 
+	'branch': 'main', 
 	'configure_options' :
 		'cmake .. {cmake_prefix_options} '
 		'-DCMAKE_BUILD_TYPE=Release '
@@ -23,6 +23,8 @@
 		'ln -snf {inTreePrefix}/spirv-cross spirv-cross',
 		'!SWITCHDIR|../_build',
 		"sed -i 's/add_subdirectory(examples)/#add_subdirectory(examples)/g' ../CMakeLists.txt",
+		"sed -i 's/--check/#--check/g' ../CMakeLists.txt",
+    	"sed -i 's/printed_count += 1/#printed_count += 1/g' ../utils/add_copyright.py",
 	],
 
 	'regex_replace': {

@@ -1,8 +1,8 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.35.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '9ccba8e02b0ce78046cdfb52e5c177f0f445e421059e43becca4359c669d4613' }, ], },
-		{ 'url' : 'https://fossies.org/linux/misc/pcre2-10.35.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '9ccba8e02b0ce78046cdfb52e5c177f0f445e421059e43becca4359c669d4613' }, ], },
+		{ 'url' : 'https://ftp.pcre.org/pub/pcre/pcre2-10.37.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '4d95a96e8b80529893b4562be12648d798b957b1ba1aae39606bbc2ab956d270' }, ], },
+		{ 'url' : 'https://fossies.org/linux/misc/pcre2-10.37.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '4d95a96e8b80529893b4562be12648d798b957b1ba1aae39606bbc2ab956d270' }, ], },
 	],
 	'conf_system' : 'cmake',
 	'patches' : [
@@ -17,5 +17,5 @@
 		'bzip2', 'zlib',
 	],
 	'update_check' : { 'url' : 'ftp://ftp.pcre.org/pub/pcre/', 'type' : 'ftpindex', 'regex' : r'pcre2-(?P<version_num>[\d.]+)\.tar\.bz2' }, # ! TODO Fix version check
-	'_info' : { 'version' : '10.35', 'fancy_name' : 'pcre2' },
+	'_info' : { 'version' : '10.37', 'fancy_name' : 'pcre2' },
 }

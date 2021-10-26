@@ -2,6 +2,7 @@
 	'repo_type' : 'git',
 	'do_not_bootstrap' : True,
 	'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
+	'branch': 'main',
 	'folder_name' : 'fontconfig_git',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-libxml2 --disable-docs --disable-silent-rules --with-expat',
 	'patches' : [
@@ -34,6 +35,6 @@
 	'depends_on' : [
 		'expat', 'iconv', 'libxml2', 'freetype', 'json-c',
 	],
-	'update_check' : { 'type' : 'git', },
+	# 'update_check' : { 'type' : 'git', },
 	'_info' : { 'version' : None, 'fancy_name' : 'fontconfig' },
 }

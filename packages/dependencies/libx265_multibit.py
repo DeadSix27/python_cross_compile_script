@@ -1,8 +1,7 @@
 {
-	'repo_type' : 'git',
-	'url' : 'https://bitbucket.org/multicoreware/x265_git',
-	'folder_name': 'x265_multilib_git',
-	'depth_git': 0,
+	'repo_type' : 'mercurial',
+	'url' : 'http://hg.videolan.org/x265/',
+	'rename_folder' : 'libx265_hg_multibit',
 	'source_subfolder' : '_build',
 	'configure_options' :
 		'../source {cmake_prefix_options} '

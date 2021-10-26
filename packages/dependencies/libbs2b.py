@@ -8,14 +8,14 @@
 	'env_exports' : {
 		'ac_cv_func_malloc_0_nonnull' : 'yes', # fixes undefined reference to `rpl_malloc'
 	},
-	'run_post_patch' : [
+	'run_post_regexreplace' : [
 		'autoreconf -fiv',
 	],
 	'regex_replace': {
 		'post_patch': [
 			{
 				0: r' dist-lzma',
-				1: r'',
+				1: r' dist-xz',
 				'in_file': 'configure.ac' # configure.ac:7: error: support for lzma-compressed distribution archives has been removed
 			},
 			{

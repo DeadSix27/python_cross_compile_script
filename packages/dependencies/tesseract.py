@@ -2,6 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/tesseract-ocr/tesseract.git',
 	'conf_system' : 'cmake',
+	'branch': 'main',
 	'source_subfolder' : '_build',
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=0 -DBUILD_TRAINING_TOOLS=0 -DSW_BUILD=0 -DBUILD_TRAINING_TOOLS=0 -DBUILD_TESTS=0 -DSTATIC=1 -DHAVE_LIBARCHIVE=1 -DLIBRARY_TYPE=STATIC -DCMAKE_BUILD_TYPE=Release',
 	'regex_replace': {

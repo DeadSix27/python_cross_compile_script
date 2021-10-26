@@ -1,7 +1,7 @@
-From 090c1d1950ae5e4ec2f2c91a9f2cb209937bacb9 Mon Sep 17 00:00:00 2001
+From 403f4cef122da6444186d4e1363fe5b96add09dd Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Tue, 7 Apr 2020 10:29:30 +0200
-Subject: [PATCH] mingw-work_arounds
+Date: Mon, 2 Dec 2019 01:59:29 +0100
+Subject: [PATCH] mingw-workarounds
 
 ---
  loader/CMakeLists.txt | 25 +++++++++++++------------
@@ -9,10 +9,9 @@ Subject: [PATCH] mingw-work_arounds
  loader/loader.rc      |  4 ++++
  loader/vulkan.pc.in   |  4 ++--
  4 files changed, 23 insertions(+), 14 deletions(-)
- mode change 100644 => 100755 loader/CMakeLists.txt
 
 diff --git a/loader/CMakeLists.txt b/loader/CMakeLists.txt
-index 382664e82..01eefaec5
+index 13a36a297..10ebc0f2c 100644
 --- a/loader/CMakeLists.txt
 +++ b/loader/CMakeLists.txt
 @@ -61,7 +61,7 @@ endif()
@@ -42,13 +41,12 @@ index 382664e82..01eefaec5
      add_library(loader-norm OBJECT ${NORMAL_LOADER_SRCS} dirent_on_windows.c dxgi_loader.c)
      target_compile_options(loader-norm PUBLIC "$<$<CONFIG:DEBUG>:${LOCAL_C_FLAGS_DBG}>")
      target_compile_options(loader-norm PUBLIC ${MSVC_LOADER_COMPILE_OPTIONS})
-@@ -225,15 +225,15 @@ else()
-     if(APPLE AND BUILD_STATIC_LOADER)
-         add_library(vulkan STATIC ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-     else()
--        add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
-+        add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} dxgi_loader.c)
+@@ -222,14 +222,14 @@ else()
+         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
      endif()
+ 
+-    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS})
++    add_library(vulkan SHARED ${NORMAL_LOADER_SRCS} ${OPT_LOADER_SRCS} dxgi_loader.c)
      add_dependencies(vulkan loader_asm_gen_files)
      set_target_properties(vulkan
 -                          PROPERTIES SOVERSION
@@ -64,7 +62,7 @@ index 382664e82..01eefaec5
      target_link_libraries(vulkan Vulkan::Headers)
  
      if(APPLE)
-@@ -294,9 +294,10 @@ else()
+@@ -286,9 +286,10 @@ else()
          include(FindPkgConfig QUIET)
          if(PKG_CONFIG_FOUND)
              set(VK_API_VERSION "${VulkanHeaders_VERSION_MAJOR}.${VulkanHeaders_VERSION_MINOR}.${VulkanHeaders_VERSION_PATCH}")
@@ -79,10 +77,10 @@ index 382664e82..01eefaec5
              install(FILES "${CMAKE_CURRENT_BINARY_DIR}/vulkan.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
          endif()
 diff --git a/loader/loader.c b/loader/loader.c
-index 143be13d0..a18210a3f 100644
+index c61649dba..4a9e530da 100644
 --- a/loader/loader.c
 +++ b/loader/loader.c
-@@ -675,6 +675,10 @@ out:
+@@ -671,6 +671,10 @@ out:
  //
  // *reg_data contains a string list of filenames as pointer.
  // When done using the returned string list, the caller should free the pointer.
@@ -94,7 +92,7 @@ index 143be13d0..a18210a3f 100644
                                        LPCSTR value_name) {
      static const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
 diff --git a/loader/loader.rc b/loader/loader.rc
-index 18eb5e6c1..de84f8a33 100755
+index f70512628..10b110c11 100755
 --- a/loader/loader.rc
 +++ b/loader/loader.rc
 @@ -43,7 +43,11 @@
@@ -122,5 +120,5 @@ index 2ce5aea43..a45ce436f 100644
  includedir=${prefix}/include
  
 -- 
-2.26.0
+2.17.1
 

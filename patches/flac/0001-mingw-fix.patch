@@ -1,18 +1,18 @@
-From 7f5c562bdf3ce6acae7dee175a3e096f3f9f6c72 Mon Sep 17 00:00:00 2001
+From ba887847510b9376d946892a2a91842227adc32a Mon Sep 17 00:00:00 2001
 From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Fri, 8 May 2020 19:49:19 +0200
-Subject: [PATCH] mingw-work_arounds
+Date: Mon, 2 Dec 2019 01:16:22 +0100
+Subject: [PATCH] mingw workarounds
 
 ---
  include/FLAC++/export.h    | 2 +-
  include/FLAC/export.h      | 2 +-
- src/CMakeLists.txt         | 4 ----
+ src/CMakeLists.txt         | 3 ---
  src/libFLAC++/flac++.pc.in | 2 +-
  src/libFLAC/flac.pc.in     | 2 +-
- 5 files changed, 4 insertions(+), 8 deletions(-)
+ 5 files changed, 4 insertions(+), 7 deletions(-)
 
 diff --git a/include/FLAC++/export.h b/include/FLAC++/export.h
-index d8dccf54..2858688d 100644
+index 6776b29c..16453621 100644
 --- a/include/FLAC++/export.h
 +++ b/include/FLAC++/export.h
 @@ -59,7 +59,7 @@
@@ -25,7 +25,7 @@ index d8dccf54..2858688d 100644
  #define	FLACPP_API __declspec(dllexport)
  #else
 diff --git a/include/FLAC/export.h b/include/FLAC/export.h
-index 3e3e7648..23a33842 100644
+index 628fe5fc..d52f0bbb 100644
 --- a/include/FLAC/export.h
 +++ b/include/FLAC/export.h
 @@ -59,7 +59,7 @@
@@ -37,21 +37,6 @@ index 3e3e7648..23a33842 100644
  #ifdef FLAC_API_EXPORTS
  #define	FLAC_API __declspec(dllexport)
  #else
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index b3c9fcf5..3aacb082 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -18,10 +18,6 @@ if(BUILD_PROGRAMS)
-     add_subdirectory("metaflac")
- endif()
- if(BUILD_CXXLIBS)
--    add_subdirectory(utils/flacdiff)
--    if(WIN32)
--        add_subdirectory(utils/flactimer)
--    endif()
- endif()
- 
- if(WITH_XMMS)
 diff --git a/src/libFLAC++/flac++.pc.in b/src/libFLAC++/flac++.pc.in
 index f09c251a..b1958307 100644
 --- a/src/libFLAC++/flac++.pc.in
@@ -76,5 +61,5 @@ index 56e8594e..2a98ecf2 100644
  Libs.private: -lm
  Cflags: -I${includedir}
 -- 
-2.26.2
+2.17.1
 

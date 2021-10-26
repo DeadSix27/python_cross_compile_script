@@ -153,7 +153,7 @@ class Parsers:
 		# self.api_key = SOURCEFORGE_APIKEY
 
 	def sourceforge(self):
-		soup = BeautifulSoup(requests.get(self.url, headers=HEADERS).content, features="html5lib")
+		soup = BeautifulSoup(requests.get(self.url, headers=HEADERS, timeout=2).content, features="html5lib")
 
 		allFolderTrs = soup.find_all("tr", attrs={"class": re.compile(r"folder.*"), "title": re.compile(r".*")})
 
@@ -183,7 +183,7 @@ class Parsers:
 		return newest
 
 	def httpindex(self):
-		cwd, listing = htmllistparse.fetch_listing(self.url, timeout=30)
+		cwd, listing = htmllistparse.fetch_listing(self.url, timeout=2)
 		newest = "0.0.0"
 		for entry in listing:
 			v = entry.name
@@ -212,7 +212,7 @@ class Parsers:
 
 		releaseApiUrl = 'https://api.github.com/repos/%s' % (m.groups()[0])
 
-		jString = requests.get(releaseApiUrl, headers=HEADERS).content  # .decode("utf-8")
+		jString = requests.get(releaseApiUrl, headers=HEADERS, timeout=2).content  # .decode("utf-8")
 
 		releases = json.loads(jString)
 
@@ -239,7 +239,7 @@ class Parsers:
 		return newest
 
 	def httpregex(self):
-		r = requests.get(self.url, headers=HEADERS)
+		r = requests.get(self.url, headers=HEADERS, timeout=2)
 
 		html = r.content.decode("utf-8")
 
@@ -255,7 +255,7 @@ class Parsers:
 
 	def ftp(self):
 		pUrl = urlparse(self.url)
-		ftp = ftplib.FTP(pUrl.netloc)
+		ftp = ftplib.FTP(pUrl.netloc, timeout=2)
 		ftp.login()
 		ftp.cwd(pUrl.path)
 		files = []

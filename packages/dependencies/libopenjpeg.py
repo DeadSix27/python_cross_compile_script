@@ -7,8 +7,8 @@
 	'depends_on' : [
 		'zlib', 'libpng', 'libtiff', 'lcms2'
 	],
-	'patches' : [
-		( 'openjpeg2/use-PkgConfig-for-third-party-libraries.patch', '-p1', '..' ),
-	],
+	# 'patches' : [
+	# 	( 'openjpeg2/use-PkgConfig-for-third-party-libraries.patch', '-p1', '..' ),
+	# ],
 	'_info' : { 'version' : None, 'fancy_name' : 'openjpeg' },
 }

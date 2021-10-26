@@ -1,6 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://chromium.googlesource.com/webm/libvpx',
+	'branch': 'main',
 	'configure_options' :
 		'--target={bit_name2}-{bit_name_win}-gcc '
 		'--prefix={target_prefix} --disable-shared '
