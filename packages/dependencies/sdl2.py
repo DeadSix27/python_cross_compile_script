@@ -2,9 +2,7 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/libsdl-org/SDL',
 	'depth_git': 0,
-	# 'branch': 'release-2.0.16',
-
-	
+	'branch': 'SDL2',
 	'env_exports' : {
 		'DXSDK_DIR'  : '{target_prefix}/include',
 	},
