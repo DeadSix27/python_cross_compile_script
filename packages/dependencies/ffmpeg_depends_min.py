@@ -6,6 +6,7 @@
 		'lzma',
 		'fontconfig',
 		'freetype',
+		'avisynth_plus_headers',
 		'libbluray',
 		'libcdio',
 		'vapoursynth_libs',
@@ -23,6 +24,7 @@
 		'xvidcore',
 		'libopus',
 		'liblame',
+        'gnutls',
 		'libogg',
 		'libvorbis',
 		'libtheora',
@@ -36,5 +38,6 @@
 		'nv-codec-headers',
 		'intel_quicksync_mfx',
 		'amf_headers',
+		# 'opencl_icd',
 	],
 }

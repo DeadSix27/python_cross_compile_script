@@ -22,7 +22,25 @@
 				0: r'set\(LIB_Ws2_32 Ws2_32\)',
 				1: r'set(LIB_Ws2_32 ws2_32)',
 				'in_file': '../CMakeLists.txt'
+			},
+			{
+				0: r'add_executable\(tesseract src/tesseract.cpp\)',
+				'in_file': '../CMakeLists.txt'
+			},
+			{
+				0: r'install\(TARGETS tesseract DESTINATION bin\)',
+				'in_file': '../CMakeLists.txt'
+			},
+			{
+				0: r'target_link_libraries\(tesseract libtesseract\)',
+				'in_file': '../CMakeLists.txt'
+			},
+			{
+				0: r'if\(HAVE_TIFFIO_H AND WIN32\)',
+				1: r'if(FALSE)',
+				'in_file': '../CMakeLists.txt'
 			}
+			
 		],
 		'post_install': [
 			{

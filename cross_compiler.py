@@ -474,9 +474,9 @@ class CrossCompileScript:
 		parser = argparse.ArgumentParser(formatter_class=epiFormatter, epilog=_epilog)
 		parser.set_defaults(which='main')
 		parser.description = Colors.CYAN + 'Pythonic Cross Compile Helper (MPL2.0)' + Colors.RESET + '\n\nExample usages:' \
-			'\n "{0} list -p"             - lists all the products' \
-			'\n "{0} -a"                  - builds everything' \
-			'\n "{0} -f -d libx264"       - forces the rebuilding of libx264' \
+			'\n "{0} list -p"			 - lists all the products' \
+			'\n "{0} -a"				  - builds everything' \
+			'\n "{0} -f -d libx264"	   - forces the rebuilding of libx264' \
 			'\n "{0} -pl x265_10bit,mpv"  - builds this list of products in that order' \
 			'\n "{0} -q -p ffmpeg_static" - will quietly build ffmpeg-static'.format(parser.prog)
 
@@ -635,7 +635,7 @@ class CrossCompileScript:
 			if len(depsRequiringIt) > 0:
 				self.logger.info("\tDependencies: %s" % (",".join(depsRequiringIt)))
 			if len(prodsRequiringIt) > 0:
-				self.logger.info("\tProducts    : %s" % (",".join(prodsRequiringIt)))
+				self.logger.info("\tProducts	: %s" % (",".join(prodsRequiringIt)))
 		else:
 			self.logger.warning("There are no packages that require '%s'." % (o))
 
@@ -1023,14 +1023,14 @@ class CrossCompileScript:
 			tcFile = [
 				F'set(CMAKE_SYSTEM_NAME Windows)',
 				F'set(CMAKE_SYSTEM_PROCESSOR {self.bitnessStr})',
-				F'set(CMAKE_SYSROOT {self.targetSubPrefix})',
+				# F'set(CMAKE_SYSROOT {self.targetSubPrefix})',
 				#F'set(CMAKE_STAGING_PREFIX /home/devel/stage)',
 				F'set(CMAKE_RANLIB {self.shortCrossPrefixStr}ranlib)',
 				F'set(CMAKE_C_COMPILER {self.shortCrossPrefixStr}gcc)',
 				F'set(CMAKE_CXX_COMPILER {self.shortCrossPrefixStr}g++)',
 				F'set(CMAKE_RC_COMPILER {self.shortCrossPrefixStr}windres)',
 				F'set(CMAKE_ASM_COMPILER {self.mingwBinpath}/{self.shortCrossPrefixStr}as)',
-				F'set(CMAKE_FIND_ROOT_PATH {self.targetPrefix})',
+				F'set(CMAKE_FIND_ROOT_PATH {self.targetPrefix}/)',
 				F'set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)',
 				F'set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)',
 				F'set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)',
@@ -1038,7 +1038,7 @@ class CrossCompileScript:
 
 				# for shaderc
 				F'set(MINGW_COMPILER_PREFIX {self.shortCrossPrefixStr})',
-				F'set(MINGW_SYSROOT {self.targetSubPrefix})'
+				# F'set(MINGW_SYSROOT {self.targetSubPrefix})'
 			]
 			with open(self.cmakeToolchainFile, 'w') as f:
 				f.write("\n".join(tcFile))
@@ -1078,7 +1078,7 @@ class CrossCompileScript:
 				"[properties]",
 				"c_link_args = ['-static', '-static-libgcc']",
 				"# sys_root = Directory that contains 'bin', 'lib', etc for the toolchain and system libraries",
-				F"sys_root = '{self.targetSubPrefix}'"
+				# F"sys_root = '{self.targetSubPrefix}'"
 			)
 			with open(self.mesonEnvFile, 'w') as f:
 				f.write("\n".join(meFile))
@@ -1308,7 +1308,7 @@ class CrossCompileScript:
 				break
 			buffer += nextline.decode("utf-8", "ignore")
 			if isSvn:
-				if not nextline.decode('utf-8').startswith('A    '):
+				if not nextline.decode('utf-8').startswith('A	'):
 					if self.quietMode:
 						self.buildLogFile.write(nextline.decode('utf-8', 'replace'))
 					elif not silent:
@@ -1521,7 +1521,7 @@ class CrossCompileScript:
 					self.logger.debug("diverged?")
 					self.logger.debug("LOCAL:  " + LOCAL)
 					self.logger.debug("REMOTE: " + REMOTE)
-					self.logger.debug("BASE    " + BASE)
+					self.logger.debug("BASE	" + BASE)
 					self.logger.debug("####################")
 				self.cchdir("..")
 		else:
@@ -1790,7 +1790,7 @@ class CrossCompileScript:
 			doNotUpdate = False
 			if 'do_not_git_update' in packageData:
 				if packageData['do_not_git_update'] is True:
-					doNotUpdate is True
+					doNotUpdate = True
 			desiredPRVal = None
 			if 'desired_pr_id' in packageData:
 				if packageData['desired_pr_id'] is not None:
@@ -1817,6 +1817,8 @@ class CrossCompileScript:
 		if workDir is None:
 			print("Unexpected error when building {0}, please report this:".format(packageName), sys.exc_info()[0])
 			raise
+			
+		# exit()
 
 		if 'rename_folder' in packageData:  # this should be moved inside the download functions, TODO.. but lazy
 			if packageData['rename_folder'] is not None:
@@ -2286,7 +2288,7 @@ class CrossCompileScript:
 				makeOpts = self.replaceVariables(packageData["configure_options"])
 			self.logger.info("Meson'ing '{0}' with: {1}".format(packageName, makeOpts))
 
-			self.runProcess('meson {0}'.format(makeOpts))
+			self.runProcess('meson setup {0}'.format(makeOpts))
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
 				_pos = 'post_configure'

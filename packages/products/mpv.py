@@ -7,20 +7,20 @@
 		'DEST_OS' : 'win32',
 		'TARGET'  : '{target_host}',
 		'PKG_CONFIG' : 'pkg-config',
-		'LDFLAGS': '-Wl,-Bdynamic -lvulkan-1 -fstack-protector-strong' # See near 'regex_replace'
+		# 'LDFLAGS': '-fstack-protector-strong' # See near 'regex_replace' #-Wl,-Bdynamic -lvulkan-1 -Wl,-Bdynamic -lOpenCL
 	},
 	'configure_options' :
 		'--enable-libmpv-shared '
 		'--enable-static-build '
 		'--prefix={output_prefix}/mpv_git.installed '
-		# '--enable-sdl2 '
+		'--disable-sdl2 '
 		'--enable-rubberband '
 		'--enable-lcms2 '
-		# '--enable-openal '
+		'--enable-openal '
 		'--enable-dvdnav '
 		'--enable-libbluray '
 		'--enable-cdda '
-		#'--enable-egl-angle-lib ' # not maintained anymore apparently, crashes for me anyway.
+		# '--enable-egl-angle-lib ' # not maintained anymore apparently, crashes for me anyway.
 		'--enable-lua '
 		'--enable-vapoursynth '
 		'--enable-uchardet '
@@ -34,7 +34,7 @@
 		'DEST_OS=win32 '
 	,
 	'depends_on' : [
-		'libffmpeg_extra',
+		'libffmpeg',
 		'zlib',
 		'iconv',
 		'python3_libs',
@@ -45,7 +45,7 @@
 		'lcms2',
 		'libdvdnav',
 		'libbluray',
-		#'openal',
+		'openal',
 		'libass',
 		'libcdio-paranoia',
 		'libjpeg-turbo',
@@ -59,12 +59,12 @@
 	# Dirty hack, so far I've found no way to get -Wl,-Bdynamic into the .pc file or mpv itself without the use of LDFLAGS...
 	'regex_replace': {
 		'post_patch': [
-			{
-				0: r'Libs: -L\${{libdir}} -lvulkan-1',
-				1: r'Libs: -L${{libdir}}',
-				'in_file': '{pkg_config_path}/vulkan.pc',
-				'out_file': '{pkg_config_path}/vulkan.pc'
-			},
+			# {
+			# 	0: r'Libs: -L\${{libdir}} -lvulkan-1',
+			# 	1: r'Libs: -L${{libdir}}',
+			# 	'in_file': '{pkg_config_path}/vulkan.pc',
+			# 	'out_file': '{pkg_config_path}/vulkan.pc'
+			# },
 			{
 				0: r' --dirty', # dirty.
 				1: r'',
@@ -92,21 +92,34 @@
 			},
 		],
 		'post_install': [
-			{
-				0: r'Libs: -L\${{libdir}}',
-				1: r'Libs: -L${{libdir}} -lvulkan-1',
-				'in_file': '{pkg_config_path}/vulkan.pc',
-				'out_file': '{pkg_config_path}/vulkan.pc'
-			}
+			# {
+			# 	0: r'Libs: -L\${{libdir}}',
+			# 	1: r'Libs: -L${{libdir}} -lvulkan-1',
+			# 	'in_file': '{pkg_config_path}/vulkan.pc',
+			# 	'out_file': '{pkg_config_path}/vulkan.pc'
+			# },
+			# {
+			# 	0: r'Libs: -L\${{libdir}}',
+			# 	1: r'Libs: -L${{libdir}} -lvulkan-1',
+			# 	'in_file': '{pkg_config_path}/vulkan.pc',
+			# 	'out_file': '{pkg_config_path}/vulkan.pc'
+			# }
 		]
 	},
-	# 'patches': [
-	# 	('mpv/0001-resolve-naming-collision-with-xavs2.patch', '-p1'),
-	# ],
+	'patches': [
+		# ('mpv/0001-resolve-naming-collision-with-xavs2.patch', '-p1'),
+		# ('https://github.com/mpv-player/mpv/pull/9360.patch', '-p1'), #player: add --auto-window-resize option
+		('https://github.com/mpv-player/mpv/pull/10065.patch', '-p1'), #player: add --auto-window-resize option redux #10065 
+		('https://github.com/mpv-player/mpv/pull/9274.patch', '-p1'), #vo_tct: rewrite using the newer vo api, generalize and optimize code
+		('https://github.com/mpv-player/mpv/pull/9348.patch', '-p1'), #w32_common: fix bad window style for no-border window
+		# ('https://github.com/mpv-player/mpv/pull/9667.patch', '-p1'), #ao_wasapi: Use ks.h public abi instead of ksuuid.h
+		('https://github.com/mpv-player/mpv/pull/9765.patch', '-p1'), #w32_common: fixes minimized window being focused on launch
+		('https://github.com/mpv-player/mpv/pull/9792.patch', '-p1'), #hwdec/d3d11va: Fix a possible memory leak
+	],
 	'run_post_install' : (
 		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv.com',
 		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv.exe',
-		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv-1.dll',
+		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv-2.dll',
 	),
 	'_info' : { 'version' : None, 'fancy_name' : 'mpv' },
 }

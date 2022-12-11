@@ -1,0 +1,27 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cc6ede7..e8991ba 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -86,7 +86,7 @@ endif ()
+ set (OPENCL_ICD_LOADER_HEADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc CACHE PATH "Path to OpenCL Headers")
+ 
+ add_library (OpenCL ${OPENCL_ICD_LOADER_SOURCES})
+-set_target_properties (OpenCL PROPERTIES VERSION "1.2" SOVERSION "1")
++set_target_properties (OpenCL PROPERTIES PREFIX "")
+ target_include_directories(OpenCL SYSTEM PUBLIC ${OPENCL_ICD_LOADER_HEADERS_DIR})
+ target_include_directories(OpenCL PRIVATE include)
+ 
+diff --git a/loader/windows/icd_windows_hkr.h b/loader/windows/icd_windows_hkr.h
+index e0db713..7463c70 100644
+--- a/loader/windows/icd_windows_hkr.h
++++ b/loader/windows/icd_windows_hkr.h
+@@ -19,4 +19,9 @@
+ #include <stdbool.h>
+ #include "icd_windows.h"
+ 
++#define CM_GETIDLIST_FILTER_TRANSPORTRELATIONS  (0x00000080)
++#define CM_GETIDLIST_FILTER_PRESENT             (0x00000100)
++#define CM_GETIDLIST_FILTER_CLASS               (0x00000200)
++#define CM_GETIDLIST_FILTER_BITS                (0x100003FF)
++
+ bool khrIcdOsVendorsEnumerateHKR(void);

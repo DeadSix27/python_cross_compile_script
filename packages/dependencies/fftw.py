@@ -1,9 +1,10 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'http://ftp.fftw.org/fftw-3.3.9.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'bf2c7ce40b04ae811af714deb512510cc2c17b9ab9d6ddcf49fe4487eea7af3d' }, ], },
-		{ 'url' : 'https://fossies.org/linux/misc/fftw-3.3.9.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'bf2c7ce40b04ae811af714deb512510cc2c17b9ab9d6ddcf49fe4487eea7af3d' }, ], },
+		{ 'url' : 'http://ftp.fftw.org/fftw-3.3.10.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467' }, ], },
+		{ 'url' : 'https://fossies.org/linux/misc/fftw-3.3.10.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467' }, ], },
 	],
+	#'custom_cflag' : '-O3 -DWITH_OUR_MALLOC',
 	'cflag_addition': '-DWITH_OUR_MALLOC',
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
@@ -28,5 +29,5 @@
 		],
 	},
 	'update_check' : { 'url' : 'ftp://ftp.fftw.org/pub/fftw/', 'type' : 'ftpindex', 'regex' : r'fftw-(?P<version_num>[\d.]+)\.tar\.gz' },
-	'_info' : { 'version' : '3.3.9', 'fancy_name' : 'fftw' },
+	'_info' : { 'version' : '3.3.10', 'fancy_name' : 'fftw' },
 }

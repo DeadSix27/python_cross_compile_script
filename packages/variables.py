@@ -11,7 +11,7 @@
 		'--enable-runtime-cpudetect '
 		'--enable-gpl '
 		'--enable-version3 '
-		'--extra-version=DeadSix27/python_cross_compile_script '
+		'--extra-version=xcompile '
 
 		# Misc.
 		'--enable-pic '
@@ -58,7 +58,7 @@
 
 		# Subtitle/OCR Libs:
 		'--enable-libass '
-		'--enable-libtesseract '
+		'--disable-libtesseract '
 		# '--enable-liblensfun '
 
 		# Image libs
@@ -68,6 +68,7 @@
 		'--enable-ffnvcodec '
 		'--enable-cuvid '
 		'--enable-opengl '
+		# '--enable-opencl '
 		'--enable-d3d11va '
 		'--enable-nvenc '
 		'--enable-nvdec '

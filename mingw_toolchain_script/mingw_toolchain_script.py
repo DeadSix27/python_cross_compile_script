@@ -42,7 +42,7 @@ SOURCES = OrderedDict()  # Order matters.
 
 SOURCES['mingw-w64'] = {
 	'type': 'git',
-	'git_shallow': True,
+	'git_shallow': False,
 	'url': 'https://git.code.sf.net/p/mingw-w64/mingw-w64',  # mirror: https://github.com/mirror/mingw-w64.git but that seems suprisingly out of date sometimes.
 	'run_after_patches': [
 		('autoreconf -fiv', ),
@@ -64,7 +64,7 @@ SOURCES['gmp'] = {
 }
 SOURCES['mpfr'] = {
 	'type': 'archive',
-	'version': '4.1.0',
+	'version': '4.1.1',
 	'url': 'https://ftp.gnu.org/gnu/mpfr/mpfr-{version}.tar.xz',
 	'update_check': {'url': 'https://ftp.gnu.org/gnu/mpfr/', 'type': 'httpindex', 'regex': r'mpfr-(?P<version_num>[\d.]+)\.tar\.xz'},
 }
@@ -76,16 +76,25 @@ SOURCES['mpc'] = {
 }
 SOURCES['isl'] = {
 	'type': 'archive',
-	'version': '0.18',
+	'version': '0.24',
 	'url': 'https://gcc.gnu.org/pub/gcc/infrastructure/isl-{version}.tar.bz2',
 	'update_check': {'url': 'https://gcc.gnu.org/pub/gcc/infrastructure/', 'type': 'httpindex', 'regex': r'isl-(?P<version_num>[\d.]+)\.tar\.bz2'},
+	# 'patches' : [
+  	# 	( 'https://dsix.me/isl.patch' , 'p1' ),
+	# ],
+	'run_after_patches': [
+		('rm -rv configure', ),
+		# ('autoreconf -fiv', ),
+		# ('mingw-w64-crt', 'autoreconf -fiv'),
+	],
 }
 SOURCES['binutils'] = {
 	'type': 'archive',
-	'version': '2.37',
-	# 'patches' : [
+	'version': '2.39',
+	'patches' : [
+  		# ( 'https://dsix.me/binutils.patch' , 'p1' ),
   		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-binutils-remove_provide_qualifiers_from_ctor_and_dtor_list.patch' , 'p1' ),
-	# ],
+	],
 	'url': 'https://ftp.gnu.org/gnu/binutils/binutils-{version}.tar.bz2',
 	'softlink_to_package': [
 		('isl', 'isl'),
@@ -95,14 +104,14 @@ SOURCES['binutils'] = {
 }
 SOURCES['gcc'] = {
 	'type': 'archive',
-	'version'   : '11.2.0',
+	'version'   : '12.2.0',
 	'url' : 'https://gcc.gnu.org/pub/gcc/releases/gcc-{version}/gcc-{version}.tar.xz',
-	# 'version': '9-20191130',
+	# 'version': '11-20220319',
 	# 'url': 'https://gcc.gnu.org/pub/gcc/snapshots/{version}/gcc-{version}.tar.xz',
-	'patches': [
+	# 'patches': [
 		#( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0001-gcc_7_1_0_weak_refs_x86_64.patch', 'p1' ),
 		# ( 'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/mingw_toolchain_script/patches/0140-gcc-7-Enable-std-experimental-filesystem.patch', 'p1' ), #Unable to get this to work.
-	],
+	# ],
 	'softlink_to_package': [
 		('gmp', 'gmp'),
 		('mpfr', 'mpfr'),
@@ -125,6 +134,7 @@ BUILDS['binutils'] = {
 		' --prefix="{prefix}"'
 		' --build="{host}"'
 		' --with-sysroot={prefix}'
+		# ' --with-isl={prefix}'
 		' --disable-shared'
 		' --enable-static'
 		' --target="{target}"'
@@ -143,9 +153,11 @@ BUILDS['mingw-w64-headers'] = {
 		' --host="{target}"'
 		' --prefix="{prefix}"'
 		' --enable-sdk=all'
-		' --enable-secure-api'
+		# ' --enable-secure-api'
 		' --enable-idl'
-		' --with-default-win32-winnt=0x600'	,
+		' --with-default-msvcrt=msvcrt'
+		# ' --with-default-win32-winnt=0x600'	,
+	,
 	'softLinks': [
 		('{prefix}', './{target}', './mingw'),
 		('{prefix}/{target}', '../include', './include'),
@@ -172,8 +184,13 @@ BUILDS['gcc-1'] = {
 		' --without-included-gettext'
 		' --enable-lto'
 		' --enable-checking=release'
+		' --enable-seh-exceptions'
+		# ' --enable-libada'
+  		# ' --enable-libssp'
+		# ' --enable-gold'
+
 		# ' --enable-default-pie'
-      	# ' --enable-default-ssp'
+	  	# ' --enable-default-ssp'
 		# ' --enable-libssp'
 		# ' --enable-libstdcxx-filesystem-ts=yes'
 		# ' --enable-fully-dynamic-string'
@@ -191,6 +208,8 @@ BUILDS['mingw-w64-crt'] = {
 		' --host="{target}"'
 		' --prefix="{prefix}"'
 		' --target="{target}"'
+		' --with-default-msvcrt=msvcrt-os'
+		' --disable-lib32'
 		' --with-sysroot={prefix}'	,
 	'customCommands': [
 		('{prefix}', 'mv "./{target}/lib/"* "./lib/"', True),
@@ -332,8 +351,8 @@ class MinGW64ToolChainBuilder:
 		def get_file_progress_file_object_class(on_progress, pb):
 			class FileProgressFileObject(tarfile.ExFileObject):
 				def read(self, size, *args):
-				  on_progress(self.name, self.position, self.size, pb)
-				  return tarfile.ExFileObject.read(self, size, *args)
+					on_progress(self.name, self.position, self.size, pb)
+					return tarfile.ExFileObject.read(self, size, *args)
 			return FileProgressFileObject
 
 		class ProgressFileObject(io.FileIO):
@@ -799,17 +818,20 @@ class MinGW64ToolChainBuilder:
 					self.log("Setting custom C(XX)FLAGS to: " + self.customCflags)
 				os.environ["CFLAGS"] = self.customCflags
 				os.environ["CXXFLAGS"] = self.customCflags
+				# os.environ["CPPFLAGS"] = "-O3"
 			else:
 				if self.debugBuild:
 					if _DEBUG:
 						self.log("Setting C(XX)FLAGS to: -ggdb")
 					os.environ["CFLAGS"] = "-ggdb"
 					os.environ["CXXFLAGS"] = "-ggdb"
+					# os.environ["CPPFLAGS"] = "-O3"
 				else:
 					if _DEBUG:
 						self.log("Setting C(XX)FLAGS to: -O3")
 					os.environ["CFLAGS"] = "-O3"
 					os.environ["CXXFLAGS"] = "-O3"
+					# os.environ["CPPFLAGS"] = "-O3"
 
 			if not os.path.isfile(confOptsHash):
 				self.log("Building: %s" % pn)

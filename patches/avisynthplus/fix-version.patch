@@ -1,0 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d60332e6..5d652a79 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -371,13 +371,8 @@ else()
+   # Based on the example here: http://www.cmake.org/pipermail/cmake/2010-July/038015.html
+   FIND_PACKAGE(Git)
+   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+-  ADD_CUSTOM_TARGET(
+-      VersionGen
+-      ${CMAKE_COMMAND} -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/avs_core/core/version.h.in
+-                       -D DST=${CMAKE_CURRENT_BINARY_DIR}/version.h
+-                       -D GIT=${GIT_EXECUTABLE}
+-                       -D REPO=${CMAKE_SOURCE_DIR}
+-                       -P ${CMAKE_CURRENT_SOURCE_DIR}/avs_core/Version.cmake
++  execute_process(
++          COMMAND ${CMAKE_COMMAND} -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/avs_core/core/version.h.in -D DST=${CMAKE_CURRENT_BINARY_DIR}/version.h -D GIT=${GIT_EXECUTABLE} -D REPO=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/avs_core/Version.cmake
+   )
+ 
+   include(GNUInstallDirs)

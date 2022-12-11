@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import sys
+from telnetlib import EC
 import traceback
 from distutils.version import LooseVersion
 from pathlib import Path
@@ -435,12 +436,18 @@ for name, pkg in {**pkgs["deps"], **pkgs["prods"]}.items():
 
 		else:  # packages that are archive downloads
 			ourVer = pkg["_info"]["version"]
-			latestVer = geLatestVersion(versionEl)
+			try:
+				latestVer = geLatestVersion(versionEl)
+			except Exception:
+				continue
 
 			if latestVer == "0.0.0":
 				print(Fore.YELLOW + "%s has an update! [Local: %s Remote: %s] (Error parsing remote version)" % (name.rjust(30), ourVer.center(10), latestVer.center(10)) + Style.RESET_ALL)
 				print("Regex pattern:")
-				print("\t" + versionEl["regex"])
+				try:
+					print("\t" + versionEl["regex"])
+				except:
+					pass
 			elif LooseVersion(ourVer) < LooseVersion(latestVer):
 				print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30), ourVer.center(10), latestVer.center(10)) + Style.RESET_ALL)
 			else:
@@ -485,7 +492,10 @@ if CWD.parent.joinpath("mingw_toolchain_script", "mingw_toolchain_script.py").ex
 			versionEl = pkg["update_check"]
 			vType = versionEl["type"]
 			ourVer = pkg["version"]
-			latestVer = geLatestVersion(versionEl)
+			try:
+				latestVer = geLatestVersion(versionEl)
+			except:
+				continue
 			if re.match(r"^(?P<version_num>(?:[\dx]{1,3}\.){0,3}[\dx]{1,3})$", ourVer) and re.match(r"^(?P<version_num>(?:[\dx]{1,3}\.){0,3}[\dx]{1,3})$", latestVer):
 				if LooseVersion(ourVer) < LooseVersion(latestVer):
 					print(Fore.GREEN + "%s has an update! [Local: %s Remote: %s]" % (name.rjust(30), ourVer.center(10), latestVer.center(10)) + Style.RESET_ALL)

@@ -4,9 +4,9 @@
 	'conf_system' : 'cmake',
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix}',
 	'source_subfolder': '_build',
-	'patches': [
-		('modplug/0001-modplug-mingw-workaround.patch', '-p1', '..'), # to avoid setting -DLIBMODPLUG_STATIC
-	],
+	# 'patches': [
+		# ('modplug/0001-modplug-mingw-workaround.patch', '-p1', '..'), # to avoid setting -DLIBMODPLUG_STATIC
+	# ],
 	'regex_replace': {
 		'post_patch': [
 			{

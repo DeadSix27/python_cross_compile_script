@@ -4,9 +4,13 @@
 	'conf_system' : 'meson',
 	'build_system' : 'ninja',
 	'source_subfolder' : 'build',
-	# 'run_post_patch' : [
-	# 	'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"', # gotta fix this properly at some point.
-	# ],
+	'run_post_patch' : [
+		# 'cp -nv "/usr/bin/pkg-config" "{cross_prefix_full}pkg-config"', # gotta fix this properly at some point.
+		'!SWITCHDIR|../',
+        'cd ..',
+        'git submodule update --init',
+        '!SWITCHDIR|build',
+	],
 
 	#'warnings' : [
 	#	'libplacebo for some reason can\'t detect Vulkan via pkg-config with new meson versions...',
@@ -24,8 +28,11 @@
 		'-Dvulkan-registry={target_prefix}/share/vulkan/registry/vk.xml '
 		'-Ddemos=false '
 		'-Dvulkan=enabled '
+		'-Dd3d11=enabled '
+		'-Dopengl=enabled '
+        '-Dglslang=enabled '
 		'--cross-file={meson_env_file} ./ ..'
 	,
-	'depends_on' : [ 'lcms2', 'spirv-tools', 'glslang', 'shaderc', 'vulkan_loader' ],
+	'depends_on' : [ 'lcms2', 'libepoxy', 'spirv-tools', 'glslang', 'shaderc', 'vulkan_loader' ],
 	'_info' : { 'version' : None, 'fancy_name' : 'libplacebo' },
 }

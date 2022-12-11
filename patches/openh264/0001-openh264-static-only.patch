@@ -1,40 +1,33 @@
-From 29ea0a1f18f89686fd6f10a70f812f86fa47b532 Mon Sep 17 00:00:00 2001
-From: DeadSix27 <DeadSix27@users.noreply.github.com>
-Date: Fri, 17 May 2019 08:23:28 +0200
-Subject: [PATCH] openh264 static only
-
----
- meson.build | 11 +----------
- 1 file changed, 1 insertion(+), 10 deletions(-)
-
+diff --git a/codec/meson.build b/codec/meson.build
+index 7a427f49..c922ba89 100644
+--- a/codec/meson.build
++++ b/codec/meson.build
+@@ -2,8 +2,8 @@ subdir('common')
+ subdir('decoder')
+ subdir('encoder')
+ subdir('processing')
+-if not ['android', 'ios'].contains(system)
++#if not ['android', 'ios'].contains(system)
+   # also disabled in the Makefile for these platforms
+-  subdir('console')
+-endif
++  # subdir('console')
++#endif
+ subdir('api')
 diff --git a/meson.build b/meson.build
-index 8813deb8..eba09f78 100644
+index ad9024ff..f04bcde6 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -98,7 +98,6 @@ api_headers = []
- api_header_deps = []
- 
- subdir ('codec')
--subdir ('test')
- 
- all_objects = [
-   libcommon.extract_all_objects(),
-@@ -107,14 +106,6 @@ all_objects = [
+@@ -191,7 +191,7 @@ all_objects = [
    libdecoder.extract_all_objects()
  ]
  
--libopenh264_shared = shared_library('openh264',
--  objects: all_objects,
--  install: true,
--  soversion: major_version,
--  version: meson.project_version(),
--  vs_module_defs: 'openh264.def',
--  dependencies: deps)
--
- libopenh264_static = static_library('openh264',
+-libopenh264_shared = library('openh264',
++libopenh264_static = library('openh264',
    objects: all_objects,
    install: true,
-@@ -147,7 +138,7 @@ foreach t : ['', '-static']
+   soversion: major_version,
+@@ -230,7 +230,7 @@ foreach t : ['', '-static']
  endforeach
  
  openh264_dep = declare_dependency(
@@ -43,6 +36,3 @@ index 8813deb8..eba09f78 100644
    include_directories: include_directories('include'),
    dependencies: deps + api_header_deps)
  
--- 
-2.21.0
-

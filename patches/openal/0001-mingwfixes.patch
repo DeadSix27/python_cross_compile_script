@@ -1,0 +1,34 @@
+From 4bb2a8ff511364f19e77d358dfb215ea29d695b8 Mon Sep 17 00:00:00 2001
+From: DeadSix <DeadSix27@users.noreply.github.com>
+Date: Sun, 21 Aug 2022 22:36:14 +0200
+Subject: [PATCH] fix-mingw-build
+
+---
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0d1690a8..1757a7f7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -918,7 +918,7 @@ endif()
+ option(ALSOFT_REQUIRE_PIPEWIRE "Require PipeWire backend" OFF)
+ if(PkgConfig_FOUND)
+     pkg_check_modules(PIPEWIRE libpipewire-0.3>=0.3.23)
+-    if(PIPEWIRE_FOUND)
++    if(MSVC)
+         option(ALSOFT_BACKEND_PIPEWIRE "Enable PipeWire backend" ON)
+         if(ALSOFT_BACKEND_PIPEWIRE)
+             set(HAVE_PIPEWIRE 1)
+@@ -929,7 +929,7 @@ if(PkgConfig_FOUND)
+         endif()
+     endif()
+ endif()
+-if(ALSOFT_REQUIRE_PIPEWIRE AND NOT HAVE_PIPEWIRE)
++if(MSVC)
+     message(FATAL_ERROR "Failed to enabled required PipeWire backend")
+ endif()
+ 
+-- 
+2.37.2
+

@@ -1,0 +1,36 @@
+diff '--color=auto' -Nur isl-0.24/doc/Makefile.in isl-0.24_p/doc/Makefile.in
+--- isl-0.24/doc/Makefile.in	2021-04-26 11:13:19.000000000 +0200
++++ isl-0.24_p/doc/Makefile.in	2022-03-01 08:33:48.443911156 +0100
+@@ -156,7 +156,7 @@
+ CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+-CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
++CPPFLAGS_FOR_BUILD = -O3
+ CPP_FOR_BUILD = @CPP_FOR_BUILD@
+ CXX = @CXX@
+ CXXCPP = @CXXCPP@
+diff '--color=auto' -Nur isl-0.24/interface/Makefile.in isl-0.24_p/interface/Makefile.in
+--- isl-0.24/interface/Makefile.in	2021-04-25 16:11:36.000000000 +0200
++++ isl-0.24_p/interface/Makefile.in	2022-03-01 08:33:38.925704498 +0100
+@@ -262,7 +262,7 @@
+ CONFIG_STATUS_DEPENDENCIES = @CONFIG_STATUS_DEPENDENCIES@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+-CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
++CPPFLAGS_FOR_BUILD = -O3
+ CPP_FOR_BUILD = @CPP_FOR_BUILD@
+ CXX = @CXX@
+ CXXCPP = @CXXCPP@
+diff '--color=auto' -Nur isl-0.24/Makefile.in isl-0.24_p/Makefile.in
+--- isl-0.24/Makefile.in	2021-04-26 11:13:19.000000000 +0200
++++ isl-0.24_p/Makefile.in	2022-03-01 08:33:43.437223283 +0100
+@@ -862,7 +862,7 @@
+ CFLAGS_FOR_BUILD = @CFLAGS_FOR_BUILD@
+ CPP = @CPP@
+ CPPFLAGS = @CPPFLAGS@
+-CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
++CPPFLAGS_FOR_BUILD = -O3
+ CPP_FOR_BUILD = @CPP_FOR_BUILD@
+ CXX = @CXX@
+ CXXCPP = @CXXCPP@

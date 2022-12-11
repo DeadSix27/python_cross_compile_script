@@ -1,0 +1,13 @@
+diff --git a/loader/vk_loader_platform.h b/loader/vk_loader_platform.h
+index 864eaf4be..1956849d1 100644
+--- a/loader/vk_loader_platform.h
++++ b/loader/vk_loader_platform.h
+@@ -29,7 +29,7 @@
+ #include <sys/select.h>
+ #endif
+ 
+-#if defined(_WIN32)
++#if defined(_MSC_VER)
+ // WinSock2.h must be included *BEFORE* windows.h
+ #include <winsock2.h>
+ #endif  // _WIN32

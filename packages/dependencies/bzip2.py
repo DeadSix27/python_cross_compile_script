@@ -7,6 +7,7 @@
 	'patches' : [
 		('bzip2/bzip2-1.0.6-gcc8.patch', '-p0'),
 	],
+	'custom_cflag' : '-O3',
 	'needs_configure' : False,
 	'needs_make' : True,
 	'needs_make_install' : False,

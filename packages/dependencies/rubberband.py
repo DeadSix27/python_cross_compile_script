@@ -1,11 +1,12 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/breakfastquay/rubberband.git',
-	'branch': 'cc13a41fd5888a0c1f9f1b6525e32810b584f6ea',
+	# 'branch': 'cc13a41fd5888a0c1f9f1b6525e32810b584f6ea',
+	'branch': 'default',
 	'download_header' : [
 		'https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/additional_headers/ladspa.h',
 	],
-
+	#'custom_cflag' : '-O3',
 
 	'conf_system' : 'meson',
 	'build_system' : 'ninja',
@@ -16,7 +17,8 @@
 		'--default-library=static '
 		'--buildtype=plain '
 		'--backend=ninja '
-		'-Dno_shared=true '
+		'-Dtests=disabled '
+        '-Dcmdline=disabled '
 		'--buildtype=release '
 		'--cross-file={meson_env_file} ./ ..'
   ,

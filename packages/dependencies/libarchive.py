@@ -1,8 +1,11 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/libarchive/libarchive.git',
+    'branch': 'v3.6.2',
+	'depth_git': 0,
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
+	#'custom_cflag' : '-O3',
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=0 -DCMAKE_BUILD_TYPE=Release '
 		'-DENABLE_NETTLE=ON '
 		'-DENABLE_OPENSSL=OFF '
@@ -11,7 +14,7 @@
 		'-DENABLE_LZO=ON '
 		'-DENABLE_LZMA=ON '
 		'-DENABLE_ZSTD=ON '
-		'-DENABLE_ZLIB=ON '
+		'-DENABLE_ZLIB=OFF '
 		'-DZLIB_WINAPI_EXITCODE=0 '
 		'-DZLIB_WINAPI_EXITCODE__TRYRUN_OUTPUT="" '
 		'-DENABLE_BZip2=ON '
