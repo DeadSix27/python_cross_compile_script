@@ -21,6 +21,17 @@
 	# 	'mkdir -p "{target_prefix}/lib/pkgconfig"',
 	# 	"echo 'prefix={target_prefix}\nexec_prefix=${{prefix}}\nlibdir=${{exec_prefix}}/lib\nincludedir=${{prefix}}/include\nName: bzip2\nDescription: bzip2\nVersion:\nLibs: -L${{libdir}} -lbz2\nCflags: -I${{includedir}}' > {target_prefix}/lib/pkgconfig/bzip2.pc",
 	# ],
+
+	'regex_replace': {
+		'post_patch': [
+			{
+				0: r'ARCHIVE_OUTPUT_NAME bz2_static\)',
+				1: r'ARCHIVE_OUTPUT_NAME bz2)',
+				'in_file': '../CMakeLists.txt'
+			},
+			
+		],
+	},
 	'update_check' : { 'url' : 'ftp://sourceware.org/pub/bzip2/', 'type' : 'ftpindex', 'regex' : r'bzip2-(?P<version_num>[\d.]+)\.tar\.gz' },
 	'_info' : { 'version' : '1.0.8', 'fancy_name' : 'BZip2 (library)' },
 }
