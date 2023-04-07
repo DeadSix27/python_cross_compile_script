@@ -1,49 +1,75 @@
+# type: ignore
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/mpv-player/mpv.git',
-	'build_system' : 'waf',
-	'conf_system' : 'waf',
+    # 'url' :'https://github.com/philipl/mpv.git',
+    # 'branch': 'vulkan-interop',
+	'conf_system' : 'meson',
+	'depth_git': 0,
+	'build_system' : 'ninja',
+    'do_not_git_update': True,
+	# 'source_subfolder' : 'build',
 	'env_exports' : {
 		'DEST_OS' : 'win32',
+        # 'CFLAGS'  : '-DHAVE_VK_EXT_DESCRIPTOR_BUFFER -DHAVE_VULKAN_INTEROP',
 		'TARGET'  : '{target_host}',
 		'PKG_CONFIG' : 'pkg-config',
-		# 'LDFLAGS': '-fstack-protector-strong' # See near 'regex_replace' #-Wl,-Bdynamic -lvulkan-1 -Wl,-Bdynamic -lOpenCL
+		'LDFLAGS': '-fstack-protector-strong',
 	},
+	'run_post_configure' : [
+		'!SWITCHDIR|build',
+	],
+
 	'configure_options' :
-		'--enable-libmpv-shared '
-		'--enable-static-build '
 		'--prefix={output_prefix}/mpv_git.installed '
-		'--disable-sdl2 '
-		'--enable-rubberband '
-		'--enable-lcms2 '
-		'--enable-openal '
-		'--enable-dvdnav '
-		'--enable-libbluray '
-		'--enable-cdda '
-		# '--enable-egl-angle-lib ' # not maintained anymore apparently, crashes for me anyway.
-		'--enable-lua '
-		'--enable-vapoursynth '
-		'--enable-uchardet '
-		'--enable-vulkan '
-		'--enable-libplacebo '
-		'--enable-libarchive '
-		'--enable-javascript '
-		'--disable-manpage-build '
-		'--disable-pdf-build '
-		'TARGET={target_host} '
-		'DEST_OS=win32 '
+		'--default-library=both '
+		'--backend=ninja '
+		'--buildtype=minsize '
+		'-Dcdda=enabled '
+        # '-Ddvbin=enabled '
+        '-Ddvdnav=enabled '
+        '-Diconv=enabled '
+        '-Djavascript=enabled '
+        '-Dlcms2=enabled '
+        '-Dlibarchive=enabled '
+        '-Dlibavdevice=enabled '
+        '-Dlibbluray=enabled '
+        '-Dlua=enabled '
+        '-Drubberband=enabled '
+        '-Dsdl2=enabled '
+        '-Dsdl2-gamepad=enabled '
+        '-Dsdl2-audio=enabled '
+        '-Dvapoursynth=enabled '
+        '-Dlibplacebo-next=enabled '
+        '-Dmanpage-build=disabled '
+        '-Dhtml-build=enabled '
+        '-Dpdf-build=enabled '
+        '-Dzimg=enabled '
+        '-Dzlib=enabled '
+        '-Dopenal=enabled '
+        '-Dcaca=enabled '
+        '-Ddirect3d=enabled '
+        # '-Degl-angle-win32=enabled '
+        '-Dlibrary-prefix=\'\' '
+        '-Dgl-dxinterop=enabled '
+        '-Dgl-win32=enabled '
+        '-Dlibmpv=true '
+		'-Doptimization=3 '
+		
+		'--cross-file={meson_env_file} ./ build/'
 	,
 	'depends_on' : [
-		'libffmpeg',
+		'libffmpeg_extra',
 		'zlib',
 		'iconv',
 		'python3_libs',
 		'vapoursynth_libs',
-		# 'sdl2',
+		'sdl2',
 		'luajit',
-		'rubberband',
+		# 'rubberband',
 		'lcms2',
 		'libdvdnav',
+		'openal',
 		'libbluray',
 		'openal',
 		'libass',
@@ -56,19 +82,12 @@
 		'vulkan_loader',
 		'libplacebo'
 	],
-	# Dirty hack, so far I've found no way to get -Wl,-Bdynamic into the .pc file or mpv itself without the use of LDFLAGS...
 	'regex_replace': {
 		'post_patch': [
-			# {
-			# 	0: r'Libs: -L\${{libdir}} -lvulkan-1',
-			# 	1: r'Libs: -L${{libdir}}',
-			# 	'in_file': '{pkg_config_path}/vulkan.pc',
-			# 	'out_file': '{pkg_config_path}/vulkan.pc'
-			# },
 			{
-				0: r' --dirty', # dirty.
+				0: r'\"--dirty\"', # dirty.
 				1: r'',
-				'in_file': 'version.sh',
+				'in_file': 'version.py',
 			},
 			{
 				0: r'bool encoder_encode',
@@ -91,30 +110,13 @@
 				'in_file': 'audio/out/ao_lavc.c',
 			},
 		],
-		'post_install': [
-			# {
-			# 	0: r'Libs: -L\${{libdir}}',
-			# 	1: r'Libs: -L${{libdir}} -lvulkan-1',
-			# 	'in_file': '{pkg_config_path}/vulkan.pc',
-			# 	'out_file': '{pkg_config_path}/vulkan.pc'
-			# },
-			# {
-			# 	0: r'Libs: -L\${{libdir}}',
-			# 	1: r'Libs: -L${{libdir}} -lvulkan-1',
-			# 	'in_file': '{pkg_config_path}/vulkan.pc',
-			# 	'out_file': '{pkg_config_path}/vulkan.pc'
-			# }
-		]
 	},
 	'patches': [
-		# ('mpv/0001-resolve-naming-collision-with-xavs2.patch', '-p1'),
-		# ('https://github.com/mpv-player/mpv/pull/9360.patch', '-p1'), #player: add --auto-window-resize option
-		('https://github.com/mpv-player/mpv/pull/10065.patch', '-p1'), #player: add --auto-window-resize option redux #10065 
-		('https://github.com/mpv-player/mpv/pull/9274.patch', '-p1'), #vo_tct: rewrite using the newer vo api, generalize and optimize code
-		('https://github.com/mpv-player/mpv/pull/9348.patch', '-p1'), #w32_common: fix bad window style for no-border window
-		# ('https://github.com/mpv-player/mpv/pull/9667.patch', '-p1'), #ao_wasapi: Use ks.h public abi instead of ksuuid.h
-		('https://github.com/mpv-player/mpv/pull/9765.patch', '-p1'), #w32_common: fixes minimized window being focused on launch
-		('https://github.com/mpv-player/mpv/pull/9792.patch', '-p1'), #hwdec/d3d11va: Fix a possible memory leak
+		( 'mpv/ádd-lib-prefix.patch', '-p1'),
+        # ('https://github.com/mpv-player/mpv/pull/9975.patch', '-p1'),
+        # ( 'https://github.com/mpv-player/mpv/pull/11494.patch', '-p1'),
+		{ 'file': 'mpv/0001-change-icons.patch', 'cmd': 'git apply '},
+        # ('https://github.com/mpv-player/mpv/pull/11495.patch', '-p1'),
 	],
 	'run_post_install' : (
 		'{cross_prefix_bare}strip -v {output_prefix}/mpv_git.installed/bin/mpv.com',

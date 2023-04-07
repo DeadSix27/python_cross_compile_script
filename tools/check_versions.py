@@ -408,7 +408,7 @@ for name, pkg in {**pkgs["deps"], **pkgs["prods"]}.items():
 		if not any(word in name for word in specificPkgs):
 			continue
 
-	if "repo_type" in pkg and (pkg["repo_type"] == "archive" or (pkg["repo_type"] == "git" and "branch" in pkg)):  # check for packages without update check.
+	if "repo_type" in pkg and (pkg["repo_type"] == "archive" or (pkg["repo_type"] == "git" and "branch" in pkg and pkg["branch"] not in ("main", "master", "default"))):  # check for packages without update check.
 		if "update_check" not in pkg:
 			if name not in ignorePkgsUpdate:
 				pkgsWithoutUpdateCheck.append(name)
@@ -419,7 +419,12 @@ for name, pkg in {**pkgs["deps"], **pkgs["prods"]}.items():
 		vType = versionEl["type"]
 
 		if vType == "git":  # packages that are git clones
-			di = getCommitsDiff(pkg)
+			di = None
+			try:
+				di = getCommitsDiff(pkg)
+			except Exception as e:
+				print(e)
+				continue
 			if di is not None:
 
 				numCmts = 0

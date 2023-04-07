@@ -1,6 +1,7 @@
 {
 	'repo_type' : 'git',
 	'url' : 'https://git.savannah.gnu.org/git/libcdio.git',
+	#'custom_cflag' : '-O3',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --disable-cddb --enable-cpp-progs', #  --enable-maintainer-mode
 	'run_post_patch' : [
 		'touch doc/version.texi', # took me far to long to come up with and find this workaround

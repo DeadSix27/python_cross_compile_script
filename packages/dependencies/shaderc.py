@@ -1,8 +1,10 @@
+# type: ignore
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/google/shaderc.git',
 	'depth_git': 0,
-	'branch': 'main', 
+	# 'branch': 'v2023.1',
+	'branch':'main', 
 	'configure_options' :
 		'cmake .. {cmake_prefix_options} '
 		'-DCMAKE_BUILD_TYPE=Release '
@@ -32,14 +34,15 @@
     	# "sed -i 's/printed_count += 1/#printed_count += 1/g' ../utils/add_copyright.py",
 	],
 
-	# 'regex_replace': {
-	# 	'post_patch': [
-	# 		{
-	# 			0: r'#define snprintf sprintf_s',
-	# 			'in_file': '../third_party/glslang/glslang/Include/Common.h'
-	# 		},
-	# 	],
-	# },
+	'regex_replace': {
+		'post_install': [
+			{
+				0: r'lshaderc_shared',
+				1: r'lshaderc_combined -lstdc++',
+				'in_file': '{pkg_config_path}/shaderc.pc'
+			}
+		],
+	},
 	
 	# 'run_post_build' : [
 	# 	'cp -rv "../libshaderc/include/shaderc" "{target_prefix}/include/"',

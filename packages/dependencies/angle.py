@@ -1,0 +1,32 @@
+{
+	'repo_type' : 'git',
+	'url' : 'https://chromium.googlesource.com/angle/angle',
+	'depth_git': 0,
+	# 'patches' : (
+		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0002-Cross-compile-hacks.patch'                             ,'-p1'),
+		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0003-rename-sprintf_s.patch'                                ,'-p1'),
+		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/0004-string_utils-cpp.patch'                                ,'-p1'),
+		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0002-install-fixed.patch'                             ,'-p1'),
+		# ('https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches/angle/angle-0003-add-option-for-targeting-cpu-architecture.patch' ,'-p1'),
+	# ),
+	'needs_make':False,
+	'needs_make_install':False,
+	'needs_configure':False,
+	'run_post_patch': (
+        'echo $PATH',
+		# 'sed -i 's/'python'/'python2'/' gyp/warnings.gyp',
+		# 'make uninstall PREFIX={target_prefix}',
+		# 'cmake -E remove_directory build',
+		# 'gyp -Duse_ozone=0 -DOS=win -Dangle_gl_library_type=static_library -Dangle_use_commit_id=1 --depth . -I gyp/common.gypi src/angle.gyp --no-parallel --format=make --generator-output=build -Dangle_enable_vulkan=0 -Dtarget_cpu=x64',
+		# 'make -C build/ commit_id',
+		# 'cmake -E copy build/out/Debug/obj/gen/angle/id/commit.h src/id/commit.h',
+		# 'make -C build {make_prefix_options} BUILDTYPE=Debug {make_cpu_count}',
+		# 'chmod u+x ./move-libs.sh && ./move-libs.sh {bit_name}-w64-mingw32 Debug',
+		# 'make install PREFIX={target_prefix}',
+		# 'touch already_do',
+	),
+	'packages': {
+		'arch' : [ 'gyp' ],
+	},
+	'_info' : { 'version' : 'git (master)', 'fancy_name' : 'ANGLE' },
+}

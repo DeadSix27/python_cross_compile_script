@@ -3,6 +3,7 @@
 	'rename_folder' : 'spirv-cross',
 	'url' : 'https://github.com/KhronosGroup/SPIRV-Cross.git',
 	'depth_git': 0,
+	'branch': 'main', 
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',
 	'configure_options' : 

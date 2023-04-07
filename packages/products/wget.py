@@ -9,7 +9,7 @@
 	'patches' : [
 		( 'wget/0001-remove-RAND_screen-which-doesn-t-exist-on-mingw.patch', '-p1' ),
 		( 'wget/0001-wget-look-for-ca-bundle.trust.crt-in-exe-path-by-def.patch', '-p1' ),
-		( 'wget/wget.timegm.patch', '-p1' ),
+		# ( 'wget/wget.timegm.patch', '-p1' ),
 	],
 	'do_not_bootstrap' : True,
 	'run_post_patch' : [

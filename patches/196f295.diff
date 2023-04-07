@@ -1,0 +1,103 @@
+From 196f295b928fd67c931b55fde5f6097e4cc3c78f Mon Sep 17 00:00:00 2001
+From: Alexandru Croitor <alexandru.croitor@qt.io>
+Date: Mon, 23 Oct 2017 15:42:52 +0200
+Subject: [PATCH] Fix shadow prefix framework builds
+
+Bundle data source files which don't exist at qmake time need to be
+handled specially. This also required splitting the generated list of
+public headers, as was already done for private ones.
+
+Task-number: QTBUG-60413
+Change-Id: I97acfa88622da6b73839b8f976f73ace3cb10223
+Reviewed-by: Oswald Buddenhagen <oswald.buddenhagen@qt.io>
+---
+
+diff --git a/bin/syncqt.pl b/bin/syncqt.pl
+index d62ffcb..e741f22 100755
+--- a/bin/syncqt.pl
++++ b/bin/syncqt.pl
+@@ -925,6 +925,7 @@
+     #information used after the syncing
+     my $pri_install_classes = "";
+     my $pri_install_files = "";
++    my $pri_install_ifiles = "";
+     my $pri_install_pfiles = "";
+     my $pri_install_ipfiles = "";
+     my $pri_install_qpafiles = "";
+@@ -1080,11 +1081,7 @@
+ 
+                             my $pri_install_iheader = fixPaths($iheader, $dir);
+                             my $injection = "";
+-                            if($public_header) {
+-                                #put it into the master file
+-                                $master_contents{$public_header} = $requires if (!$shadow && shouldMasterInclude($iheader));
+-
+-                                #deal with the install directives
++                            if ($public_header) {
+                                 foreach my $class (@classes) {
+                                     # Strip namespaces:
+                                     $class =~ s/^.*:://;
+@@ -1096,8 +1093,17 @@
+                                                                 unless($pri_install_classes =~ $class_header);
+                                     $injection .= ":$class";
+                                 }
+-                                $pri_install_files.= "$pri_install_iheader ";;
+-                                $pri_clean_files .= "$pri_install_iheader".($requires ? ":".$requires : "")." " if ($clean_header);
++
++                                if ($shadow) {
++                                    $pri_install_ifiles .= "$pri_install_iheader ";
++                                } else {
++                                    # put it into the master file
++                                    $master_contents{$public_header} = $requires if (shouldMasterInclude($iheader));
++
++                                    # deal with the install directives
++                                    $pri_install_files .= "$pri_install_iheader ";
++                                    $pri_clean_files .= "$pri_install_iheader".($requires ? ":".$requires : "")." " if ($clean_header);
++                                }
+                             }
+                             elsif ($qpa_header) {
+                                 $pri_install_qpafiles.= "$pri_install_iheader ";;
+@@ -1247,6 +1253,7 @@
+         #handle the headers.pri for each module
+         my $headers_pri_contents = "";
+         $headers_pri_contents .= "SYNCQT.HEADER_FILES = $pri_install_files\n";
++        $headers_pri_contents .= "SYNCQT.INJECTED_HEADER_FILES = $pri_install_ifiles\n";
+         $headers_pri_contents .= "SYNCQT.HEADER_CLASSES = $pri_install_classes\n";
+         $headers_pri_contents .= "SYNCQT.PRIVATE_HEADER_FILES = $pri_install_pfiles\n";
+         $headers_pri_contents .= "SYNCQT.INJECTED_PRIVATE_HEADER_FILES = $pri_install_ipfiles\n";
+diff --git a/mkspecs/features/qt_installs.prf b/mkspecs/features/qt_installs.prf
+index 0d3dfb6..90d84cc 100644
+--- a/mkspecs/features/qt_installs.prf
++++ b/mkspecs/features/qt_installs.prf
+@@ -32,7 +32,7 @@
+     class_headers.path = $$[QT_INSTALL_HEADERS]/$$MODULE_INCNAME
+     INSTALLS += class_headers
+ 
+-    targ_headers.files = $$SYNCQT.HEADER_FILES
++    targ_headers.files = $$SYNCQT.HEADER_FILES $$SYNCQT.INJECTED_HEADER_FILES
+     targ_headers.path = $$[QT_INSTALL_HEADERS]/$$MODULE_INCNAME
+     INSTALLS += targ_headers
+ 
+diff --git a/mkspecs/features/qt_module.prf b/mkspecs/features/qt_module.prf
+index 8a8c17f..a5c40a7 100644
+--- a/mkspecs/features/qt_module.prf
++++ b/mkspecs/features/qt_module.prf
+@@ -136,9 +136,17 @@
+            if(if(!debug_and_release|CONFIG(release, debug|release))) {
+         FRAMEWORK_HEADERS.version = Versions
+         FRAMEWORK_HEADERS.files = $$SYNCQT.HEADER_FILES $$SYNCQT.HEADER_CLASSES
++        # Non-existing paths (yet, they will be generated) are used verbatim.
++        for (injected_header, SYNCQT.INJECTED_HEADER_FILES): \
++            FRAMEWORK_HEADERS.files += \
++                $$relative_path($$absolute_path($$injected_header, $$_PRO_FILE_PWD_), $$OUT_PWD)
++
+         FRAMEWORK_HEADERS.path = Headers
+         FRAMEWORK_PRIVATE_HEADERS.version = Versions
+-        FRAMEWORK_PRIVATE_HEADERS.files = $$SYNCQT.PRIVATE_HEADER_FILES $$SYNCQT.INJECTED_PRIVATE_HEADER_FILES
++        FRAMEWORK_PRIVATE_HEADERS.files = $$SYNCQT.PRIVATE_HEADER_FILES
++        for (injected_header, SYNCQT.INJECTED_PRIVATE_HEADER_FILES): \
++            FRAMEWORK_PRIVATE_HEADERS.files += \
++                $$relative_path($$absolute_path($$injected_header, $$_PRO_FILE_PWD_), $$OUT_PWD)
+         FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private
+         FRAMEWORK_QPA_HEADERS.version = Versions
+         FRAMEWORK_QPA_HEADERS.files = $$SYNCQT.QPA_HEADER_FILES

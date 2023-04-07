@@ -7,6 +7,7 @@
 	# 'run_post_install' : [
 		# 'sed -i.bak \'s/Libs: -L${{libdir}} -lharfbuzz.*/Libs: -L${{libdir}} -lharfbuzz -lfreetype/\' "{pkg_config_path}/harfbuzz.pc"',
 	# ],
+	#'custom_cflag' : '-O3',
 	'folder_name' : 'harfbuzz-with-freetype',
 	'rename_folder' : 'harfbuzz-with-freetype',
 	'conf_system' : 'cmake',

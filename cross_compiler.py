@@ -34,6 +34,7 @@ import hashlib
 import importlib
 import logging
 import os.path
+import os
 import re
 import shutil
 import stat
@@ -432,6 +433,18 @@ class CrossCompileScript:
 				setattr(args, self.dest, values)
 				parser.exit()
 		return customArgsAction
+	
+	
+	def resetDefaultEnvVars(self):
+		# os.environ["PATH"] = "{0}:{1}:{2}".format (self.mingwBinpath, os.path.join(self.targetPrefix, 'bin'), self.originalPATH)  # TODO: properly test this..
+		os.environ["CFLAGS"] = self.originalCflags
+		os.environ["CXXFLAGS"] = self.originalCflags
+		os.environ["PKG_CONFIG_LIBDIR"] = ""
+		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
+		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
+		os.environ["COLOR"] = "ON"  # Force coloring on (for CMake primarily)
+		os.environ["CLICOLOR_FORCE"] = "ON"  # Force coloring on (for CMake primarily)
+		os.environ["CARGO_HOME"] = str(self.cargoHomePath)
 
 	def assembleConfigHelps(self, pdlist, type, main):
 		class customArgsAction(argparse.Action):
@@ -439,8 +452,9 @@ class CrossCompileScript:
 				main.quietMode = True
 				main.init_quietMode()
 				main.prepareBuilding(64)
-				main.build_mingw(64)
 				main.initBuildFolders()
+				main.resetDefaultEnvVars()
+				main.build_mingw(64)
 				for k, v in pdlist.items():
 					if '_disabled' not in v:
 						if '_info' in v:
@@ -684,6 +698,8 @@ class CrossCompileScript:
 		self.bitnessStrWin = "win64" if bitness == 64 else "win32"  # e.g win64
 		self.targetHostStr = F"{self.bitnessStr}-w64-mingw32"  # e.g x86_64-w64-mingw32
 
+		self.rustTargetStr = "x86_64-pc-windows-gnu" # hardcoded, only 64bit supported.
+
 		self.targetPrefix = self.fullWorkDir.joinpath(self.mingwDir, self.bitnessStr + "-w64-mingw32", self.targetHostStr)  # workdir/xcompilers/mingw-w64-x86_64/x86_64-w64-mingw32
 
 		self.inTreePrefix = self.fullWorkDir.joinpath(self.bitnessStr)  # workdir/x86_64
@@ -700,7 +716,8 @@ class CrossCompileScript:
 
 		self.shortCrossPrefixStr = F"{self.bitnessStr}-w64-mingw32-"  # e.g x86_64-w64-mingw32-
 
-		self.autoConfPrefixOptions = F'--with-sysroot="{self.targetSubPrefix}" --host={self.targetHostStr} --prefix={self.targetPrefix} --disable-shared --enable-static'
+		self.autoConfPrefixOptions = F'--host={self.targetHostStr} --prefix={self.targetPrefix} --disable-shared --enable-static'
+		#--with-sysroot="{self.targetSubPrefix}"
 
 		self.makePrefixOptions = F'CC={self.shortCrossPrefixStr}gcc ' \
 			F"AR={self.shortCrossPrefixStr}ar " \
@@ -716,6 +733,7 @@ class CrossCompileScript:
 
 		self.mesonEnvFile = self.fullWorkDir.joinpath("meson_environment.txt")
 		self.cmakeToolchainFile = self.fullWorkDir.joinpath("mingw_toolchain.cmake")
+		self.cargoHomePath = self.fullWorkDir.joinpath("cargohome")
 		self.cmakePrefixOptions = F'-DCMAKE_TOOLCHAIN_FILE="{self.cmakeToolchainFile}" -G\"Ninja\"'
 		self.cmakePrefixOptionsOld = "-G\"Unix Makefiles\" -DCMAKE_SYSTEM_PROCESSOR=\"{bitness}\" -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB={cross_prefix_full}ranlib -DCMAKE_C_COMPILER={cross_prefix_full}gcc -DCMAKE_CXX_COMPILER={cross_prefix_full}g++ -DCMAKE_RC_COMPILER={cross_prefix_full}windres -DCMAKE_FIND_ROOT_PATH={target_prefix}".format(cross_prefix_full=self.fullCrossPrefixStr, target_prefix=self.targetPrefix, bitness=self.bitnessStr)
 		self.cpuCount = self.config["toolchain"]["cpu_count"]
@@ -750,6 +768,7 @@ class CrossCompileScript:
 				'bit_name3': self.bitnessStr3,
 				'bit_name_win': self.bitnessStrWin,
 				'bit_num': self.currentBitness,
+				'rust_target': self.rustTargetStr,
 				'product_prefix': self.fullProductDir,
 				'target_prefix_sed_escaped': str(self.targetPrefix).replace("/", "\\/"),
 				'make_cpu_count': "-j {0}".format(self.cpuCount),
@@ -758,19 +777,12 @@ class CrossCompileScript:
 				'current_path': os.getcwd(),
 				'current_envpath': self.getKeyOrBlankString(os.environ, "PATH"),
 				'meson_env_file': self.mesonEnvFile
-			}
+			} # type: ignore
 		)
 
 		self.config = self.formatConfig(self.config)
 		self.fullOutputDir = self.projectRoot.joinpath(self.replaceToolChainVars(self.config["toolchain"]["output_path"]))
 		self.formatDict['output_prefix'] = str(self.fullOutputDir)
-
-		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
-		# os.environ["PATH"] = "{0}:{1}:{2}".format (self.mingwBinpath, os.path.join(self.targetPrefix, 'bin'), self.originalPATH)  # TODO: properly test this..
-		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
-		os.environ["PKG_CONFIG_LIBDIR"] = ""
-		os.environ["COLOR"] = "ON"  # Force coloring on (for CMake primarily)
-		os.environ["CLICOLOR_FORCE"] = "ON"  # Force coloring on (for CMake primarily)
 	#:
 
 	def initBuildFolders(self):
@@ -793,6 +805,7 @@ class CrossCompileScript:
 		# create toolchain files for meson and cmake
 		self.createMesonEnvFile()
 		self.createCmakeToolchainFile()
+		self.createCargoHome()
 
 	def boolKey(self, d, k):
 		if k in d:
@@ -1016,6 +1029,27 @@ class CrossCompileScript:
 
 				return fullOutputPath
 	#:
+
+	def createCargoHome(self):
+		if not os.path.isdir(self.cargoHomePath):
+			os.environ["CARGO_HOME"] = str(self.cargoHomePath)
+			self.logger.info("Creating Cargo Home: '%s'" % (self.cargoHomePath))
+
+			cargoConfigPath = self.cargoHomePath.joinpath("config.toml")
+			
+			self.cargoHomePath.mkdir(parents=True)
+			tcFile = [
+				F'[target.{self.rustTargetStr}]',
+				F'linker = "{self.shortCrossPrefixStr}gcc"',
+				F'ar = "{self.shortCrossPrefixStr}ar"',
+			]
+			with open(cargoConfigPath, 'w') as f:
+				f.write("\n".join(tcFile))
+			self.logger.info("Wrote Cargo Home config.toml in '%s'" % (self.cargoHomePath))
+
+			self.logger.info("Setting up cargo toolchain in '%s'" % (self.cargoHomePath))
+
+			os.system("cargo install cargo-c")
 
 	def createCmakeToolchainFile(self):
 		if not os.path.isfile(self.cmakeToolchainFile):
@@ -1536,6 +1570,14 @@ class CrossCompileScript:
 				addArgs.append(F"--depth 1")
 
 			self.logger.info(F"Git {'Shallow C' if depth >= 1 else 'C'}loning '{url}' to '{os.getcwd() + '/' + realFolderName}'")
+
+			tmpPath = Path(os.getcwd() + '/' + realFolderName + ".tmp")
+
+			if tmpPath.exists():
+				self.logger.info(F"Deleting leftover git tmp path: {tmpPath}")
+				shutil.rmtree(tmpPath)
+
+
 			self.runProcess('git clone {0} --progress "{1}" "{2}"'.format(" ".join(addArgs), url, realFolderName + ".tmp"))
 			if desiredBranch is not None:
 				self.cchdir(realFolderName + ".tmp")
@@ -1623,7 +1665,7 @@ class CrossCompileScript:
 				os.makedirs(folderName)
 
 			if fileName.endswith(tars):
-				self.runProcess('tar -xf "{0}"{1}'.format(fileName, customFolderTarArg))
+				self.runProcess('tar -vxf "{0}"{1}'.format(fileName, customFolderTarArg))
 			else:
 				self.runProcess('unzip "{0}"'.format(fileName))
 
@@ -1734,6 +1776,9 @@ class CrossCompileScript:
 
 	def buildThing(self, packageName, packageData, type, forceRebuild=False, skipDepends=False):  # type = PRODUCT or DEPENDENCY # I couldn't come up with a better name :S
 		# we are in workdir
+
+		self.resetDefaultEnvVars()
+		
 		if '_already_built' in packageData:
 			if packageData['_already_built'] is True:
 				return
@@ -1764,7 +1809,6 @@ class CrossCompileScript:
 			print("##############################")
 
 		self.logger.info("Building {0} '{1}'".format(type.lower(), packageName))
-		self.resetDefaultEnvVars()
 
 		if 'warnings' in packageData:
 			if len(packageData['warnings']) > 0:
@@ -1849,11 +1893,21 @@ class CrossCompileScript:
 
 		if forceRebuild:
 			if os.path.isdir(".git"):
+				self.logger.info(F'Force cleaning')
 				self.runProcess('git clean -ffdx')  # https://gist.github.com/nicktoumpelis/11214362
 				self.runProcess('git submodule foreach --recursive git clean -ffdx')
 				self.runProcess('git reset --hard')
 				self.runProcess('git submodule foreach --recursive git reset --hard')
 				self.runProcess('git submodule update --init --recursive')
+
+		if 'regex_replace' in packageData and packageData['regex_replace']:
+			_pos = 'pre_patch'
+			if isinstance(packageData['regex_replace'], dict) and _pos in packageData['regex_replace']:
+				for r in packageData['regex_replace'][_pos]:
+					try:
+						self.handleRegexReplace(r, packageName)
+					except re.error as e:
+						self.errorExit(e)
 
 		if 'source_subfolder' in packageData:
 			if packageData['source_subfolder'] is not None:
@@ -1924,7 +1978,10 @@ class CrossCompileScript:
 		if 'patches' in packageData:
 			if packageData['patches'] is not None:
 				for p in packageData['patches']:
-					self.applyPatch(p[0], p[1], False, self.getValueByIntOrNone(p, 2))
+					if isinstance(p, dict):
+						self.applyPatchv2(p)
+					else:
+						self.applyPatch(p[0], p[1], False, self.getValueByIntOrNone(p, 2))
 
 		if not self.anyFileStartsWith('already_ran_make'):
 
@@ -1988,6 +2045,8 @@ class CrossCompileScript:
 				build_system = "waf"
 			if packageData['build_system'] == "rake":
 				build_system = "rake"
+			if packageData['build_system'] == "rust":
+				build_system = "rust"
 		if 'conf_system' in packageData:
 			if packageData['conf_system'] == "cmake":
 				conf_system = "cmake"
@@ -1997,6 +2056,8 @@ class CrossCompileScript:
 				conf_system = "meson"
 			elif packageData['conf_system'] == "waf":
 				conf_system = "waf"
+			elif packageData['conf_system'] == "cinstall":
+				conf_system = "cinstall"
 
 		conf_system = "autoconf" if not conf_system else conf_system
 		build_system = "make" if not build_system else build_system
@@ -2223,6 +2284,53 @@ class CrossCompileScript:
 
 			self.touch(touchName)
 
+	def applyPatchv2(self, patchData):
+
+		url = patchData["file"]
+
+		originalFolder = os.getcwd()
+		if "dir" in patchData and patchData["dir"] is not None:
+			self.cchdir(patchData["dir"])
+			self.logger.debug("Moving to patch folder: {0}" .format(os.getcwd()))
+
+		self.logger.debug("Applying patch '{0}' in '{1}'" .format(url, os.getcwd()))
+
+		patchTouchName = "patch_%s.done" % (self.md5(url))
+
+		ignoreErr = False
+		exitOn = True
+		ignore = ""
+
+		if os.path.isfile(patchTouchName):
+			self.logger.debug("Patch '{0}' already applied".format(url))
+			self.cchdir(originalFolder)
+			return
+
+		pUrl = urlparse(url)
+		if pUrl.scheme != '':
+			fileName = os.path.basename(pUrl.path)
+			self.logger.info("Downloading patch '{0}' to: {1}".format(url, fileName))
+			self.downloadFile(url, fileName)
+		else:
+			local_patch_path = os.path.join(self.fullPatchDir, url)
+			fileName = os.path.basename(Path(local_patch_path).name)
+			if os.path.isfile(local_patch_path):
+				copyPath = os.path.join(os.getcwd(), fileName)
+				self.logger.info("Copying patch from '{0}' to '{1}'".format(local_patch_path, copyPath))
+				shutil.copyfile(local_patch_path, copyPath)
+			else:
+				fileName = os.path.basename(urlparse(url).path)
+				url = "https://raw.githubusercontent.com/DeadSix27/python_cross_compile_script/master/patches" + url
+				self.downloadFile(url, fileName)
+
+		self.logger.info("Patching source using: '{0}'".format(fileName))
+		print(f'{patchData["cmd"]} "{fileName}"')
+		self.runProcess(f'{patchData["cmd"]} "{fileName}"', ignoreErr, exitOn)
+		self.touch(patchTouchName)
+
+		if "dir" in patchData and patchData["dir"] is not None:
+			self.cchdir(originalFolder)
+
 	def applyPatch(self, url, type="-p1", postConf=False, folderToPatchIn=None):
 		originalFolder = os.getcwd()
 		if folderToPatchIn is not None:
@@ -2297,9 +2405,28 @@ class CrossCompileScript:
 						self.handleRegexReplace(r, packageName)
 
 			self.touch(touchName)
+		if 'run_post_configure' in packageData:
+			if packageData['run_post_configure'] is not None:
+				for cmd in packageData['run_post_configure']:
+					if cmd.startswith("!SWITCHDIRBACK"):
+						self.cchdir(_origDir)
+					elif cmd.startswith("!SWITCHDIR"):
+						_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
+						self.cchdir(_dir)
+					else:
+						cmd = self.replaceVariables(cmd)
+						self.logger.info("Running post-build-command: '{0}'".format(cmd))
+						self.runProcess(cmd)
+
 
 	def cmakeSource(self, packageName, packageData):
 		touchName = "already_ran_cmake_%s" % (self.md5(packageName, self.getKeyOrBlankString(packageData, "configure_options")))
+		
+		if self.debugMode:
+			print("### Environment variables:  ###")
+			for tk in os.environ:
+				print("\t" + tk + " : " + os.environ[tk])
+			print("##############################")
 
 		if not os.path.isfile(touchName):
 			self.removeAlreadyFiles()
@@ -2320,6 +2447,7 @@ class CrossCompileScript:
 						self.handleRegexReplace(r, packageName)
 
 			self.touch(touchName)
+			
 
 	def buildSource(self, packageName, packageData, buildSystem):
 		_origDir = os.getcwd()
@@ -2342,6 +2470,8 @@ class CrossCompileScript:
 				mkCmd = 'rake'
 			if buildSystem == "ninja":
 				mkCmd = 'ninja'
+			if buildSystem == "rust":
+				mkCmd = 'cargo'
 
 			if buildSystem == "make":
 				if os.path.isfile("configure"):
@@ -2358,6 +2488,23 @@ class CrossCompileScript:
 				print("##############################")
 
 			self.logger.info(F"Building '{packageName}' with: {makeOpts} in {os.getcwd()}", extra={'type': buildSystem})
+			
+			if 'run_pre_build' in packageData and packageData['run_pre_build']:
+					for cmd in packageData['run_pre_build']:
+						ignoreFail = False
+						if isinstance(cmd, tuple):
+							cmd = cmd[0]
+							ignoreFail = cmd[1]
+						if cmd.startswith("!SWITCHDIRBACK"):
+							self.cchdir(currentFullDir)
+						elif cmd.startswith("!SWITCHDIR"):
+							_dir = self.replaceVariables("|".join(cmd.split("|")[1:]))
+							self.cchdir(_dir)
+						else:
+							cmd = self.replaceVariables(cmd)
+							self.logger.info("Running post-patch-command: '{0}'".format(cmd))
+							# self.run_process(cmd)
+							self.runProcess(cmd, ignoreFail)
 
 			if 'ignore_build_fail_and_run' in packageData:
 				if len(packageData['ignore_build_fail_and_run']) > 0:  # todo check if its a list too
@@ -2372,9 +2519,12 @@ class CrossCompileScript:
 							self.logger.info(F"Running post-failed-make-command: '{cmd}'")
 							self.runProcess(cmd)
 			else:
-				if buildSystem == "waf":
-					mkCmd = './waf --color=yes build'
-				self.runProcess(F'{mkCmd} {cpuCountStr} {makeOpts}')
+				if buildSystem == "rust":
+					os.system(F'{mkCmd} {cpuCountStr} {makeOpts}')
+				else:
+					if buildSystem == "waf":
+						mkCmd = './waf --color=yes build'
+					self.runProcess(F'{mkCmd} {cpuCountStr} {makeOpts}')
 
 			if 'regex_replace' in packageData and packageData['regex_replace']:
 				_pos = 'post_build'
@@ -2427,6 +2577,8 @@ class CrossCompileScript:
 				mkCmd = "rake"
 			if buildSystem == "ninja":
 				mkCmd = "ninja"
+			if buildSystem == "rust":
+				mkCmd = "cargo"
 
 			self.runProcess(F'{mkCmd} {installTarget} {makeInstallOpts} {cpuCountStr}')
 
@@ -2451,14 +2603,6 @@ class CrossCompileScript:
 
 			self.touch(touchName)
 	#:
-
-	def resetDefaultEnvVars(self):
-		self.logger.debug("Reset CFLAGS/CXXFLAGS to: {0}".format(self.originalCflags))
-		os.environ["CFLAGS"] = self.originalCflags
-		os.environ["CXXFLAGS"] = self.originalCflags
-		os.environ["PKG_CONFIG_LIBDIR"] = ""
-		os.environ["PATH"] = "{0}:{1}".format(self.mingwBinpath, self.originalPATH)
-		os.environ["PKG_CONFIG_PATH"] = self.pkgConfigPath
 	#:
 
 	def anyFileStartsWith(self, wild):

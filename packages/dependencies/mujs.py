@@ -2,13 +2,28 @@
 	'repo_type' : 'git',
 	'url' : 'git://git.ghostscript.com/mujs.git',
 	'needs_configure' : False,
-	'build_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
-	'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=no',
+	'build_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=yes',
+	'install_options' : '{make_prefix_options} prefix={target_prefix} HAVE_READLINE=yes',
 	'regex_replace': {
 		'post_patch': [
 			{
-				0: r'install -m 755 \$\(OUT\)\/mujs',
-				1: r'install -m 755 $(OUT)/mujs.exe',
+				0: r'default\: build\/release\/mujs build\/release\/mujs\-pp',
+				1: r'default: build/release/mujs build/release/mujs-pp',
+				'in_file': 'Makefile'
+			},
+			{
+				0: r'install \-m 755 build\/release\/mujs-pp \$\(DESTDIR\)\$\(bindir\)',
+				1: r'install -m 755 build/release/mujs-pp.exe $(DESTDIR)$(bindir) ',
+				'in_file': 'Makefile'
+			},
+			{
+				0: r'install \-m 755 build\/release\/mujs \$\(DESTDIR\)\$\(bindir\)',
+				1: r'install -m 755 build/release/mujs.exe $(DESTDIR)$(bindir) ',
+				'in_file': 'Makefile'
+			},
+			{
+				0: r'-DHAVE_READLINE -lreadline',
+				1: r'',
 				'in_file': 'Makefile'
 			},
 		],

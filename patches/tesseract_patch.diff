@@ -1,0 +1,19 @@
+--- CMakeLists_o.txt	2023-04-01 00:06:40.708165737 +0200
++++ CMakeLists.txt	2023-04-01 00:07:39.017072293 +0200
+@@ -390,11 +390,11 @@
+   find_package(PkgConfig)
+   # Check for required library. option -DLeptonica_DIR=path => cmake hint where
+   # to find leptonica
+-  find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG)
+-  if(NOT Leptonica_FOUND AND PKG_CONFIG_EXECUTABLE)
+-    pkg_check_modules(Leptonica lept>=${MINIMUM_LEPTONICA_VERSION})
+-    link_directories(${Leptonica_LIBRARY_DIRS})
+-  endif()
++  # find_package(Leptonica ${MINIMUM_LEPTONICA_VERSION} CONFIG)
++  # if(NOT Leptonica_FOUND AND PKG_CONFIG_EXECUTABLE)
++  pkg_check_modules(Leptonica lept>=${MINIMUM_LEPTONICA_VERSION})
++  link_directories(${Leptonica_LIBRARY_DIRS})
++  # endif()
+   if(NOT Leptonica_FOUND)
+     message(FATAL_ERROR "Cannot find required library Leptonica. Quitting!")
+   endif(NOT Leptonica_FOUND)

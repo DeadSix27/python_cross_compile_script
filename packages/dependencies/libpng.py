@@ -13,5 +13,5 @@
 	],
 	'depends_on' : [ 'zlib', ],
 	'update_check' : { 'url' : 'https://sourceforge.net/projects/libpng/files/libpng16/', 'type' : 'sourceforge', },
-	'_info' : { 'version' : '1.6.38', 'fancy_name' : 'libpng' },
+	'_info' : { 'version' : '1.6.39', 'fancy_name' : 'libpng' },
 }

@@ -1,0 +1,29 @@
+diff --git a/lib/jxl/libjxl.pc.in b/lib/jxl/libjxl.pc.in
+index 4a7af65b..789ad0d9 100644
+--- a/lib/jxl/libjxl.pc.in
++++ b/lib/jxl/libjxl.pc.in
+@@ -8,6 +8,6 @@ Description: Loads and saves JPEG XL files
+ Version: @JPEGXL_LIBRARY_VERSION@
+ Requires.private: @JPEGXL_LIBRARY_REQUIRES@
+ Libs: -L${libdir} -ljxl
+-Libs.private: -lm
+-Cflags: -I${includedir}
+-Cflags.private: -DJXL_STATIC_DEFINE
++Libs.private: -lm -lstdc++
++Cflags: -I${includedir} -DJXL_EXPORT=
++Cflags.private: -DJXL_EXPORT= -DJXL_STATIC_DEFINE
+\ No newline at end of file
+diff --git a/lib/threads/libjxl_threads.pc.in b/lib/threads/libjxl_threads.pc.in
+index 50b937a8..f6591ec8 100644
+--- a/lib/threads/libjxl_threads.pc.in
++++ b/lib/threads/libjxl_threads.pc.in
+@@ -8,6 +8,6 @@ Description: JPEG XL multi-thread runner using std::threads.
+ Version: @JPEGXL_LIBRARY_VERSION@
+ Requires.private: @JPEGXL_THREADS_LIBRARY_REQUIRES@
+ Libs: -L${libdir} -ljxl_threads
+-Libs.private: -lm
+-Cflags: -I${includedir}
+-Cflags.private: -DJXL_THREADS_STATIC_DEFINE
++Libs.private: -lm -lstdc++
++Cflags: -I${includedir} -DJXL_EXPORT=
++Cflags.private: -DJXL_EXPORT= -DJXL_STATIC_DEFINE

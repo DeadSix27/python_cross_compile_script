@@ -1,0 +1,70 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ed60f07bc..7862c5f4c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -356,6 +356,8 @@ check_function_exists(gethostname HAVE_GETHOSTNAME)
+ if(WIN32)
+   check_library_exists_concat("ws2_32" getch        HAVE_LIBWS2_32)
+   check_library_exists_concat("winmm"  getch        HAVE_LIBWINMM)
++  check_library_exists_concat("shlwapi"  getch        HAVE_SHLWAPI)
++  list(APPEND CURL_LIBS "ws2_32" "winmm" "shlwapi")
+ endif()
+ 
+ # check SSL libraries
+@@ -482,6 +484,10 @@ if(CURL_USE_OPENSSL)
+   find_package(OpenSSL REQUIRED)
+   set(SSL_ENABLED ON)
+   set(USE_OPENSSL ON)
++  
++  message(WARNING "hi")
++  list(APPEND OPENSSL_LIBRARIES "shlwapi" "ws2_32" "bcrypt")
++  message(WARNING "${OPENSSL_LIBRARIES}")
+ 
+   # Depend on OpenSSL via imported targets if supported by the running
+   # version of CMake.  This allows our dependents to get our dependencies
+@@ -500,6 +506,8 @@ if(CURL_USE_OPENSSL)
+   if(NOT DEFINED HAVE_BORINGSSL)
+     check_symbol_exists(OPENSSL_IS_BORINGSSL "openssl/base.h" HAVE_BORINGSSL)
+   endif()
++  list(APPEND CURL_LIBS "shlwapi" "ws2_32" "bcrypt")
++  message(WARNING "${CURL_LIBS}")
+ endif()
+ 
+ if(CURL_USE_MBEDTLS)
+@@ -780,6 +788,8 @@ if(CURL_USE_LIBSSH2)
+   find_package(LibSSH2)
+   if(LIBSSH2_FOUND)
+     list(APPEND CURL_LIBS ${LIBSSH2_LIBRARY})
++    list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
++	message(WARNING "${CURL_LIBS}")
+     list(APPEND CMAKE_REQUIRED_INCLUDES "${LIBSSH2_INCLUDE_DIR}")
+     include_directories("${LIBSSH2_INCLUDE_DIR}")
+     set(USE_LIBSSH2 ON)
+diff --git a/src/tool_doswin.c b/src/tool_doswin.c
+index e9347d298..45d63ccd1 100644
+--- a/src/tool_doswin.c
++++ b/src/tool_doswin.c
+@@ -630,11 +630,22 @@ CURLcode FindWin32CACert(struct OperationConfig *config,
+ 
+     DWORD res_len;
+     TCHAR buf[PATH_MAX];
++    TCHAR exedir[PATH_MAX];
+     TCHAR *ptr = NULL;
+ 
+     buf[0] = TEXT('\0');
+ 
+-    res_len = SearchPath(NULL, bundle_file, NULL, PATH_MAX, buf, &ptr);
++    // Get the directory part of the exe file path
++    GetModuleFileName(NULL, exedir, PATH_MAX);
++    PathRemoveFileSpec(exedir);
++
++    // Create the search path string with the current directory and exe file directory
++    TCHAR szSearchPath[PATH_MAX * 2];
++    swprintf(szSearchPath, PATH_MAX * 2, L".;%s", exedir);
++
++    printf("szSearchPath = %ls\n", szSearchPath);
++    // Search for the file in the current directory and the exe file directory
++    res_len = SearchPath(szSearchPath, bundle_file, NULL, PATH_MAX, buf, &ptr);
+     if(res_len > 0) {
+       char *mstr = curlx_convert_tchar_to_UTF8(buf);
+       Curl_safefree(config->cacert);

@@ -4,6 +4,7 @@
 	'depth_git': 0,
 	'strip_cflags': ['-ffast-math', ],
 	'conf_system' : 'cmake',
+	#'custom_cflag' : '-O3',
 	'source_subfolder' : '_build',
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DOPUS_X86_MAY_HAVE_SSE=1 -DOPUS_X86_MAY_HAVE_SSE2=1 -DOPUS_X86_MAY_HAVE_SSE4_1=1 -DOPUS_X86_MAY_HAVE_AVX=1 -DOPUS_X86_PRESUME_SSE=1 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DBUILD_TESTING=0 -DOPUS_CUSTOM_MODES=1 -DOPUS_BUILD_PROGRAMS=0 -DOPUS_INSTALL_PKG_CONFIG_MODULE=1',
 	'patches' : [
@@ -22,5 +23,3 @@
 	},
 	'_info' : { 'version' : None, 'fancy_name' : 'opus' },
 }
-
-

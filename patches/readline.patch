@@ -1,0 +1,32 @@
+diff --git a/input.c b/input.c
+index 6f038d4..b7459d4 100644
+--- a/input.c
++++ b/input.c
+@@ -818,8 +818,9 @@ rl_getc (FILE *stream)
+       /* We know at this point that _rl_caught_signal == 0 */
+ 
+ #if defined (__MINGW32__)
+-      if (isatty (fd)
++      if (isatty (fd)) {
+ 	return (_getch ());	/* "There is no error return." */
++	  }
+ #endif
+       result = 0;
+ #if defined (HAVE_PSELECT) || defined (HAVE_SELECT)
+diff --git a/rlprivate.h b/rlprivate.h
+index d87d07a..9fb7b01 100644
+--- a/rlprivate.h
++++ b/rlprivate.h
+@@ -27,6 +27,12 @@
+ #include "rlstdc.h"
+ #include "posixjmp.h"	/* defines procenv_t */
+ #include "rlmbutil.h"	/* for HANDLE_MULTIBYTE */
++#include <winsock2.h>
++#include <signal.h>
++#include <setjmp.h>
++#include <sys/types.h>
++
++typedef int sigset_t;
+ 
+ /*************************************************************************
+  *									 *

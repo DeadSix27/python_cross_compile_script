@@ -1,8 +1,8 @@
 {
 	'repo_type' : 'archive',
 	'download_locations' : [
-		{ 'url' : 'https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.40/pcre2-10.40.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '14e4b83c4783933dc17e964318e6324f7cae1bc75d8f3c79bc6969f00c159d68' }, ], },
-		{ 'url' : 'https://fossies.org/linux/misc/pcre2-10.40.tar.bz2 ', 'hashes' : [ { 'type' : 'sha256', 'sum' : '14e4b83c4783933dc17e964318e6324f7cae1bc75d8f3c79bc6969f00c159d68' }, ], },
+		{ 'url' : 'https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.bz2', 'hashes' : [ { 'type' : 'sha256', 'sum' : '8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840' }, ], },
+		{ 'url' : 'https://fossies.org/linux/misc/pcre2-10.42.tar.bz2 ', 'hashes' : [ { 'type' : 'sha256', 'sum' : '8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840' }, ], },
 	],
 	'conf_system' : 'cmake',
 	'patches' : [
@@ -17,5 +17,5 @@
 		'bzip2', 'zlib',
 	],
 	'update_check' : { 'url' : 'https://github.com/PCRE2Project/pcre2/releases', 'type' : 'githubreleases', 'name_or_tag' : 'name' },
-	'_info' : { 'version' : '10.40', 'fancy_name' : 'pcre2' },
+	'_info' : { 'version' : '10.42', 'fancy_name' : 'pcre2' },
 }

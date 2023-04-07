@@ -1,3 +1,4 @@
+#type: ignore
 {
 	'ffmpeg_config' : # the base for all ffmpeg configurations.
 		'--arch={bit_name2} '
@@ -18,6 +19,7 @@
 		'--enable-bzlib '
 		'--enable-zlib '
 		'--enable-lzma '
+		# '--enable-gcrypt '
 		'--enable-fontconfig '
 		'--enable-libfontconfig '
 		'--enable-libfreetype '
@@ -30,10 +32,13 @@
 		'--enable-libcaca '
 		'--enable-iconv '
 		'--enable-libxml2 '
-		'--enable-gmp '
-		'--enable-gnutls ' # nongpl: openssl,libtls(libressl)
-		# '--enable-libglslang '
-		# '--enable-vulkan '
+		# '--enable-gmp '
+        '--enable-openssl '
+        '--enable-libtls '
+		# '--enable-gnutls ' # nongpl: openssl,libtls(libressl)
+		'--enable-vulkan '
+		'--enable-libshaderc '
+        '--enable-libplacebo '
 
 		# Video/Picture Libs
 		'--enable-libzimg '
@@ -44,6 +49,8 @@
 		'--enable-libvpx '
 		'--enable-libdav1d '
 		'--enable-libaom '
+        '--enable-libsvtav1 '
+        '--enable-librav1e '
 		'--enable-libxvid '
 		'--enable-gray '
 
@@ -55,26 +62,31 @@
 		'--enable-libspeex '
 		'--enable-libsoxr '
 		'--enable-librubberband '
+        '--enable-openal '
 
 		# Subtitle/OCR Libs:
 		'--enable-libass '
-		'--disable-libtesseract '
-		# '--enable-liblensfun '
+		'--enable-libtesseract '
+		'--enable-liblensfun '
 
 		# Image libs
 		'--enable-libwebp '
+        '--enable-libopenjpeg '
+        '--enable-libjxl '
 
 		# HW Decoders
 		'--enable-ffnvcodec '
 		'--enable-cuvid '
 		'--enable-opengl '
-		# '--enable-opencl '
+		'--disable-opencl '
 		'--enable-d3d11va '
 		'--enable-nvenc '
 		'--enable-nvdec '
 		'--enable-dxva2 '
+		'--enable-cuda-nvcc '
 		'--enable-libmfx '
 		'--enable-amf '
+        '--extra-cflags="-DAL_LIBTYPE_STATIC -DMODPLUG_STATIC" '
 	,
 
 	'ffmpeg_nonfree': '--enable-nonfree --enable-libfdk-aac --enable-decklink', # --enable-cuda-sdk # nonfree stuff
@@ -91,19 +103,19 @@
 		'--enable-filter=frei0r '
 		'--enable-libsrt '
 		'--enable-libbs2b '
-		#'--enable-libwavpack '
+		# '--enable-libwavpack '
 		'--enable-libilbc '
 		'--enable-libgme '
-		'--enable-libflite '
-		#'--enable-sdl '
+		#'--enable-libflite ' #todo fix this shit
+		'--enable-sdl '
 		'--enable-libdavs2 '
 		'--enable-libxavs '
 		'--enable-libxavs2 '
-		#'--enable-libopenmpt '
+		'--enable-libopenmpt '
 		'--enable-libmysofa '
 		'--enable-libvidstab '
 		'--enable-libmodplug '
-		#'--disable-schannel '
+		# '--disable-schannel '
 		#'--disable-gcrypt '
 		#'--enable-ladspa '
 		# '--enable-libcodec2 ' # Requires https://github.com/traviscross/freeswitch/tree/master/libs/libcodec2, too lazy to split that off.

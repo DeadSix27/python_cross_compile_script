@@ -1,0 +1,23 @@
+diff --git a/meson.build b/meson.build
+index 45b9dbbf54..a5819505e5 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1679,7 +1679,7 @@ major = client_h_define.split('|')[0].split('<<')[0].strip('() ')
+ minor = client_h_define.split('|')[1].strip('() ')
+ client_api_version = major + '.' + minor + '.0'
+ 
+-libmpv = library('mpv', sources, dependencies: dependencies, gnu_symbol_visibility: 'hidden',
++libmpv = library('mpv', sources, name_prefix: get_option('library-prefix'), dependencies: dependencies, gnu_symbol_visibility: 'hidden',
+                  version: client_api_version, include_directories: includedir,
+                  install: get_option('libmpv'), build_by_default: get_option('libmpv'))
+ 
+diff --git a/meson_options.txt b/meson_options.txt
+index 27af048c37..b460036686 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,4 +1,5 @@
+ # booleans
++option('library-prefix', type: 'string', value: 'lib', description: 'libmpv library prefix')
+ option('gpl', type: 'boolean', value: true, description: 'GPL (version 2 or later) build')
+ option('cplayer', type: 'boolean', value: true, description: 'mpv CLI player')
+ option('libmpv', type: 'boolean', value: false, description: 'libmpv library')

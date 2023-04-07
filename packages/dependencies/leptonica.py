@@ -1,3 +1,4 @@
+#type: ignore
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/DanBloomberg/leptonica.git',
@@ -9,6 +10,7 @@
 		'sed -i.bak \'s/Libs: -L${{libdir}} -l@leptonica_NAME@/Libs: -L${{libdir}} -l@leptonica_NAME@-@leptonica_VERSION@/\' ../lept.pc.cmake',
 	],
 	'run_post_install' : [
+        'mv -v "{pkg_config_path}/lept_Release.pc" "{pkg_config_path}/lept.pc"',
 		'sed -i.bak \'s/Libs: -L${{libdir}} /Requires: libtiff-4 libpng libopenjp2 libjpeg libwebp\\nRequires.private: libtiff-4 libpng libopenjp2 libjpeg libwebp\\nLibs: -L${{libdir}} /\' "{pkg_config_path}/lept.pc"',
 		'sed -i \'s/Libs: -L${{libdir}} -lleptonica-\(.*\)$/Libs: -L${{libdir}} -lleptonica-\\1 -lgif/\' "{pkg_config_path}/lept.pc"',
 	],

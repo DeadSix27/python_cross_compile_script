@@ -1,3 +1,4 @@
+#type: ignore
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/tesseract-ocr/tesseract.git',
@@ -5,6 +6,10 @@
 	'branch': 'main',
 	'source_subfolder' : '_build',
 	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=0 -DBUILD_TRAINING_TOOLS=0 -DSW_BUILD=0 -DBUILD_TRAINING_TOOLS=0 -DBUILD_TESTS=0 -DSTATIC=1 -DHAVE_LIBARCHIVE=1 -DLIBRARY_TYPE=STATIC -DCMAKE_BUILD_TYPE=Release',
+
+	'patches' : [
+		( 'tesseract_patch.diff', '-p0', '..' ),
+	],
 	'regex_replace': {
 		'post_patch': [
 			{
@@ -48,7 +53,8 @@
 				1: r'Requires: lept libarchive\nRequires.private: lept libarchive\nLibs: -L${{libdir}} \1 -lstdc++ -lws2_32',
 				'in_file': '{pkg_config_path}/tesseract.pc'
 			}
-		]
+		],
+
 	},
 	'depends_on' : [ 'leptonica', 'libxml2', 'zlib', 'libarchive', 'libtiff'],
 	'_info' : { 'version' : None, 'fancy_name' : 'tesseract' },

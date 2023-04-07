@@ -3,9 +3,10 @@
 	'depth_git': 0,
 	'url' : 'https://github.com/KhronosGroup/Vulkan-Loader.git',
 	# 'branch': 'ad393f9be6c91160e4292ea176c2c8e01efd5d8e',
-	'branch': 'master',
+	# 'branch': 'v1.3.241',
+	'branch':'main', 
 	'configure_options' : 
-		'.. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX={target_prefix} '
+		'.. {cmake_prefix_options} -DCMAKE_BUILD_TYPE=Release -DUPDATE_DEPS=1 -DCMAKE_INSTALL_PREFIX={target_prefix} '
 		'-DVULKAN_HEADERS_INSTALL_DIR={target_prefix} '
 		'-DBUILD_TESTS=OFF '
 		# '-DUPDATE_DEPS=ON '
@@ -13,6 +14,12 @@
 		'-DBUILD_STATIC_LOADER=ON '
         "-DENABLE_WERROR=OFF "
 	,
+	'env_exports' : {
+		'CFLAGS'   : ' -DVK_ENABLE_BETA_EXTENSIONS {original_cflags}',
+		'CXXFLAGS' : ' -DVK_ENABLE_BETA_EXTENSIONS {original_cflags}',
+		'CPPFLAGS' : ' -DVK_ENABLE_BETA_EXTENSIONS {original_cflags}', # 2020.06.20 per https://github.com/fribidi/fribidi/issues/146#issuecomment-646991416
+		'LDFLAGS'  : ' -DVK_ENABLE_BETA_EXTENSIONS {original_cflags}',
+	},
 	# 'cpu_count': 1,
 	'conf_system' : 'cmake',
 	'source_subfolder' : '_build',

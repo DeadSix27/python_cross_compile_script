@@ -12,6 +12,7 @@
 		'--enable-multi-res-encoding --enable-vp9-temporal-denoising '
 		'--disable-tools --disable-docs --disable-examples --disable-install-docs --disable-unit-tests --disable-decode-perf-tests --disable-encode-perf-tests --as=yasm'
 	,
+	#'custom_cflag' : '-O3',
 	'env_exports' : {
 		'CROSS' : '{cross_prefix_bare}',
 	},

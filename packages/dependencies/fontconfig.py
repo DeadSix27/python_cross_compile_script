@@ -1,12 +1,14 @@
 {
 	'repo_type' : 'git',
 	'do_not_bootstrap' : True,
+	# 'do_not_git_update' : True,
 	'url' : 'https://gitlab.freedesktop.org/fontconfig/fontconfig.git',
 	'branch': 'main',
 	'folder_name' : 'fontconfig_git',
 	'configure_options' : '--host={target_host} --prefix={target_prefix} --disable-shared --enable-static --enable-libxml2 --disable-docs --disable-silent-rules --with-expat',
 	'patches' : [
 		('fontconfig/0001-fontconfig-remove-tests.patch', '-p1' ),
+		('fontconfig/0002-fontconfig-add-default-windows-path.patch', '-p1' ),
 		# ('fontconfig/fontconfig-git-utimes.patch', '-p1' ),
 		# ('fontconfig/fontconfig-0001-fix-missing-bracket.patch', '-p1' ),
 	],
@@ -26,12 +28,13 @@
 			},
 			{
 				0: r'Libs: -L\${{libdir}} -lfontconfig',
-				1: r'Libs: -L${{libdir}} -lfontconfig -liconv -lintl ',
+				1: r'Libs: -L${{libdir}} -lfontconfig -liconv ',
 				'in_file': '{pkg_config_path}/fontconfig.pc'
 			}
 		]
 	},
 
+	#'custom_cflag' : '-O3',
 	'depends_on' : [
 		'expat', 'iconv', 'libxml2', 'freetype', 'json-c',
 	],

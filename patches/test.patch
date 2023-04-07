@@ -1,0 +1,69 @@
+diff --git a/DOCS/man/options.rst b/DOCS/man/options.rst
+index 37bc63c729..8d5cab99cd 100644
+--- a/DOCS/man/options.rst
++++ b/DOCS/man/options.rst
+@@ -3088,6 +3088,16 @@ Window
+     Play video with window border and decorations. Since this is on by
+     default, use ``--no-border`` to disable the standard window decorations.
+ 
++``--window-affinity=<default|excludefromcapture|monitor>``
++    (Windows only)
++    Sets the affinity of the mpv window.
++    This affects how it is displayed on the desktop,
++    which affects certain system-level operations such as taking screenshots.
++
++    :default: No change in default Windows behavior
++    :system:  The window is excluded from appearing in screenshots and other display operations that capture the contents of the screen.
++    :monitor: The window is designated as a monitor, and its contents are included in screenshots and other display operations that capture the contents of the screen.
++
+ ``--on-all-workspaces``
+     (X11 and macOS only)
+     Show the video window on all virtual desktops.
+diff --git a/options/options.c b/options/options.c
+index 5401ab126b..db3bb53d75 100644
+--- a/options/options.c
++++ b/options/options.c
+@@ -111,6 +111,9 @@ static const m_option_t mp_vo_opt_list[] = {
+     {"ontop-level", OPT_CHOICE(ontop_level, {"window", -1}, {"system", -2},
+         {"desktop", -3}), M_RANGE(0, INT_MAX)},
+     {"border", OPT_BOOL(border)},
++    #if HAVE_WIN32_DESKTOP
++    {"window-affinity", OPT_CHOICE(window_affinity, {"default", 0}, {"excludefromcapture", 1}, {"monitor", 2})},
++    #endif
+     {"fit-border", OPT_BOOL(fit_border),
+      .deprecation_message = "the option is ignored and no longer needed"},
+     {"on-all-workspaces", OPT_BOOL(all_workspaces)},
+diff --git a/options/options.h b/options/options.h
+index c3a5e727ee..aef1c79a88 100644
+--- a/options/options.h
++++ b/options/options.h
+@@ -15,6 +15,7 @@ typedef struct mp_vo_opts {
+     int ontop_level;
+     bool fullscreen;
+     bool border;
++    int window_affinity;
+     bool fit_border;
+     bool all_workspaces;
+     bool window_minimized;
+diff --git a/video/out/w32_common.c b/video/out/w32_common.c
+index 64d69d8242..679a901f73 100644
+--- a/video/out/w32_common.c
++++ b/video/out/w32_common.c
+@@ -1543,6 +1543,17 @@ static void *gui_thread(void *ptr)
+         goto done;
+     }
+ 
++    // If the user did not specify any special affinity,
++    // we simply don't set it at all which will keep the default affinity.
++    // Note: On versions prior to Win10 WDA_EXCLUDEFROMCAPTURE will internally be using WDA_MONITOR.
++    if (w32->opts->window_affinity > 0) {
++        SetWindowDisplayAffinity(w32->window,
++            w32->opts->window_affinity == 1 ? WDA_EXCLUDEFROMCAPTURE :
++            w32->opts->window_affinity == 2 ? WDA_MONITOR :
++            WDA_NONE
++        );
++    }
++
+     if (SUCCEEDED(OleInitialize(NULL))) {
+         ole_ok = true;
+ 

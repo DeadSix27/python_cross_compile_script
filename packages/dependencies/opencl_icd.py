@@ -4,7 +4,8 @@
 	# 'needs_make_install' : False,
 	'source_subfolder': '_build',
 	'conf_system' : 'cmake',
-	'configure_options' : '.. {cmake_prefix_options} -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=ON -DCMAKE_STATIC_LIBRARY_PREFIX="" -DOPENCL_ICD_LOADER_DISABLE_OPENCLON12=ON ',
+	'branch': 'main',
+	'configure_options' : '.. {cmake_prefix_options} -DOPENCL_ICD_LOADER_HEADERS_DIR={target_prefix}/include -DCMAKE_INSTALL_PREFIX={target_prefix} -DBUILD_SHARED_LIBS=ON -DCMAKE_STATIC_LIBRARY_PREFIX="" ',
 	#-DBUILD_SHARED_LIBS=ON
 	# -DOPENCL_ICD_LOADER_REQUIRE_WDK=OFF
 	'depends_on' : [ 'opencl_headers' ],	
@@ -16,7 +17,7 @@
 		# ('opencl/0001-OpenCL-git-prefix.patch', '-p1', '..'),
 		# ('opencl/0002-OpenCL-git-header.patch', '-p1', '..'),
 		# ('opencl/0001-win32_crosscompile_fixes.patch', '-p1', '..'),
-		('opencl/1.patch', '-p1', '..'),
+		# ('opencl/1.patch', '-p1', '..'),
 	],
 	'_info' : { 'version' : None, 'fancy_name' : 'OpenCL ICD' },
 }

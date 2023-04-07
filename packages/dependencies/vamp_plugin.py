@@ -7,6 +7,7 @@
 	'run_post_patch' : [
 		'cp -fv build/Makefile.mingw64 Makefile',
 	],
+	#'custom_cflag' : '-O3',
 	'patches' : [
 		('vamp/vamp-plugin-sdk-2.7.1.patch','-p0'), #They rely on M_PI which is gone since c99 or w/e, give them a self defined one and hope for the best.
 	],

@@ -1,3 +1,4 @@
+#type: ignore
 {
 	'repo_type' : 'git',
 	'url' : 'https://github.com/breakfastquay/rubberband.git',
@@ -19,6 +20,10 @@
 		'--backend=ninja '
 		'-Dtests=disabled '
         '-Dcmdline=disabled '
+        '-Djni=disabled '
+        '-Dvamp=enabled '
+        '-Dresampler=libsamplerate '
+        '-Dfft=fftw '
 		'--buildtype=release '
 		'--cross-file={meson_env_file} ./ ..'
   ,

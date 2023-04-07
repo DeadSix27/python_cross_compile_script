@@ -2,6 +2,8 @@
 	'repo_type' : 'git',
 	'url' : 'https://github.com/libressl-portable/portable.git',
 	'folder_name' : 'libressl_git',
+	'depth_git': 0,
+	# 'branch': 'v3.7.0',
 	'configure_options' : '{autoconf_prefix_options} --disable-hardening',
 	# 'patches' : [
 		# ( 'https://raw.githubusercontent.com/shinchiro/mpv-winbuild-cmake/master/packages/libressl-0001-ignore-compiling-test-and-man-module.patch', '-p1' ),

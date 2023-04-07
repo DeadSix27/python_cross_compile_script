@@ -1,0 +1,27 @@
+diff --git a/libavutil/hwcontext.c b/libavutil/hwcontext.c
+index 3396598..c55980b 100644
+--- a/libavutil/hwcontext.c
++++ b/libavutil/hwcontext.c
+@@ -15,7 +15,8 @@
+  * License along with FFmpeg; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+  */
+-
++#include "vulkan/vulkan_core.h"
++#include "vulkan/vulkan_beta.h"
+ #include "config.h"
+ 
+ #include "avassert.h"
+diff --git a/libavutil/hwcontext_vulkan.c b/libavutil/hwcontext_vulkan.c
+index f1db1c7..3c25c73 100644
+--- a/libavutil/hwcontext_vulkan.c
++++ b/libavutil/hwcontext_vulkan.c
+@@ -40,6 +40,8 @@
+ 
+ #include "vulkan.h"
+ #include "vulkan_loader.h"
++#include "vulkan/vulkan_core.h"
++#include "vulkan/vulkan_beta.h"
+ 
+ #if CONFIG_LIBDRM
+ #include <xf86drm.h>

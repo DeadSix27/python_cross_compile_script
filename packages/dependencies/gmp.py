@@ -3,6 +3,7 @@
 	#export CPP_FOR_BUILD=usr/bin/cpp
 	#generic_configure "ABI=$bits_target"
 	'repo_type' : 'archive',
+	'custom_cflag' : '-O3',
 	'download_locations' : [
 		{ 'url' : 'https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2' }, ], },
 		{ 'url' : 'https://fossies.org/linux/misc/gmp-6.2.1.tar.xz', 'hashes' : [ { 'type' : 'sha256', 'sum' : 'fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2' }, ], },

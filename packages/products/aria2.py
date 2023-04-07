@@ -15,6 +15,48 @@
 	'patches' : [
 		( 'aria2/aria2_timegm_workaround.patch', '-p1' ),
 	],
+    'regex_replace': {
+        'pre_patch': [
+            {
+                0: r'SUBDIRS =  po lib deps src doc test',
+                1: r'SUBDIRS =  po lib deps src',
+                'in_file': 'Makefile.am',
+            },
+            {
+                0: r'doc/Makefile',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/Makefile',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/en/Makefile',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/en/conf.py',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/ru/Makefile',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/ru/conf.py',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/pt/Makefile',
+                'in_file': 'configure.ac',
+            },
+            {
+                0: r'doc/manual-src/pt/conf.py',
+                'in_file': 'configure.ac',
+            },
+        ],
+    },
+
 	'run_post_patch' : [
 		('autoreconf -fiv', True),
 		'autoreconf -fiv',

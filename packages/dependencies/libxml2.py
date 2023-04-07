@@ -4,6 +4,7 @@
 		{ 'url' : 'http://xmlsoft.org/sources/libxml2-2.9.10-rc1.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '913d85bf02ab22f07c76805522e013b7dfda7585dfe5addc465440880ef8cae5' }, ], },
 		{ 'url' : 'https://fossies.org/linux/www/libxml2-2.9.10-rc1.tar.gz', 'hashes' : [ { 'type' : 'sha256', 'sum' : '913d85bf02ab22f07c76805522e013b7dfda7585dfe5addc465440880ef8cae5' }, ], },
 	],
+	#'custom_cflag' : '-O2',
 	'folder_name' : 'libxml2-2.9.10',
 	'rename_folder' : 'libxml2-2.9.10-rc1',
 	'configure_options' : '{autoconf_prefix_options} --without-python --enable-tests=no --enable-programs=no',
