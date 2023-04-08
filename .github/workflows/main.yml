@@ -1,9 +1,10 @@
-name: Ubuntu Build
-
 on:
   push:
+    branches:
+      - main
   pull_request:
-
+    branches:
+      - main
 
 jobs:
   build:
@@ -33,9 +34,9 @@ jobs:
       - name: Install additional packages
         run: |
           sudo apt-get install -y subversion cvs pax patch mercurial gettext autopoint docbook-to-man rst2pdf po4a
-          sudo apt-get install -y libisl-dev libxslt1-dev libxml2-dev libogg-dev libvorbis-dev libmp3lame-dev libopus-dev libass-dev libbluray-dev libcdio-paranoia-dev libdvdnav-dev libdvdread-dev libflac-dev libfontconfig-dev libfreetype6-dev libfribidi-dev libharfbuzz-dev liblcms2-dev libopenjpeg-dev libpulse-dev libquvi-dev libsmbclient-dev libspeex-dev libtheora-dev libtool-bin libv4l-dev libwebp-dev libx264-dev libx265-dev libxcb-shm0-dev libxcb-xfixes0-dev libxvidcore-dev libzmq3-dev libzvbi-dev
+          sudo apt-get install -y libisl-dev libtool-bin
           sudo apt-get install -y p7zip-full p7zip gyp
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Run cross_compile.py script
-        run: ./cross_compiler.py -p mpv,ffmpeg_extra
+        run: ./cross_compile.py -p mpv,ffmpeg_extra
