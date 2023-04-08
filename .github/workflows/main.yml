@@ -1,10 +1,6 @@
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
@@ -39,4 +35,4 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Run cross_compile.py script
-        run: ./cross_compile.py -p mpv,ffmpeg_extra
+        run: ./cross_compiler.py -p mpv,ffmpeg_extra
