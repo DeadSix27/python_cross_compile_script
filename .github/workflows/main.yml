@@ -30,7 +30,7 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env
           sudo apt-get install -y pax cvs subversion flex bison patch mercurial
       - name: Install additional packages
-        run: sudo apt-get install -y libxml2-dev libssl-dev libevent-dev libffi-dev libglib2.0-dev libjpeg-dev libpng-dev libtiff-dev libgtk-3-dev libncurses-dev libudev-dev libusb-dev libavformat-dev libswscale-dev libavcodec-dev libavutil-dev libtool p7zip-full p7zip pandoc docbook-to-man rst2pdf
+        run: sudo apt-get install -y libxml2-dev libssl-dev libevent-dev libffi-dev libglib2.0-dev libjpeg-dev libpng-dev libtiff-dev libgtk-3-dev libncurses-dev libudev-dev libusb-dev libavformat-dev libswscale-dev libavcodec-dev libavutil-dev libtool p7zip-full p7zip pandoc docbook-to-man rst2pdf libisl-dev
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Run cross_compile.py script
