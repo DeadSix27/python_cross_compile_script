@@ -25,4 +25,4 @@ jobs:
     - name: Clone repository
       uses: actions/checkout@v2
     - name: Run cross_compile.py script
-      run: pwd && echo meh && ./cross_compile.py
+      run: ls -l && ./cross_compiler.py -fp mpv,ffmpeg_extra
