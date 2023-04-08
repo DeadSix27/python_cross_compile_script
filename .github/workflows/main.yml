@@ -15,8 +15,8 @@ jobs:
           sudo apt-get install -y autotools-dev autoconf automake libtool-bin pkg-config texinfo
           sudo apt-get install -y libxslt1.1 docbook-utils docbook-xsl
           sudo apt-get install -y gettext autopoint rake
-      - name: Install Yasm and related packages
-        run: sudo apt-get install -y yasm gperf
+      - name: Install Yasm, Nasm and related packages
+        run: sudo apt-get install -y yasm nasm gperf
       - name: Install CMake, Meson and Ninja
         run: sudo apt-get install -y cmake meson ninja-build
       - name: Install Python3 and related packages
