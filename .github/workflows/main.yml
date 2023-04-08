@@ -17,8 +17,8 @@ jobs:
           sudo apt-get install -y gettext autopoint rake
       - name: Install Yasm, Nasm and related packages
         run: sudo apt-get install -y yasm nasm gperf
-      - name: Install CMake, Meson and Ninja
-        run: sudo apt-get install -y cmake meson ninja-build
+      - name: Install CMake and Ninja
+        run: sudo apt-get install -y cmake ninja-build
       - name: Install Python3 and related packages
         run: |
           sudo apt-get install -y python3 python3-dev python3-pip
@@ -26,12 +26,18 @@ jobs:
       - name: Install Rust and related packages
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env
-          sudo apt-get install -y libssl-dev libevent-dev libffi-dev libglib2.0-dev libjpeg-dev libpng-dev libtiff-dev libgtk-3-dev libncurses-dev libudev-dev libusb-dev libavformat-dev libswscale-dev libavcodec-dev libavutil-dev libtool
       - name: Install additional packages
         run: |
           sudo apt-get install -y subversion cvs pax patch mercurial gettext autopoint docbook-to-man rst2pdf po4a
           sudo apt-get install -y libisl-dev libtool-bin
           sudo apt-get install -y p7zip-full p7zip gyp
+      - name: Install Meson
+        run: |
+          sudo apt-get remove -y meson
+          wget https://github.com/mesonbuild/meson/releases/download/1.0.1/meson-1.0.1.tar.gz
+          tar xvf meson-1.0.1.tar.gz
+          cd meson-1.0.1
+          sudo python3 setup.py install
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Run cross_compile.py script
