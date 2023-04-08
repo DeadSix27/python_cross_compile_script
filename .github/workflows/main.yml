@@ -31,13 +31,13 @@ jobs:
           sudo apt-get install -y subversion cvs pax patch mercurial gettext autopoint docbook-to-man rst2pdf po4a
           sudo apt-get install -y libisl-dev libtool-bin
           sudo apt-get install -y p7zip-full p7zip gyp
-      - name: Install Meson
+      - name: Install latest version of Meson
         run: |
-          sudo apt-get remove -y meson
-          wget https://github.com/mesonbuild/meson/releases/download/1.0.1/meson-1.0.1.tar.gz
-          tar xvf meson-1.0.1.tar.gz
-          cd meson-1.0.1
+          git clone https://github.com/mesonbuild/meson.git
+          cd meson
+          python3 setup.py build
           sudo python3 setup.py install
+          cd ..
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Run cross_compile.py script
