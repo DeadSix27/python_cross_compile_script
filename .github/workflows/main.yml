@@ -8,21 +8,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Install build essentials
-      run: sudo apt-get update && sudo apt-get install -y build-essential
-    - name: Install CMake
-      run: sudo apt-get install -y cmake
-    - name: Install Ninja
-      run: sudo apt-get install -y ninja-build
-    - name: Install Meson
-      run: sudo apt-get install -y meson
-    - name: Install Pip
-      run: sudo apt-get install -y python3-pip
-    - name: Install Python3
-      run: sudo apt-get install -y python3-dev
-    - name: Install Cargo
-      run: curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env
-    - name: Clone repository
-      uses: actions/checkout@v2
-    - name: Run cross_compile.py script
-      run: ls -l && ./cross_compiler.py -fp mpv,ffmpeg_extra
+      - name: Install build essentials
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+      - name: Install CMake
+        run: sudo apt-get install -y cmake
+      - name: Install Ninja
+        run: sudo apt-get install -y ninja-build
+      - name: Install Meson
+        run: sudo apt-get install -y meson
+      - name: Install Pip
+        run: sudo apt-get install -y python3-pip
+      - name: Install Python3
+        run: sudo apt-get install -y python3-dev
+      - name: Install Cargo
+        run: curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Install Python Packages
+        run: pip3 install progressbar2 requests PyYAML
+      - name: Run cross_compile.py script
+        run: ./cross_compiler.py -fp mpv,ffmpeg_extra
