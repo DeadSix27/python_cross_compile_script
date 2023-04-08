@@ -19,7 +19,7 @@ jobs:
           sudo apt-get install -y gettext autopoint rake
       - name: Install Yasm and related packages
         run: sudo apt-get install -y yasm gperf
-      - name: Install CMake
+      - name: Install CMake and related packages
         run: sudo apt-get install -y cmake ninja-build
       - name: Install Python3 and related packages
         run: |
@@ -28,10 +28,10 @@ jobs:
       - name: Install Rust and related packages
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env
-          sudo apt-get install -y pax cvs subversion flex bison patch mercurial
+          sudo apt-get install -y libssl-dev libevent-dev libffi-dev libglib2.0-dev libjpeg-dev libpng-dev libtiff-dev libgtk-3-dev libncurses-dev libudev-dev libusb-dev libavformat-dev libswscale-dev libavcodec-dev libavutil-dev libtool
       - name: Install additional packages
-        run: sudo apt-get install -y libxml2-dev libssl-dev libevent-dev libffi-dev libglib2.0-dev libjpeg-dev libpng-dev libtiff-dev libgtk-3-dev libncurses-dev libudev-dev libusb-dev libavformat-dev libswscale-dev libavcodec-dev libavutil-dev libtool p7zip-full p7zip pandoc docbook-to-man rst2pdf libisl-dev
+        run: sudo apt-get install -y subversion flex bison patch mercurial docbook-to-man rst2pdf libisl-dev po4a p7zip-full p7zip gyp
       - name: Clone repository
         uses: actions/checkout@v2
       - name: Run cross_compile.py script
-        run: ./cross_compiler.py -fp mpv,ffmpeg_extra
+        run: ./cross_compiler.py -p mpv,ffmpeg_extra
