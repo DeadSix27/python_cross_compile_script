@@ -1,4 +1,11 @@
-[![Discord](https://img.shields.io/badge/Discord-Join-blue.svg)](https://discord.gg/gAvufS2)
+# Archived, working on new version, see: https://github.com/DeadSix27/py-cross
+
+---
+
+---
+
+
+![Discord](https://img.shields.io/badge/Discord-Join-blue.svg)](https://discord.gg/gAvufS2)
 
 # Linux to Windows x64 cross-compile helper script
 
